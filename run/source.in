@@ -1,0 +1,7 @@
+                   !! r
+2.0D-1                   !! Q
+2.0D-4  1.0D-7           !! K1, Ss1
+1.0D+0  2.0D-5  5.0D-5   !! b, K2, Ss2
+2.0D-4  1.0D-1            !! Kz1,Sy
+1.0D-5                  !! tau
+runconf_beta1.out

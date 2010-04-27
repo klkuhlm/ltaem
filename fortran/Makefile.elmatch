@@ -1,0 +1,118 @@
+## -*-makefile-*-
+# $Id: Makefile.elmatch,v 1.6 2007/09/19 21:17:42 kris Exp kris $
+EXTERNAL=cbessel.o
+MATHIEU=mathieu_const.o shared_mathieu.o mcn_eigenvalues.o \
+  bessel_functions_mat.o mathieu_functions.o
+KKLOW=special_functions.o bessel_functions.o invlap.o file_ops.o calcshareddata.o \
+  shared_matching_el_data.o
+
+# for g95 or ifort (not gfortran)
+################################
+LAPACKLIB=-llapack
+#LAPACKLIB=/home/kris/src/lapack-3.1.1/lapack_ifort.a
+#BLASLIB=-lblas
+BLASLIB=/home/kris/src/GotoBLAS/libgoto.a -lpthread
+
+# main-program related
+####################################
+## matching.o not used
+KKHIGH=wells_el.o matching_ellipse_only.o calc_ellipse_routines.o elliptical_geometry.o 
+MAIN=ltaem_el_main.o
+TARG=ltaem_el
+
+OBJS=constants.o element_specs.o $(EXTERNAL) $(KKLOW) $(MATHIEU) $(KKHIGH)
+
+# compile in debugging code (prints intermediate steps for checking)
+#DEBUG=-DDEBUG
+
+# for the dependency-generation
+F90OBJS=constants.o element_specs.o $(KKLOW) $(MATHIEU) $(KKHIGH)
+F90SRC=./external/cbessel.f90 $(patsubst %.o,%.f90,$(F90OBJS) $(MAIN)) 
+
+########### g95 (work) related ##########
+F90=g95
+DFLAGS=-fbounds-check -Wall -Wextra -freal=NaN -finteger=-99999 -O0 -flogical=false
+#WUNFLAG=-Wunused-module-vars -Wunused-module-procs -Wunused-parameter
+W1FLAG=-Wno=140,141
+W2FLAG=-Wno=159
+W3FLAG=-Wno=136
+W5FLAG=-Wno=165
+PFLAGS=-O2 -march=nocona -msse2 -funroll-loops
+CPPFLAG=-cpp
+##################################
+
+####  gfortran 4.3 ##########
+#F90=gfortran-4.3
+#CPPFLAG=-xf95-cpp-input
+#DFLAGS=-W -g -O0 -fbounds-check -frange-check
+#PFLAGS=-O3 -march=nocona -funroll-loops -fomit-frame-pointer -msse2 
+#LINKFLAG=-static
+#BLASLIB=/home/kris/src/lapack-3.1.1/blas_GFORTRAN_43_LINUX.a
+#LAPACKLIB=/home/kris/src/lapack-3.1.1/lapack_GFORTRAN_43_LINUX.a
+##BLASLIB=/home/kris/src/GotoBLAS/libgoto.a -lpthread
+################################
+
+# switch between performance or debugging flags
+FLAGS=$(DFLAGS)
+
+# the link step
+main: $(OBJS) $(MAIN)
+	$(F90) $(LINKFLAG) -o $(TARG) $(OBJS) $(MAIN) $(LIBPATH) $(LAPACKLIB) $(BLASLIB)
+	install $(TARG) ../run/
+
+ltaem_el_main.o: mcn_matrix_method.mod shared_mathieu.mod elliptical_geometry.mod \
+  calc_ellipse_routines.mod matching_ellipse_only.mod inverse_laplace_transform.mod \
+  error_handler.mod file_ops.mod element_specs.mod calc_shared_data.mod constants.mod \
+  ltaem_el_main.f90
+	$(F90) -c $(FLAGS) $(CPPFLAG) $(DEBUG) -o ltaem_el_main.o ltaem_el_main.f90
+
+calc_ellipse_routines.o calc_ellipse_routines.mod: wells_el.mod mathieu_functions.mod \
+  shared_mathieu.mod element_specs.mod constants.mod calc_ellipse_routines.f90
+	$(F90) -c $(FLAGS) $(CPPFLAG) $(DEBUG) -o calc_ellipse_routines.o calc_ellipse_routines.f90
+
+# warnings 140 and 141: implicit type conversion
+cbessel.o : ./external/cbessel.f90
+	$(F90) -c $(PFLAGS) $(W1FLAG) -o $@ $<
+
+# warning 136: unused module variable
+file_ops.o :  file_ops.f90
+	$(F90) -c $(FLAGS) $(W3FLAG) -o $@ $<
+
+mcn_eigenvalues.o : mcn_eigenvalues.f90
+	$(F90) -c $(CPPFLAG) $(FLAGS) $(W3FLAG) -o $@ $<
+
+## include output generated using "make dep" below
+cbessel.o complex_bessel.mod: ./external/cbessel.f90
+constants.o constants.mod: constants.f90
+element_specs.o element_specs.mod: constants.mod element_specs.f90
+special_functions.o matrix_inverse.mod bessel_functions.mod error_handler.mod: constants.mod complex_bessel.mod special_functions.f90
+bessel_functions.o bessel_functions_deriv.mod: complex_bessel.mod constants.mod bessel_functions.f90
+invlap.o inverse_laplace_transform.mod: constants.mod invlap.f90
+file_ops.o file_ops.mod: constants.mod error_handler.mod element_specs.mod file_ops.f90
+calcshareddata.o calc_shared_data.mod: constants.mod calcshareddata.f90
+shared_matching_el_data.o shared_matching_el_data.mod: constants.mod shared_matching_el_data.f90
+mathieu_const.o mathieu_const.mod: mathieu_const.f90
+shared_mathieu.o shared_mathieu.mod: constants.mod shared_mathieu.f90
+mcn_eigenvalues.o mcn_matrix_method.mod: mathieu_const.mod mcn_eigenvalues.f90
+bessel_functions_mat.o bessel_functions_deriv_mat.mod: complex_bessel.mod constants.mod bessel_functions_mat.f90
+mathieu_functions.o mathieu_functions.mod: bessel_functions_deriv_mat.mod shared_mathieu.mod constants.mod mathieu_functions.f90
+wells_el.o wells_el.mod: complex_bessel.mod element_specs.mod constants.mod wells_el.f90
+matching_ellipse_only.o matching_ellipse_only.mod: wells_el.mod matrix_inverse.mod shared_matching_el_data.mod shared_mathieu.mod mathieu_functions.mod element_specs.mod constants.mod matching_ellipse_only.f90
+elliptical_geometry.o elliptical_geometry.mod: file_ops.mod shared_matching_el_data.mod element_specs.mod constants.mod elliptical_geometry.f90
+ltaem_el_main.o: mcn_matrix_method.mod shared_mathieu.mod elliptical_geometry.mod calc_ellipse_routines.mod matching_ellipse_only.mod inverse_laplace_transform.mod error_handler.mod file_ops.mod element_specs.mod calc_shared_data.mod constants.mod ltaem_el_main.f90
+
+%.o: %.f
+	$(F90) -c $(PFLAGS) -o $@ $<
+
+%.o: %.f90
+	$(F90) -c $(FLAGS) -o $@ $<
+
+
+
+clean:
+	rm -f *.o *.mod $(TARG)
+
+# create list of dependencies using g95 compiler
+dep:
+	g95 -M -cpp $(F90SRC) > dep.out && echo -e "\n\t***\ndependencies output to dep.out\n\t***\n"
+

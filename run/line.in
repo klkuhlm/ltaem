@@ -1,0 +1,25 @@
+F  T  T  T  1  F  !! match, flux, point, cartesian, output, hydrograph    
+9 9 1       !! numx, numy, numt
+10 1.0D-9 1.0D-7  !! numft, tol, de hoog alpha 
+1.0D+0  20        !! Q/head  pts
+0.0D+0             !! gamma
+1.0D+0  1.0D+2     !! K_out, K_in
+5.0D-4  5.0D-4     !! Ss_out, Ss_in
+-2.0 -1.0 -0.5 -0.25 0.0 0.25 0.5 1.0 2.0
+-1.5 -0.75 -0.5 -0.25 0.01 0.25 0.5 0.75 1.5
+0.25
+5.0D-1  0.0        !! f, y0
+7.5D-1  24  45          !! eta_0, N, MS 
+0  0.8 0.05 10.0  1.0D0  !! type, K2, Ss2, b2, b1  (leaky parameters)
+F  0.25 0.001       !! flag, Sy, Kz  (unconfined parameters)
+ellipse_hydrograph.out
+
+## output
+1) gnuplot contour map output
+2) matlab contour map output
+3) gnuplot hydrograph output (w/ velocities)
+11) gnuplot hydrograph output (w/o velocities)
+10) inverse-friedly output for matlab
+4) pathline gnuplot output
+5) streakline gnuplot output
+

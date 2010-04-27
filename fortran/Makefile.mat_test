@@ -1,0 +1,78 @@
+# $Id: Makefile,v 1.1 2007/03/15 00:16:09 kris Exp kris $
+EXTERNAL=cbessel.o
+KKLOW=constants.o utility.o
+# 
+################################
+LAPACKLIB=~/src/lapack-3.2.1/lapack_MAC10.5.a
+BLASLIB=~/src/GotoBLAS2/libgoto2.a -lpthread
+
+# main-program related
+####################################
+KKHIGH=mathieu_functions2.o 
+MAIN=mathieu_test.o
+TARG=mathieu_test
+
+# thin wrapper program related
+MAINW=mathieu_wrapper.o
+TARGW=mathieu_wrap
+
+OBJS=$(EXTERNAL) $(KKLOW) $(KKHIGH)
+
+## for the dependency-generation
+#F90OBJS=$(KKLOW) $(KKHIGH) $(MAIN)
+#F90SRC=./external/cbessel.f90 $(patsubst %.o,%.f90,$(F90OBJS) $(MAIN)) 
+
+########### g95 ##########
+#F90=g95
+#DFLAGS=-O0 -Wall -Wextra -fbounds-check -freal=nan -finteger=-999999 -flogical=false -ftrace=full
+#WUNFLAG=-Wunused-module-vars -Wunused-module-procs -Wunused-parameter
+##W1FLAG=-Wno=140,141
+##W2FLAG=-Wno=159
+##W3FLAG=-Wno=136
+##W5FLAG=-Wno=165
+#PFLAGS=-O3 -funroll-loops -fomit-frame-pointer
+################################
+
+########## ifort (work) related ##########
+#F90=ifort
+#DFLAGS=-O0 -g -traceback -gen-interfaces -warn all -check bounds -check pointers -check uninit
+#PFLAGS=-fast -openmp -cpp -DNOCHECK
+#LINKFLAG=-fast 
+###################################
+
+#### gfortran 4.4.1 ################# 
+F90=gfortran
+DFLAGS=-O0 -cpp -fbounds-check -frange-check -Wall
+PFLAGS=-O3 -march=native -cpp -DNOCHECK -fopenmp
+#LINKFLAG=-O3 -march=native -fopenmp
+###################################
+
+# switch between performance or debugging flags
+FLAGS=$(DFLAGS)
+
+# the the big driver routine
+main: $(OBJS) $(MAIN)
+	$(F90) $(LINKFLAG) -o $(TARG) $(OBJS) $(MAIN) $(LAPACKLIB) $(BLASLIB)
+	install $(TARG) ../testing/mathieu_tests
+
+wrapper: $(OBJS) $(MAINW)
+	$(F90) $(LINKFLAG) -o $(TARGW) $(OBJS) $(MAINW) $(LAPACKLIB) $(BLASLIB)
+
+
+# warnings 140 and 141: implicit type conversion
+cbessel.o : ./external/cbessel.f90
+	$(F90) -c $(PFLAGS) $(W1FLAG) -o $@ $<
+
+%.o: %.f
+	$(F90) -c $(PFLAGS) -o $@ $<
+
+%.o: %.f90
+	$(F90) -c $(FLAGS) -o $@ $<
+
+clean:
+	rm -f *.o *.mod $(TARG)
+
+## create list of dependencies using compiler
+#dep:
+#	g95 -M -cpp $(F90SRC) > dep.out && echo -e "\n\t***\ndependencies output to dep.out\n\t***\n"
+
