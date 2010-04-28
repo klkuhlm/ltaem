@@ -10,7 +10,7 @@ module mathieu_functions
      complex(DP), allocatable :: A(:,:,:), B(:,:,:)  ! 1:M, 0:M-1, 0:1
   end type mathieu
 
-  ! $Id: mathieu_functions2.f90,v 1.25 2010/04/08 01:33:51 klkuhlm Exp klkuhlm $
+  ! $Id: mathieu_functions2.f90,v 1.26 2010/04/23 21:47:12 klkuhlm Exp klkuhlm $
   ! updated Feb 2010
 
   private  !! only interfaces and mathieu_init are publicly callable
@@ -52,9 +52,7 @@ module mathieu_functions
   interface DKo  ! derivative of odd second kind radial MF
      module procedure DKo_scalar_nz, DKo_scalar_n, DKo_scalar_z, DKo_vect_nz
   end interface
-  
 contains
-
   function mathieu_init(q,MM,CUTOFF) result(mat)
     ! this subroutine computes the eigenvalues given at least a value for the
     ! Mathieu parameter (q), the norm and matrix size (M) are optional
@@ -316,8 +314,7 @@ contains
 
     nz = size(z)
     call angfcnsetup(mf,n,v,vi,EV,OD)
-    nje = size(EV)
-    njo = size(OD)
+    nje = size(EV); njo = size(OD)
     j = floor(n/2.0)
     
     ce(EV,:) = sum(spread(mf%A(:,j(EV),0),3,nz)* &
@@ -348,8 +345,7 @@ contains
 
     nz = size(z)
     call angfcnsetup(mf,n,v,vi,EV,OD)
-    nje = size(EV)
-    njo = size(OD)
+    nje = size(EV); njo = size(OD)
     j = floor((n-1)/2.0)
     where (n==0) j = 0
 
@@ -381,8 +377,7 @@ contains
 
     nz = size(z)
     call angfcnsetup(mf,n,v,vi,EV,OD)
-    nje = size(EV)
-    njo = size(OD)
+    nje = size(EV); njo = size(OD)
     j = floor(n/2.0)
 
     Dce(EV,:) = sum(spread(spread(2*v,2,nje)*mf%A(:,j(EV),0),3,nz)* &
@@ -412,8 +407,7 @@ contains
 
     nz = size(z)
     call angfcnsetup(mf,n,v,vi,EV,OD)
-    nje = size(EV)
-    njo = size(OD)
+    nje = size(EV); njo = size(OD)
     j = floor((n-1)/2.0)
     where (n==0) j=0
 
@@ -438,7 +432,7 @@ contains
 
     integer, dimension(size(n)) :: j
     real(DP), dimension(mf%M):: v, vi
-    complex(DP), dimension(0:mf%M+1,size(z)) :: I1, I2
+    complex(DP), dimension(0:mf%M,size(z)) :: I1, I2
     integer, dimension(count(mod(n,2)==0)) :: EV
     integer, dimension(count(mod(n,2)==1)) :: OD
     complex(DP), dimension(size(z)) :: v1, v2
@@ -447,11 +441,10 @@ contains
 
     nz = size(z); M = mf%M
     call radfcnsetup(mf,n,z,sqrtq,v1,v2,v,vi,EV,OD)
-    nje = size(EV)
-    njo = size(OD)
+    nje = size(EV); njo = size(OD)
     j = floor(n/2.0)
-    call BesselI_val(v1,M+2,I1(0:M+1,1:nz))
-    call BesselI_val(v2,M+2,I2(0:M+1,1:nz))
+    call BesselI_val(v1,M+1,I1(0:M,1:nz))
+    call BesselI_val(v2,M+1,I2(0:M,1:nz))
 
     Ie(EV,:) = sum(spread(spread(vi,2,nje)*mf%A(:,j(EV),0),3,nz)* &
          & spread(I1(0:m-1,:)*I2(0:m-1,:),2,nje),dim=1)/spread(mf%A(1,j(EV),0),2,nz)
@@ -475,7 +468,7 @@ contains
 
     integer, dimension(size(n)) :: j
     real(DP), dimension(mf%M):: v, vi
-    complex(DP), dimension(0:mf%M+2,size(z)) :: I1, I2
+    complex(DP), dimension(0:mf%M+1,size(z)) :: I1, I2
     integer, dimension(count(mod(n,2)==0)) :: EV
     integer, dimension(count(mod(n,2)==1)) :: OD
     complex(DP), dimension(size(z)) :: v1, v2
@@ -484,12 +477,11 @@ contains
 
     nz = size(z); M = mf%M
     call radfcnsetup(mf,n,z,sqrtq,v1,v2,v,vi,EV,OD)
-    nje = size(EV)
-    njo = size(OD)
+    nje = size(EV); njo = size(OD)
     j = floor((n-1)/2.0)
     where (n==0) j=0
-    call BesselI_val(v1,m+3,I1(0:m+2,:))
-    call BesselI_val(v2,m+3,I2(0:m+2,:))
+    call BesselI_val(v1,m+2,I1(0:m+1,:))
+    call BesselI_val(v2,m+2,I2(0:m+1,:))
 
      Io(EV,:) = sum(spread(spread(vi,2,nje)*mf%B(:,j(EV),0),3,nz)* &
          & spread(I1(0:m-1,:)*I2(2:m+1,:) - I1(2:m+1,:)*I2(0:m-1,:),2,nje),dim=1)/ &
@@ -514,7 +506,7 @@ contains
 
     integer, dimension(size(n)) :: j
     real(DP), dimension(mf%M):: v, vi
-    complex(DP), dimension(0:mf%M+1,size(z)) :: I, K
+    complex(DP), dimension(0:mf%M,size(z)) :: I, K
     integer, dimension(count(mod(n,2)==0)) :: EV
     integer, dimension(count(mod(n,2)==1)) :: OD
     complex(DP), dimension(size(z)) :: v1, v2
@@ -523,11 +515,10 @@ contains
 
     nz = size(z); m = mf%M
     call radfcnsetup(mf,n,z,sqrtq,v1,v2,v,vi,EV,OD)
-    nje = size(EV)
-    njo = size(OD)
-    j = floor(n/2.0)
-    call BesselI_val(v1,m+2,I(0:m+1,:))
-    call BesselK_val(v2,m+2,K(0:m+1,:))
+    nje = size(EV); njo = size(OD)
+    j = floor(real(n,DP)/2.0)
+    call BesselI_val(v1,m+1,I(0:m,:))
+    call BesselK_val(v2,m+1,K(0:m,:))
 
     Ke(EV,:) = sum(spread(mf%A(:,j(EV),0),3,nz)* &
          & spread(I(0:m-1,:)*K(0:m-1,:),2,nje),dim=1)/spread(mf%A(1,j(EV),0),2,nz)
@@ -551,7 +542,7 @@ contains
 
     integer, dimension(size(n)) :: j
     real(DP), dimension(mf%M):: v, vi
-    complex(DP), dimension(0:mf%M+2,size(z)) :: I, K
+    complex(DP), dimension(0:mf%M+1,size(z)) :: I, K
     integer, dimension(count(mod(n,2)==0)) :: EV
     integer, dimension(count(mod(n,2)==1)) :: OD
     complex(DP), dimension(size(z)) :: v1, v2
@@ -560,12 +551,11 @@ contains
 
     nz = size(z); m = mf%M
     call radfcnsetup(mf,n,z,sqrtq,v1,v2,v,vi,EV,OD)
-    nje = size(EV)
-    njo = size(OD)
+    nje = size(EV); njo = size(OD)
     j = floor((n-1)/2.0)
     where(n==0) j=0
-    call BesselI_val(v1,m+3,I(0:m+2,:))
-    call BesselK_val(v2,m+3,K(0:m+2,:))
+    call BesselI_val(v1,m+2,I(0:m+1,:))
+    call BesselK_val(v2,m+2,K(0:m+1,:))
 
     Ko(EV,:) = sum(spread(mf%B(:,j(EV),0),3,nz)* &
          & spread(I(0:m-1,:)*K(2:m+1,:) - I(2:m+1,:)*K(0:m-1,:),2,nje),dim=1)/ &
@@ -591,7 +581,7 @@ contains
 
     integer, dimension(size(n)) :: j
     real(DP), dimension(mf%M):: v, vi
-    complex(DP), dimension(0:mf%M+1,size(z)) :: I1, I2, DI1, DI2
+    complex(DP), dimension(0:mf%M,size(z)) :: I1, I2, DI1, DI2
     integer, dimension(count(mod(n,2)==0)) :: EV
     integer, dimension(count(mod(n,2)==1)) :: OD
     complex(DP), dimension(size(z)) :: v1, v2
@@ -601,20 +591,19 @@ contains
 
     nz = size(z); m = mf%M
     call radderivfcnsetup(mf,n,z,sqrtq,v1,v2,enz,epz,v,vi,EV,OD)
-    nje = size(EV)
-    njo = size(OD)
+    nje = size(EV); njo = size(OD)
     j = floor(n/2.0)
-    call BesselI_val_and_deriv(v1,m+2,I1(0:m+1,:),DI1(0:m+1,:))
-    call BesselI_val_and_deriv(v2,m+2,I2(0:m+1,:),DI2(0:m+1,:))
+    call BesselI_val_and_deriv(v1,m+1,I1(0:m,:),DI1(0:m,:))
+    call BesselI_val_and_deriv(v2,m+1,I2(0:m,:),DI2(0:m,:))
 
-    DIe(EV,:) = spread(sqrtq/mf%A(1,j(EV),0),2,nz)* &
-         & sum(spread(spread(vi,2,nje)*mf%A(:,j(EV),0),3,nz)* &
-         & spread(epz*I1(0:m-1,:)*DI2(0:m-1,:) - enz*DI1(0:m-1,:)*I2(0:m-1,:),2,nje),dim=1)
+    DIe(EV,:) = sqrtq*sum(spread(spread(vi,2,nje)*mf%A(:,j(EV),0),3,nz)* &
+         & spread(epz*I1(0:m-1,:)*DI2(0:m-1,:) - enz*DI1(0:m-1,:)*I2(0:m-1,:),2,nje),dim=1)/ &
+         & spread(mf%A(1,j(EV),0),2,nz)
 
-    DIe(OD,:) = spread(sqrtq/mf%B(1,j(OD),1),2,nz)* &
-         & sum(spread(spread(vi,2,njo)*mf%B(:,j(OD),1),3,nz)* &
+    DIe(OD,:) = sqrtq*sum(spread(spread(vi,2,njo)*mf%B(:,j(OD),1),3,nz)* &
          & spread(epz*I1(0:m-1,:)*DI2(1:m,:) - enz*DI1(0:m-1,:)*I2(1:m,:) + &
-         &        epz*I1(1:m,:)*DI2(0:m-1,:) - enz*DI1(1:m,:)*I2(0:m-1,:),2,njo),dim=1)
+         &        epz*I1(1:m,:)*DI2(0:m-1,:) - enz*DI1(1:m,:)*I2(0:m-1,:),2,njo),dim=1)/&
+         & spread(mf%B(1,j(OD),1),2,nz)
 
     DIe = DIe*spread(exp(abs(real(v1)) + abs(real(v2))),1,size(n))
   end function DIe_vect_nz
@@ -631,7 +620,7 @@ contains
 
     integer, dimension(size(n)) :: j
     real(DP), dimension(mf%M):: v, vi
-    complex(DP), dimension(0:mf%M+2,size(z)) :: I1, I2, DI1, DI2
+    complex(DP), dimension(0:mf%M+1,size(z)) :: I1, I2, DI1, DI2
     integer, dimension(count(mod(n,2)==0)) :: EV
     integer, dimension(count(mod(n,2)==1)) :: OD
     complex(DP), dimension(size(z)) :: v1, v2
@@ -641,22 +630,21 @@ contains
 
     nz = size(z); m = mf%M
     call radderivfcnsetup(mf,n,z,sqrtq,v1,v2,enz,epz,v,vi,EV,OD)
-    nje = size(EV)
-    njo = size(OD)
+    nje = size(EV); njo = size(OD)
     j = floor((n-1)/2.0)
     where (n==0) j=0
-    call BesselI_val_and_deriv(v1,m+3,I1(0:m+2,:),DI1(0:m+2,:))
-    call BesselI_val_and_deriv(v2,m+3,I2(0:m+2,:),DI2(0:m+2,:))
+    call BesselI_val_and_deriv(v1,m+2,I1(0:m+1,:),DI1(0:m+1,:))
+    call BesselI_val_and_deriv(v2,m+2,I2(0:m+1,:),DI2(0:m+1,:))
 
-    DIo(EV,:) = spread(sqrtq/mf%B(1,j(EV),0),2,nz)* &
-         & sum(spread(spread(vi,2,nje)*mf%B(:,j(EV),0),3,nz)* &
+    DIo(EV,:) = sqrtq*sum(spread(spread(vi,2,nje)*mf%B(:,j(EV),0),3,nz)* &
          & spread(epz*I1(0:m-1,:)*DI2(2:m+1,:) - enz*DI1(0:m-1,:)*I2(2:m+1,:) - &
-         &        epz*I1(2:m+1,:)*DI2(0:m-1,:) - enz*DI1(2:m+1,:)*I2(0:m-1,:),2,nje),dim=1)
+         &        epz*I1(2:m+1,:)*DI2(0:m-1,:) - enz*DI1(2:m+1,:)*I2(0:m-1,:),2,nje),dim=1)/&
+         & spread(mf%B(1,j(EV),0),2,nz)
 
-    DIo(OD,:) = spread(sqrtq/mf%A(1,j(OD),1),2,nz)* &
-         & sum(spread(spread(vi,2,njo)*mf%A(:,j(OD),1),3,nz)* &
+    DIo(OD,:) = sqrtq*sum(spread(spread(vi,2,njo)*mf%A(:,j(OD),1),3,nz)* &
          & spread(epz*I1(0:m-1,:)*DI2(1:m,:) - enz*DI1(0:m-1,:)*I2(1:m,:) - &
-         &        epz*I1(1:m,:)*DI2(0:m-1,:) - enz*DI1(1:m,:)*I2(0:m-1,:),2,njo),dim=1)
+         &        epz*I1(1:m,:)*DI2(0:m-1,:) - enz*DI1(1:m,:)*I2(0:m-1,:),2,njo),dim=1)/&
+         & spread(mf%A(1,j(OD),1),2,nz)
 
     DIo = DIo*spread(exp(abs(real(v1)) + abs(real(v2))),1,size(n))
     where (spread(n,2,nz) == 0) DIo = -huge(1.0)  ! DIo_0() is invalid
@@ -668,6 +656,7 @@ contains
   function DKe_vect_nz(mf,n,z) result(DKe)
     ! mathieu coefficients corresponding to q passed via module
     use constants, only : DP
+    implicit none
     integer, dimension(:), intent(in) :: n
     real(DP), dimension(:), intent(in) :: z
     type(mathieu), intent(in) :: mf
@@ -675,7 +664,7 @@ contains
 
     integer, dimension(size(n)) :: j
     real(DP), dimension(mf%M):: v, vi
-    complex(DP), dimension(0:mf%M+1,size(z)) :: I, K, DI, DK
+    complex(DP), dimension(0:mf%M,size(z)) :: I, K, DI, DK
     integer, dimension(count(mod(n,2)==0)) :: EV
     integer, dimension(count(mod(n,2)==1)) :: OD
     complex(DP), dimension(size(z)) :: v1, v2
@@ -685,18 +674,19 @@ contains
 
     nz = size(z); m = mf%M
     call radderivfcnsetup(mf,n,z,sqrtq,v1,v2,enz,epz,v,vi,EV,OD)
-    nje = size(EV)
-    njo = size(OD)
+    nje = size(EV); njo = size(OD)
     j = floor(n/2.0)
-    call BesselI_val_and_deriv(v1,m+2,I(0:m+1,:),DI(0:m+1,:))
-    call BesselK_val_and_deriv(v2,m+2,K(0:m+1,:),DK(0:m+1,:))
+    call BesselI_val_and_deriv(v1,m+1,I(0:m,:),DI(0:m,:))
+    call BesselK_val_and_deriv(v2,m+1,K(0:m,:),DK(0:m,:))
 
-    DKe(EV,:) = spread(sqrtq/mf%A(1,j(EV),0),2,nz)*sum(spread(mf%A(:,j(EV),0),3,nz)* &
-         & spread(epz*I(0:m-1,:)*DK(0:m-1,:) - enz*DI(0:m-1,:)*K(0:m-1,:),2,nje),dim=1)
-
-    DKe(OD,:) = spread(sqrtq/mf%B(1,j(OD),1),2,nz)*sum(spread(mf%B(:,j(OD),1),3,nz)* &
+    DKe(EV,:) = sqrtq*sum(spread(mf%A(:,j(EV),0),3,nz)* &
+         & spread(epz*I(0:m-1,:)*DK(0:m-1,:) - enz*DI(0:m-1,:)*K(0:m-1,:),2,nje),dim=1)/&
+         & spread(mf%A(1,j(EV),0),2,nz)
+    
+    DKe(OD,:) = sqrtq*sum(spread(mf%B(:,j(OD),1),3,nz)* &
          & spread(epz*I(0:m-1,:)*DK(1:m,:) - enz*DI(0:m-1,:)*K(1:m,:) - &
-         &        epz*I(1:m,:)*DK(0:m-1,:) - epz*DI(1:m,:)*K(0:m-1,:),2,njo),dim=1)
+         &        epz*I(1:m,:)*DK(0:m-1,:) - epz*DI(1:m,:)*K(0:m-1,:),2,njo),dim=1)/ &
+         & spread(mf%B(1,j(OD),1),2,nz)
 
     DKe = DKe*spread(exp(abs(real(v1)) - v2),1,size(n))
   end function DKe_vect_nz
@@ -714,7 +704,7 @@ contains
 
     integer, dimension(size(n)) :: j
     real(DP), dimension(mf%M):: v, vi
-    complex(DP), dimension(0:mf%M+2,size(z)) :: I, K, DI, DK
+    complex(DP), dimension(0:mf%M+1,size(z)) :: I, K, DI, DK
     integer, dimension(count(mod(n,2)==0)) :: EV
     integer, dimension(count(mod(n,2)==1)) :: OD
     complex(DP), dimension(size(z)) :: v1, v2
@@ -724,20 +714,21 @@ contains
 
     nz = size(z); m = mf%M
     call radderivfcnsetup(mf,n,z,sqrtq,v1,v2,enz,epz,v,vi,EV,OD)
-    nje = size(EV)
-    njo = size(OD)
+    nje = size(EV); njo = size(OD)
     j = floor((n-1)/2.0)
     where (n==0) j=0
-    call BesselI_val_and_deriv(v1,m+3,I(0:m+2,:),DI(0:m+2,:))
-    call BesselK_val_and_deriv(v2,m+3,K(0:m+2,:),DK(0:m+2,:))
+    call BesselI_val_and_deriv(v1,m+2,I(0:m+1,:),DI(0:m+1,:))
+    call BesselK_val_and_deriv(v2,m+2,K(0:m+1,:),DK(0:m+1,:))
 
-    DKo(EV,:) = spread(sqrtq/mf%B(1,j(EV),0),2,nz)*sum(spread(mf%B(:,j(EV),0),3,nz)* &
+    DKo(EV,:) = sqrtq*sum(spread(mf%B(:,j(EV),0),3,nz)* &
          & spread(epz*I(0:m-1,:)*DK(2:m+1,:) - enz*DI(0:m-1,:)*K(2:m+1,:) - &
-         &        epz*I(2:m+1,:)*DK(0:m-1,:) - epz*DI(2:m+1,:)*K(0:m-1,:),2,nje),dim=1)
+         &        epz*I(2:m+1,:)*DK(0:m-1,:) - epz*DI(2:m+1,:)*K(0:m-1,:),2,nje),dim=1)/&
+         & spread(mf%B(1,j(EV),0),2,nz)
 
-    DKo(OD,:) = spread(sqrtq/mf%A(1,j(OD),1),2,nz)*sum(spread(mf%A(:,j(OD),1),3,nz)* &
+    DKo(OD,:) = sqrtq*sum(spread(mf%A(:,j(OD),1),3,nz)* &
          & spread(epz*I(0:m-1,:)*DK(1:m,:) - enz*DI(0:m-1,:)*K(1:m,:) + &
-         &        epz*I(1:m,:)*DK(0:m-1,:) - enz*DI(1:m,:)*K(0:m-1,:),2,njo),dim=1)
+         &        epz*I(1:m,:)*DK(0:m-1,:) - enz*DI(1:m,:)*K(0:m-1,:),2,njo),dim=1)/&
+         & spread(mf%A(1,j(OD),1),2,nz)
 
     DKo = DKo*spread(exp(abs(real(v1)) - v2),1,size(n))
     where (spread(n,2,nz) == 0) DKo = -huge(1.0)  ! DKo_0() is invalid
@@ -1145,12 +1136,12 @@ contains
        vi = -1.0_DP
     end where
 
-    ! indexing vectors based on even/odd-ness of n
-    forall (j=1:size(n)) nn(j) = j       
     sqrtq = sqrt(mf%q)
     v1 = sqrtq*exp(-z)
-    v2 = sqrtq*exp(z)
+    v2 = sqrtq*exp( z)
 
+    ! indexing vectors based on even/odd-ness of n
+    forall (j=1:size(n)) nn(j) = j       
     EV = pack(nn,mod(n,2)==0)
     OD = pack(nn,mod(n,2)==1)
   end subroutine radfcnsetup
@@ -1182,14 +1173,14 @@ contains
        vi = -1.0_DP
     end where
 
-    ! indexing vectors based on even/odd-ness of n
-    forall (j=1:size(n)) nn(j) = j
     enz = spread(exp(-z),dim=1,ncopies=mf%m)
     epz = spread(exp( z),dim=1,ncopies=mf%m)
     sqrtq = sqrt(mf%q)
     v1 = enz(1,:)*sqrtq
     v2 = epz(1,:)*sqrtq
 
+    ! indexing vectors based on even/odd-ness of n
+    forall (j=1:size(n)) nn(j) = j
     EV = pack(nn,mod(n,2)==0)
     OD = pack(nn,mod(n,2)==1)
   end subroutine radderivfcnsetup

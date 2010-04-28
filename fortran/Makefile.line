@@ -1,0 +1,112 @@
+# -*-makefile-*-
+# $Id: Makefile.line,v 1.3 2010/04/08 01:32:52 klkuhlm Exp klkuhlm $
+MATHIEU=mathieu_functions2.o
+EXTERNAL=cbessel.o invlap.o $(MATHIEU)
+KK=error_handler.o file_ops.o mathieu_line.o
+
+BENCH_MAIN1=mathieu_test.o
+BENCH_TARG=mathieu_test
+
+# main-program related
+####################################
+MAIN=line_ellipse_test.o
+TARG=mat_line
+
+OBJS=constants.o element_specs.o utility.o $(EXTERNAL) $(KK)
+
+BENCH_OBJS=constants.o element_specs.o cbessel.o $(MATHIEU) 
+
+# for the dependency-generation
+F90SRC=$(patsubst %.o,%.f90, constants.o element_specs.o invlap.o $(MATHIEU) $(KK) $(MAIN)) \
+  ./external/cbessel.f90
+
+########### g95 (work) related ##########
+##F90=g95
+##DFLAGS=-cpp -Wall -Wextra -O1 -fbounds-check
+##DFLAGS+= -g -freal=NaN -finteger=999999 -flogical=true -ftrace=full
+##DFLAGS+=-Wunused-module-vars -Wunused-module-procs -Wunused-parameter
+##PFLAGS=-cpp -O3 -fshort-circuit
+##################################
+
+########## macports gfortran ##########  needs dylib mp lapack and blas libraries
+F90=gfortran-mp-4.3
+CPP=-x f95-cpp-input
+##CPP=-cpp
+DFLAGS=$(CPP) -Wall -g3 -fbacktrace -Wextra -finit-real=nan -finit-integer=-9999 -O0 -fbounds-check -frange-check
+PFLAGS=$(CPP) -O0 ##-msse -march=native 
+#LINKFLAG=-O3 -msse -march=native
+LINKFLAG=-g3 -fbacktrace
+LAPACKLIB=lapack.dylib
+BLASLIB=blas.dylib
+######################################
+
+########## native gfortran ########## uses native-compiled GotoBLAS and lapack
+#F90=gfortran-4.5
+#CPP=-cpp
+#DFLAGS=$(CPP) -Wall -g3 -fbacktrace -Wextra -finit-real=nan -finit-integer=-9999 -O0 -fbounds-check -frange-check
+#PFLAGS=$(CPP) -O0 ##-msse -march=native 
+##LINKFLAG=-O3 -msse -march=native
+#LINKFLAG=-g -fbacktrace
+#LAPACKLIB=lapack.a
+#BLASLIB=blas.a -pthread 
+######################################
+
+# switch between performance or debugging flags
+FLAGS=$(DFLAGS)
+
+# the link & install step for testing the line source
+main: $(OBJS) $(MAIN)
+	$(F90) $(LINKFLAG) -o $(TARG) $(OBJS) $(MAIN) \
+  $(LIBPATH) $(LAPACKLIB) $(BLASLIB) $(BLASFLAG)
+	install $(TARG) ../run/
+
+# the link & install step for benchmarking the mathieu function routines 
+bench1: $(BENCH_OBJS) $(BENCH_MAIN1)
+	$(F90) $(LINKFLAG) -o $(BENCH_TARG) $(BENCH_OBJS) $(BENCH_MAIN1) \
+ $(LIBPATH) $(LAPACKLIB) $(BLASLIB) $(BLASFLAG)
+	install $(BENCH_TARG) ../testing/
+
+# the link & install step for benchmarking the mathieu function routines 
+bench2: $(BENCH_OBJS) $(BENCH_MAIN2)
+	$(F90) $(LINKFLAG) -o $(BENCH_TARG) $(BENCH_OBJS) $(BENCH_MAIN2) \
+ $(LIBPATH) $(LAPACKLIB) $(BLASLIB) $(BLASFLAG)
+	install $(BENCH_TARG) ../testing/
+
+
+# warnings 140 and 141: implicit type conversion
+cbessel.o : ./external/cbessel.f90
+	$(F90) -c $(PFLAGS) $(W1FLAG) -o $@ ./external/cbessel.f90
+
+# warning 136: unused module variable
+file_ops.o : file_ops.f90
+	$(F90) -c $(FLAGS) $(W3FLAG) -o $@ $<
+
+calcshareddata.o : calcshareddata.f90
+	$(F90) -c $(FLAGS) $(W3FLAG) -o $@ $<
+
+%.o: %.f90
+	$(F90) -c $(FLAGS) -o $@ $<
+
+clean:
+	rm -f *.o *.mod $(TARG)
+
+cleankk:
+	rm -f $(MAIN) element_specs.o $(KKLOW) $(KKHIGH) $(TARG)
+
+# create list of dependencies using compiler
+dep:
+	g95 -M $(F90SRC) > dep.out && echo -e "\n\t***\ndependencies output to dep.out\n\t***\n"
+
+# dependency structure (created by hand since g95 seems to be broken)
+cbessel.o complex_bessel.mod: ./external/cbessel.f90
+constants.o constants.mod: constants.f90
+element_specs.o element_specs.mod: constants.mod element_specs.f90
+mathieu_line.o mathieu_line.mod: constants.mod mathieu_functions.mod mathieu_line.f90
+line_ellipse_test.o: constants.mod file_ops.mod inverse_Laplace_Transform.mod mathieu_line.mod mathieu_functions.mod line_ellipse_test.f90
+mathieu_functions2.o mathieu_functions.mod: constants.mod utility.mod mathieu_functions2.f90
+utility.o utility.mod: constants.mod utility.f90
+invlap.o inverse_Laplace_Transform.mod: constants.mod invlap.f90
+error_handler.o error_handler.mod: error_handler.f90
+file_ops.o file_ops.mod: element_specs.mod error_handler.mod constants.mod file_ops.f90
+
+

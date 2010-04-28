@@ -96,7 +96,7 @@ contains
     lwork = 4*M
     allocate(work(lwork),stat=ierr)
     if ( ierr /= 0 ) then
-       print *, 'error allocating: work ',lwork
+       write(*,'(A,I0)') 'error allocating: work ',lwork
        stop 222
     end if
     
@@ -107,7 +107,12 @@ contains
        ! location in complex elliptical coords
        W = cacosh(calcpt/lin%sf)
     else
+       ! complex definition of elliptical coords
        W = lin%WW
+
+       ! complex definition of Cartesian coords
+       calcpt = cmplx(lin%sf*cosh(real(W))*cos(aimag(W)), &
+                   &  lin%sf*sinh(real(W))*sin(aimag(W)))
     end if
     
     eta = real(W)  ! radial elliptical coordinate
@@ -129,7 +134,7 @@ contains
           if(.not. allocated(kappasq)) then
              allocate(kappasq(np),qq(nP,2),stat=ierr)
              if (ierr /= 0) then
-                write(*,'(A,(I0,1X))') 'error allocating: kappasq ',np
+                write(*,'(A,I0)') 'error allocating: kappasq ',np
                 stop 101
              end if
           end if
@@ -167,6 +172,7 @@ contains
           end if
        end if
 666    format(A,I0,2(A,ES10.3E2),A,3(I0,1X))
+       print *, 'c'
        if(lin%match) then
           if(.not. allocated(Am)) then
              allocate(Am(1:2*M,0:4*N+1),bm(1:2*M),stat=ierr)
@@ -209,7 +215,7 @@ contains
        if(.not. allocated(sig)) then
           allocate(sig(0:MS-1),denom(0:MS-1),stat=ierr)
           if (ierr /= 0) then
-             write(*,'(A,(I0,1X))') 'error allocating: sig,denom ',MS-1
+             write(*,'(A,I0)') 'error allocating: sig,denom ',MS-1
              stop 106
           end if
        end if
@@ -233,7 +239,7 @@ contains
 !!$       write(*,'(I0,1X)',advance='no') i
        if (lin%first) then
           
-!!$          write(*,'(A)',advance='no') '*';
+          write(*,'(A)',advance='no') '*';
 
           !! specified flux element
           if (.not. lin%match .and. lin%flux) then
@@ -437,6 +443,7 @@ contains
 
           !! removed factor of 4 from numerator
           !! apply time behavior (constant) and convert DP -> h in denominator
+
           F(i) = -lin%Q/(lin%k*p(i)*PI)*sum(sig(0:nmax)*sum(&
                & spread(sig(0:mf(i,1)%M-1)/denom(0:mf(i,1)%M-1),2,nmax+1)* &
                & conjg(mf(i,1)%A(:,0:nmax,0)),dim=1) * ce(mf(i,1),2*vi(0:nmax),psi)* &

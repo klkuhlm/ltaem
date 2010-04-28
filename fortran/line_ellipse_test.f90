@@ -37,6 +37,7 @@ program line_ellipse_test
 
   open(unit=23,file='line.in',action='read',status='old')
   read(23,*) lin%match, lin%flux, point, lin%cartesian, output, hydrograph
+!!$  print *, lin%match, lin%flux, point, lin%cartesian, output, hydrograph
 
   read(23,*) numx, numy, numt
   allocate(t(numt),x(numx),y(numy),stat=ierr)
@@ -87,6 +88,18 @@ program line_ellipse_test
   read(23,*) lin%leak, lin%k2, lin%ss2, lin%b2, lin%b
   read(23,*) lin%unconfined, lin%Sy, lin%kz
   read(23,*) BGoutFname
+!!$  print *, lin%q, npts
+!!$  print *, lin%gamma
+!!$  print *, lin%k, lin%Ek
+!!$  print *, lin%Ss, lin%ESs
+!!$  print *, x(1:NUMX)
+!!$  print *, y(1:NUMY)
+!!$  print *, t(1:NUMT)
+!!$  print *, lin%sf  !!, y0??
+!!$  print *, lin%eta0, lin%n, lin%ms
+!!$  print *, lin%leak, lin%k2, lin%ss2, lin%b2, lin%b
+!!$  print *, lin%unconfined, lin%Sy, lin%kz
+!!$  print *, BGoutFname
   close(23)
 
   bout(7:8+len_trim(BGoutFname)) = BGoutFname
@@ -156,7 +169,7 @@ program line_ellipse_test
               end if
            end if
         end do
-        write(*,'(/)',advance='no')
+!!$        write(*,'(/)',advance='no')
      end do
   end do
 
@@ -174,7 +187,7 @@ program line_ellipse_test
                    & head(k,j,i),velx(k,j,i),vely(k,j,i)
            end do
         end do
-        write (22,'(//)')
+!!$        write (22,'(//)')
      end do
      
      write(22,*) '# EOF'
