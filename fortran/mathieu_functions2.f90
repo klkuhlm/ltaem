@@ -10,9 +10,6 @@ module mathieu_functions
      complex(DP), allocatable :: A(:,:,:), B(:,:,:)  ! 1:M, 0:M-1, 0:1
   end type mathieu
 
-  ! $Id: mathieu_functions2.f90,v 1.26 2010/04/23 21:47:12 klkuhlm Exp klkuhlm $
-  ! updated Feb 2010
-
   private  !! only interfaces and mathieu_init are publicly callable
   public :: ce, Dce, se, Dse, Ke, Ko, DKe, DKo, Ie, Io, DIe, DIo, mathieu_init, print_struct
 
