@@ -14,69 +14,87 @@ module element_specs
 
   real :: trash
 
-  ! Circular Inclusion related parameters
+  ! parameters related to the entire domain
+  !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  
+  type, public :: domain
+     ! given hierarchy arrays (eventually to be calculated)
+     integer, allocatable :: InclUp(:), WellUp(:)
+
+     logical, allocatable :: InclIn(:,:), WellIn(:,:), WellBg(:,:), &
+          & InclBg(:,:), CalcIn(:)
+
+     ! number of each type of element
+     ! 1=wells, 2=circles, 3=ellipses
+     integer, dimension(3) :: num
+
+  end type domain
+
+  type, public :: matching
+  end type matching
+  
+  type, public :: time
+  end type time
+  
+
+  ! Circular Inclusion related parameters (each parameter for )
   !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  type, public :: circular
   
-  ! number of circular inclusion
-  integer, save :: CInum
+     ! number of FS terms, number of matching points on circles
+     integer :: n,m
 
-  ! number of FS terms, number of matching points on circles
-  integer, save :: CIn, CIm
+     ! tolerance to use in iterative solution for coefficients
+     real(kind=DP) :: matchTol
 
-  ! tolerance to use in iterative solution for coefficients
-  real(kind=DP), save :: CImatchTol
-
-  ! SOR parameter for iterative solution for coefficients
-  real(kind=DP), save :: CImatchOmega
+     ! SOR parameter for iterative solution for coefficients
+     real(kind=DP) :: matchOmega
   
-  ! type of inclusion: -1=specified head TOTAL, 0=match, +1=specified flux TOTAL
-  !                    -2=specified head ELEMENT, +2=specified flux ELEMENT
-  integer, save, allocatable :: CIibnd(:)
+     ! type of inclusion: -1=specified head TOTAL, 0=match, +1=specified flux TOTAL
+     !                    -2=specified head ELEMENT, +2=specified flux ELEMENT
+     integer :: ibnd
 
-  !! leaky-related 
-  real(kind=DP), save, allocatable :: CIaquitardK(:), CIaquitardSs(:),&
-       & CIaquitardb(:), CISy(:), CIKz(:)
-  integer, save, allocatable :: CIaquitardLeak(:) , CIunconfined(:) 
+     !! leaky-related 
+     real(kind=DP) :: aquitardK, aquitardSs, aquitardb, Sy, Kz
+     integer :: aquitardLeak , unconfined 
 
-  ! whether inclusion is a matching(T) or specified(F) inclusion
-  logical, save, allocatable :: CImatch(:)
+     ! whether inclusion is a matching(T) or specified(F) inclusion
+     logical :: match
 
-  ! specified value on bdry of inclusion
-  real(kind=DP), save, allocatable :: CIspec(:)    
+     ! specified value on bdry of inclusion
+     real(kind=DP) :: spec    
 
-  ! inclusion radius, x&y location of center, k and Ss of inclusion
-  real(kind=DP), save, allocatable ::CIr(:), CIx(:), CIy(:), CIk(:), CIss(:)
+     ! inclusion radius, x&y location of center, k and Ss of inclusion
+     real(kind=DP) :: r, x, y, k, Ss
 
-  ! porosity, starting time (step), and constant area flux for inclusion
-  real(kind=DP), save, allocatable :: CIpor(:), CIarea(:)
+     ! porosity, starting time (step), and constant area flux for inclusion
+     real(kind=DP) :: por, area
 
-  ! type of time behavior for AREA FLUX 1=step, 2=pulse, 3=stair, ...
-  integer, save, allocatable :: CIAreaTime(:)
-  ! parameters related to different time behaviors (on, off, etc)
-  real(kind=DP), save, allocatable :: CIAtpar(:,:)
+     ! type of time behavior for AREA FLUX 1=step, 2=pulse, 3=stair, ...
+     integer :: AreaTime
 
-  ! type of time behavior for BOUNDARY HEAD/FLUX 1=step, 2=pulse, 3=stair, ...
-  integer, save, allocatable :: CIBdryTime(:)
-  ! parameters related to different time behaviors (on, off, etc)
-  real(kind=DP), save, allocatable :: CIBtpar(:,:)
+     ! parameters related to different time behaviors (on, off, etc)
+     real(kind=DP), dimension(2) :: Atpar
+     
+     ! type of time behavior for BOUNDARY HEAD/FLUX 1=step, 2=pulse, 3=stair, ...
+     integer :: BdryTime
 
-  ! given hierarchy arrays (eventually to be calculated)
-  integer, save, allocatable :: CIInclUp(:), CIWellUp(:)
-  logical, save, allocatable :: CIInclIn(:,:), CIWellIn(:,:), CIWellBg(:,:), &
-       & CIInclBg(:,:), CICalcIn(:)
+     ! parameters related to different time behaviors (on, off, etc)
+     real(kind=DP), dimension(2) :: Btpar
+     
+  end type circular
 
+  
   ! Elliptical Inclusion related parameters
   !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   
-  ! number of elliptical elements
-  integer, save :: EInum
+  type, public :: ellipse
 
-  ! number of FS terms, number of matching points on circles
-  ! size of MF infinite matrix
-  integer, save :: EIn, EIm, EIms
+     ! number of FS terms, number of matching points on circles
+     ! size of MF infinite matrix
+     integer, save :: n, m, ms
 
-  ! tolerance to use in iterative solution for coefficients
-  real(kind=DP), save :: EImatchTol
+     ! tolerance to use in iterative solution for coefficients
+     real(kind=DP), save :: matchTol
 
   ! type of inclusion: -1=specified head TOTAL, 0=match, +1=specified flux TOTAL
   !                    -2=specified head ELEMENT, +2=specified flux ELEMENT
