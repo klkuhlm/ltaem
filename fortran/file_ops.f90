@@ -9,7 +9,7 @@ module file_ops
 
   !##################################################
   subroutine readInput(filename)
-    use element_specs
+    use element_specs, only : 
     use error_handler, only : fileerror
     implicit none
 

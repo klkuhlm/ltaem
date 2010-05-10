@@ -15,13 +15,14 @@ program ltaem_main
   use particle_integrate
 
   implicit none
+
+  ! structs that organize variables
+  type(domain) :: dom
+  type(solution) :: sol
+  
   integer :: i, j, part, tnp
   integer, dimension(4) :: ic
   integer, allocatable :: parnumdt(:)
-  real(DP), allocatable :: head(:,:,:), velx(:,:,:), vely(:,:,:)
-  complex(DP), allocatable :: headp(:),velxp(:),velyp(:)
-  complex(DP), allocatable :: coeff(:,:,:,:) 
-  complex(DP), allocatable :: Gm(:,:,:)
 
   real(DP), allocatable :: logt(:), tee(:)
   integer, allocatable :: nt(:), run(:)
@@ -36,10 +37,10 @@ program ltaem_main
 !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
   ! either specify here or ask for at prompt
-  BGinfname = 'input'
+  sol%infname = 'input'
 
   ! read in locations, options & data from input file
-  call readInput(BGinfname)
+  call readInput(sol,dom)
 
   ! nudge times on 'edge' of logcycle down a tiny bit to increase accuracy
   where ((nint(BGt(1:BGnumt)) - BGt(1:BGnumt)) < SMALL)
