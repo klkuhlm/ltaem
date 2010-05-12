@@ -1,11 +1,14 @@
 ! this is the driver routine for LT-AEM programs
+! this can compute a time-domain solution either on a grid of locations and times,
+! at a single point through time (i.e., hydrograph), or at a particle location through
+! space and time.  The solution depends on the given properties of circular and 
+! elliptical elements.  Wells or points are treated as special case circles, and lines are
+! treated as special case ellipses.
 
 program ltaem_main
-  use constants, only : DP, PI, RTWO, SMALL,CZERO
+  use constants, only : DP, PI
   use file_ops, only : readinput, writeresults
-  use error_handler, only : fileerror
-  use inverse_Laplace_Transform, only : invlap => deHoog_invlap
-!!$  use matching_new, only : circInverse_matrix
+  use inverse_Laplace_Transform, only : invlap => deHoog_invlap, pvalues => deHoog_pvalues
   use matching_old
   use calc_routines
   use circular_geometry, only : DistanceAngleCalcs
@@ -31,7 +34,6 @@ program ltaem_main
   integer, allocatable :: nt(:), run(:)
   complex(DP), allocatable :: s(:,:)
   integer :: ilogt, iminlogt, imaxlogt, lot, hit, lop, hip, ierr, lo
-  character(128) :: subname = 'MainProgram (ltaem_main)'
   character(20) :: tmpfname
 
   real(DP), parameter :: MOST = 0.99_DP  ! 'most' of a log-cycle
@@ -46,12 +48,12 @@ program ltaem_main
   call readInput(sol,lap,dom,bg,c,e,p)
 
   ! nudge times on 'edge' of logcycle down a tiny bit to increase accuracy
-  where ((nint(BGt(1:BGnumt)) - BGt(1:BGnumt)) < SMALL)
-     BGt(1:BGnumt) = BGt(1:BGnumt) - SMALL
+  where (abs(nint(sol%t(:)) - sol%t(:)) < epsilon(sol%t(:)))
+     sol%t(:) = sol%t(:) - epsilon(sol%t(:))
   end where
 
-  allocate(run(1:2*INVm+1))
-  forall(i=0:2*INVm) run(i+1)=i
+  allocate(run(1:2*lap%m+1))
+  forall(i=0:2*lap%m) run(i+1)=i
 
   ! independent of most choices
   call DistanceAngleCalcs()
@@ -59,21 +61,19 @@ program ltaem_main
 111 continue ! come back here if error opening restart file
 
   ! calculate the values of p needed for inverse LT
-  if (BGcalc) then
-
-     !^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-     if (BGparticle) then   ! particle tracking
+  if (sol%calc) then
+     if (sol%particle) then   ! particle tracking
         
         ! need to do something better here about particles starting at t=0?
-        do i=1, PARnum
-           if (PARti(i) < 1.0D-5) then
-              PARti(1:PARnum) = 1.0D-5
-              write(*,'(A,I3,A)') '^^^^ start time for particle ',i,' reset to 1.0E-5 ^^^^'
+        do i=1, sol%nPart
+           if (p(i)%ti < 1.0D-5) then
+              p(i)%ti = 1.0D-5
+              write(*,'(A,I0,A)') '^^^^ start time for particle ',i,' reset to 1.0E-5 ^^^^'
            end if
         end do
         
-        iminlogt = floor(  minval(log10(PARti(1:PARnum))))
-        imaxlogt = ceiling(maxval(log10(PARtf(1:PARnum))))
+        iminlogt = floor(  minval(log10(p(:)%ti)))
+        imaxlogt = ceiling(maxval(log10(p(:)%tf)))
 
         allocate(s(2*INVm+1,iminlogt:imaxlogt), nt(iminlogt:imaxlogt), &
              & tee(iminlogt:imaxlogt))
@@ -81,41 +81,39 @@ program ltaem_main
         nt(iminlogt:imaxlogt) = 1
 
         do ilogt = iminlogt, imaxlogt
-           tee(ilogt) = min(10.0_DP**(ilogt + MOST),maxval(PARtf(1:PARnum)))*RTWO
-           s(:,ilogt) = cmplx(INValpha - log(INVtol)/(RTWO*tee(ilogt)), PI*run/tee(ilogt), DP)
+           tee(ilogt) = min(10.0_DP**(ilogt + MOST), maxval(p(:)%tf))*2.0
+           s(:,ilogt) = pvalues(tee(ilogt),lap)
         end do
 
         ! to make it possible for particles / contours to share code...
         imaxlogt = imaxlogt + 1
 
-        
         deallocate(run)
         
      !^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
      else   ! contour maps / hydrographs
-        allocate(logt(1:BGnumt))
+        allocate(logt(1:sol%numt))
 
         lo = 1
-        logt(1:BGnumt) = log10(BGt(1:BGnumt))
-        iminlogt =   floor(minval(logt(1:BGnumt)))
-        imaxlogt = ceiling(maxval(logt(1:BGnumt)))
+        logt(:) = log10(sol%t(:))
+        iminlogt =   floor(minval(logt(:)))
+        imaxlogt = ceiling(maxval(logt(:)))
 
         allocate(s(2*INVm+1,iminlogt:imaxlogt-1), nt(iminlogt:imaxlogt-1), &
              & tee(iminlogt:imaxlogt-1))
 
         do ilogt = iminlogt, imaxlogt-1
            nt(ilogt) = count(logt >= real(ilogt,DP) .and. logt < real(ilogt+1,DP))
-!!$           print *, 'ilogt:',ilogt
-!!$           print *, BGt(lo:lo+nt(ilogt)-1)
-           tee(ilogt) = maxval(BGt(lo:lo+nt(ilogt)-1))*RTWO
-           s(:,ilogt) = cmplx(INValpha - log(INVtol)/(RTWO*tee(ilogt)), PI*run/tee(ilogt), DP)
+           tee(ilogt) = maxval(sol%t(lo:lo+nt(ilogt)-1))*2.0
+           s(:,ilogt) = pvalues(t(ilogt),lap)
            lo = lo + nt(ilogt)
         end do
         deallocate(logt,run)
      end if
-     
 
-     if(CInum > 0) then
+     ! only do matching if there is at least one matching element
+     if(count(e(:)%match) + count(c(:)%match) > 0) then
+
         allocate(coeff(2*INVm+1, iminlogt:imaxlogt-1, 0:4*CIn+1, CInum), &
              & Gm(1:4*CIn+2, 1:2*CIm, 1:CInum))
         
@@ -144,31 +142,31 @@ program ltaem_main
         end do
 
         !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        ! save coefficient matrix in binary form to file (more accurate?)
-        open(UNIT=77, FILE=BGCoeffFName, STATUS='REPLACE', ACTION='WRITE',&
-             &  FORM='UNFORMATTED', IOSTAT=ierr)
-        if (ierr /= 0) call fileError(BGCoeffFName,ierr,subname,0)
-        write(77) iminlogt,imaxlogt,coeff,nt,s,tee,WLstorCoeff
+        ! save coefficient matrix to file
+        open(UNIT=77, FILE=sol%coeffFName, STATUS='REPLACE', ACTION='WRITE', IOSTAT=ierr)
+        if (ierr /= 0) then
+           print *, 'error writing intermediate coefficient matrix to file',sol%coefffname
+           stop 000
+        end if
+        write(77,*) iminlogt,imaxlogt,nt,s,tee
+        write(77,*) coeff
         close(77)
-        write(*,'(A)') 'matching finished'
-
+        write(*,'(A)') '<matching finished>'
      end if
 
-  else ! do not re-calculate coefficients (this only makes sense if CInum > 0)
+  else ! do not re-calculate coefficients (this only makes sense if num matching elements > 0)
 
-     if(CInum > 0) then
-        open(UNIT=77, FILE=BGCoeffFName, STATUS='OLD', ACTION='READ',&
-             &  FORM='UNFORMATTED', IOSTAT=ierr)
+     if(count(e(:)%match) + count(c(:)%match) > 0) then
+        open(UNIT=77, FILE=BGCoeffFName, STATUS='OLD', ACTION='READ', IOSTAT=ierr)
         if (ierr /= 0) then
            ! go back and recalc if no restart file
            write(*,'(A)') 'error opening restart file, recalculating...'
-           BGcalc = .true.
+           sol%calc = .true.
            goto 111
         end if
 
-        ! read two numbers needed to allocate arrays
-        read(77) iminlogt,imaxlogt
-        allocate(coeff(2*INVm+1, iminlogt:imaxlogt-1, 0:4*CIn+1, CInum), &
+        read(77,*) iminlogt,imaxlogt,nt,s,tee
+        allocate(coeff(2*lap%m+1, iminlogt:imaxlogt-1, 0:4*CIn+1, CInum), &
              & s(2*INVm+1,iminlogt:imaxlogt-1), nt(iminlogt:imaxlogt-1), &
              & tee(iminlogt:imaxlogt-1))
 
@@ -182,15 +180,17 @@ program ltaem_main
   end if ! re-calculate coefficients
 
   !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-  if(BGparticle) then ! integrate along particle path
+  if(sol%particle) then ! integrate along particle path
 
      write(*,'(A)') 'compute solution for tracking particles'
-     allocate(parnumdt(PARnum))
+     allocate(parnumdt(sol%nPart))
 
-     parnumdt(:) = ceiling((PARtf(:) - PARti(:))/PARdt)
+     parnumdt(:) = ceiling((p(:)%tf - p(:)%ti)/p(:)%dt)
 
-     allocate(Presult(0:maxval(parnumdt),5,PARnum))
-     Presult = 0.0_DP
+     do i = 1,sol%nPart
+        allocate(p(i)%result(0:parnumdt(i),5))
+        p(:)%result(:,:) = 0.0        
+     end do
 
      ! cycle over particles, integrating each
      ! re-shape matrix s into a vector
@@ -214,25 +214,25 @@ program ltaem_main
      end do
 
   !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-  elseif(BGcontour) then ! contour output (x,y locations are independent; e.g. outerproduct)
+  elseif(sol%contour) then ! contour output (x,y locations outerproduct of x,y vectors)
 
      write(*,'(A)') 'compute solution for plotting contours'
-     allocate(head(BGnumx,BGnumy,BGnumt), headp(size(s)), &
-          &   velx(BGnumx,BGnumy,BGnumt), velXp(size(s)), &
-          &   vely(BGnumx,BGnumy,BGnumt), velYp(size(s)))
+     allocate(sol%h(sol%nx,sol%ny,sol%nt), sol%hp(size(s)), &
+          &   sol%vx(sol%nx,sol%ny,sol%nt), sol%vxp(size(s)), &
+          &   sol%vy(sol%nx,sol%ny,sol%nt), sol%vyp(size(s)))
 
      ic = shape(coeff)  !! integer vector of matrix size in each dimension
      tnp = ic(1)*ic(2)  !! total number of Laplace parameters, over all times
 
-     do j = 1,BGnumx
-        write (*,'(A,ES14.6E1)') 'x: ',BGx(j)
-        do i = 1,BGnumy
+     do j = 1,sol%nx
+        write (*,'(A,ES14.6E1)') 'x: ',sol%x(j)
+        do i = 1,sol%ny
 
-           !! compute f(p) for all values of p at this location 
-           headp(1:tnp) = headCalc(reshape(s,[tnp]),BGx(j),BGy(i),reshape(coeff,[tnp,ic(3:4)]))
-           velxp(1:tnp) = velxCalc(reshape(s,[tnp]),BGx(j),BGy(i),reshape(coeff,[tnp,ic(3:4)]))
+           !! compute f(p) for all values of p -- not just one log cycle of time -- at this location 
+           sol%hp(1:tnp) = headCalc(reshape(s,[tnp]),sol%x(j),sol%y(i),reshape(coeff,[tnp,ic(3:4)]))
+           sol%vxp(1:tnp) = velxCalc(reshape(s,[tnp]),sol%x(j),sol%y(i),reshape(coeff,[tnp,ic(3:4)]))
            ! velx and vely share most of the calculations (velx _must_ be called first)
-           velyp(1:tnp) = velyCalc(reshape(s,[tnp]),BGx(j),BGy(i))
+           sol%vyp(1:tnp) = velyCalc(reshape(s,[tnp]),sol%x(j),sol%y(i))
 
            !! invert solutions one log-cycle of t at a time
            do ilogt = iminlogt,imaxlogt-1
@@ -245,9 +245,9 @@ program ltaem_main
               lop = (ilogt - iminlogt)*ic(1) + 1
               hip = lop + ic(1) - 1
 
-              head(j,i,lot:hit) = invlap(INValpha,INVtol,BGt(lot:hit),tee(ilogt),headp(lop:hip),INVm)
-              velx(j,i,lot:hit) = invlap(INValpha,INVtol,BGt(lot:hit),tee(ilogt),velxp(lop:hip),INVm)
-              vely(j,i,lot:hit) = invlap(INValpha,INVtol,BGt(lot:hit),tee(ilogt),velyp(lop:hip),INVm)
+              sol%h(j,i,lot:hit) = invlap(sol%t(lot:hit),tee(ilogt),sol%hp(lop:hip),lap)
+              sol%vx(j,i,lot:hit) = invlap(sol%t(lot:hit),tee(ilogt),sol%vxp(lop:hip),lap)
+              sol%vy(j,i,lot:hit) = invlap(sol%t(lot:hit),tee(ilogt),sol%vyp(lop:hip),lap)
            end do
         end do
      end do
@@ -256,12 +256,12 @@ program ltaem_main
 
      write(*,'(A)') 'compute solution for plotting hydrograph'
 
-     allocate(head(BGnumx,1,BGnumt), headp(size(s)), &
-          &   velx(BGnumx,1,BGnumt), velXp(size(s)), &
-          &   vely(BGnumx,1,BGnumt), velYp(size(s)))
+     allocate(sol%h(sol%nx,1,sol%nt), sol%hp(size(s)), &
+          &   sol%vx(sol%nx,1,sol%nt), sol%vxp(size(s)), &
+          &   sol%vy(sol%nx,1,sol%nt), sol%vyp(size(s)))
      
-     do i = 1,BGnumx
-        write(*,'(A,2(1X,ES14.7E1))') 'location:',BGx(i),BGy(i)
+     do i = 1,sol%nx
+        write(*,'(A,2(1X,ES14.7E1))') 'location:',sol%x(i),sol%y(i)
 
         if (allocated(coeff)) then
            ic = shape(coeff)
@@ -270,11 +270,10 @@ program ltaem_main
            tnp = size(s)
            ic(1:4) = [0,0,0,0]
         end if
-        
 
-        headp(1:tnp) = headCalc(reshape(s,[tnp]),BGx(i),BGy(i),reshape(coeff,[tnp,ic(3:4)]))
-        velxp(1:tnp) = velxCalc(reshape(s,[tnp]),BGx(i),BGy(i),reshape(coeff,[tnp,ic(3:4)]))
-        velyp(1:tnp) = velyCalc(reshape(s,[tnp]),BGx(i),BGy(i))
+        sol%hp(1:tnp) = headCalc(reshape(s,[tnp]),sol%x(i),sol%y(i),reshape(coeff,[tnp,ic(3:4)]))
+        sol%vxp(1:tnp) = velxCalc(reshape(s,[tnp]),sol%x(i),sol%y(i),reshape(coeff,[tnp,ic(3:4)]))
+        sol%vyp(1:tnp) = velyCalc(reshape(s,[tnp]),sol%x(i),sol%y(i))
         
         do ilogt = iminlogt,imaxlogt-1
            lot = 1 + sum(nt(iminlogt:ilogt-1))
@@ -283,12 +282,10 @@ program ltaem_main
            lop = (ilogt - iminlogt)*ic(1) + 1
            hip = lop + ic(1) - 1
 
-!!$           print *, lot,hit,ilogt
-
            ! don't need second dimension of results matricies
-           head(i,1,lot:hit) = invlap(INValpha,INVtol,BGt(lot:hit),tee(ilogt),headp(lop:hip),INVm)
-           velx(i,1,lot:hit) = invlap(INValpha,INVtol,BGt(lot:hit),tee(ilogt),velxp(lop:hip),INVm)
-           vely(i,1,lot:hit) = invlap(INValpha,INVtol,BGt(lot:hit),tee(ilogt),velyp(lop:hip),INVm)
+           sol%h(i,1,lot:hit) = invlap(sol%t(lot:hit),tee(ilogt),sol%hp(lop:hip),lap)
+           sol%vx(i,1,lot:hit) = invlap(sol%t(lot:hit),tee(ilogt),sol%vxp(lop:hip),lap)
+           sol%vy(i,1,lot:hit) = invlap(sol%t(lot:hit),tee(ilogt),sol%vyp(lop:hip),lap)
         end do
      end do
   end if
@@ -296,23 +293,18 @@ program ltaem_main
   !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   ! cleanup memory and write output to file
 
-!!$  
-!!$  deallocate(coeff,s,nt)
-!!$  call freeCalcMem()
-
-  if (BGparticle) then 
+  if (sol%particle) then 
      ! make sure correct output if doing particle tracking
-     if (BGoutput /= 4 .and. BGoutput /= 5) then
-        BGoutput = 4
+     if (sol%output /= 4 .and. sol%output /= 5) then
+        sol%output = 4
      end if
   else
      ! reset back to gnuplot output if not particle tracking
-     if (BGoutput == 4) BGoutput = 1
+     if (sol%output == 4) sol%output = 1
   end if
 
   ! call subroutine to write output to file
   call writeResults(head,velx,vely,BGx,BGy,BGt,BGoutput,BGoutfname,Presult)
-
 
 end program ltaem_main
 

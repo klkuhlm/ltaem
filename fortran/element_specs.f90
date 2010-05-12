@@ -124,14 +124,14 @@ module element_specs
      integer :: output, aquitardLeak, unconfined
      
      ! x-spacing vector, y-spacing vector, time vector
-     integer :: numx, numy, numt
+     integer :: nx, ny, nt
      real(DP) allocatable :: x(:), y(:), t(:)
 
-     ! containers for time-domain results
-     real(DP),    allocatable :: head(:,:,:), velx(:,:,:), vely(:,:,:)
+     ! containers for time-domain final results
+     real(DP),    allocatable :: h(:,:,:), vx(:,:,:), vy(:,:,:)
 
-     ! container for Laplace-space results
-     complex(DP), allocatable :: headp(:), velxp(:), velyp(:)
+     ! container for Laplace-space intermediate results
+     complex(DP), allocatable :: hp(:), vxp(:), vyp(:)
      complex(DP), allocatable :: coeff(:,:,:,:) 
      complex(DP), allocatable :: Gm(:,:,:)
   end type solution
@@ -163,8 +163,13 @@ module element_specs
      logical :: InclIn
      
      ! results from particle tracking (for each particle)
-     real(DP), allocatable :: Presult(:,:)
+     real(DP), allocatable :: result(:,:)
 
   end type particle
+
+  ! taking the place of shared_matching_data
+  type, public :: matching
+     
+  end type matching
 
 end module element_specs

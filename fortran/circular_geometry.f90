@@ -1,4 +1,5 @@
- ! $Id: circular_geometry.f90,v 1.3 2008/12/10 02:47:29 kris Exp kris $
+! this module computes the geometry related to the element distributions
+
 module circular_geometry
   implicit none
 
@@ -9,12 +10,13 @@ contains
 
   ! ##################################################
   ! initializes / calculates geometry - all global variables
-  subroutine DistanceAngleCalcs()
-    use constants, only: DP, PI, TWOPI
-    use element_specs, only : CIm,CInum,WLnum,CIr,CIx,CIy,CIWellBg,CIWellIn,WLq,WLr,WLx,WLy,&
-         & CIInclIn,CIInclUp,CIInclBg,CIWellIn,CIWellBg,CIWellUp
-    use shared_matching_data, only :  CIPcm, CIXcm, CIYcm, CIXom, CIYom, CIRwm, CIPwm, CIRgm, CIPgm
+  subroutine DistanceAngleCalcs(cm)
+    use constants, only: DP, PI
+    use element_specs, only :  circle, matching
+!!$    use shared_matching_data, only :  CIPcm, CIXcm, CIYcm, CIXom, CIYom, CIRwm, CIPwm, CIRgm, CIPgm
     use file_ops, only : writeGeometry
+
+    type(matching) :: cm
 
     ! INTERNAL VARIABLES
     ! x/y distances from wells to points on circumference of elements
@@ -31,12 +33,12 @@ contains
          & CIWellIn(0:ni,nw), CIWellBg(ni,nw), CIWellUp(nw), CIPcm(1:M))  !! CICalcIn(0:ni), 
 
     ! vector of eqi-spaced locations on perimeter of circle
-    ! this could potentially be optimized, more points for larger circles?
-    rM = real(M,DP)
-    forall (phi = 1:M)
-       CIPcm(phi) = -PI + TWOPI/rM * real(phi-1,DP)
+    forall ()
+       forall (phi = 1:M)
+          CIPcm(phi) = -PI + 2.0*PI/M * real(phi-1,DP)
+       end forall
     end forall
-
+    
     call CircularElementHierarchy()
 
     ! circular inclusion related geometry
@@ -44,8 +46,6 @@ contains
          & CIYom(M,ni), CIRwm(M,nw,ni), CIPwm(M,nw,ni), &
          & CIRgm(M,ni,ni), CIPgm(M,ni,ni))
 
-    ! could use complex math to calculate geometry,
-    ! but that doesn't generalize to 3D
     forall (incl = 1:ni)
        ! x,y components from center of element to points on circumference
        CIXcm(1:M,incl) = cos(CIPcm(1:M))*CIr(incl)
@@ -129,19 +129,6 @@ contains
        CIWellIn(0,1:nw) = .true.
     end where
     
-
-!!$    write(89,'(A)') '####################'
-!!$    fmt = '(  (F6.3,1X),A,I2,A)'
-!!$    write(fmt(2:3),'(I2.2)') nw
-!!$    do i=1,ni
-!!$       write(89,fmt) Rwg(i,1:nw),'Rwg(',i,',1:nw)'
-!!$    end do    
-!!$
-!!$    write(89,'(A)') '####################'
-!!$    do i=1,ni
-!!$       write(89,*) CIWellIn(i,1:nw),'CIWellIn(',i,',1:nw)'
-!!$    end do    
-
     ! well within double-precision of circular element boundary
     if (any(abs(Rwg(:,:) - spread(CIr(:),dim=2,ncopies=nw)) < SMALL)) then
        stop 'GEOMETRY ERROR: well _on_ boundary of circular element'
@@ -153,13 +140,6 @@ contains
     Rgg(1:ni,1:ni) = sqrt( &
          &(spread(CIx(:),dim=2,ncopies=ni) - spread(CIx(:),dim=1,ncopies=ni))**2 +&
          &(spread(CIy(:),dim=2,ncopies=ni) - spread(CIy(:),dim=1,ncopies=ni))**2 )
-
-!!$    write(89,'(A)') '####################'
-!!$    write(fmt(2:3),'(I2.2)') ni
-!!$
-!!$    do i=1,ni
-!!$       write(89,fmt) Rgg(i,1:ni),'Rgg(',i,',1:ni)'
-!!$    end do 
 
     ! discr produces a symmetric matrix, but only need upper triangle
     if(any( discr(spread(CIx(1:ni),dim=2,ncopies=ni),&
@@ -187,11 +167,6 @@ contains
        end do
     end do
     
-!!$    write(89,'(A)') '####################'
-!!$    do i=0,ni
-!!$       write(89,*) CIInclIn(i,1:ni),'CIInclIn(',i,',1:ni)'
-!!$    end do 
-
     ! determine which elements are in the background (level 0)
     ! background elements (columns) have all false entries
     where (.not. any(CIInclIn(1:ni,:),dim=1))
@@ -200,13 +175,6 @@ contains
        CIInclIn(0,1:ni) = .true.
     end where
    
-!!$    write(89,'(A)') '### after marking _obvious_ background inclusions'
-!!$    write(89,*) CIlevel,'CILevel(1:ni)'
-!!$    write(89,*) CIInclUp,'CIInclUp(1:ni)'
-!!$    do i=0,ni
-!!$       write(89,*) CIInclIn(i,1:ni),'CIInclIn(',i,',1:ni)'
-!!$    end do 
-
     !##################################################
     !  remove nested duplicates
     !##################################################

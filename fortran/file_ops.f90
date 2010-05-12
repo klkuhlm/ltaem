@@ -177,29 +177,29 @@ contains
        read(15,*) e(:)%por
        read(15,*) e(:)%area
        do j=1,size(c,dim=1)
-          read(15,'(I)', advance='no') c(j)%AreaTime 
-          if (c(j)%AreaTime > -1) then
-             allocate(c(j)%ATPar(2))
-             read(15,*) c(j)%ATPar(:)
-             write(15,*) c(j)%AreaTime,c(j)%ATPar(:),'  ||  Area time behavior, par1, par2 for circle ',j
+          read(15,'(I)', advance='no') e(j)%AreaTime 
+          if (e(j)%AreaTime > -1) then
+             allocate(e(j)%ATPar(2))
+             read(15,*) e(j)%ATPar(:)
+             write(15,*) e(j)%AreaTime,e(j)%ATPar(:),'  ||  Area time behavior, par1, par2 for ellipse ',j
           else
-             allocate(c(j)%ATPar(-2*c(j)%AreaTime+1))
-             read(15,*) c(j)%ATPar(:)
-             write(16,*) c(j)%AreaTime,c(j)%ATPar(:-c(j)%AreaTime+1),' | ',&
-                  & c(j)%ATPar(-c(j)%AreaTime+2:), '  ||    Area ti, tf | strength for circle ',j
+             allocate(e(j)%ATPar(-2*e(j)%AreaTime+1))
+             read(15,*) e(j)%ATPar(:)
+             write(16,*) e(j)%AreaTime,e(j)%ATPar(:-e(j)%AreaTime+1),' | ',&
+                  & e(j)%ATPar(-e(j)%AreaTime+2:), '  ||    Area ti, tf | strength for ellipse ',j
           end if
        end do
        do j=1,size(c,dim=1)
-          read(15,'(I)', advance='no') c(j)%BdryTime
-          if (c(j)%BdryTime > -1) then
-             allocate(c(j)%BTPar(2))
-             read(15,*) c(j)%BTPar(:)
-             write(15,*) c(j)%BdryTime,c(j)%BTPar(:),'  ||  Bdry time behavior, par1, par2 for circle ',j
+          read(15,'(I)', advance='no') e(j)%BdryTime
+          if (e(j)%BdryTime > -1) then
+             allocate(e(j)%BTPar(2))
+             read(15,*) e(j)%BTPar(:)
+             write(15,*) e(j)%BdryTime,e(j)%BTPar(:),'  ||  Bdry time behavior, par1, par2 for circle ',j
           else
-             allocate(c(j)%BTPar(-2*c(j)%BdryTime+1))
-             read(15,*) c(j)%BTPar(:)
-             write(16,*) c(j)%BdryTime,c(j)%BTPar(:-c(j)%BdryTime+1),' | ',&
-                  & c(j)%BTPar(-c(j)%BdryTime+2:), '  ||    Bdry ti, tf | strength for circle ',j
+             allocate(e(j)%BTPar(-2*e(j)%BdryTime+1))
+             read(15,*) e(j)%BTPar(:)
+             write(16,*) e(j)%BdryTime,e(j)%BTPar(:-e(j)%BdryTime+1),' | ',&
+                  & e(j)%BTPar(-e(j)%BdryTime+2:), '  ||    Bdry ti, tf | strength for circle ',j
           end if
        end do
        read(15,*) e(:)%leakFlag
@@ -248,6 +248,11 @@ contains
        allocate(e(0))
     end if
 
+    if (sum(dom%num) < 1) then
+       print *, 'need at least one circular (including well) or elliptical (including line) element'
+       stop 102
+    end if
+    
     ! re-calculation parameter
     read(15,*) sol%calc
     write(16,*) sol%calc, '  || re-calculate coefficients?'
