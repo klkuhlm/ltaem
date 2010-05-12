@@ -59,10 +59,6 @@ module element_specs
      ! number of FS terms, number of matching points on circles/ellipses
      ! for lines/wells can be one (e.g., borehole storage) or zero (known Q)
      integer :: n, m
-
-     ! tolerance to use in iterative solution for coefficients
-     ! SOR parameter for iterative solution for coefficients
-     real(DP) :: matchTol, matchOmega
   
      ! type of element: -1=specified head TOTAL, 0=match, +1=specified flux TOTAL
      !                    -2=specified head ELEMENT, +2=specified flux ELEMENT
@@ -110,12 +106,11 @@ module element_specs
   end type INVLT
 
   ! things relating to the numerical solution, independent from flow elements
-  !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   type, public, extends(laplace) :: solution
 
      ! integrate particle lines vs. calculate at set locations/times
      logical :: particle
-     integer :: numParticles
+     integer :: nPart
 
      ! calculate contours (thru space) vs. calculate hydrographs (thru time)
      logical :: contour

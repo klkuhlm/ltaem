@@ -2,16 +2,17 @@
 
 module file_ops
   implicit none  
-
+  
   private
-  public :: readInput, writeResults, writeGeometry, readEllipseInput
+  public :: readInput, writeResults, writeGeometry
 
-  contains
+contains
 
   !##################################################
+  ! this routine read the main input file, and allocates the main 
+  ! data structures used to store data.
   subroutine readInput(sol,lap,dom,bg,c,e,p)
     use element_specs
-    use error_handler, only : fileerror
     use constants, only : DP
     implicit none
 
@@ -28,12 +29,16 @@ module file_ops
     integer :: ierr, j
 
     echofname = trim(sol%infname) + '.echo'
-
     open(UNIT=15, FILE=sol%infname, STATUS='OLD', ACTION='READ', IOSTAT=ierr)
-    if (ierr /= 0) call fileError(filename,ierr,subname,1)
-    
+    if (ierr /= 0) then
+       print *, 'READINPUT: error opening input file ',sol%infname
+       stop 100
+    endif
     open(UNIT=16, FILE=echofname, STATUS='REPLACE', ACTION='WRITE', IOSTAT=ierr)
-    if (ierr /= 0) call fileError(echofname,ierr,subname,0)
+    if (ierr /= 0) then
+       print *, 'READINPUT: error opening echo file ',echofname
+       stop 101
+    endif   
     
     ! solution-specific and background aquifer parameters
     read(15,*) sol%particle, sol%contour, sol%output, sol%outFname, sol%coeffFName
@@ -69,322 +74,214 @@ module file_ops
 
     ! circular (includes wells)
     read(15,*) dom%num(1)
-    allocate(c(dom%num(1)))
-    read(15,*) c(:)%n
-    read(15,*) c(:)%m
-    read(15,*) c(:)%matchTol
-    read(15,*) c(:)%matchOmega
-    read(15,*) c(:)%ibnd
-    read(15,*) c(:)%spec
-    read(15,*) c(:)%CalcIn
-    read(15,*) c(:)%r
-    read(15,*) c(:)%x
-    read(15,*) c(:)%y
-    read(15,*) c(:)%k
-    read(15,*) c(:)%Ss
-    read(15,*) c(:)%por
-    read(15,*) c(:)%area
-    read(15,*) c(:)%Areatime
-    read(15,*) c(:)%Atpar(1)  
-    read(15,*) c(:)%Atpar(2)
-    read(15,*) c(:)%Bdrytime(1:c(:)%num)
-    read(15,*) c(:)%Btpar(1:c(:)%num,1)  
-    read(15,*) c(:)%Btpar(1:c(:)%num,2)
-    read(15,*) c(:)%aquitardLeak(1:c(:)%num) !! new leaky circle stuff
-    read(15,*) c(:)%aquitardK(1:c(:)%num)
-    read(15,*) c(:)%aquitardSs(1:c(:)%num)
-    read(15,*) c(:)%aquitardb(1:c(:)%num)
-    read(15,*) c(:)%unconfined(1:c(:)%num)  !! unconfined stuff
-    read(15,*) c(:)%Sy(1:c(:)%num)
-    read(15,*) c(:)%Kz(1:c(:)%num)
-
-    CImatch = .false.
-    where (CIibnd == -1 .or. CIibnd == 0 .or. CIibnd == +1)
-       CImatch = .true.
-    end where
-       
-    write(16,*) CInum, CIn, CIm, CImatchTol, CImatchOmega, &
-         & '  ||    number of inclusions, N, M; match_tol, match_omega'
-    write(16,*) CIibnd(1:CInum), '  ||    ibnd array'
-    write(16,*) CImatch(1:CInum), '  ||    matching array'
-    write(16,*) CIspec(1:CInum), '  ||    specified quantity'
-    write(16,*) CIcalcin(1:CInum), '  ||    calculate inside this element?'
-    write(16,*) CIr(1:CInum), '  ||    incl radius'
-    write(16,*) CIx(1:CInum), '  ||    incl ctr x'
-    write(16,*) CIy(1:CInum), '  ||    incl ctr y'
-    write(16,*) CIk(1:CInum), '  ||    incl k'
-    write(16,*) CIss(1:CInum), '  ||    incl Ss'
-    write(16,*) CIpor(1:CInum), '  ||    incl porosity'
-    write(16,*) CIarea(1:CInum), '  ||    incl area rch rate'
-    write(16,*) CIAreaTime(1:CInum), '  ||    incl Area flux time fcn index'
-    write(16,*) CIAtpar(1:CInum,1), '  ||    incl Area flux time fcn parameter "a"'
-    write(16,*) CIAtpar(1:CInum,2), '  ||    incl Area flux time fcn parameter "b"'
-    write(16,*) CIBdryTime(1:CInum), '  ||    incl Boundary head/flux time fcn index'
-    write(16,*) CIBtpar(1:CInum,1), '  ||    incl Boundary head/flux time fcn parameter "a"'
-    write(16,*) CIBtpar(1:CInum,2), '  ||    incl Boundary head/flux time fcn parameter "b"'
-    write(16,*) CIaquitardLeak(1:CInum), '  ||     leaky type'
-    write(16,*) CIaquitardK(1:CInum), '  ||     leaky aquitard K'
-    write(16,*) CIaquitardSs(1:CInum), '  ||     leaky aquitard Ss'
-    write(16,*) CIaquitardb(1:CInum), '  ||     leaky aquitard thickness'
-    write(16,*) CIunconfined(1:CInum), '  ||     unconfined flag'
-    write(16,*) CISy(1:CInum), '  ||     specific yield'
-    write(16,*) CIKz(1:CInum), '  ||     vertical K'
-
-    ! build up k,s, por and alpha vectors
-    allocate(kv(0:CInum),sv(0:CInum),av(0:CInum),porv(0:CInum),k2v(0:CInum),&
-         & S2v(0:CInum),a2v(0:CInum),leakv(0:CInum),b2v(0:CInum),&
-         & syv(0:CInum),Kzv(0:CInum),unconfv(0:CInum))
-
-    kv(0) = BGk; sv(0) = BGss; av(0) = BGk/BGss; porv(0) = BGpor;
-    k2v(0) = BGk2; s2v(0) = BGs2; a2v(0) = BGk2/BGS2; b2v(0) = BGb2
-    syv(0) = BGsy; kzv(0) = BGkz
-    leakv(0) = BGaquitardleak
-    unconfv(0) = BGunconfined
-    kv(1:CInum) = CIk
-    sv(1:CInum) = CIss
-    av(1:CInum) = CIk/CIss
-    porv(1:CInum) = CIpor
-    k2v(1:CInum) = CIaquitardK
-    s2v(1:CInum) = CIaquitardSs
-    a2v(1:CInum) = CIaquitardK/CIaquitardSs
-    b2v(1:CInum) = CIaquitardb
-    leakv(1:CInum) = CIaquitardleak
-    unconfv(1:CInum) = CIunconfined
-    syv(1:CInum) = CIsy
-    kzv(1:CInum) = CIkz
-
-    write(16,*) kv, '  ||    k vector'
-    write(16,*) av, '  ||    alpha vector'
-    write(16,*) sv, '  ||    Ss vector'
-    write(16,*) porv, '  ||    porosity vector'
-    write(16,*) k2v, '  ||    aquitard k vector'
-    write(16,*) a2v, '  ||    aquitard alpha vector'
-    write(16,*) s2v, '  ||    aquitard Ss vector'
-    write(16,*) b2v, '  ||    aquitard thickness vector'
-    write(16,*) leakv, '  ||    aquitard leakyness type'
-    write(16,*) unconfv, '  ||    unconfined flag'
-    write(16,*) syv,'  ||    Sy vector'
-    write(16,*) kzv,'  ||    Kz vector'
-
-    ! wells
-    read(15,*) WLnum
-    write(16,*) WLnum, '  ||    number of wells'
-    allocate(WLx(WLnum), WLy(WLnum), WLr(WLnum), WLq(WLnum), &
-           & WLtime(WLnum), WLstor(WLnum),WLdskin(WLnum))
-    ! this is sort of out of place
-    ! %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    allocate(WLstorCoeff(WLnum))
-    WLstorCoeff = (0.0_DP, 0.0_DP)
-    ! %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    read(15,*) WLx(1:WLnum)
-    write(16,*) WLx(1:WLnum), '  ||    well x'
-    read(15,*) WLy(1:WLnum)
-    write(16,*) WLy(1:WLnum), '  ||    well y'
-    read(15,*) WLr(1:WLnum)
-    write(16,*) WLr(1:WLnum), '  ||    well radius'
-    read(15,*) WLq(1:WLnum)
-    write(16,*) WLq(1:WLnum), '  ||    well pumping rate'
-    read(15,*) WLtime(1:WLnum)
-    write(16,*) WLtime(1:WLnum), '  ||    well time function index'
-    if(any(WLtime > 0)) then  !! all or nothing
-       ! previous way of doing things
-       allocate(WLtpar(WLnum,2))
-       read(15,*) WLtpar(1:WLnum,1)
-       write(16,*) WLtpar(1:WLnum,1), '  ||    well time function parameter "a"'
-       read(15,*) WLtpar(1:WLnum,2)
-       write(16,*) WLtpar(1:WLnum,2), '  ||    well time function parameter "b"'
-    else
-       ! this way is "transpose" of other way
-       ! new more flexible way for n piecewise constant sections
-       ! n beginning times + 1 final end time + n pumping rates = 2n+1
-       allocate(WLtpar(WLnum,2*maxval(abs(WLtime))+1))
-       ! (some pumping wells may have more steps than others)
-       WLtpar = -huge(1.0)
-       do j=1,WLnum
-          read(15,*) WLtpar(j,1:2*abs(WLtime(j))+1)
-          write(16,*) WLtpar(j,1:abs(WLtime(j))+1),' | ',&
-               & WLtpar(j,abs(WLtime(j))+2:2*abs(WLtime(j))+1), '  ||    well ti, tf | Q for well ',j
+    if (dom%num(1) > 0) then
+       allocate(c(dom%num(1)))
+       read(15,*) c(:)%n
+       read(15,*) c(:)%m
+       read(15,*) c(:)%ibnd
+       read(15,*) c(:)%spec
+       read(15,*) c(:)%CalcIn
+       read(15,*) c(:)%r
+       read(15,*) c(:)%x
+       read(15,*) c(:)%y
+       read(15,*) c(:)%k
+       read(15,*) c(:)%Ss
+       read(15,*) c(:)%por
+       read(15,*) c(:)%area
+       do j=1,size(c,dim=1)
+          read(15,'(I)', advance='no') c(j)%AreaTime 
+          if (c(j)%AreaTime > -1) then
+             allocate(c(j)%ATPar(2))
+             read(15,*) c(j)%ATPar(:)
+             write(15,*) c(j)%AreaTime,c(j)%ATPar(:),'  ||  Area time behavior, par1, par2 for circle ',j
+          else
+             allocate(c(j)%ATPar(-2*c(j)%AreaTime+1))
+             read(15,*) c(j)%ATPar(:)
+             write(16,*) c(j)%AreaTime,c(j)%ATPar(:-c(j)%AreaTime+1),' | ',&
+                  & c(j)%ATPar(-c(j)%AreaTime+2:), '  ||    Area ti, tf | strength for circle ',j
+          end if
        end do
+       do j=1,size(c,dim=1)
+          read(15,'(I)', advance='no') c(j)%BdryTime
+          if (c(j)%BdryTime > -1) then
+             allocate(c(j)%BTPar(2))
+             read(15,*) c(j)%BTPar(:)
+             write(15,*) c(j)%BdryTime,c(j)%BTPar(:),'  ||  Bdry time behavior, par1, par2 for circle ',j
+          else
+             allocate(c(j)%BTPar(-2*c(j)%BdryTime+1))
+             read(15,*) c(j)%BTPar(:)
+             write(16,*) c(j)%BdryTime,c(j)%BTPar(:-c(j)%BdryTime+1),' | ',&
+                  & c(j)%BTPar(-c(j)%BdryTime+2:), '  ||    Bdry ti, tf | strength for circle ',j
+          end if
+       end do
+       read(15,*) c(:)%leakFlag
+       read(15,*) c(:)%aquitardK
+       read(15,*) c(:)%aquitardSs
+       read(15,*) c(:)%aquitardb  !aquitard thickness
+       read(15,*) c(:)%unconfinedFlag
+       read(15,*) c(:)%Sy
+       read(15,*) c(:)%Kz
+       read(15,*) c(:)%b  ! aquifer thickness
+       read(15,*) c(:)%dskin ! dimensionless skin
+   
+       where (c(:)%ibnd == -1 .or. c(:)%ibnd == 0 .or. c(:)%ibnd == +1)
+          c(:)%match = .true.
+       elsewhere
+          c(:)%match = .false.       
+       end where
+          
+       write(16,*) dom%num(1), '  ||   number of circular elements (including wells)'
+       write(16,*) c(:)%n,'  ||   number of circular free parameter (Fourier series coeffs)'
+       write(16,*) c(:)%m,'  ||   number of circular matching locations'
+       write(16,*) c(:)%ibnd, '  ||    circle ibnd array'
+       write(16,*) c(:)%match, '  ||    circle matching array'
+       write(16,*) c(:)%spec, '  ||    circle boundary specified head/flux strength'
+       write(16,*) c(:)%calcin, '  ||    calculate inside this circle?'
+       write(16,*) c(:)%r, '  ||    circle radius'
+       write(16,*) c(:)%x, '  ||    circle center x'
+       write(16,*) c(:)%y, '  ||    circle center y'
+       write(16,*) c(:)%k, '  ||    circle aquifer k'
+       write(16,*) c(:)%ss, '  ||    circle aquifer Ss'
+       write(16,*) c(:)%por, '  ||    circle aquifer porosity'
+       write(16,*) c(:)%area, '  ||    circle area rch rate'
+       write(16,*) c(:)%leakFlag, '  ||     circle leaky type'
+       write(16,*) c(:)%aquitardK, '  ||     circle leaky aquitard K'
+       write(16,*) c(:)%aquitardSs, '  ||     circle leaky aquitard Ss'
+       write(16,*) c(:)%aquitardb, '  ||     circle leaky aquitard thickness'
+       write(16,*) c(:)%unconfinedFlag, '  ||     circle unconfined flag'
+       write(16,*) c(:)%Sy, '  ||     circle aquifer specific yield'
+       write(16,*) c(:)%Kz, '  ||     circle aquifer vertical K'
+       write(16,*) c(:)%b,'  ||    circle aquifer thickness'
+       write(16,*) c(:)%dskin,'  ||    circle boundary dimensionless skin factor'
+    else
+       allocate(c(0))
     end if
-    
-       
-    read(15,*) WLstor(1:WLnum)
-    write(16,*) WLstor(1:WLnum), '  ||    well bore storage computed?'
-    read(15,*) WLdskin(1:WLnum)
-    write(16,*) WLdskin(1:WLnum), '  ||    dimensionless well bore skin?'
 
-    read(15,*) BGcalc
-    write(16,*) BGcalc, '  || re-calculate coefficients'
+    ! elliptical (includes lines)
+    read(15,*) dom%num(2)
+    if (dom%num(2) > 0) then
+       allocate(e(dom%num(2)))
+       read(15,*) e(:)%n
+       read(15,*) e(:)%m
+       read(15,*) e(:)%ms
+       read(15,*) e(:)%ibnd
+       read(15,*) e(:)%spec
+       read(15,*) e(:)%CalcIn
+       read(15,*) e(:)%r
+       read(15,*) e(:)%x
+       read(15,*) e(:)%y
+       read(15,*) e(:)%f
+       read(15,*) e(:)%theta      
+       read(15,*) e(:)%k
+       read(15,*) e(:)%Ss
+       read(15,*) e(:)%por
+       read(15,*) e(:)%area
+       do j=1,size(c,dim=1)
+          read(15,'(I)', advance='no') c(j)%AreaTime 
+          if (c(j)%AreaTime > -1) then
+             allocate(c(j)%ATPar(2))
+             read(15,*) c(j)%ATPar(:)
+             write(15,*) c(j)%AreaTime,c(j)%ATPar(:),'  ||  Area time behavior, par1, par2 for circle ',j
+          else
+             allocate(c(j)%ATPar(-2*c(j)%AreaTime+1))
+             read(15,*) c(j)%ATPar(:)
+             write(16,*) c(j)%AreaTime,c(j)%ATPar(:-c(j)%AreaTime+1),' | ',&
+                  & c(j)%ATPar(-c(j)%AreaTime+2:), '  ||    Area ti, tf | strength for circle ',j
+          end if
+       end do
+       do j=1,size(c,dim=1)
+          read(15,'(I)', advance='no') c(j)%BdryTime
+          if (c(j)%BdryTime > -1) then
+             allocate(c(j)%BTPar(2))
+             read(15,*) c(j)%BTPar(:)
+             write(15,*) c(j)%BdryTime,c(j)%BTPar(:),'  ||  Bdry time behavior, par1, par2 for circle ',j
+          else
+             allocate(c(j)%BTPar(-2*c(j)%BdryTime+1))
+             read(15,*) c(j)%BTPar(:)
+             write(16,*) c(j)%BdryTime,c(j)%BTPar(:-c(j)%BdryTime+1),' | ',&
+                  & c(j)%BTPar(-c(j)%BdryTime+2:), '  ||    Bdry ti, tf | strength for circle ',j
+          end if
+       end do
+       read(15,*) e(:)%leakFlag
+       read(15,*) e(:)%aquitardK
+       read(15,*) e(:)%aquitardSs
+       read(15,*) e(:)%aquitardb  !aquitard thickness
+       read(15,*) e(:)%unconfinedFlag
+       read(15,*) e(:)%Sy
+       read(15,*) e(:)%Kz
+       read(15,*) e(:)%b  ! aquifer thickness
+       read(15,*) e(:)%dskin ! dimensionless skin
+
+       where (e(:)%ibnd == -1 .or. e(:)%ibnd == 0 .or. e(:)%ibnd == +1)
+          e(:)%match = .true.
+       elsewhere
+          e(:)%match = .false.       
+       end where
+
+       write(16,*) dom%num(1), '  ||   number of elliptical elements (including lines)'
+       write(16,*) e(:)%n,'  ||   number of elliptical free parameter (Fourier series coeffs)'
+       write(16,*) e(:)%m,'  ||   number of ellipse matching locations'
+       write(16,*) e(:)%ms,'  ||   size of "infinite" Mathieu matrices'
+       write(16,*) e(:)%ibnd, '  ||    ellipse ibnd array'
+       write(16,*) e(:)%match, '  ||    ellipse matching array'
+       write(16,*) e(:)%spec, '  ||    ellipse boundary specified head/flux strength'
+       write(16,*) e(:)%calcin, '  ||    calculate inside this ellipse?'
+       write(16,*) e(:)%r, '  ||    ellipse radius (eta)'
+       write(16,*) e(:)%x, '  ||    ellipse center x'
+       write(16,*) e(:)%y, '  ||    ellipse center y'
+       write(16,*) e(:)%x, '  ||    ellipse semi-focal length'
+       write(16,*) e(:)%y, '  ||    ellipse angle rotation with +x axis'
+       write(16,*) e(:)%k, '  ||    ellipse aquifer k'
+       write(16,*) e(:)%ss, '  ||    ellipse aquifer Ss'
+       write(16,*) e(:)%por, '  ||    ellipse aquifer porosity'
+       write(16,*) e(:)%area, '  ||     ellipse area rch rate'
+       write(16,*) e(:)%leakFlag, '  ||     ellipse leaky type'
+       write(16,*) e(:)%aquitardK, '  ||     ellipse leaky aquitard K'
+       write(16,*) e(:)%aquitardSs, '  ||     ellipse leaky aquitard Ss'
+       write(16,*) e(:)%aquitardb, '  ||     ellipse leaky aquitard thickness'
+       write(16,*) e(:)%unconfinedFlag, '  ||     ellipse unconfined flag'
+       write(16,*) e(:)%Sy, '  ||     ellipse aquifer specific yield'
+       write(16,*) e(:)%Kz, '  ||     ellipse aquifer vertical K'
+       write(16,*) e(:)%b,'  ||    ellipse aquifer thickness'
+       write(16,*) e(:)%dskin,'  ||    ellipse boundary dimensionless skin factor'
+    else
+       allocate(e(0))
+    end if
+
+    ! re-calculation parameter
+    read(15,*) sol%calc
+    write(16,*) sol%calc, '  || re-calculate coefficients?'
 
     ! particles
-    if (BGparticle) then
-       read(15,*) PARnum, PARtol, PARdt, PARmaxStep, PARstreakSkip
-       allocate(PARx(PARnum), PARy(PARnum), PARti(PARnum), PARtf(PARnum), &
-              & PARint(PARnum), PARInclIn(PARnum))
-       read(15,*) PARx(1:PARnum)
-       read(15,*) PARy(1:PARnum)
-       read(15,*) PARti(1:PARnum)
-       read(15,*) PARtf(1:PARnum)
-       read(15,*) PARint(1:PARnum)
-       read(15,*) PARInclIn(1:PARnum)
+    if (sol%particle) then
+       read(15,*) sol%nPart
+       allocate(p(sol%nPart))
+       read(15,*) p(:)%tol 
+       read(15,*) p(:)%dt 
+       read(15,*) p(:)%maxStep
+       read(15,*) p(:)%streakSkip
+       read(15,*) p(:)%x
+       read(15,*) p(:)%y
+       read(15,*) p(:)%ti
+       read(15,*) p(:)%tf
+       read(15,*) p(:)%int
+       read(15,*) p(:)%InclIn
 
-       write(16,*) PARnum, PARtol, PARdt, PARmaxStep, '  ||    number, tolerance, dt, max flux for particles '
-       write(16,*) PARx(1:PARnum), '  ||    part initial x'
-       write(16,*) PARy(1:PARnum), '  ||    part initial y'
-       write(16,*) PARti(1:PARnum), '  ||    part initial t'
-       write(16,*) PARtf(1:PARnum), '  ||    part maximum t'
-       write(16,*) PARint(1:PARnum), '  ||    part integration method'
-       write(16,*) PARInclIn(1:PARnum), '  ||    part begins inside CH/CF incl?'
+       write(16,*) p(:)%tol,'  ||    particle solution tolerances'
+       write(16,*) p(:)%dt,'  ||    particle dt'
+       write(16,*) p(:)%maxStep,'  ||   particle max flux'
+       write(16,*) p(:)%x, '  ||    particle initial x'
+       write(16,*) p(:)%y, '  ||    particle initial y'
+       write(16,*) p(:)%ti, '  ||    particle initial t'
+       write(16,*) p(:)%tf, '  ||    particle maximum t'
+       write(16,*) p(:)%int, '  ||    particle integration method'
+       write(16,*) p(:)%InclIn, '  ||    particle begins inside CH/CF incl?'
     else
-       write(16,*) '  || no particle data read'
+       allocate(p(0))
     endif
-
     close(15)
     close(16)
-
-!!$  contains
-!!$    integer function error(ierr) 
-!!$      integer, intent(in) :: ierr
-!!$      
-!!$      write(*,'(A,I2)') 'ERROR reading input file, line:',ierr
-!!$      error = 1
-!!$      stop
-!!$      
-!!$    end function error
-
   end subroutine readInput
-
-  !##################################################
-  subroutine readEllipseInput(filename)
-    use element_specs
-    use error_handler, only : fileerror
-    implicit none
-
-    character(128), intent(in) :: filename
-    character(128) :: subname = 'ReadInput', echofname = 'echo_input'
-    integer :: ierr
-
-    open(UNIT=15, FILE=filename, STATUS='OLD', ACTION='READ', IOSTAT=ierr)
-    if (ierr /= 0) call fileError(filename,ierr,subname,1)
-    
-    open(UNIT=16, FILE=echofname, STATUS='REPLACE', ACTION='WRITE', IOSTAT=ierr)
-    if (ierr /= 0) call fileError(echofname,ierr,subname,0)
-
-    ! general options / choices
-    read(15,*) BGcontour, BGoutput, BGoutFname, BGcoeffFName
-    read(15,*) BGpor, BGk, BGss
-
-    write(16,*)  BGcontour, BGoutput,  trim(BGoutFname),' ',trim(BGcoeffFName), &
-         & '  ||   Lcontour, Ioutput, out/coeff fnames'
-    write(16,*) BGpor, BGk, BGss, '  ||    por, k, Ss'
-
-    read(15,*) BGnumx, BGnumy, BGnumt
-    allocate(BGx(BGnumx), BGy(BGnumy), BGt(BGnumt))
-    read(15,*) BGx(1:BGnumx)
-    read(15,*) BGy(1:BGnumy)
-    read(15,*) BGt(1:BGnumt)
-    
-    ! inverse Laplace transform parameters
-    read(15,*) INValpha, INVtol, INVm, INVsmooth
-    if (INVtol < SMALL) INVtol = SMALL 
-
-    write(16,*) INValpha, INVtol, INVm, INVsmooth,'  ||    alpha, tol, M, smooth'
-     
-    ! elliptical elements
-    read(15,*) EInum, EIn, EIm, EIms, EImatchTol
-    allocate(EIibnd(EInum), EImatch(EInum), EIspec(EInum), EItheta(EInum), &
-           & EIeta(EInum), EIx(EInum), EIy(EInum), EIf(EInum), EIk(EInum), &
-           & EIss(EInum), EIpor(EInum), EIarea(EInum), &
-           & EIAreaTime(EInum), EIAtpar(EInum,2), EIBdryTime(EInum), EIBtpar(EInum,2))
-    read(15,*) EIibnd(1:EInum)
-    read(15,*) EIspec(1:EInum)
-    read(15,*) EIeta(1:EInum)
-    read(15,*) EIf(1:EInum)
-    read(15,*) EIx(1:EInum)
-    read(15,*) EIy(1:EInum)
-    read(15,*) EItheta(1:EInum)
-    read(15,*) EIk(1:EInum)
-    read(15,*) EIss(1:EInum)
-    read(15,*) EIpor(1:EInum)
-    read(15,*) EIarea(1:EInum)
-    read(15,*) EIAreatime(1:EInum)
-    read(15,*) EIAtpar(1:EInum,1)  
-    read(15,*) EIAtpar(1:EInum,2)
-    read(15,*) EIBdrytime(1:EInum)
-    read(15,*) EIBtpar(1:EInum,1)  
-    read(15,*) EIBtpar(1:EInum,2)
-
-    EImatch = .false.
-    where (EIibnd == -1 .or. EIibnd == 0 .or. EIibnd == +1)
-       EImatch = .true.  !! active element
-    end where
-       
-    write(16,*) EInum, EIn, EIm, EImatchTol, &
-         & '  ||    number of inclusions, N, M; match_tol '
-    write(16,*) EIibnd(1:EInum), '  ||    ibnd array'
-    write(16,*) EImatch(1:EInum), '  ||    matching array'
-    write(16,*) EIspec(1:EInum), '  ||    specified quantity'
-    write(16,*) EIeta(1:EInum), '  ||    incl eta_0'
-    write(16,*) EIf(1:EInum), '  ||    incl semi-focal length'
-    write(16,*) EIx(1:EInum), '  ||    incl ctr x'
-    write(16,*) EIy(1:EInum), '  ||    incl ctr y'
-    write(16,*) EItheta(1:EInum), '  ||    incl angle w/ x+ axis'
-    write(16,*) EIk(1:EInum), '  ||    incl k'
-    write(16,*) EIss(1:EInum), '  ||    incl Ss'
-    write(16,*) EIpor(1:EInum), '  ||    incl porosity'
-    write(16,*) EIarea(1:EInum), '  ||    incl area rch rate'
-    write(16,*) EIAreaTime(1:EInum), '  ||    incl Area flux time fcn index'
-    write(16,*) EIAtpar(1:EInum,1), '  ||    incl Area flux time fcn parameter "a"'
-    write(16,*) EIAtpar(1:EInum,2), '  ||    incl Area flux time fcn parameter "b"'
-    write(16,*) EIBdryTime(1:EInum), '  ||    incl Boundary head/flux time fcn index'
-    write(16,*) EIBtpar(1:EInum,1), '  ||    incl Boundary head/flux time fcn parameter "a"'
-    write(16,*) EIBtpar(1:EInum,2), '  ||    incl Boundary head/flux time fcn parameter "b"'
-
-
-    ! build up k,s, por and alpha vectors
-    allocate(kv(0:EInum),sv(0:EInum),av(0:EInum),porv(0:EInum))
-    kv(0) = BGk; sv(0) = BGss; av(0) = BGk/BGss; porv(0) = BGpor;
-    kv(1:EInum) = EIk
-    sv(1:EInum) = EIss
-    av(1:EInum) = EIk/EIss
-    porv(1:EInum) = EIpor
-
-    write(16,*) kv, '  ||    k vector'
-    write(16,*) av, '  ||    alpha vector'
-    write(16,*) sv, '  ||    Ss vector'
-    write(16,*) porv, '  ||    porosity vector'
-
-    ! elliptical inclusions
-
-    ! infinite linear disconinuities
-
-    ! wells
-    read(15,*) WLnum
-    write(16,*) WLnum, '  ||    number of wells'
-    allocate(WLx(WLnum), WLy(WLnum), WLr(WLnum), WLq(WLnum), &
-           & WLtime(WLnum), WLtpar(WLnum,2))
-    read(15,*) WLx(1:WLnum)
-    write(16,*) WLx(1:WLnum), '  ||    well x'
-    read(15,*) WLy(1:WLnum)
-    write(16,*) WLy(1:WLnum), '  ||    well y'
-    read(15,*) WLr(1:WLnum)
-    write(16,*) WLr(1:WLnum), '  ||    well radius'
-    read(15,*) WLq(1:WLnum)
-    write(16,*) WLq(1:WLnum), '  ||    well pumping rate'
-    read(15,*) WLtime(1:WLnum)
-    write(16,*) WLtime(1:WLnum), '  ||    well time function index'
-    read(15,*) WLtpar(1:WLnum,1)
-    write(16,*) WLtpar(1:WLnum,1), '  ||    well time function parameter "a"'
-    read(15,*) WLtpar(1:WLnum,2)
-    write(16,*) WLtpar(1:WLnum,2), '  ||    well time function parameter "b"'
-
-    read(15,*) BGcalc
-    write(16,*) BGcalc, '  || re-calculate coefficients'
-
-    close(15)
-    close(16)
-
-  end subroutine readEllipseInput
 
   !******************************************************
   subroutine writeResults(head,velx,vely,x,y,t,flag,filename,pout)
@@ -734,61 +631,5 @@ module file_ops
 777 format (1x,I3,4(1x,ES13.6))
     close(40)
 
-
   end subroutine writeGeometry
-
-!!$  !##################################################
-!!$  function mergeSortLocations(v,v1) result(order)
-!!$    use constants, only : DP
-!!$
-!!$    real(DP), intent(in), dimension(:) :: v, v1
-!!$    integer, dimension(size(v)+size(v1)) :: order
-!!$    integer :: old, neu, cnt, less
-!!$    real(DP) :: difo, difn
-!!$
-!!$    ! three things to keep track of while working through the locations
-!!$    ! index in old output => old -
-!!$    ! index in new output => neu +
-!!$    ! index in order vector => cnt
-!!$
-!!$    order = 0
-!!$    old = 1; neu = 1; cnt = 1
-!!$    less = 0
-!!$
-!!$    ! find first element
-!!$    if (v(neu) < v1(old)) then ! new v is farther left/down
-!!$       order(cnt) = neu
-!!$       neu = neu + 1
-!!$    elseif (v1(old)< v(neu)) then ! v1 is farther left/down
-!!$       order(cnt) = -old
-!!$       old = old + 1
-!!$    else ! they are equal (advance both counters)
-!!$       order(cnt) = neu
-!!$       old = old + 1
-!!$       neu = neu + 1
-!!$       less = less + 1
-!!$    end if
-!!$
-!!$    do cnt = 2, size(v)+size(v1)
-!!$       difo = v1(old) - order(cnt)
-!!$       difn = v(neu) - order(cnt)
-!!$       if (difn < difo) then
-!!$          order(cnt) = neu
-!!$          neu = neu + 1
-!!$       elseif (difo < difn) then
-!!$          order(cnt) = -old
-!!$          old = old + 1
-!!$       else
-!!$          order(cnt) = neu
-!!$          old = old + 1
-!!$          neu = neu + 1
-!!$          less = less + 1
-!!$       end if
-!!$    end do
-!!$
-!!$    ! zero out values not used due to duplication
-!!$    order(size(order)-less:) = 0
-!!$
-!!$  end function mergeSortLocations
-
 end module file_ops
