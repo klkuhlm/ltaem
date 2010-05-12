@@ -1,10 +1,7 @@
-! $Id: ltaem_main.f90,v 1.7 2008/12/10 02:46:44 kris Exp kris $
+! this is the driver routine for LT-AEM programs
+
 program ltaem_main
-  use constants, only     : DP, PI, RTWO, SMALL,CZERO
-  use calc_shared_data, only : Presult
-  use element_specs, only : BGinfname,BGcalc,BGparticle,BGnumt,BGt,PARnum,PARdt,PARti,PARtf,&
-       & BGx,BGy,Bgt,INVm,INVtol,INValpha,PARint,CIn,CInum,BGCoeffFName,BGcontour,&
-       & BGnumx,BGnumy,BGoutput,BGoutfname, CIm, CIMatchTol, WLstorCoeff
+  use constants, only : DP, PI, RTWO, SMALL,CZERO
   use file_ops, only : readinput, writeresults
   use error_handler, only : fileerror
   use inverse_Laplace_Transform, only : invlap => deHoog_invlap
@@ -18,7 +15,13 @@ program ltaem_main
 
   ! structs that organize variables
   type(domain) :: dom
+  type(element) :: bg
+  type(circle), allocatable :: c(:)
+  type(ellipse), allocatable :: e(:)
+
   type(solution) :: sol
+  type(INVLT) :: lap
+  type(particle), allocatable :: p(:)
   
   integer :: i, j, part, tnp
   integer, dimension(4) :: ic
@@ -39,8 +42,8 @@ program ltaem_main
   ! either specify here or ask for at prompt
   sol%infname = 'input'
 
-  ! read in locations, options & data from input file
-  call readInput(sol,dom)
+  ! read in data, initialize variables, allocate major structs
+  call readInput(sol,lap,dom,bg,c,e,p)
 
   ! nudge times on 'edge' of logcycle down a tiny bit to increase accuracy
   where ((nint(BGt(1:BGnumt)) - BGt(1:BGnumt)) < SMALL)

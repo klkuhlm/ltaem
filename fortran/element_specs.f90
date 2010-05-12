@@ -1,126 +1,113 @@
-!##################################################
 module element_specs
   use constants, only : DP
   implicit none
   
-  type, private :: time
-     ! time behavior / parameters (WLtpar())
-     ! 1=step on,              WLtpar(1)  =on time
-     ! 2=finite pulse,         WLtpar(1:2)=on/off time
-     ! 3=instan. pulse,  -  no parameters
-     ! 4=stairs,               WLtpar(1:2)=time step, off time
-     ! 5=1/2 square wave,      WLtpar(1)  =1/2 period of wave
-     ! 6=sine,                 WLtpar(1)=1/amplitude & wave number
-     ! 7=1/2 triangular wave,  WLtpar(1)=1/4 period of wave
-
-     ! type of time behavior for AREA FLUX 1=step, 2=pulse, 3=stair, ...
-     integer :: AreaTime
-
-     ! parameters related to different time behaviors (on, off, etc)
-     real(DP), dimension(2) :: Atpar
-     
-     ! type of time behavior for BOUNDARY HEAD/FLUX 1=step, 2=pulse, 3=stair, ...
-     integer :: BdryTime
-
-     ! parameters related to different time behaviors (on, off, etc)
-     real(DP), dimension(2) :: Btpar
-  end type time
-
-  ! parameters related to the entire domain (background)
-  !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  
   type, public :: domain
-
-     ! vectors w/ bg & circular (elliptical too, later) properties
-     real(DP),  allocatable :: kv(:), sv(:), av(:), porv(:), &
-          & k2v(:), s2v(:),a2v(:), b2v(:), syv(:), kzv(:)
-     integer, allocatable :: leakv(:), unconfv(:)
-     real :: trash
+     ! number of each type of element
+     ! 1=circles (wells as special case), 2=ellipses (lines as special case)
+     integer, dimension(2) :: num
 
      ! given hierarchy arrays (eventually to be calculated)
      integer, allocatable :: InclUp(:), WellUp(:)
 
      logical, allocatable :: InclIn(:,:), WellIn(:,:), WellBg(:,:), &
           & InclBg(:,:), CalcIn(:)
-
-     ! number of each type of element
-     ! 1=wells, 2=circles, 3=ellipses
-     integer, dimension(3) :: num
-
-     ! porosity, k, Ss, etc of background material
-     real(DP), save :: por, k, Ss, k2, S2, b2, Sy, Kz, b
   end type domain
   
-  type, private, extends(time) :: matching
-     ! number of FS terms, number of matching points on circles
-     ! for wells can be one (e.g., borehole storage) or zero (known Q)
-     integer :: n,m
+  type, private :: time
+     ! all element inherit this time behavior
+
+     ! time behavior / parameters 
+     ! 1 = step on,              tpar(1)  = on time
+     ! 2 = finite pulse,         tpar(1:2) = on/off time
+     ! 3 = instan. pulse         tpar(1) = pulse time
+     ! 4 = stairs,               tpar(1) = time step (increasing Q by integer multiples 
+     !                                     at integer multiples of tpar(1)); tpar(2) = off time.
+     ! 5 = + only square wave,   tpar(1) = 1/2 period of wave; tpar(2) = start time
+     ! 6 = cosine(tpar(1)*t),    tpar(1) = frequency multiplier; tpar(2) = start time
+     ! 7 = + only tri wave,      tpar(1) = 1/4 period of wave; tpar(2) = start time
+     ! 8 = +/- square wave,      tpar(1) = 1/2 period of wave; tpar(2) = start time
+     ! n<0 = arbitrary piecewise constant rate, comprised of n steps from tpar(1) to tfinal
+     !                tpar(1:n) = starting times of each step
+     !                tpar(n+1) = final time of last step
+     !                tpar(n+2:2*n+1) = strength at each of n steps 
+     ! (is multiplied by constant strength too -- you probably want to set that to unity)
+
+     ! type of time behavior for AREA/Boundary Head/Flux 1=step, 2=pulse, 3=stair, ...
+     integer :: AreaTime, BdryTime
+
+     ! parameters related to different time behaviors (on, off, etc)
+     real(DP), allocatable :: AtPar(:), BtPar(:)
+  end type time
+ 
+  type, public, extends(time) :: element
+     ! porosity, constant area source term
+     ! main aquifer hydraulic conductivity and Ss for element
+     real(DP) :: por, area, k, Ss, b
+
+     ! leaky-related (adjoining aquitard/aquifer parameters)
+     integer :: leakFlag
+     real(DP) :: aquitardK, aquitardSs, aquitardb
+
+     ! unconfined-related (flag, specific yield, and vertical K)
+     integer ::  unconfinedFlag
+     real(DP) :: Sy, Kz
+
+  end type element
+    
+  type, private, extends(element) :: matching
+     ! number of FS terms, number of matching points on circles/ellipses
+     ! for lines/wells can be one (e.g., borehole storage) or zero (known Q)
+     integer :: n, m
 
      ! tolerance to use in iterative solution for coefficients
-     real(DP) :: matchTol
-
      ! SOR parameter for iterative solution for coefficients
-     real(DP) :: matchOmega
+     real(DP) :: matchTol, matchOmega
   
-     ! type of inclusion: -1=specified head TOTAL, 0=match, +1=specified flux TOTAL
+     ! type of element: -1=specified head TOTAL, 0=match, +1=specified flux TOTAL
      !                    -2=specified head ELEMENT, +2=specified flux ELEMENT
      integer :: ibnd
-
-     !! leaky-related 
-     real(DP) :: aquitardK, aquitardSs, aquitardb, Sy, Kz
-     integer :: aquitardLeak , unconfined 
-
+     
      ! whether inclusion is a matching(T) or specified(F) inclusion
      logical :: match
 
      ! specified value on bdry of inclusion
      real(DP) :: spec    
 
-     ! porosity, starting time (step), and constant area flux for inclusion
-     ! hydraulic conductivity and Ss inside matching element
-     real(DP) :: por, area, k, Ss
+     ! dimensionless skin at boundary of element 
+     real(DP) :: dskin
 
      ! location of center of element
-     real(DP) ::x, y 
+     real(DP) :: x, y 
   end type matching
-    
 
-  ! Circular Inclusion related parameters
-  !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   type, extends(matching) :: circle
+     ! Circular Inclusion related parameters
+     ! well is special case of circle
+
      ! inclusion radius
-     real(kind=DP) :: r 
+     real(DP) :: r 
   end type circle
-  
-  ! Elliptical Inclusion related parameters
-  !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
   type, public, extends(matching) :: ellipse
+     ! Elliptical Inclusion related parameters
+     ! line is special case of ellipse
 
      ! size of MF infinite matrix
      integer, save :: ms
 
-     ! inclusion elliptical 'radius'
-     ! semi-focal dist, angle major axis makes with Cartesian x axis,
+     ! inclusion elliptical 'radius', semi-focal dist, 
+     ! angle major axis makes with Cartesian x axis
      real(DP) :: eta, f, theta
   end type ellipse
 
-  ! WeLl related parameters
-  !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-  type, public, extends(matching) :: well
+  type, public :: INVLT
+     ! INVerse Laplace Transform parameters
 
-     ! wellbore radius, pumping rate, dimensionless skin
-     real(DP) :: r, q, dskin
-     complex(DP) :: storCoeff
-  end type well
-
-  ! INVerse Laplace Transform parameters
-  !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-  type, private :: laplace
-     
      ! abcissa of convergence, LT tolerance
-     real(kind=DP), save :: alpha, tol
-     integer, save :: m
-     logical, save :: smooth
-  end type laplace
+     real(DP) :: alpha, tol
+     integer :: m
+  end type INVLT
 
   ! things relating to the numerical solution, independent from flow elements
   !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -152,7 +139,6 @@ module element_specs
      complex(DP), allocatable :: headp(:), velxp(:), velyp(:)
      complex(DP), allocatable :: coeff(:,:,:,:) 
      complex(DP), allocatable :: Gm(:,:,:)
-
   end type solution
 
   ! PARticle related parameters (one for each particle)
@@ -180,6 +166,10 @@ module element_specs
      
      ! particle starts inside a constant head or constant flux inclusion?
      logical :: InclIn
+     
+     ! results from particle tracking (for each particle)
+     real(DP), allocatable :: Presult(:,:)
+
   end type particle
 
 end module element_specs

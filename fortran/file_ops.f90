@@ -1,4 +1,5 @@
-! $Id: file_ops.f90,v 1.8 2008/12/10 02:47:13 kris Exp kris $
+! this module contains most of the I/O associated with LT-AEM
+
 module file_ops
   implicit none  
 
@@ -8,92 +9,94 @@ module file_ops
   contains
 
   !##################################################
-  subroutine readInput(filename)
-    use element_specs, only : 
+  subroutine readInput(sol,lap,dom,bg,c,e,p)
+    use element_specs
     use error_handler, only : fileerror
+    use constants, only : DP
     implicit none
 
-    character(128), intent(in) :: filename
-    character(128) :: subname = 'ReadInput', echofname = 'echo_input'
+    type(solution), intent(inout) :: sol
+    type(INVLT), intent(out) :: lap
+    type(particle), intent(out), allocatable :: p(:)
+
+    type(domain), intent(out) :: dom
+    type(element), intent(out) :: bg
+    type(circle), intent(out), allocatable :: c(:)
+    type(ellipse), intent(out), allocatable :: e(:)
+
+    character(128) :: subname = 'ReadInput', echofname
     integer :: ierr, j
 
-    open(UNIT=15, FILE=filename, STATUS='OLD', ACTION='READ', IOSTAT=ierr)
+    echofname = trim(sol%infname) + '.echo'
+
+    open(UNIT=15, FILE=sol%infname, STATUS='OLD', ACTION='READ', IOSTAT=ierr)
     if (ierr /= 0) call fileError(filename,ierr,subname,1)
     
     open(UNIT=16, FILE=echofname, STATUS='REPLACE', ACTION='WRITE', IOSTAT=ierr)
     if (ierr /= 0) call fileError(echofname,ierr,subname,0)
     
-    ! general options / choices
-    read(15,*) BGparticle, BGcontour, BGoutput, BGoutFname, BGcoeffFName
-    read(15,*) BGpor, BGk, BGss, BGaquitardLeak, BGk2, BGS2, BGb2
-    ! if (ierr /= 0) error(2)
-    read(15,*) BGSy, BGKz, BGunconfined, BGb
-    ! if (ierr /= 0) error(3)
-    write(16,*)  BGparticle, BGcontour, BGoutput,  trim(BGoutFname),' ',trim(BGcoeffFName), &
+    ! solution-specific and background aquifer parameters
+    read(15,*) sol%particle, sol%contour, sol%output, sol%outFname, sol%coeffFName
+    read(15,*) bg%por, bg%k, bg%ss, bg%leakFlag, bg%aquitardK, bg%aquitardSs, bg%aquitardb
+    read(15,*) bg%Sy, bg%kz, bg%unconfinedFlag, bg%b
+
+    write(16,*) sol%particle, sol%contour, sol%output, trim(sol%outFname), trim(sol%coeffFName), &
          & '  ||    Lparticle, Lcontour, Ioutput, out/coeff fnames'
-    write(16,*) BGpor, BGk, BGss, BGaquitardLeak, BGk2, BGS2, BGb2,&
+    write(16,*) bg%por, bg%k, bg%ss, bg%leakFlag, bg%aquitardK, bg%aquitardSs, bg%aquitardb
          & '  ||    por, k, Ss, leaky_type, k2, ss2, b2'
-    write(16,*) BGSy, BGKz, BGunconfined, BGb, '  || BGSy, BGKz, unconfined flag, BGb'
+    write(16,*) bg%Sy, bg%kz, bg%unconfinedFlag, bg%b, '  || BGSy, BGKz, unconfined flag, BGb'
     
-    read(15,*) BGnumx, BGnumy, BGnumt
-    ! if (ierr /= 0) error(4)
-    allocate(BGx(BGnumx), BGy(BGnumy), BGt(BGnumt))
-    read(15,*) BGx(1:BGnumx)
-    ! if (ierr /= 0) error(5)
-    read(15,*) BGy(1:BGnumy)
-    ! if (ierr /= 0) error(6)
-    do j=1,BGnumt  !! modified to accommidate pest
-       read(15,*) BGt(j)
-       if(ierr /= 0) write(*,'(A,I3)') 'ERROR reading time ',j
+    ! desired solution points/times
+    read(15,*) sol%numx, sol%numy, sol%numt
+    allocate(sol%x(sol%numx), sol%y(sol%numy), sol%t(sol%numt))
+    read(15,*) sol%x(:)
+    read(15,*) sol%y(:)
+    do j=1,sol%numt  !! modified to accommidate pest (make time a column)
+       read(15,*,iostat=ierr) sol%t(j)
+       if(ierr /= 0) write(*,'(A,I0)') 'ERROR reading time ',j
     end do
-    
-    if (BGparticle) write(16,*) '  ||*** following data is only a placeholder - not used ***'
-    write(16,*) BGnumx, BGnumy, BGnumt, '  ||    numX, numY, numt'
-    write(16,*) BGx(1:BGnumx), '  ||    xVector'
-    write(16,*) BGy(1:BGnumy), '  ||    yVector'
-    write(16,*) BGt(1:BGnumt), '  ||    tVector'
-    if (BGparticle) write(16,*) '  ||*** end placeholder data ***'
+    if (.not. sol%particle) then
+       write(16,*) sol%numx, sol%numy, sol%numt, '  ||    numX, numY, numt'
+       write(16,*) sol%x(:), '  ||    xVector'
+       write(16,*) sol%y(:), '  ||    yVector'
+       write(16,*) sol%t(:), '  ||    tVector'
+    endif
 
     ! inverse Laplace transform parameters
-    read(15,*) INValpha, INVtol, INVm, INVsmooth
-    ! if (ierr /= 0) error(7)
-    if (INVtol < SMALL) INVtol = SMALL 
+    read(15,*) lap%alpha, lap%tol, lap%m
+    if (lap%tol < epsilon(lap%tol)) lap%tol = epsilon(lap%tol)
+    write(16,*) lap%alpha, lap%tol, lap%m,'  ||    alpha, tol, M'
 
-    write(16,*) INValpha, INVtol, INVm, INVsmooth,'  ||    alpha, tol, M, smooth'
-
-    ! circular inclusions
-    read(15,*) CInum, CIn, CIm, CImatchTol, CImatchOmega
-    ! if (ierr /= 0) error(8)
-    allocate(CIibnd(CInum), CImatch(CInum), CIspec(CInum), CIcalcin(CInum), &
-           & CIr(CInum), CIx(CInum), CIy(CInum), CIk(CInum), &
-           & CIss(CInum), CIpor(CInum), CIarea(CInum), &
-           & CIAreaTime(CInum), CIAtpar(CInum,2), CIBdryTime(CInum), &
-           & CIBtpar(CInum,2), CIaquitardK(CInum),CIaquitardSs(Cinum),&
-           & CIaquitardb(CInum),CIaquitardLeak(CInum),CIunconfined(CInum),CISy(CInum),CIKz(CInum))
-    read(15,*) CIibnd(1:CInum)
-    ! if (ierr /= 0) error(9)
-    read(15,*) CIspec(1:CInum)
-    read(15,*) CICalcIn(1:CInum)
-    read(15,*) CIr(1:CInum)
-    read(15,*) CIx(1:CInum)
-    read(15,*) CIy(1:CInum)
-    read(15,*) CIk(1:CInum)
-    read(15,*) CIss(1:CInum)
-    read(15,*) CIpor(1:CInum)
-    read(15,*) CIarea(1:CInum)
-    read(15,*) CIAreatime(1:CInum)
-    read(15,*) CIAtpar(1:CInum,1)  
-    read(15,*) CIAtpar(1:CInum,2)
-    read(15,*) CIBdrytime(1:CInum)
-    read(15,*) CIBtpar(1:CInum,1)  
-    read(15,*) CIBtpar(1:CInum,2)
-    read(15,*) CIaquitardLeak(1:CInum) !! new leaky circle stuff
-    read(15,*) CIaquitardK(1:CInum)
-    read(15,*) CIaquitardSs(1:CInum)
-    read(15,*) CIaquitardb(1:CInum)
-    read(15,*) CIunconfined(1:CInum)  !! unconfined stuff
-    read(15,*) CISy(1:CInum)
-    read(15,*) CIKz(1:CInum)
+    ! circular (includes wells)
+    read(15,*) dom%num(1)
+    allocate(c(dom%num(1)))
+    read(15,*) c(:)%n
+    read(15,*) c(:)%m
+    read(15,*) c(:)%matchTol
+    read(15,*) c(:)%matchOmega
+    read(15,*) c(:)%ibnd
+    read(15,*) c(:)%spec
+    read(15,*) c(:)%CalcIn
+    read(15,*) c(:)%r
+    read(15,*) c(:)%x
+    read(15,*) c(:)%y
+    read(15,*) c(:)%k
+    read(15,*) c(:)%Ss
+    read(15,*) c(:)%por
+    read(15,*) c(:)%area
+    read(15,*) c(:)%Areatime
+    read(15,*) c(:)%Atpar(1)  
+    read(15,*) c(:)%Atpar(2)
+    read(15,*) c(:)%Bdrytime(1:c(:)%num)
+    read(15,*) c(:)%Btpar(1:c(:)%num,1)  
+    read(15,*) c(:)%Btpar(1:c(:)%num,2)
+    read(15,*) c(:)%aquitardLeak(1:c(:)%num) !! new leaky circle stuff
+    read(15,*) c(:)%aquitardK(1:c(:)%num)
+    read(15,*) c(:)%aquitardSs(1:c(:)%num)
+    read(15,*) c(:)%aquitardb(1:c(:)%num)
+    read(15,*) c(:)%unconfined(1:c(:)%num)  !! unconfined stuff
+    read(15,*) c(:)%Sy(1:c(:)%num)
+    read(15,*) c(:)%Kz(1:c(:)%num)
 
     CImatch = .false.
     where (CIibnd == -1 .or. CIibnd == 0 .or. CIibnd == +1)

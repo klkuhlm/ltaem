@@ -19,7 +19,5 @@ module calc_shared_data
   complex(DP), save, allocatable :: calcCoeff(:,:,:)
 !!$  complex(DP), save, allocatable :: calcVn(:,:)
   
-  ! results from particle tracking
-  real(DP), save,  allocatable :: Presult(:,:,:)
 
 end module calc_shared_data

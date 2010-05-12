@@ -1,6 +1,4 @@
-!! $Id: match_matrix.f90,v 1.13 2008/03/30 20:24:11 kris Exp kris $
-
-module matching_new
+module matching
   implicit none
 
   private 
@@ -9,7 +7,7 @@ module matching_new
 contains
 
   !##################################################
-  subroutine CircInverse_matrix(p,coeff)
+  subroutine Inverse_matrix(p,coeff)
     use constants, only: DP,PI,TWOPI,CZERO,CONE,CTWO,RONE,RZERO
     use element_specs, only : CIn,CIm,CInum,av,kv,CImatch,CIInclUp, &
          & CIibnd,CIr,CICalcIn,CIinclIn,CIInclBg
@@ -34,13 +32,6 @@ contains
     ! Jtr is deriv wrt theta 1 -> radius 2
     real(DP), dimension(1:CIm) :: Jrr, Jtr
     integer, save :: counter = 0
-
-!!$    !! ##############################
-!!$    integer :: step
-!!$    character(5) :: awidth
-!!$    character(4) :: ccount, cstep
-!!$    character(21) :: fmtstr
-!!$    !! ##############################
 
     ! vectors of Bessel functions to minimize calls to Bessel fcn subroutine
     complex(DP), dimension(CIm,0:CIn,CInum) :: besskRcm, bessiRcm
@@ -96,14 +87,6 @@ contains
              col(2,i) = 2*N + col(1,i)
           end if
        end do
-!!$       write(*,'(2(A,I3))') 'N:',N, ' M:',M
-!!$       do i=1,ni
-!!$          write(*,'(3(A,I5))') 'row ',i,' lo:',row(1,i),' hi:',row(2,i)
-!!$       end do
-!!$       do i=1,ni
-!!$          write(*,'(3(A,I5))') 'col ',i,' lo:',col(1,i),' hi:',col(2,i)
-!!$       end do
-
     end if
 
     allocate(Amain(1:row(2,ni),1:col(2,ni)))
@@ -113,11 +96,6 @@ contains
     Am = CZERO
 
     rk(0:N) = real((/ (k, k=0,N) /),DP)
-
-    !! ##############################
-!!$    step = 0
-!!$    write(ccount,'(I4.4)') counter
-    !! ##############################
 
     !******************** Am matrix setup ********************
     ! calcualte coefficient matrix (Am) which depends on the geometry 
@@ -212,20 +190,6 @@ contains
              Amain(row(1,e):row(2,e),col(1,e):col(2,e)) = Am(M+1:2*M,1:colmax,e,e)
 
           end select 
-
-!!$          !! $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
-!!$          step = step + 1
-!!$          write(cstep,'(I4.4)') step
-!!$          open(unit=98, file='amain_'//ccount//'_'//cstep//'_diag.dat',&
-!!$               & status='replace',action='write')
-!!$          write(awidth,'(I5.5)') size(Amain,dim=2)
-!!$          fmtstr = '(' //awidth // '(1X,ES15.6E3))'
-!!$          do i=1,size(Amain,dim=1) ! cycle over rows
-!!$             write(98,fmtstr) real(Amain(i,:))
-!!$          end do
-!!$          close(98)
-!!$          !! $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
-
        end if
     end do ELEM
 
@@ -335,14 +299,8 @@ contains
                 case(0) ! matching: head + flux effects on outside of target (a_n and b_n)
                    Amain(row(1,t):row(2,t),col(2,s)-(2*N):col(2,s)) = Am(1:2*M,1:2*N+1,t,s)
                 case(+1) ! spec. flux: flux effects on outside of target
-!!$                   write(*,'(A)') 'spec. flux , par == s'
-!!$                   write(*,'(A,4I5)') 'global: ',row(1,t),row(2,t),col(2,s)-(2*N),col(2,s)
-!!$                   write(*,'(A,4I5)') 'local : ',1,M,1,2*N+1
                    Amain(row(1,t):row(2,t),col(2,s)-(2*N):col(2,s)) = Am(1:M,1:2*N+1,t,s)
                 case(-1) ! spec. head: head effects on outside of target
-!!$                   write(*,'(A)') 'spec. head , par == s'
-!!$                   write(*,'(A,4I5)') 'global: ',row(1,t),row(2,t),col(2,s)-(2*N),col(2,s)
-!!$                   write(*,'(A,4I5)') 'local : ',1,M,1,2*N+1
                    Amain(row(1,t):row(2,t),col(2,s)-(2*N):col(2,s)) = Am(1:M,1:2*N+1,t,s)
                 end select
              else
@@ -350,37 +308,16 @@ contains
                 case(0) ! matching:  head + flux effects on inside of target (c_n and d_n)
                    Amain(row(1,t):row(2,t),col(1,s):col(1,s)+2*N) = Am(1:2*M,1:2*N+1,t,s)
                 case(+1) ! spec. flux: flux effects on inside of target
-!!$                   write(*,'(A)') 'spec. flux , par /= s'
-!!$                   write(*,'(A,4I5)') 'global: ',row(1,t),row(2,t),col(1,s),col(1,s)+2*N
-!!$                   write(*,'(A,4I5)') 'local : ',1,M,1,2*N+1
                    Amain(row(1,t):row(2,t),col(1,s):col(1,s)+2*N) = Am(1:M,1:2*N+1,t,s)
                 case(-1) ! spec. head: head effects on inside of target
-!!$                   write(*,'(A)') 'spec. head , par /= s'
-!!$                   write(*,'(A,4I5)') 'global: ',row(1,t),row(2,t),col(1,s),col(1,s)+2*N
-!!$                   write(*,'(A,4I5)') 'local : ',1,M,1,2*N+1
                    Amain(row(1,t):row(2,t),col(1,s):col(1,s)+2*N) = Am(1:M,1:2*N+1,t,s)
                 end select
              end if
-!!$             !! $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
-!!$             step = step + 1
-!!$             write(cstep,'(I4.4)') step
-!!$             open(unit=98, file='amain_'//ccount//'_'//cstep// & 
-!!$                  & '_pares.dat',status='replace',action='write')
-!!$             write(awidth,'(I5.5)') size(Amain,dim=2)
-!!$             fmtstr = '(' //awidth // '(1X,ES15.6E3))'
-!!$             do i=1,size(Amain,dim=1) ! cycle over rows
-!!$                write(98,fmtstr) real(Amain(i,:))
-!!$             end do
-!!$             close(98)
-!!$             !! $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
-
           end if
        end do SRC
     end do TARG
 
     call computeCircularStrengths(Amain,p,coeff,counter)
-!!$    if (counter > 1) stop ' collaborate and listen!'
-
   end subroutine CircInverse_matrix
 
 
@@ -420,7 +357,6 @@ contains
 
     ! results from subroutines for passive circular elements
     complex(DP), dimension(CIm,CInum) :: PotWellIn,FluxWellIn,PotWellBg,FluxWellBg
-!!$       complex(DP), dimension(CIm,CInum) :: PotCElmIn,FluxCElmIn,PotCElmBg,FluxCElmBg  ! << not yet
 
     ! sqrt(p/alpha)
     complex(DP), dimension(0:CInum) :: q
@@ -434,14 +370,6 @@ contains
     N = CIn; M = CIm; ni = CInum; nw = WLnum
 
     q(1:ni) = sqrt(p/av(1:ni))
-
-!!$       ! calculate non-matching circular element effects and save their coefficients
-!!$       if (any(CIibnd(1:ni) == -2)) then
-!!$          call circHeadElementEffects(p,PotCElmIn,FluxCElmIn,PotCElmBg,FluxCElmBg,coeff)
-!!$       end if
-!!$       if (any(CIibnd(1:ni) == +2)) then
-!!$          call circFluxElementEffects(p,PotCElmIn,FluxCElmIn,PotCElmBg,FluxCElmBg,coeff)
-!!$       end if 
 
     if (nw > 0) then
        call wellEffects(p,PotWellIn,FluxWellIn,PotWellBg,FluxWellBg)
@@ -605,19 +533,5 @@ contains
     use shared_matching_data
     deallocate(CIXcm, CIYcm, CIXom, CIYom, CIRwm, CIPwm, CIRgm, CIPgm, CIPcm,row,col)
   end subroutine freematchmem
-
-  !$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
-  ! outer product, for vectorizing operations 
-  ! in two directions simultaneously
-  function outer_prod(a,b) result(x)
-    use constants, only : DP
-
-    real(DP), dimension(:), intent(in) :: a, b
-    real(DP), dimension(size(a),size(b)) :: x
-
-    x = spread(a,dim=2,ncopies=size(b))*&
-         & spread(b,dim=1,ncopies=size(a))
-
-  end function outer_prod
 
 end module matching_new
