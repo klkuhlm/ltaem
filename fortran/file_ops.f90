@@ -52,8 +52,8 @@ contains
     write(16,*) bg%Sy, bg%kz, bg%unconfinedFlag, bg%b, '  || BGSy, BGKz, unconfined flag, BGb'
     
     ! desired solution points/times
-    read(15,*) sol%numx, sol%numy, sol%numt
-    allocate(sol%x(sol%numx), sol%y(sol%numy), sol%t(sol%numt))
+    read(15,*) sol%nx, sol%ny, sol%nt
+    allocate(sol%x(sol%nx), sol%y(sol%ny), sol%t(sol%nt))
     read(15,*) sol%x(:)
     read(15,*) sol%y(:)
     do j=1,sol%numt  !! modified to accommidate pest (make time a column)
@@ -61,7 +61,7 @@ contains
        if(ierr /= 0) write(*,'(A,I0)') 'ERROR reading time ',j
     end do
     if (.not. sol%particle) then
-       write(16,*) sol%numx, sol%numy, sol%numt, '  ||    numX, numY, numt'
+       write(16,*) sol%nx, sol%ny, sol%nt, '  ||    numX, numY, numt'
        write(16,*) sol%x(:), '  ||    xVector'
        write(16,*) sol%y(:), '  ||    yVector'
        write(16,*) sol%t(:), '  ||    tVector'
