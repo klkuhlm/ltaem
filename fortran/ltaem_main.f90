@@ -114,8 +114,9 @@ program ltaem_main
      ! only do matching if there is at least one matching element
      if(count(e(:)%match) + count(c(:)%match) > 0) then
 
-        allocate(coeff(2*INVm+1, iminlogt:imaxlogt-1, 0:4*CIn+1, CInum), &
-             & Gm(1:4*CIn+2, 1:2*CIm, 1:CInum))
+
+!!$        allocate(coeff(2*INVm+1, iminlogt:imaxlogt-1, 0:4*CIn+1, CInum), &
+!!$             & Gm(1:4*CIn+2, 1:2*CIm, 1:CInum))
         
         coeff = CZERO
      
@@ -125,7 +126,7 @@ program ltaem_main
         do ilogt = iminlogt,imaxlogt-1
            write(*,'(A,I3)') 'log t=',ilogt
 
-           do j = 1,2*INVm+1
+           do j = 1,2*lap%m+1
               if (nt(ilogt) > 0) then
                  write(*,'(I4,1X,2(A,ES10.3),A)') j, '(',real(s(j,ilogt)),',',aimag(s(j,ilogt)),')'
                  ! compute generalized inverse of A matrix

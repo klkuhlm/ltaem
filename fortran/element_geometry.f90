@@ -1,6 +1,6 @@
 ! this module computes the geometry related to the element distributions
 
-module circular_geometry
+module geometry
   implicit none
 
   private

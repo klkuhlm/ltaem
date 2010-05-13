@@ -2,18 +2,15 @@ module matching
   implicit none
 
   private 
-  public :: CircInverse_matrix,freeMatchMem
+  public :: Inverse_matrix,freeMatchMem
 
 contains
 
   !##################################################
   subroutine Inverse_matrix(p,coeff)
-    use constants, only: DP,PI,TWOPI,CZERO,CONE,CTWO,RONE,RZERO
-    use element_specs, only : CIn,CIm,CInum,av,kv,CImatch,CIInclUp, &
-         & CIibnd,CIr,CICalcIn,CIinclIn,CIInclBg
-    use bessel_functions_deriv, only : besselk_val, besselk_val_and_deriv, besseli_val, besseli_val_and_deriv
+    use constants, only: DP,PI
+    use element_specs, only : circle, ellipse
     use bessel_functions
-    use shared_matching_data, only : CIPcm,CIRgm,CIPgm,row,col
 
     ! ARGUMENTS EXTERNAL TO SUBROUTINE
     ! scalar Laplace parameter
