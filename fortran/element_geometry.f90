@@ -13,7 +13,7 @@ contains
   subroutine DistanceAngleCalcs(cm)
     use constants, only: DP, PI
     use element_specs, only :  circle, matching
-!!$    use shared_matching_data, only :  CIPcm, CIXcm, CIYcm, CIXom, CIYom, CIRwm, CIPwm, CIRgm, CIPgm
+    
     use file_ops, only : writeGeometry
 
     type(matching) :: cm

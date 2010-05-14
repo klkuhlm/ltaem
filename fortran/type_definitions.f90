@@ -7,11 +7,12 @@ module element_specs
      ! 1=circles (wells as special case), 2=ellipses (lines as special case)
      integer, dimension(2) :: num
 
-     ! given hierarchy arrays (eventually to be calculated)
+     ! index of parent element
      integer, allocatable :: InclUp(:), WellUp(:)
 
-     logical, allocatable :: InclIn(:,:), WellIn(:,:), WellBg(:,:), &
-          & InclBg(:,:), CalcIn(:)
+     ! matrix indicating if an element is inside or in the background of
+     ! a current element
+     logical, allocatable :: InclIn(:,:), InclBg(:,:)
   end type domain
   
   type, private :: time
@@ -41,6 +42,10 @@ module element_specs
   end type time
  
   type, public, extends(time) :: element
+
+     ! global id for the current element
+     integer :: id
+
      ! porosity, constant area source term
      ! main aquifer hydraulic conductivity and Ss for element
      real(DP) :: por, area, k, Ss, b
@@ -52,6 +57,11 @@ module element_specs
      ! unconfined-related (flag, specific yield, and vertical K)
      integer ::  unconfinedFlag
      real(DP) :: Sy, Kz
+
+     ! whether to calculate solution (Helmholtz eqn) inside element
+     ! and whether to compute storage (using mass conservation ODE) inside element
+     ! StorIn is only checked if CalcIn is false for an element.
+     logical :: CalcIn, StorIn
 
   end type element
     
@@ -75,6 +85,9 @@ module element_specs
 
      ! location of center of element
      real(DP) :: x, y 
+
+     ! net coefficient in modified Helmholtz equation
+     complex(DP) :: kappa
   end type matching
 
   type, extends(matching) :: circle
@@ -166,10 +179,5 @@ module element_specs
      real(DP), allocatable :: result(:,:)
 
   end type particle
-
-  ! taking the place of shared_matching_data
-  type, public :: matching
-     
-  end type matching
 
 end module element_specs

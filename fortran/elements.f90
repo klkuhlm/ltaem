@@ -1,49 +1,81 @@
-! $Id: wells.f90,v 1.7 2008/12/10 02:47:51 kris Exp kris $
-module wells
+! this module contains the basic functions defining the head or flux 
+! effects of a circular or elliptical element, as well as the time
+! behaviors
+
+module elements
   implicit none
   private
-  public  :: WellHead, WellFlux, CircTimeArea, CircTimeBdry !this needs a different home eventually
 
   ! the four basic functions are overloaded for either 
   ! p being a vector (during inversion) or a scalar (during matching)
 
-  interface WellHead
-     module procedure wellhead_rvect
-     module procedure wellhead_pvect
+  interface CircleHead
+     module procedure CircleHead_match, CircleHead_calc
+  end interface
+  interface CircleFlux
+     module procedure CircleFlux_match, CircleFlux_calc
   end interface
 
-  interface WellFlux
-     module procedure wellflux_rvect
-     module procedure wellflux_pvect
+  interface EllipseHead
+     module procedure EllipseHead_match, EllipseHead_calc
+  end interface
+  interface EllipseFlux
+     module procedure EllipseFlux_match, EllipseFlux_calc
   end interface
 
-  interface WellTime
-     module procedure welltime_pscal
-     module procedure welltime_pvect
+  interface AreaTime
+     module procedure AreaTime_pScal, AreaTime_pVect
   end interface
-  
-  interface CircTimeArea
-     module procedure circtimearea_pscal
-     module procedure circtimearea_pvect
+  interface BdryTime
+     module procedure BdryTime_pScal, BdryTime_pVect
   end interface
-
-  interface CircTimeBdry
-     module procedure circtimebdry_pscal
-     module procedure circtimebdry_pvect
-  end interface
-
 
 contains
+
+  function circle_head_match(c,p,r,dom,in) result(res)
+    use constants, only : 
+    use element_specs, only : circle, domain
+    use bessel_functions, only : bK, bI
+    implicit none
+
+    type(circle), intent(in) :: c
+    type(domain), intent(in) :: dom
+    complex(DP), dimension(:), intent(in) :: p
+    logical, intent(in) :: in
+
+    ! size = number of matching locations on target element
+    real(DP), dimension(:), intent(in) :: r
+    ! second dimension is LHS with RHS tacked on as last column
+    ! if Theis well, LHS=0 is not needed, otherwise RHS is discarded
+    complex(DP), dimension(size(r,1),c%n+1,size(p,1)) :: res
+    
+    if (c%n == 0) then
+       ! Theis well, with specified strength
+
+    else
+       if (in) then
+       
+
+
+       else
+
+       end if
+    end if
+    
+
+  end function circle_head_match
+  
+  
 
   !##################################################
   ! does some error checking and calculates Bessel functions 
   ! needed for head effects of instantaneous point source
-  
   ! radius is a vector, p and kappa are scalars (matching)
 
-   function WellHead_rvect(id,p,kappa,r) result(Lhead)
-    use constants, only: DP, TWOPI, CZERO, PI
-    use element_specs, only : Wlr, Wlq, WLstor, WLdskin, kv, CIWellUp
+   function CircleHead_rvect(id,p,kappa,r) result(Lhead)
+    use constants, only: DP, PI
+    use element_specs, only : circle
+    
     use bessel_functions, only : besselk
     implicit none
     
@@ -273,16 +305,17 @@ contains
        allocate(ti(n),Q(0:n))
 
        ! unpack initial times, pumping rates and final time
-       ti(1:n) = WLTpar(id,1:n); tf = WLTpar(id,n+1)
-       Q(1:n) =  WLTpar(id,n+2:2*n+1); Q(0) = 0.0_DP
+       ti(1:n) = WLTpar(id,1:n)
+       tf = WLTpar(id,n+1)
+       Q(0) = 0.0_DP
+       Q(1:n) =  WLTpar(id,n+2:2*n+1)
        
        mult = (sum((Q(1:n) - Q(0:n-1))*exp(-ti(1:n)*p)) - &
             & sum(Q(1:n) - Q(0:n-1))*exp(-tf*p))/p
-
     end select
   end function WellTime_pscal
 
-   ! ##################################################
+  ! ##################################################
   ! version for p a vector (code is the same)
    function WellTime_pvect(id,p) result(mult)
     use constants, only: DP, RONE
@@ -340,13 +373,14 @@ contains
        allocate(ti(n),Q(0:n))
 
        ! unpack initial times, pumping rates and final time
-       ti(1:n) = WLTpar(id,1:n); tf = WLTpar(id,n+1)
-       Q(1:n) =  WLTpar(id,n+2:2*n+1); Q(0) = 0.0_DP
+       ti(1:n) = WLTpar(id,1:n)
+       tf = WLTpar(id,n+1)
+       Q(0) = 0.0_DP
+       Q(1:n) =  WLTpar(id,n+2:2*n+1)
        
        mult(1:np) = (sum(spread(Q(1:n) - Q(0:n-1),2,np)*&
             & exp(-spread(ti(1:n),2,np)*spread(p(1:np),1,n)),dim=1) - &
             & sum(Q(1:n) - Q(0:n-1))*exp(-tf*p(:)))/p(:)
-
     end select
   end function WellTime_pvect
 
