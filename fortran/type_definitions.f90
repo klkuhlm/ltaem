@@ -15,7 +15,7 @@ module element_specs
      logical, allocatable :: InclIn(:,:), InclBg(:,:)
   end type domain
   
-  type, private :: time
+  type, public :: time
      ! all element inherit this time behavior
 
      ! time behavior / parameters 
@@ -65,7 +65,7 @@ module element_specs
 
   end type element
     
-  type, private, extends(element) :: matching
+  type, public, extends(element) :: matching
      ! number of FS terms, number of matching points on circles/ellipses
      ! for lines/wells can be one (e.g., borehole storage) or zero (known Q)
      integer :: n, m
@@ -86,8 +86,6 @@ module element_specs
      ! location of center of element
      real(DP) :: x, y 
 
-     ! net coefficient in modified Helmholtz equation
-     complex(DP) :: kappa
   end type matching
 
   type, extends(matching) :: circle

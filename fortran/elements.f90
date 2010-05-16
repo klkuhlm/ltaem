@@ -1,6 +1,6 @@
 ! this module contains the basic functions defining the head or flux 
 ! effects of a circular or elliptical element, as well as the time
-! behaviors
+! behaviors, and the routine for computing general kappa for MHE.
 
 module elements
   implicit none
@@ -23,17 +23,18 @@ module elements
      module procedure EllipseFlux_match, EllipseFlux_calc
   end interface
 
-  interface AreaTime
-     module procedure AreaTime_pScal, AreaTime_pVect
+  interface Time
+     module procedure Time_pScal, Time_pVect
   end interface
-  interface BdryTime
-     module procedure BdryTime_pScal, BdryTime_pVect
+
+  interface kappa
+     module procedure  kappa_pVect, kappa_pscal
   end interface
 
 contains
 
   function circle_head_match(c,p,r,dom,in) result(res)
-    use constants, only : 
+    use constants, only : DP, PI
     use element_specs, only : circle, domain
     use bessel_functions, only : bK, bI
     implicit none
@@ -41,20 +42,50 @@ contains
     type(circle), intent(in) :: c
     type(domain), intent(in) :: dom
     complex(DP), dimension(:), intent(in) :: p
-    logical, intent(in) :: in
+    logical, intent(in) :: in ! calculating inside element?
 
     ! size = number of matching locations on target element
     real(DP), dimension(:), intent(in) :: r
-    ! second dimension is LHS with RHS tacked on as last column
-    ! if Theis well, LHS=0 is not needed, otherwise RHS is discarded
-    complex(DP), dimension(size(r,1),c%n+1,size(p,1)) :: res
+    ! second dimension is either LHS or RHS 
+    ! if Theis well or ring flux source, n=0,
+    ! and solution is the vector of RHS for each p value (known),
+    ! otherwise solution is LHS, a 2D matrix for each value of p (unknown)
+    complex(DP), dimension(size(r,1),max(c%n,1),size(p,1)) :: res
     
-    if (c%n == 0) then
-       ! Theis well, with specified strength
+    complex(DP), allocatable :: besk(:,:,:), besi(:,:,:), kap(:)
+
+    nR = size(r,1)
+    nP = size(p,1)
+
+    if (c%n <= 1) then
+       if (.not. c%storIn) then
+          ! finite-radius "Theis" well (n==0) with specified strength
+          ! well given in van Everdingen & Hurst, no wellbore storage.
+
+          allocate(besk(nR,nP,0:1),kap(nP))
+          kap(1:nP) = kappa(p,c%matching)
+          besk = bK(outerprod(kap(1:nP)*r(1:nR)),2)
+
+          ! result is LHS vector (unknown strength) for each value of p
+          res(1:nR,1:nP) = spread(Time(p,c%time,.false.)/kap(1:nP),dim=1,ncopies=nR)*&
+               & besk(:,:,0)/(2.0*PI*c%r*besk(:,:,1))
+          deallocate(besk,kap)
+       
+          if (c%n == 0) then
+             ! result is RHS vector (known strength) for each value of p
+             res(:,:) = C%spec*res(:,:)
+          end if
+       else
+          ! finite-radius well with wellbore storage
+          
+       end if
+    end if
+    
+    
 
     else
        if (in) then
-       
+          
 
 
        else
@@ -64,8 +95,6 @@ contains
     
 
   end function circle_head_match
-  
-  
 
   !##################################################
   ! does some error checking and calculates Bessel functions 
@@ -101,9 +130,6 @@ contains
        ! assume wellbore storage = area
        cw = PI*WLr(id)**2  
        
-!!$       aw(1:nR) = WLq(id)*WellTime(id,p)/(1.0_DP + p/(TWOPI*k)*&
-!!$              & (WLDSkin(id)*cw +  besselk(kappa*WLr(id),0)/&
-!!$              & (bessk1*kappa*WLr(id))))
        aw(1:nR) = WLq(id)*WellTime(id,p)/(1.0_DP + cw*p/(TWOPI*k)*&
               & (WLDSkin(id) +  besselk(kappa*WLr(id),0)/&
               & (bessk1*kappa*WLr(id))))
@@ -246,83 +272,14 @@ contains
 
   end function WellFlux_pvect
 
-  !##################################################
-  ! this function provides the time-dependent portion
-  ! of the well response. Solution comes from convolving 
-  ! this with the instantan. point source (* in Lap domain)
-
-   function WellTime_pscal(id,p) result(mult)
-    use constants, only: DP, RONE
-    use element_specs, only : WLtime, WLtpar
-    implicit none
-
-    integer, intent(in) :: id
-    complex(DP), intent(in) :: p
-    real(DP), allocatable :: ti(:),q(:)
-    integer :: n
-    real(DP) :: tf
-    complex(DP) :: mult
-    
-    select case(WLtime(id))
-    case(1)
-       ! step on at time=par1
-       mult = exp(-WLtpar(id,1)*p)/p
-    case(2)
-       ! step on at time=par1, off at time=par2
-       mult = exp(-WLtpar(id,1)*p)/p - &
-            & exp(-WLtpar(id,2)*p)/p
-    case(3)
-       ! instantaneous at time=par1
-       mult = exp(-WLtpar(id,1)*p)
-    case(4)  
-       ! "step test": increasing by integer multiples of Q each 
-       ! integer multiple of par1 time, off at par2
-       mult = RONE/(p - p*exp(-WLtpar(id,1)*p)) * &
-            & (RONE - exp(-WLtpar(id,2)*p))/p
-    case(5)
-       ! half square wave (only +), period 2*par1
-       ! shifted to start at t=par2
-       mult = exp(-WLtpar(id,2)*p)/(p + p*exp(-WLtpar(id,1)*p))
-    case(6)
-       ! cosine wave  - cos(at)
-       ! shifted to start at t=par2
-       mult = exp(-WLtpar(id,2)*p)*p/(p**2 + WLtpar(id,1)**2)
-    case(7)
-       ! half triangular wave (only +), period 4*par1
-       ! shifted to start at t=par2
-       mult = exp(-WLtpar(id,2)*p) / p**2 * &
-            &(exp(WLtpar(id,1)*p) - exp(WLtpar(id,1)*p))/ &
-            &(exp(WLtpar(id,1)*p) + exp(WLtpar(id,1)*p))
-    case(8)
-       ! full square wave (only +, then -), period 2*par1
-       ! shifted to start at t=par2
-       mult = exp(-WLtpar(id,2)*p)* &
-            &  (RONE - exp(-WLtpar(id,1)*p/2.0))/ &
-            & ((RONE + exp(-WLtpar(id,1)*p/2.0))*p)
-    case(:-1)
-       !! arbitrary piecewise constant pumping rate with n steps, from ti(1) to tf
-       n = abs(WLtime(id))
-       allocate(ti(n),Q(0:n))
-
-       ! unpack initial times, pumping rates and final time
-       ti(1:n) = WLTpar(id,1:n)
-       tf = WLTpar(id,n+1)
-       Q(0) = 0.0_DP
-       Q(1:n) =  WLTpar(id,n+2:2*n+1)
-       
-       mult = (sum((Q(1:n) - Q(0:n-1))*exp(-ti(1:n)*p)) - &
-            & sum(Q(1:n) - Q(0:n-1))*exp(-tf*p))/p
-    end select
-  end function WellTime_pscal
-
   ! ##################################################
-  ! version for p a vector (code is the same)
-   function WellTime_pvect(id,p) result(mult)
-    use constants, only: DP, RONE
-    use element_specs, only: WLtime, WLtpar
+  ! general time behavior function, for all elements
+   function Time_pvect(p,t,area) result(mult)
+    use constants, only: DP
+    use element_specs, only : time
     implicit none
 
-    integer, intent(in) :: id
+    type(time), intent(in) :: t
     complex(DP), dimension(:), intent(in) :: p
     complex(DP), dimension(size(p,1)) :: mult
     integer :: n, np
@@ -330,229 +287,212 @@ contains
     real(DP) :: tf
     
     np = size(p,1)
+    if (area) then
+       time = t%areaTime
+       allocate(par(size(t%ATPar)))
+       par = t%AtPar
+    else
+       time = t%BdryTime
+       allocate(par(size(t%BTPar)))
+       par = t%BTPar
+    end if
 
-    select case(WLtime(id))
+    select case(time)
     case(1)
        ! step on at time=par1
-       mult(1:np) = exp(-WLtpar(id,1)*p)/p
+       mult(1:np) = exp(-par(1)*p)/p
     case(2)
        ! step on at time=par1, off at time=par2
-       mult(1:np) = exp(-WLtpar(id,1)*p)/p - &
-            & exp(-WLtpar(id,2)*p)/p
+       mult(1:np) = exp(-par(1)*p)/p - exp(-par(2)*p)/p
     case(3)
        ! instantaneous at t=par1
-       mult(1:np) = exp(-WLtpar(id,1)*p)
+       mult(1:np) = exp(-par(1)*p)
     case(4)  
        ! "step test": increasing by integer multiples of Q each 
        ! integer multiple of par1 time, off at par2
-       mult(1:np) = RONE/(p - p*exp(-WLtpar(id,1)*p)) * &
-            & (RONE - exp(-WLtpar(id,2)*p))/p
+       mult(1:np) = 1.0/(p - p*exp(-par(1)*p)) * &
+            & (1.0 - exp(-par(2)*p))/p
     case(5)
        ! half square wave (only +), period 2*par1
        ! shifted to start at t=par2
-       mult(1:np) = exp(-WLtpar(id,2)*p)/(p + p*exp(-WLtpar(id,1)*p))
+       mult(1:np) = exp(-par(2)*p)/(p + p*exp(-par(1)*p))
     case(6)
        ! cosine wave  - cos(at)
        ! shifted to start at t=par2
-       mult(1:np) = exp(-WLtpar(id,2)*p)*p/(p**2 + WLtpar(id,1)**2)
+       mult(1:np) = exp(-par(2)*p)*p/(p**2 + par(1)**2)
     case(7)
        ! half triangular wave (only +), period 4*par1
        ! shifted to start at t=par2
-       mult(1:np) = exp(-WLtpar(id,2)*p) / p**2 * &
-            &(exp(WLtpar(id,1)*p) - exp(WLtpar(id,1)*p))/ &
-            &(exp(WLtpar(id,1)*p) + exp(WLtpar(id,1)*p))
+       mult(1:np) = exp(-par(2)*p) / p**2 * &
+            &(exp(par(1)*p) - exp(par(1)*p))/ &
+            &(exp(par(1)*p) + exp(par(1)*p))
     case(8)
        ! full square wave (only +, then -), period 2*par1
        ! shifted to start at t=par2
-       mult(1:np) = exp(-WLtpar(id,2)*p)* &
-            &  (RONE - exp(-WLtpar(id,1)*p/2.0))/ &
-            & ((RONE + exp(-WLtpar(id,1)*p/2.0))*p)
+       mult(1:np) = exp(-par(2)*p)* &
+            &  (1.0 - exp(-par(1)*p/2.0))/ &
+            & ((1.0 + exp(-par(1)*p/2.0))*p)
     case(:-1)
        !! arbitrary piecewise constant pumping rate with n steps, from ti(1) to tf
-       n = abs(WLtime(id))
+       n = abs(time)
        allocate(ti(n),Q(0:n))
 
        ! unpack initial times, pumping rates and final time
-       ti(1:n) = WLTpar(id,1:n)
-       tf = WLTpar(id,n+1)
-       Q(0) = 0.0_DP
-       Q(1:n) =  WLTpar(id,n+2:2*n+1)
+       ti(1:n) = par(1:n)
+       tf = par(n+1)
+       Q(0) = 0.0
+       Q(1:n) = par(n+2:2*n+1)
        
        mult(1:np) = (sum(spread(Q(1:n) - Q(0:n-1),2,np)*&
             & exp(-spread(ti(1:n),2,np)*spread(p(1:np),1,n)),dim=1) - &
             & sum(Q(1:n) - Q(0:n-1))*exp(-tf*p(:)))/p(:)
     end select
-  end function WellTime_pvect
+  end function Time_pvect
 
-  !##################################################
-  ! this function provides the time-dependent portion
-  ! of a circular inclusion's AREA FLUX response. 
-  ! solution comes from convolving 
-  ! this with the instantan. solution (* in Lap domain)
-
-   function CircTimeArea_pscal(id,p) result(mult)
-    use constants, only: DP, RONE
-    use element_specs, only : CIAreaTime, CIAtpar
-    implicit none
-
-    integer, intent(in) :: id
-    complex(DP),  intent(in) :: p
+  ! wrapper to allow calling time routine with scalar p
+  function Time_pscal(p,t,area) result(mult)
+    type(time), intent(in) :: t
+    complex(DP), intent(in) :: p
     complex(DP) :: mult
+
+    mult = sum(Time_pVect([p],t,area))
+
+  end function Time_pscal
+
+  function kappa_pVect(p,m) result(q)
+    use constants, only : DP, PI
+    use element_specs, only : matching
+
+    integer, parameter :: NTERMS = 200, MAXITER = 200
     
-    select case(CIAreaTime(id))
-    case(1)
-       ! step on at time=par1
-       mult = exp(-CIAtpar(id,1)*p)/p
-    case(2)
-       ! step on at time=par1, off at time=par2
-       mult = exp(-CIAtpar(id,1)*p)/p - &
-            & exp(-CIAtpar(id,2)*p)/p
-    case(3)
-       ! instantaneous at t=par1
-       mult = exp(-CIAtpar(id,1)*p)
-    case(4)  
-       ! "step test": increasing by integer multiples of Q each 
-       ! integer multiple of par1 time, off at par2
-       mult = RONE/(p - p*exp(-CIAtpar(id,1)*p)) * &
-            & (RONE - exp(-CIAtpar(id,2)*p))/p
-    case(5)
-       ! half square wave (only +), period 2*par1
-       ! shifted to start at t=par2
-       mult = exp(-CIAtpar(id,2)*p)/(p + p*exp(-CIAtpar(id,1)*p))
-    case(6)
-       ! sine wave  - sin(par1*t)/par1
-       ! shifted to start at t=par2
-       mult = exp(-CIAtpar(id,2)*p)/(p**2 + CIAtpar(id,1)**2)
-    case(7)
-       ! half triangular wave (only +), period 4*par1
-       ! shifted to start at t=par2
-       mult = exp(-CIAtpar(id,2)*p)/p**2 * &
-            &(exp(CIAtpar(id,1)*p) - exp(CIAtpar(id,1)*p))/ &
-            &(exp(CIAtpar(id,1)*p) + exp(CIAtpar(id,1)*p))
-    end select
-  end function CircTimeArea_pscal
+    complex(DP), intent(in), dimension(:) :: p
+    complex(DP), dimension(size(p),0:CInum) :: q
 
-  function CircTimeArea_pvect(id,p) result(mult)
-    use constants, only: DP, RONE
-    use element_specs, only : CIAreaTime, CIAtpar
-    implicit none
+    integer :: i, ni, np
+    complex(DP), dimension(size(p),0:CInum) :: kap2
+    complex(DP), dimension(size(p)) :: exp2z
 
-    integer, intent(in) :: id
-    complex(DP), dimension(:), intent(in) :: p
-    complex(DP), dimension(size(p,1)) :: mult
+    !! boulton stuff
+!!$    real(DP), dimension(NTERMS) :: guess, gamma
+!!$    real(DP), dimension(0:CInum) :: sigma
+!!$    complex(DP), dimension(size(p)) :: kernel
+!!$    real(DP) :: x, delta
+!!$    integer :: k, kk
+!!$    logical, save :: first = .true.
+    real(DP) :: boulton
+
+    np = size(p)
+    ni = CInum
+!!$    sigma(0:ni) = sqrt(sv/Syv)
+
+    do i=0,ni
+       !! leaky-ness
+       !! ##############################
+       if(leakv(i) == 0) then
+          !! no leaky layer, standard definition
+          q(1:np,i) = p(1:np)/av(i)
+       else
+          kap2(1:np,i) = sqrt(p(:)/a2v(i))
+          exp2z(1:np) = exp(-2.0_DP*kap2(:,i)*b2v(i))
+
+          if(leakv(i) == 1) then
+             !! case I, no-drawdown condition at top of aquitard
+             q(:,i) = p(:)/av(i) + kap2(:,i)*k2v(i)/(bgb*kv(i))*&
+                  & (1.0_DP + exp2z(:))/(1.0_DP - exp2z(:))
+          elseif(leakv(i) == 2) then
+             !! case II, no-flow condition at top of aquitard
+             q(:,i) = p(:)/av(i) + kap2(:,i)*k2v(i)/(bgb*kv(i))*&
+                  & (1.0_DP - exp2z(:))/(1.0_DP + exp2z(:))
+          elseif(leakv(i) == 3) then
+             !! aquitard thickness -> infinity
+             q(:,i) = p(:)/av(i) + kap2(:,i)*k2v(i)/(bgb*kv(i))
+          else
+             stop 'ERROR: incorrect value for CIAquitardLeak parameter -> (1,2,3)'
+          end if
+       end if
+       
+       !! unconfined-ness 
+       !! ##############################
+       if(unconfv(i) == 0) then
+          !! do nothing, q already computed above
+       else
+          !! Boulton unconfined source (Herrera infinite sum Kernel)
+          !! guess is halfway between asymptotes of cot()
+!!$
+!!$          if (first) then
+!!$             if(.not. allocated(root)) then
+!!$                allocate(root(NTERMS,0:CInum))
+!!$             end if
+!!$             
+!!$             !! roots are not a function of p (just sigma)- only compute once
+!!$             guess(2:NTERMS) = PI*(real((/(k, k=1,NTERMS-1)/)) + 0.5_DP)/sigma(i)
+!!$             guess(1) = 1.7D0
+!!$
+!!$             !! first root is hard to find with NR, 
+!!$             !! use TS approximation for tangent and re-arrange
+!!$             x = guess(1)
+!!$             NR1: do kk = 1,MAXITER
+!!$                delta = (x + (sigma(i) - 1.0_DP/sigma(i))*(x*sigma(i) + (x*sigma(i))**3/3.0_DP + &
+!!$                     & 2.0_DP*(sigma(i)*x)**5/15.0_DP) + 17.0_DP*(x*sigma(i))**7/315.0_DP)/ &
+!!$                     & (1.0_DP - (1.0_DP/sigma(i) - sigma(i))*(sigma(i) + x**2*sigma(i)**3 + &
+!!$                     & 2.0_DP*x**4*sigma(i)**5/3.0_DP + 17.0_DP*x**6*sigma(i)**7/45.0_DP))
+!!$                x = x - delta
+!!$                if (abs(delta) <= 1.0D-10) then
+!!$                   root(1,i) = x
+!!$                   exit NR1
+!!$                end if
+!!$                if(kk == MAXITER) print *, '1 failed to converge'
+!!$             end do NR1
+!!$
+!!$             do k = 2, NTERMS
+!!$                x = guess(k)
+!!$                NR: do kk = 1,MAXITER
+!!$                   delta = (1.0_DP/tan(x*sigma(i)) + (sigma(i) - 1.0_DP/sigma(i))/x)/&
+!!$                        & (sigma(i)/(sin(sigma(i)*x)**2) + (sigma(i) + 1.0_DP/sigma(i))/x**2)
+!!$                   x = x + delta
+!!$                   if (abs(delta) <= spacing(x)*10.0) then
+!!$                      root(k,i) = x
+!!$                      exit NR
+!!$                   end if
+!!$                   if(kk == MAXITER) print *, k,'failed to converge'
+!!$                end do NR
+!!$             end do
+!!!!!$             if (i == ni) first = .false.
+!!!!!$          end if
+!!$
+!!$          gamma(1:NTERMS) = Kzv(i)*root(1:NTERMS,i)**2/(bgb*Syv(i))
+!!$
+!!$          kernel(1:np) = 2.0_DP*sum(spread(gamma(1:NTERMS),2,np)/&
+!!$               & ((spread(root(1:NTERMS,i)**2,2,np) - 1.0_DP + sigma(i)**2)* &
+!!$               & (spread(p(1:np),1,NTERMS) + spread(gamma(1:NTERMS),2,np))),dim=1)
+!!$          
+!!$
+!!$          q(1:np,i) = q(1:np,i) + p(1:np)*Syv(i)/Kv(i)*kernel
+
+          ! scrap Herrera's infinite sum for Boulton's original
+          ! rough-n-ready alpha, with a semi-physical expression for it
+          boulton = 3.0_DP*Kzv(i)/(bgb*Syv(i))
+          q(1:np,i) = q(:,i) + Syv(i)*p(1:np)*boulton/(Kv(i)*(boulton + p(1:np)))
+       end if
+    end do
     
-    select case(CIAreaTime(id))
-    case(1)
-       ! step on at time=par1
-       mult = exp(-CIAtpar(id,1)*p)/p
-    case(2)
-       ! step on at time=par1, off at time=par2
-       mult = exp(-CIAtpar(id,1)*p)/p - &
-            & exp(-CIAtpar(id,2)*p)/p
-    case(3)
-       ! instantaneous at t=par1
-       mult = exp(-CIAtpar(id,1)*p)
-    case(4)  
-       ! "step test": increasing by integer multiples of Q each 
-       ! integer multiple of par1 time, off at par2
-       mult = RONE/(p - p*exp(-CIAtpar(id,1)*p)) * &
-            & (RONE - exp(-CIAtpar(id,2)*p))/p
-    case(5)
-       ! half square wave (only +), period 2*par1
-       mult = exp(-CIAtpar(id,2)*p)/(p + p*exp(-CIAtpar(id,1)*p))
-    case(6)
-       ! sine wave  - sin(par1*t)/par1
-       mult = exp(-CIAtpar(id,2)*p)/(p**2 + CIAtpar(id,1)**2)
-    case(7)
-       ! half triangular wave (only +), period 4*par1
-       mult = exp(-CIAtpar(id,2)*p)/ p**2 * &
-            &(exp(CIAtpar(id,1)*p) - exp(CIAtpar(id,1)*p))/ &
-            &(exp(CIAtpar(id,1)*p) + exp(CIAtpar(id,1)*p))
-    end select
-  end function CircTimeArea_pvect
+    !! sources are only additive under the square root
+    q = sqrt(q);
 
-  !##################################################
-  ! this function provides the time-dependent portion
-  ! of a circular inclusion's BOUNDARY HEAD/FLUX response. 
-  ! solution comes from convolving 
-  ! this with the instantan. solution (* in Lap domain)
+  end function compute_CIleaky_qv
+  
+  !! scalar version useful in matching
+  function compute_CIleaky_qs(p) result(q)
+    use constants, only : DP
+    use element_specs, only : CInum
 
-   function CircTimeBdry_pscal(id,p) result(mult)
-    use constants, only: DP, RONE
-    use element_specs, only : CIBdryTime, CIBtpar
-    implicit none
+    complex(DP), intent(in) :: p
+    complex(DP), dimension(0:CInum) :: q
 
-    integer, intent(in) :: id
-    complex(DP),  intent(in) :: p
-    complex(DP) :: mult
-    
-    select case(CIBdryTime(id))
-    case(1)
-       ! step on at time=par1
-       mult = exp(-CIBtpar(id,1)*p)/p
-    case(2)
-       ! step on at time=par1, off at time=par2
-       mult = exp(-CIBtpar(id,1)*p)/p - &
-            & exp(-CIBtpar(id,2)*p)/p
-    case(3)
-       ! instantaneous
-       mult = exp(-CIBtpar(id,1)*p)
-    case(4)  
-       ! "step test": increasing by integer multiples of Q each 
-       ! integer multiple of par1 time, off at par2
-       mult = RONE/(p - p*exp(-CIBtpar(id,1)*p)) * &
-            & (RONE - exp(-CIBtpar(id,2)*p))/p
-    case(5)
-       ! half square wave (only +), period 2*par1
-       mult = exp(-CIBtpar(id,2)*p)/(p + p*exp(-CIBtpar(id,1)*p))
-    case(6)
-       ! sine wave  - sin(par1*t)/par1
-       mult = exp(-CIBtpar(id,2)*p)/(p**2 + CIBtpar(id,1)**2)
-    case(7)
-       ! half triangular wave (only +), period 4*par1
-       mult = exp(-CIBtpar(id,2)*p)/ p**2 * &
-            &(exp(CIBtpar(id,1)*p) - exp(CIBtpar(id,1)*p))/ &
-            &(exp(CIBtpar(id,1)*p) + exp(CIBtpar(id,1)*p))
-    end select
-  end function CircTimeBdry_pscal
+    !! sum away singleton first dimension
+    kappa = sum(compute_CIleaky_qv( [p],m))
 
-  function CircTimeBdry_pvect(id,p) result(mult)
-    use constants, only: DP, RONE
-    use element_specs, only : CIBdryTime,CIBtpar
-    implicit none
+  end function compute_CIleaky_qs
+  
 
-    integer, intent(in) :: id
-    complex(DP), dimension(:), intent(in) :: p
-    complex(DP), dimension(size(p,1)) :: mult
-    
-    select case(CIBdryTime(id))
-    case(1)
-       ! step on at time=par1
-       mult = exp(-CIBtpar(id,1)*p)/p
-    case(2)
-       ! step on at time=par1, off at time=par2
-       mult = exp(-CIBtpar(id,1)*p)/p - &
-            & exp(-CIBtpar(id,2)*p)/p
-    case(3)
-       ! instantaneous
-       mult = exp(-CIBtpar(id,1)*p)
-    case(4)  
-       ! "step test": increasing by integer multiples of Q each 
-       ! integer multiple of par1 time, off at par2
-       mult = RONE/(p - p*exp(-CIBtpar(id,1)*p)) * &
-            & (RONE - exp(-CIBtpar(id,2)*p))/p
-    case(5)
-       ! half square wave (only +), period 2*par1
-       mult = exp(-CIBtpar(id,1)*p)/(p + p*exp(-CIBtpar(id,1)*p))
-    case(6)
-       ! sine wave  - sin(par1*t)/par1
-       mult = exp(-CIBtpar(id,1)*p)/(p**2 + CIBtpar(id,1)**2)
-    case(7)
-       ! half triangular wave (only +), period 4*par1
-       mult = exp(-CIBtpar(id,1)*p)/p**2 * &
-            &(exp(CIBtpar(id,1)*p) - exp(CIBtpar(id,1)*p))/ &
-            &(exp(CIBtpar(id,1)*p) + exp(CIBtpar(id,1)*p))
-    end select
-  end function CircTimeBdry_pvect
-
-end module wells
+end module elements
