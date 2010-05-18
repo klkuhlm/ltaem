@@ -46,11 +46,11 @@ contains
 
     ! size = number of matching locations on target element
     real(DP), dimension(:), intent(in) :: r
-    ! second dimension is either LHS or RHS 
-    ! if Theis well or ring flux source, n=0,
-    ! and solution is the vector of RHS for each p value (known),
+    ! second dimension is either LHS + RHS 
+    ! if Theis well specified flux source, n=0,
+    ! and solution is the RHS vector for each p value (known),
     ! otherwise solution is LHS, a 2D matrix for each value of p (unknown)
-    complex(DP), dimension(size(r,1),max(c%n,1),size(p,1)) :: res
+    complex(DP), dimension(size(r,1),c%n+1,size(p,1)) :: res
     
     complex(DP), allocatable :: besk(:,:,:), besi(:,:,:), kap(:)
 
@@ -67,13 +67,13 @@ contains
           besk = bK(outerprod(kap(1:nP)*r(1:nR)),2)
 
           ! result is LHS vector (unknown strength) for each value of p
-          res(1:nR,1:nP) = spread(Time(p,c%time,.false.)/kap(1:nP),dim=1,ncopies=nR)*&
+          res(1:nR,1,1:nP) = spread(Time(p,c%time,.false.)/kap(1:nP),dim=1,ncopies=nR)*&
                & besk(:,:,0)/(2.0*PI*c%r*besk(:,:,1))
           deallocate(besk,kap)
        
           if (c%n == 0) then
              ! result is RHS vector (known strength) for each value of p
-             res(:,:) = C%spec*res(:,:)
+             res(:,1,:) = C%spec*res(:,1,:)
           end if
        else
           ! finite-radius well with wellbore storage

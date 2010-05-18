@@ -13,6 +13,11 @@ module element_specs
      ! matrix indicating if an element is inside or in the background of
      ! a current element
      logical, allocatable :: InclIn(:,:), InclBg(:,:)
+
+     ! vectors of parameters for simpler indexing of parameters.
+     ! This seems to be sort of a hack and maybe this can be removed or improved later.
+     real(DP), allocatable :: Kv,Ssv,bv,porv,areav,Syv,Kzv,K2v,Ss2v,b2v,skinv 
+
   end type domain
   
   type, public :: time
@@ -23,7 +28,7 @@ module element_specs
      ! 2 = finite pulse,         tpar(1:2) = on/off time
      ! 3 = instan. pulse         tpar(1) = pulse time
      ! 4 = stairs,               tpar(1) = time step (increasing Q by integer multiples 
-     !                                     at integer multiples of tpar(1)); tpar(2) = off time.
+     !                                     @ integer multiples tpar(1)); tpar(2) =off time.
      ! 5 = + only square wave,   tpar(1) = 1/2 period of wave; tpar(2) = start time
      ! 6 = cosine(tpar(1)*t),    tpar(1) = frequency multiplier; tpar(2) = start time
      ! 7 = + only tri wave,      tpar(1) = 1/4 period of wave; tpar(2) = start time

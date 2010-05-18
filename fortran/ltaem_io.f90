@@ -26,7 +26,7 @@ contains
     type(ellipse), intent(out), allocatable :: e(:)
 
     character(128) :: subname = 'ReadInput', echofname
-    integer :: ierr, j
+    integer :: ierr, j,nEl,nC,nE  ! #elements, #circles, #ellipses
 
     echofname = trim(sol%infname) + '.echo'
     open(UNIT=15, FILE=sol%infname, STATUS='OLD', ACTION='READ', IOSTAT=ierr)
@@ -74,8 +74,9 @@ contains
 
     ! circular (includes wells)
     read(15,*) dom%num(1)
-    if (dom%num(1) > 0) then
-       allocate(c(dom%num(1)))
+    nc = dom%num(1)
+    if (nc > 0) then
+       allocate(c(nc))
        read(15,*) c(:)%n
        read(15,*) c(:)%m
        read(15,*) c(:)%ibnd
@@ -93,12 +94,14 @@ contains
           if (c(j)%AreaTime > -1) then
              allocate(c(j)%ATPar(2))
              read(15,*) c(j)%ATPar(:)
-             write(15,*) c(j)%AreaTime,c(j)%ATPar(:),'  ||  Area time behavior, par1, par2 for circle ',j
+             write(15,*) c(j)%AreaTime,c(j)%ATPar(:),&
+                  &'  ||  Area time behavior, par1, par2 for circle ',j
           else
              allocate(c(j)%ATPar(-2*c(j)%AreaTime+1))
              read(15,*) c(j)%ATPar(:)
              write(16,*) c(j)%AreaTime,c(j)%ATPar(:-c(j)%AreaTime+1),' | ',&
-                  & c(j)%ATPar(-c(j)%AreaTime+2:), '  ||    Area ti, tf | strength for circle ',j
+                  & c(j)%ATPar(-c(j)%AreaTime+2:), &
+                  &'  ||    Area ti, tf | strength for circle ',j
           end if
        end do
        do j=1,size(c,dim=1)
@@ -106,12 +109,14 @@ contains
           if (c(j)%BdryTime > -1) then
              allocate(c(j)%BTPar(2))
              read(15,*) c(j)%BTPar(:)
-             write(15,*) c(j)%BdryTime,c(j)%BTPar(:),'  ||  Bdry time behavior, par1, par2 for circle ',j
+             write(15,*) c(j)%BdryTime,c(j)%BTPar(:),&
+                  &'  ||  Bdry time behavior, par1, par2 for circle ',j
           else
              allocate(c(j)%BTPar(-2*c(j)%BdryTime+1))
              read(15,*) c(j)%BTPar(:)
              write(16,*) c(j)%BdryTime,c(j)%BTPar(:-c(j)%BdryTime+1),' | ',&
-                  & c(j)%BTPar(-c(j)%BdryTime+2:), '  ||    Bdry ti, tf | strength for circle ',j
+                  & c(j)%BTPar(-c(j)%BdryTime+2:), &
+                  &'  ||    Bdry ti, tf | strength for circle ',j
           end if
        end do
        read(15,*) c(:)%leakFlag
@@ -131,7 +136,7 @@ contains
        end where
           
        write(16,*) dom%num(1), '  ||   number of circular elements (including wells)'
-       write(16,*) c(:)%n,'  ||   number of circular free parameter (Fourier series coeffs)'
+       write(16,*) c(:)%n,'  ||   number of circular free parameter (Fourier coeffs)'
        write(16,*) c(:)%m,'  ||   number of circular matching locations'
        write(16,*) c(:)%ibnd, '  ||    circle ibnd array'
        write(16,*) c(:)%match, '  ||    circle matching array'
@@ -157,10 +162,11 @@ contains
        allocate(c(0))
     end if
 
-    ! elliptical (includes lines)
+    ! elliptical (includes line sources/sinks)
     read(15,*) dom%num(2)
-    if (dom%num(2) > 0) then
-       allocate(e(dom%num(2)))
+    ne = dom%num(2)
+    if (ne > 0) then
+       allocate(e(ne))
        read(15,*) e(:)%n
        read(15,*) e(:)%m
        read(15,*) e(:)%ms
@@ -181,12 +187,14 @@ contains
           if (e(j)%AreaTime > -1) then
              allocate(e(j)%ATPar(2))
              read(15,*) e(j)%ATPar(:)
-             write(15,*) e(j)%AreaTime,e(j)%ATPar(:),'  ||  Area time behavior, par1, par2 for ellipse ',j
+             write(15,*) e(j)%AreaTime,e(j)%ATPar(:),&
+                  &'  ||  Area time behavior, par1, par2 for ellipse ',j
           else
              allocate(e(j)%ATPar(-2*e(j)%AreaTime+1))
              read(15,*) e(j)%ATPar(:)
              write(16,*) e(j)%AreaTime,e(j)%ATPar(:-e(j)%AreaTime+1),' | ',&
-                  & e(j)%ATPar(-e(j)%AreaTime+2:), '  ||    Area ti, tf | strength for ellipse ',j
+                  & e(j)%ATPar(-e(j)%AreaTime+2:), &
+                  &'  ||    Area ti, tf | strength for ellipse ',j
           end if
        end do
        do j=1,size(c,dim=1)
@@ -194,12 +202,14 @@ contains
           if (e(j)%BdryTime > -1) then
              allocate(e(j)%BTPar(2))
              read(15,*) e(j)%BTPar(:)
-             write(15,*) e(j)%BdryTime,e(j)%BTPar(:),'  ||  Bdry time behavior, par1, par2 for circle ',j
+             write(15,*) e(j)%BdryTime,e(j)%BTPar(:),&
+                  &'  ||  Bdry time behavior, par1, par2 for circle ',j
           else
              allocate(e(j)%BTPar(-2*e(j)%BdryTime+1))
              read(15,*) e(j)%BTPar(:)
              write(16,*) e(j)%BdryTime,e(j)%BTPar(:-e(j)%BdryTime+1),' | ',&
-                  & e(j)%BTPar(-e(j)%BdryTime+2:), '  ||    Bdry ti, tf | strength for circle ',j
+                  & e(j)%BTPar(-e(j)%BdryTime+2:), &
+                  &'  ||    Bdry ti, tf | strength for circle ',j
           end if
        end do
        read(15,*) e(:)%leakFlag
@@ -218,8 +228,8 @@ contains
           e(:)%match = .false.       
        end where
 
-       write(16,*) dom%num(1), '  ||   number of elliptical elements (including lines)'
-       write(16,*) e(:)%n,'  ||   number of elliptical free parameter (Fourier series coeffs)'
+       write(16,*) dom%num(2), '  ||   number of elliptical elements (including lines)'
+       write(16,*) e(:)%n,'  ||   number of elliptical free parameter (Fourier coeffs)'
        write(16,*) e(:)%m,'  ||   number of ellipse matching locations'
        write(16,*) e(:)%ms,'  ||   size of "infinite" Mathieu matrices'
        write(16,*) e(:)%ibnd, '  ||    ellipse ibnd array'
@@ -247,12 +257,82 @@ contains
     else
        allocate(e(0))
     end if
-
-    if (sum(dom%num) < 1) then
-       print *, 'need at least one circular (including well) or elliptical (including line) element'
+    
+    nEl = sum(dom%num) ! total number of circular and elliptical elements
+    if (nEl < 1) then
+       print *, 'need at least one circular (including well) or'\\&
+            & 'elliptical (including line) element.'
        stop 102
     end if
+
+    ! allocate and populate global vectors of parameters
+    allocate(dom%Kv(0:nEl),dom%Ssv(0:nEl),dom%bv(0:nEl),dom%porv(0:nEl),&
+         & dom%Syv(0:nEl),dom%Kzv(0:nEl),dom%area(0:nEl),dom%skin(0:nEl),&
+         & dom%K2v(0:nEl),dom%Ss2v(0:nEl),dom%b2v(0:nEl))
     
+    ! background is "element zero"
+    dom%Kv(0) = bg%K
+    dom%Ssv(0) = bg%Ss
+    dom%bv(0) = bg%b
+    dom%porv(0) = bg%por
+    dom%Syv(0) = bg%Sy
+    dom%Kzv(0) = bg%Kz
+    dom%K2v(0) = bg%K2
+    dom%Ss2v(0) = bg%Ss2
+    dom%b2v(0) = bg%b2
+    dom%areav(0) = bg%area
+    dom%skinv(0) = bg%skin
+
+    ! circles are first
+    dom%Kv(1:nc) = c(:)%K
+    dom%Ssv(1:nc) = c(:)%Ss
+    dom%bv(1:nc) = c(:)%b
+    dom%porv(1:nc) = c(:)%por
+    dom%areav(1:nc) = c(:)%area
+    dom%skinv(1:nc) = c(:)%skin
+
+    where(c(:)%unconfinedFlag)
+       dom%Syv(1:nc) = c(:)%Sy
+       dom%Kzv(1:nc) = c(:)%Kz
+    elsewhere
+       dom%Syv(1:nc) = -huge(1.0)
+       dom%Kzv(1:nc) = -huge(1.0)     
+    end where
+    where(c(:)%leakFlag)
+       dom%K2v(1:nc) = c(:)%K2
+       dom%Ss2v(1:nc) = c(:)%Ss2
+       dom%b2v(1:nc) = c(:)%b2
+    elsewhere
+       dom%K2v(1:nc) = -huge(1.0)
+       dom%Ss2v(1:nc) = -huge(1.0)
+       dom%b2v(1:nc) = -huge(1.0)
+    end where
+
+    ! ellipses are second
+    dom%Kv(nc+1:nEl) = e(:)%K
+    dom%Ssv(nc+1:nEl) = e(:)%Ss
+    dom%bv(nc+1:nEl) = e(:)%b
+    dom%porv(nc+1:nEl) = e(:)%por
+    dom%areav(nc+1:nEl) = e(:)%area
+    dom%skinv(nc+1:nEl) = e(:)%skin
+
+    where(e(:)%unconfinedFlag)
+       dom%Syv(nc+1:nEl) = e(:)%Sy
+       dom%Kzv(nc+1:nEl) = e(:)%Kz
+    elsewhere
+       dom%Syv(nc+1:nEl) = -huge(1.0)
+       dom%Kzv(nc+1:nEl) = -huge(1.0)
+    end where
+    where(e(:)%LeakFlag)
+       dom%K2v(nc+1:nEl) = e(:)%K2
+       dom%Ss2v(nc+1:nEl) = e(:)%Ss2
+       dom%b2v(nc+1:nEl) = e(:)%b2
+    elsewhere
+       dom%K2v(nc+1:nEl) = -huge(1.0)
+       dom%Ss2v(nc+1:nEl) = -huge(1.0)
+       dom%b2v(nc+1:nEl) = -huge(1.0)
+    end where
+
     ! re-calculation parameter
     read(15,*) sol%calc
     write(16,*) sol%calc, '  || re-calculate coefficients?'
