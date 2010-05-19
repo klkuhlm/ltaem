@@ -28,7 +28,7 @@ module elements
   end interface
 
   interface kappa
-     module procedure  kappa_pVect, kappa_pscal
+     module procedure  kappa_pVect, kappa_pScal
   end interface
 
 contains
