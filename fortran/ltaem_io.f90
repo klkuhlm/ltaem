@@ -41,12 +41,14 @@ contains
     endif   
     
     ! solution-specific and background aquifer parameters
-    read(15,*) sol%particle, sol%contour, sol%output, sol%outFname, sol%coeffFName
+    read(15,*) sol%particle, sol%contour, sol%output, &
+         & sol%outFname, sol%coeffFName, sol%elemHfName
     read(15,*) bg%por, bg%k, bg%ss, bg%leakFlag, bg%aquitardK, bg%aquitardSs, bg%aquitardb
     read(15,*) bg%Sy, bg%kz, bg%unconfinedFlag, bg%b
 
-    write(16,*) sol%particle, sol%contour, sol%output, trim(sol%outFname), trim(sol%coeffFName), &
-         & '  ||    Lparticle, Lcontour, Ioutput, out/coeff fnames'
+    write(16,*) sol%particle, sol%contour, sol%output, &
+         & trim(sol%outFname), trim(sol%coeffFName), trim(sol%elemHfName)&
+         & '  ||    Lparticle, Lcontour, Ioutput, out/coeff/hierarchy file names'
     write(16,*) bg%por, bg%k, bg%ss, bg%leakFlag, bg%aquitardK, bg%aquitardSs, bg%aquitardb
          & '  ||    por, k, Ss, leaky_type, k2, ss2, b2'
     write(16,*) bg%Sy, bg%kz, bg%unconfinedFlag, bg%b, '  || BGSy, BGKz, unconfined flag, BGb'

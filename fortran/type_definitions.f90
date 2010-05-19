@@ -142,7 +142,7 @@ module element_specs
      logical :: calc
      
      ! input/output filenames
-     character(128) :: outfname, infname, coefffname
+     character(128) :: outfname, infname, coefffname, elemHfName
      
      ! output index (1= gnuplot; 2= matlab)
      integer :: output, aquitardLeak, unconfined
