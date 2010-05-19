@@ -34,6 +34,7 @@ contains
 
   function circle_head_match_self(c,p,dom) result(res)
     use constants, only : DP, PI
+    use utilities, only : outer_prod
     use element_specs, only : circle, domain
     use bessel_functions, only : bK, bI
     implicit none
@@ -41,14 +42,61 @@ contains
     type(circle), intent(in) :: c
     type(domain), intent(in) :: dom
     complex(DP), dimension(:), intent(in) :: p
-    complex(DP), dimension(c%M,c%n+1,size(p,1)) :: res    
-    integer :: nP
+    complex(DP), dimension(c%M,4*c%n+2,size(p,1)) :: res    
 
-    cop = cos(outer_prod())
+    integer :: nP, j, N, M
+    real(DP), dimension(0:c%N) :: vi, k(0:1)
+    real(DP), dimension(c%M,0:c%N) :: top ! trig outer prod
 
-    res(1:c%M,)
+    N = c%N; M = c%M
+    forall(j=0,N) vi(j)=real(j,DP)
+
+    k(0) = dom%kv(c%id)  ! K inside
+    k(1) = dom%kv(dom%InclUp(c%id)) ! K of parent
+
+    top(1:M,0:N) = cos(outer_prod(c%Pcm(1:M),vi(0:N)))
+    res(1:M,1:N+1)       =  top/k(1)
+    res(1:M,2*N+2:3*N+2) = -top/k(0)
+
+    top(1:M,1:N) = sin(outer_prod(c%Pcm(1:M),vi(1:N)))
+    res(1:M,N+2:2*N+1)   =  top/k(1)
+    res(1:M,3*N+3:4*N+2) = -top/k(0)
 
   end function circle_head_match_self
+
+  function circle_flux_match_self(c,p,dom) result(res)
+    use constants, only : DP, PI
+    use utilities, only : outer_prod
+    use element_specs, only : circle, domain
+    use bessel_functions, only : bK, bI
+    implicit none
+
+    type(circle), intent(in) :: c
+    type(domain), intent(in) :: dom
+    complex(DP), dimension(:), intent(in) :: p
+    complex(DP), dimension(c%M,4*c%n+2,size(p,1)) :: res    
+
+    integer :: nP, j, N, M
+    real(DP), dimension(0:c%N) :: vi, k(0:1)
+    real(DP), dimension(c%M,0:c%N) :: top ! trig outer prod
+
+    N = c%N; M = c%M
+    forall(j=0,N) vi(j)=real(j,DP)
+
+    k(0) = dom%kv(c%id)  ! K inside
+    k(1) = dom%kv(dom%InclUp(c%id)) ! K of parent
+
+    top(1:M,0:N) = cos(outer_prod(c%Pcm(1:M),vi(0:N)))
+    res(1:M,1:N+1)       =  top/k(1)
+    res(1:M,2*N+2:3*N+2) = -top/k(0)
+
+    top(1:M,1:N) = sin(outer_prod(c%Pcm(1:M),vi(1:N)))
+    res(1:M,N+2:2*N+1)   =  top/k(1)
+    res(1:M,3*N+3:4*N+2) = -top/k(0)
+
+  end function circle_head_match_self
+
+
   
 
   function circle_head_match_other(c,r,p,dom,in) result(res)

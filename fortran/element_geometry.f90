@@ -49,7 +49,7 @@ contains
        end forall
     end do
 
-    call ElementHierarchy(dom)
+    call ElementHierarchy(dom,sol)
 
     ! circular inclusion related geometry
     allocate(CIXcm(M,ni), CIYcm(M,ni), CIXom(M,ni), &
