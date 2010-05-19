@@ -10,7 +10,7 @@ module elements
   ! p being a vector (during inversion) or a scalar (during matching)
 
   interface CircleHead
-     module procedure CircleHead_match, CircleHead_calc
+     module procedure Circle_Head_match_self, Circle_Head_match_other, Circle_Head_calc
   end interface
   interface CircleFlux
      module procedure CircleFlux_match, CircleFlux_calc
@@ -26,14 +26,32 @@ module elements
   interface Time
      module procedure Time_pScal, Time_pVect
   end interface
-
   interface kappa
      module procedure  kappa_pVect, kappa_pScal
   end interface
 
 contains
 
-  function circle_head_match(c,p,r,dom,in) result(res)
+  function circle_head_match_self(c,p,dom) result(res)
+    use constants, only : DP, PI
+    use element_specs, only : circle, domain
+    use bessel_functions, only : bK, bI
+    implicit none
+
+    type(circle), intent(in) :: c
+    type(domain), intent(in) :: dom
+    complex(DP), dimension(:), intent(in) :: p
+    complex(DP), dimension(c%M,c%n+1,size(p,1)) :: res    
+    integer :: nP
+
+    cop = cos(outer_prod())
+
+    res(1:c%M,)
+
+  end function circle_head_match_self
+  
+
+  function circle_head_match_other(c,r,p,dom,in) result(res)
     use constants, only : DP, PI
     use element_specs, only : circle, domain
     use bessel_functions, only : bK, bI
@@ -53,6 +71,7 @@ contains
     complex(DP), dimension(size(r,1),c%n+1,size(p,1)) :: res
     
     complex(DP), allocatable :: besk(:,:,:), besi(:,:,:), kap(:)
+    integer :: nR,nP
 
     nR = size(r,1)
     nP = size(p,1)
@@ -82,7 +101,7 @@ contains
     end if
     
     
-
+    if (something) then
     else
        if (in) then
           
@@ -94,7 +113,7 @@ contains
     end if
     
 
-  end function circle_head_match
+  end function circle_head_match_other
 
   !##################################################
   ! does some error checking and calculates Bessel functions 

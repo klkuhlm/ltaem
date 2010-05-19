@@ -8,7 +8,7 @@ module element_specs
      integer, dimension(2) :: num
 
      ! index of parent element
-     integer, allocatable :: InclUp(:), WellUp(:)
+     integer, allocatable :: InclUp(:)
 
      ! matrix indicating if an element is inside or in the background of
      ! a current element
@@ -99,6 +99,10 @@ module element_specs
 
      ! inclusion radius
      real(DP) :: r 
+
+     ! vector of matching locations 
+     real(DP), allocatable :: Pcm(:)
+
   end type circle
 
   type, public, extends(matching) :: ellipse
@@ -111,6 +115,10 @@ module element_specs
      ! inclusion elliptical 'radius', semi-focal dist, 
      ! angle major axis makes with Cartesian x axis
      real(DP) :: eta, f, theta
+
+     ! vector of matching locations 
+     real(DP), allocatable :: Pcm(:)
+
   end type ellipse
 
   type, public :: INVLT

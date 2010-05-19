@@ -10,13 +10,14 @@ contains
 
   ! ##################################################
   ! initializes / calculates geometry - all global variables
-  subroutine DistanceAngleCalcs(cm)
+  subroutine DistanceAngleCalcs(c,e,dom)
     use constants, only: DP, PI
-    use element_specs, only :  circle, matching
-    
+    use element_specs
     use file_ops, only : writeGeometry
 
-    type(matching) :: cm
+    type(domain), intent(inout) :: dom
+    type(circle), intent(in), dimension(:) :: c
+    type(ellipse), intent(in), dimension(:) :: e
 
     ! INTERNAL VARIABLES
     ! x/y distances from wells to points on circumference of elements
@@ -24,22 +25,30 @@ contains
     ! x/y distances from center of other circles to circumference of elements
     real(DP), dimension(CIm,CInum,CInum) :: CIXgm, CIYgm
     real(DP) :: rm 
-    integer :: incl, well, other, M, ni, nw, phi !, line
+    integer :: i, ne, nc, ntot
+    integer :: incl, well, other, M, ni, nw, phi 
 
-    M = CIm; ni = CInum; nw = WLnum;
+    nc = dom%num(1)
+    ne = dom%num(2)
+    ntot = sum(dom%num)
 
-    ! variables shared through ELEMENT_SPECS module -- initialized and filled here
-    allocate(CIInclIn(0:ni,ni), CIInclUp(ni), CIInclBg(ni,ni), &
-         & CIWellIn(0:ni,nw), CIWellBg(ni,nw), CIWellUp(nw), CIPcm(1:M))  !! CICalcIn(0:ni), 
+    allocate(dom%InclIn(0:ntot,ntot), dom%InclUp(ntot), dom%InclBg(ntot,ntot))
 
-    ! vector of eqi-spaced locations on perimeter of circle
-    forall ()
-       forall (phi = 1:M)
-          CIPcm(phi) = -PI + 2.0*PI/M * real(phi-1,DP)
+    ! vector of eqi-spaced locations on perimeter of circle and ellipse
+    do i=1,nc
+       allocate(c(i)%Pcm(c(i)%M))
+       forall (phi = 1:c(i)%M)
+          c(i)%Pcm(phi) = -PI + 2.0*PI/c(i)%M*real(phi-1,DP)
        end forall
-    end forall
-    
-    call CircularElementHierarchy()
+    end do
+    do i=1,ne
+       allocate(e(i)%Pcm(e(i)%M))
+       forall (phi = 1:e(i)%M)
+          e(i)%Pcm(phi) = -PI + 2.0*PI/e(i)%M*real(phi-1,DP)
+       end forall
+    end do
+
+    call ElementHierarchy(dom)
 
     ! circular inclusion related geometry
     allocate(CIXcm(M,ni), CIYcm(M,ni), CIXom(M,ni), &
@@ -76,15 +85,14 @@ contains
     call writeGeometry(CIXom,CIYom,WLx,WLy,Wlr,WLq)    
   end subroutine DistanceAngleCalcs
 
-
   !##################################################
   !##################################################
-  subroutine CircularElementHierarchy()
-    use constants, only : DP, SMALL, RZERO
-    use element_specs, only : CInum, WLnum, CIWellIn,  CIWellBg, CIInclIn, &
-         & WLx,WLy,CIx,CIy,CIr,CIInclIn,CIInclUp,CIInclBg,CIWellUp
+  subroutine ElementHierarchy(dom)
+    use constants, only : DP
+    use element_specs, only : domain
 
-!!$    character(40) :: fmt
+    type(domain), intent(in) :: dom
+
     integer, dimension(CInum) :: CIlevel
     real(DP), dimension(CInum,WLnum) :: Rwg
     real(DP), dimension(CInum,CInum) :: Rgg
@@ -372,6 +380,6 @@ contains
       where (IN(par,:) .and. union)  IN(par,:) = .false.
 
     end subroutine clear_grandkids
-  end subroutine CircularElementHierarchy
+  end subroutine ElementHierarchy
 end module  circular_geometry
 
