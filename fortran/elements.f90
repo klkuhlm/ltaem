@@ -38,37 +38,41 @@ contains
 
     type(circle), intent(in) :: c
     type(domain), intent(in) :: dom
-    complex(DP), dimension(:), intent(in) :: p
-    complex(DP), dimension(c%M*(2-abs(c%ibnd)),4*c%n+2,size(p,1)) :: res    
+    complex(DP), intent(in) :: p
+    complex(DP), dimension(c%M*(2-abs(c%ibnd)), &
+         & (4*c%n+2) +1) :: res ! LHS+RHS    
 
     integer :: nP, j, N, M, lo, hi
     real(DP), dimension(0:c%N) :: vi, k(0:1)
+    complex(DP), allocatable :: Kn(:), dKn(:)
+    complex(DP) :: kap
+
+    real(DP) :: cmat(1:M,0:N-1), smat(1:M,1:N-1)
 
     N = c%N; M = c%M
     forall(j=0,N) vi(j)=real(j,DP)
 
-    k(0) = dom%kv(c%id)  ! K inside
+    k(0) = dom%kv(c%id)  ! K (hyd. cond.) inside
     k(1) = dom%kv(dom%InclUp(c%id)) ! K of parent
+
+    cmat = cos(outer_prod(c%Pcm(1:M),vi(0:N-1)))
+    smat = sin(outer_prod(c%Pcm(1:M),vi(1:N-1)))
 
     ! matching or specified head (always first M rows); no dependence on p
     if (c%ibnd==0 .or. c%ibnd==-1) then
 
        ! outside cosine (a_n)
-       res(1:M,1:N,1:nP) = spread(&
-            & cos(outer_prod(c%Pcm(1:M),vi(0:N-1)))/k(1), dim=3,ncopies=nP)
+       res(1:M,1:N) = cmat/k(1)
 
        ! outside sine (c_n)
-       res(1:M,N+1:2*N,1:nP) = spread(&
-            & sin(outer_prod(c%Pcm(1:M),vi(1:N-1)))/k(1), dim=3,ncopies=nP)
+       res(1:M,N+1:2*N) = smat/k(1)
 
        if (c%calcin) then
           ! inside cosine (b_n)
-          res(1:M,2*N+2:3*N+2,1:nP) = -spread(&
-               & cos(outer_prod(c%Pcm(1:M),vi(0:N-1)))/k(0), dim=3,ncopies=nP)
+          res(1:M,2*N+2:3*N+2) = -cmat/k(0)
 
           ! inside sine (d_n)
-          res(1:M,3*N+3:4*N+2,1:nP) = -spread(&
-               & sin(outer_prod(c%Pcm(1:M),vi(1:N-1)))/k(0), dim=3,ncopies=nP)
+          res(1:M,3*N+3:4*N+2) = -smat/k(0)
        end if
     end if
 
@@ -77,10 +81,21 @@ contains
        lo = M+1 - c%ibnd*M  
        hi = 2*M - c%ibnd*M
        
-       allocate(besk(M,nP,0:1),kap(nP))
-       kap(1:nP) = kappa(p,c%matching)
-       besk = bK(outerprod(kap(1:nP)*r(1:nR)),2)
+       allocate(Kn(0:N),dKn(0:N))
+       kap = kappa(p,c%matching)
+       call bKD(kap*c%r,N+1,Kn,dKn)
+       dKn = kap*dKn 
 
+       ! outside cosine
+       res(lo:hi,1:N) = spread(dKn(0:N-1)/Kn(0:N-1), 1,M) * cmat/k(1)
+
+       ! outside sine
+       res(lo:hi,N+1:2*N) = spread(dKn(1:N-1)/Kn(1:N-1), 1,M) * smat/k(1)
+
+       if (c%calcin) then
+          
+          
+       end if
        
        
     end if
