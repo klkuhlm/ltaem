@@ -42,7 +42,7 @@ module element_specs
      real(DP), allocatable :: AtPar(:), BtPar(:)
   end type time
  
-  type, public, extends(time) :: element
+  type, extends(time) :: element
 
      ! global id for the current element
      integer :: id
@@ -69,7 +69,7 @@ module element_specs
 
   end type element
     
-  type, public, extends(element) :: matching
+  type, extends(element) :: matching
      ! number of FS terms, number of matching points on circles/ellipses
      ! for lines/wells can be one (e.g., borehole storage) or zero (known Q)
      integer :: n, m
@@ -104,12 +104,12 @@ module element_specs
 
   end type circle
 
-  type, public, extends(matching) :: ellipse
+  type, extends(matching) :: ellipse
      ! Elliptical Inclusion related parameters
      ! line is special case of ellipse
 
      ! size of MF infinite matrix
-     integer, save :: ms
+     integer :: ms
 
      ! inclusion elliptical 'radius', semi-focal dist, 
      ! angle major axis makes with Cartesian x axis
@@ -120,7 +120,7 @@ module element_specs
 
   end type ellipse
 
-  type, public :: INVLT
+  type :: INVLT
      ! INVerse Laplace Transform parameters
 
      ! abcissa of convergence, LT tolerance
@@ -129,7 +129,7 @@ module element_specs
   end type INVLT
 
   ! things relating to the numerical solution, independent from flow elements
-  type, public, extends(laplace) :: solution
+  type, extends(INVLT) :: solution
 
      ! integrate particle lines vs. calculate at set locations/times
      logical :: particle
@@ -148,7 +148,7 @@ module element_specs
      
      ! x-spacing vector, y-spacing vector, time vector
      integer :: nx, ny, nt
-     real(DP) allocatable :: x(:), y(:), t(:)
+     real(DP), allocatable :: x(:), y(:), t(:)
 
      ! containers for time-domain final results
      real(DP),    allocatable :: h(:,:,:), vx(:,:,:), vy(:,:,:)
@@ -161,7 +161,7 @@ module element_specs
 
   ! PARticle related parameters (one for each particle)
   !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-  type, public :: particle
+  type :: particle
   
      ! number of particles
      integer :: streakSkip
