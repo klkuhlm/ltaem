@@ -10,7 +10,7 @@ contains
 
   ! ##################################################
   ! initializes / calculates geometry - all global variables
-  subroutine DistanceAngleCalcs(c,e,dom,sol)
+  subroutine DistanceAngleCalcs(c,e,bg,dom,sol)
     use constants, only: DP, PI
     use element_specs
     use file_ops, only : writeGeometry
@@ -18,6 +18,7 @@ contains
     type(domain), intent(inout) :: dom
     type(circle), intent(in), dimension(:) :: c
     type(ellipse), intent(in), dimension(:) :: e
+    type(element), intent(in) :: bg
     type(solution), intent(in) :: sol
 
     ! INTERNAL VARIABLES
@@ -26,7 +27,7 @@ contains
     ! x/y distances from center of other circles to circumference of elements
     real(DP), dimension(CIm,CInum,CInum) :: CIXgm, CIYgm
     real(DP) :: rm 
-    integer :: i, ne, nc, ntot
+    integer :: i, ne, nc, ntot, par
     integer :: incl, well, other, M, ni, nw, phi 
 
     nc = dom%num(1)
@@ -50,6 +51,43 @@ contains
     end do
 
     call ElementHierarchy(dom,sol)
+
+    ! setup pointers to parent elements
+    bg%parent => null()  ! background has no parent
+    do i=1,nc
+       par = dom%InclUp(i) 
+       select case(par)
+       case(0)
+          ! circle has background as parent
+          c(i)%parent => bg
+       case(1:nc)
+          ! circle has another circle as parent
+          c(i)%parent => c(par)%element
+       case(nc+1:ntot)   
+          ! circle has ellipse as parent
+          c(i)%parent => e(par)%element
+       case default
+          write(*,'(A,(1X,I0))') 'error in parent element index',par,i
+          stop 200
+       end select
+    end do
+    do i=1,ne
+       par = dom%InclUp(nc+i) 
+       select case(par)
+       case(0)
+          ! ellipse has background as parent
+          e(i)%parent => bg
+       case(1:nc)
+          ! ellipse has circle as parent
+          e(i)%parent => c(par)%element
+       case(nc+1:ntot) 
+          ! ellipse has another ellipse as parent
+          e(i)%parent => e(par)%element
+       case default
+          write(*,'(A,(1X,I0))') 'error in parent element index',par,i
+          stop 201
+       end select
+    end do
 
     ! circular inclusion related geometry
     allocate(CIXcm(M,ni), CIYcm(M,ni), CIXom(M,ni), &

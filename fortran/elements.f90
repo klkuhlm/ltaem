@@ -29,22 +29,26 @@ module elements
 
 contains
 
-  function circle_match_self(c,p,dom) result(res)
+  subroutine circle_match_self(c,p,dom,LHS,RHS)
     use constants, only : DP, PI
     use utilities, only : outer_prod
     use element_specs, only : circle, domain
     use bessel_functions, only : bK, bI
     implicit none
 
+    ! ibnd = {-2,-1,0,1,2} spec {el,tot} flux, match, spec {tot,el} head
+
     type(circle), intent(in) :: c
     type(domain), intent(in) :: dom
     complex(DP), intent(in) :: p
-    complex(DP), dimension(c%M*(2-abs(c%ibnd)), &
-         & (4*c%n+2) +1) :: res ! LHS+RHS    
+    complex(DP), intent(out), &
+         & dimension(c%M*(2-abs(c%ibnd)), &
+         &       (2*N-1)*(2-abs(c%ibnd))) :: LHS
+    complex(DP), intent(out), dimension(c%M*(2-abs(c%ibnd))) :: RHS
 
     integer :: nP, j, N, M, lo, hi
     real(DP), dimension(0:c%N) :: vi, k(0:1)
-    complex(DP), allocatable :: Kn(:), dKn(:)
+    complex(DP), allocatable :: Kn(:), dKn(:), In(:), dIn(:)
     complex(DP) :: kap
 
     real(DP) :: cmat(1:M,0:N-1), smat(1:M,1:N-1)
@@ -52,8 +56,8 @@ contains
     N = c%N; M = c%M
     forall(j=0,N) vi(j)=real(j,DP)
 
-    k(0) = dom%kv(c%id)  ! K (hyd. cond.) inside
-    k(1) = dom%kv(dom%InclUp(c%id)) ! K of parent
+    k(0) = c%K   ! K (hyd. cond.) inside
+    k(1) = c%parent%K ! K of parent
 
     cmat = cos(outer_prod(c%Pcm(1:M),vi(0:N-1)))
     smat = sin(outer_prod(c%Pcm(1:M),vi(1:N-1)))
@@ -61,18 +65,19 @@ contains
     ! matching or specified head (always first M rows); no dependence on p
     if (c%ibnd==0 .or. c%ibnd==-1) then
 
-       ! outside cosine (a_n)
-       res(1:M,1:N) = cmat/k(1)
+       ! outside cosine
+       res(1:M,1:N) = cmat/c%parent%K
 
-       ! outside sine (c_n)
-       res(1:M,N+1:2*N) = smat/k(1)
+       ! outside sine
+       res(1:M,N+1:2*N-1) = smat/c%parent%K
 
+       ! assume always calculate outside an element.  
        if (c%calcin) then
-          ! inside cosine (b_n)
-          res(1:M,2*N+2:3*N+2) = -cmat/k(0)
+          ! inside cosine
+          res(1:M,2*N:3*N-1) = -cmat/c%K
 
-          ! inside sine (d_n)
-          res(1:M,3*N+3:4*N+2) = -smat/k(0)
+          ! inside sine
+          res(1:M,3*N:4*N-2) = -smat/c%K
        end if
     end if
 
@@ -82,60 +87,33 @@ contains
        hi = 2*M - c%ibnd*M
        
        allocate(Kn(0:N),dKn(0:N))
-       kap = kappa(p,c%matching)
+       kap = kappa(p,par) 
        call bKD(kap*c%r,N+1,Kn,dKn)
        dKn = kap*dKn 
 
-       ! outside cosine
-       res(lo:hi,1:N) = spread(dKn(0:N-1)/Kn(0:N-1), 1,M) * cmat/k(1)
+       ! Kn cosine
+       res(lo:hi,1:N) = spread(dKn(0:N-1)/Kn(0:N-1), 1,M) * cmat/c%parent%K
 
-       ! outside sine
-       res(lo:hi,N+1:2*N) = spread(dKn(1:N-1)/Kn(1:N-1), 1,M) * smat/k(1)
+       ! Kn sine
+       res(lo:hi,N+1:2*N-1) = spread(dKn(1:N-1)/Kn(1:N-1), 1,M) * smat/c%parent%K
+       deallocate(Kn,dKn)
 
        if (c%calcin) then
-          
-          
+          allocate(In(0:N),dIn(0:N))
+          kap = kappa(p,c%element)
+          call bID(kap*c%r,N+1,In,dIn)
+          dIn = kap*dIn 
+
+          ! In cosine
+          res(lo:hi,2*N:3*N-1) = spread(dIn(0:N-1)/In(0:N-1), 1,M) * cmat/c%K
+
+          ! In sine
+          res(lo:hi,3*N:4*N-2) = spread(dIn(1:N-1)/In(1:N-1), 1,M) * smat/c%K
+          deallocate(dIn,In)
        end if
-       
-       
     end if
-    
-  end function circle_head_match_self
-
-  function circle_flux_match_self(c,p,dom) result(res)
-    use constants, only : DP, PI
-    use utilities, only : outer_prod
-    use element_specs, only : circle, domain
-    use bessel_functions, only : bK, bI
-    implicit none
-
-    type(circle), intent(in) :: c
-    type(domain), intent(in) :: dom
-    complex(DP), dimension(:), intent(in) :: p
-    complex(DP), dimension(c%M*(2-abs(c%ibnd)),4*c%n+2,size(p,1)) :: res    
-
-    integer :: nP, j, N, M
-    real(DP), dimension(0:c%N) :: vi, k(0:1)
-    real(DP), dimension(c%M,0:c%N) :: top ! trig outer prod
-
-    N = c%N; M = c%M
-    forall(j=0,N) vi(j)=real(j,DP)
-
-    k(0) = dom%kv(c%id)  ! K inside
-    k(1) = dom%kv(dom%InclUp(c%id)) ! K of parent
-
-    top(1:M,0:N) = cos(outer_prod(c%Pcm(1:M),vi(0:N)))
-    res(1:M,1:N+1)       =  top/k(1)
-    res(1:M,2*N+2:3*N+2) = -top/k(0)
-
-    top(1:M,1:N) = sin(outer_prod(c%Pcm(1:M),vi(1:N)))
-    res(1:M,N+2:2*N+1)   =  top/k(1)
-    res(1:M,3*N+3:4*N+2) = -top/k(0)
-
-  end function circle_head_match_self
-
-
   
+  end subroutine circle_match_self
 
   function circle_head_match_other(c,r,p,dom,in) result(res)
     use constants, only : DP, PI
@@ -455,7 +433,7 @@ contains
   end function Time_pvect
 
   ! wrapper to allow calling time routine with scalar p
-  function Time_pscal(p,t,area) result(mult)
+  function Time_pscal(p,t) result(mult)
     type(time), intent(in) :: t
     complex(DP), intent(in) :: p
     complex(DP) :: mult
@@ -464,140 +442,80 @@ contains
 
   end function Time_pscal
 
-  function kappa_pVect(p,m) result(q)
+  function kappa_pVect(p,el) result(q)
     use constants, only : DP, PI
-    use element_specs, only : matching
+    use element_specs, only : element
 
     integer, parameter :: NTERMS = 200, MAXITER = 200
     
     complex(DP), intent(in), dimension(:) :: p
-    complex(DP), dimension(size(p),0:CInum) :: q
+    type(element), intent(in) :: el
+    complex(DP), dimension(size(p)) :: q
 
     integer :: i, ni, np
     complex(DP), dimension(size(p),0:CInum) :: kap2
     complex(DP), dimension(size(p)) :: exp2z
-
-    !! boulton stuff
-!!$    real(DP), dimension(NTERMS) :: guess, gamma
-!!$    real(DP), dimension(0:CInum) :: sigma
-!!$    complex(DP), dimension(size(p)) :: kernel
-!!$    real(DP) :: x, delta
-!!$    integer :: k, kk
-!!$    logical, save :: first = .true.
-    real(DP) :: boulton
+    complex(DP) :: boulton
 
     np = size(p)
     ni = CInum
-!!$    sigma(0:ni) = sqrt(sv/Syv)
 
-    do i=0,ni
-       !! leaky-ness
-       !! ##############################
-       if(leakv(i) == 0) then
-          !! no leaky layer, standard definition
-          q(1:np,i) = p(1:np)/av(i)
-       else
-          kap2(1:np,i) = sqrt(p(:)/a2v(i))
-          exp2z(1:np) = exp(-2.0_DP*kap2(:,i)*b2v(i))
-
-          if(leakv(i) == 1) then
-             !! case I, no-drawdown condition at top of aquitard
-             q(:,i) = p(:)/av(i) + kap2(:,i)*k2v(i)/(bgb*kv(i))*&
-                  & (1.0_DP + exp2z(:))/(1.0_DP - exp2z(:))
-          elseif(leakv(i) == 2) then
-             !! case II, no-flow condition at top of aquitard
-             q(:,i) = p(:)/av(i) + kap2(:,i)*k2v(i)/(bgb*kv(i))*&
-                  & (1.0_DP - exp2z(:))/(1.0_DP + exp2z(:))
-          elseif(leakv(i) == 3) then
-             !! aquitard thickness -> infinity
-             q(:,i) = p(:)/av(i) + kap2(:,i)*k2v(i)/(bgb*kv(i))
-          else
-             stop 'ERROR: incorrect value for CIAquitardLeak parameter -> (1,2,3)'
-          end if
-       end if
+    !! leaky-ness
+    !! ##############################
+    if(el%leakFlag == 0) then
+       !! no leaky layer, standard definition
+       q(:) = p(1:np)/el%alpha
+    else
+       kap2(1:np) = sqrt(p(:)*el%aquitardSs/el%aquitardK)
+       exp2z(1:np) = exp(-2.0*kap2(:)*el%aquitardb)
        
-       !! unconfined-ness 
-       !! ##############################
-       if(unconfv(i) == 0) then
-          !! do nothing, q already computed above
+       if(el%leakFlag == 1) then
+          !! case I, no-drawdown condition at top of aquitard
+          q(:) = p(:)/el%alpha + kap2(:)*el%aquitardK/(el%b*el%K)*&
+               & (1.0 + exp2z(:))/(1.0 - exp2z(:))
+       elseif(el%leakFlag == 2) then
+          !! case II, no-flow condition at top of aquitard
+          q(:) = p(:)/el%alpha + kap2(:)*el%aquitardK/(el%b*el%K)*&
+               & (1.0 - exp2z(:))/(1.0 + exp2z(:))
+       elseif(el%leakFlag == 3) then
+          !! aquitard thickness -> infinity
+          q(:) = p(:)/el%alpha + kap2(:)*el%aquitardK/(el%b*el%K)
        else
-          !! Boulton unconfined source (Herrera infinite sum Kernel)
-          !! guess is halfway between asymptotes of cot()
-!!$
-!!$          if (first) then
-!!$             if(.not. allocated(root)) then
-!!$                allocate(root(NTERMS,0:CInum))
-!!$             end if
-!!$             
-!!$             !! roots are not a function of p (just sigma)- only compute once
-!!$             guess(2:NTERMS) = PI*(real((/(k, k=1,NTERMS-1)/)) + 0.5_DP)/sigma(i)
-!!$             guess(1) = 1.7D0
-!!$
-!!$             !! first root is hard to find with NR, 
-!!$             !! use TS approximation for tangent and re-arrange
-!!$             x = guess(1)
-!!$             NR1: do kk = 1,MAXITER
-!!$                delta = (x + (sigma(i) - 1.0_DP/sigma(i))*(x*sigma(i) + (x*sigma(i))**3/3.0_DP + &
-!!$                     & 2.0_DP*(sigma(i)*x)**5/15.0_DP) + 17.0_DP*(x*sigma(i))**7/315.0_DP)/ &
-!!$                     & (1.0_DP - (1.0_DP/sigma(i) - sigma(i))*(sigma(i) + x**2*sigma(i)**3 + &
-!!$                     & 2.0_DP*x**4*sigma(i)**5/3.0_DP + 17.0_DP*x**6*sigma(i)**7/45.0_DP))
-!!$                x = x - delta
-!!$                if (abs(delta) <= 1.0D-10) then
-!!$                   root(1,i) = x
-!!$                   exit NR1
-!!$                end if
-!!$                if(kk == MAXITER) print *, '1 failed to converge'
-!!$             end do NR1
-!!$
-!!$             do k = 2, NTERMS
-!!$                x = guess(k)
-!!$                NR: do kk = 1,MAXITER
-!!$                   delta = (1.0_DP/tan(x*sigma(i)) + (sigma(i) - 1.0_DP/sigma(i))/x)/&
-!!$                        & (sigma(i)/(sin(sigma(i)*x)**2) + (sigma(i) + 1.0_DP/sigma(i))/x**2)
-!!$                   x = x + delta
-!!$                   if (abs(delta) <= spacing(x)*10.0) then
-!!$                      root(k,i) = x
-!!$                      exit NR
-!!$                   end if
-!!$                   if(kk == MAXITER) print *, k,'failed to converge'
-!!$                end do NR
-!!$             end do
-!!!!!$             if (i == ni) first = .false.
-!!!!!$          end if
-!!$
-!!$          gamma(1:NTERMS) = Kzv(i)*root(1:NTERMS,i)**2/(bgb*Syv(i))
-!!$
-!!$          kernel(1:np) = 2.0_DP*sum(spread(gamma(1:NTERMS),2,np)/&
-!!$               & ((spread(root(1:NTERMS,i)**2,2,np) - 1.0_DP + sigma(i)**2)* &
-!!$               & (spread(p(1:np),1,NTERMS) + spread(gamma(1:NTERMS),2,np))),dim=1)
-!!$          
-!!$
-!!$          q(1:np,i) = q(1:np,i) + p(1:np)*Syv(i)/Kv(i)*kernel
-
-          ! scrap Herrera's infinite sum for Boulton's original
-          ! rough-n-ready alpha, with a semi-physical expression for it
-          boulton = 3.0_DP*Kzv(i)/(bgb*Syv(i))
-          q(1:np,i) = q(:,i) + Syv(i)*p(1:np)*boulton/(Kv(i)*(boulton + p(1:np)))
+          stop 'ERROR: incorrect value for leakFlag parameter -> (1,2,3)'
        end if
-    end do
+    end if
+    
+    !! unconfined-ness 
+    !! ##############################
+    if(el%unconfinedFlag) then
+       !! do nothing, q already computed above
+    else
+       !! Boulton unconfined source (Herrera infinite sum Kernel)
+       !! guess is halfway between asymptotes of cot()
+       
+       ! scrap Herrera's infinite sum for Boulton's original
+       ! rough-n-ready alpha, with a semi-physical expression for it
+       boulton = 3.0*el%Kz/(el%b*el%Sy)
+       q(1:np) = q(:) + el%Sy*p(:)*boulton/(el%K*(boulton + p(:)))
+    end if
     
     !! sources are only additive under the square root
-    q = sqrt(q);
+    q = sqrt(q)
 
-  end function compute_CIleaky_qv
+  end function kappa_pVect
   
   !! scalar version useful in matching
-  function compute_CIleaky_qs(p) result(q)
+  function kappa_pscal(p,el) result(q)
     use constants, only : DP
-    use element_specs, only : CInum
+    use element_specs, only : element
 
     complex(DP), intent(in) :: p
-    complex(DP), dimension(0:CInum) :: q
+    type(element), intent(in) :: el
+    complex(DP) :: q
 
     !! sum away singleton first dimension
-    kappa = sum(compute_CIleaky_qv( [p],m))
+    q = sum(kappa_pVect([p],el))
 
-  end function compute_CIleaky_qs
-  
+  end function kappa_pscal
 
 end module elements

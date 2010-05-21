@@ -14,10 +14,6 @@ module element_specs
      ! a current element
      logical, allocatable :: InclIn(:,:), InclBg(:,:)
 
-     ! vectors of parameters for simpler indexing of parameters.
-     ! This seems to be sort of a hack and maybe this can be removed or improved later.
-     real(DP), allocatable :: Kv,Ssv,bv,porv,areav,Syv,Kzv,K2v,Ss2v,b2v,skinv 
-
   end type domain
   
   type, public :: time
@@ -53,7 +49,7 @@ module element_specs
 
      ! porosity, constant area source term
      ! main aquifer hydraulic conductivity and Ss for element
-     real(DP) :: por, area, k, Ss, b
+     real(DP) :: por, area, k, Ss, b, alpha
 
      ! leaky-related (adjoining aquitard/aquifer parameters)
      integer :: leakFlag
@@ -68,6 +64,9 @@ module element_specs
      ! StorIn is only checked if CalcIn is false for an element.
      logical :: CalcIn, StorIn
 
+     ! the parent element
+     type(element), pointer :: parent => null()
+
   end type element
     
   type, public, extends(element) :: matching
@@ -76,7 +75,7 @@ module element_specs
      integer :: n, m
   
      ! type of element: -1=specified head TOTAL, 0=match, +1=specified flux TOTAL
-     !                    -2=specified head ELEMENT, +2=specified flux ELEMENT
+     !                  -2=specified head ELEMENT, +2=specified flux ELEMENT
      integer :: ibnd
      
      ! whether inclusion is a matching(T) or specified(F) inclusion

@@ -267,73 +267,12 @@ contains
        stop 102
     end if
 
-    ! allocate and populate global vectors of parameters
-    allocate(dom%Kv(0:nEl),dom%Ssv(0:nEl),dom%bv(0:nEl),dom%porv(0:nEl),&
-         & dom%Syv(0:nEl),dom%Kzv(0:nEl),dom%area(0:nEl),dom%skin(0:nEl),&
-         & dom%K2v(0:nEl),dom%Ss2v(0:nEl),dom%b2v(0:nEl))
-    
-    ! background is "element zero"
-    dom%Kv(0) = bg%K
-    dom%Ssv(0) = bg%Ss
-    dom%bv(0) = bg%b
-    dom%porv(0) = bg%por
-    dom%Syv(0) = bg%Sy
-    dom%Kzv(0) = bg%Kz
-    dom%K2v(0) = bg%K2
-    dom%Ss2v(0) = bg%Ss2
-    dom%b2v(0) = bg%b2
-    dom%areav(0) = bg%area
-    dom%skinv(0) = bg%skin
+    ! compute secondary parameters
+    c(:)%alpha = c(:)%K/c(:)%Ss
+    e(:)%alpha = e(:)%K/e(:)%Ss
 
-    ! circles are first
-    dom%Kv(1:nc) = c(:)%K
-    dom%Ssv(1:nc) = c(:)%Ss
-    dom%bv(1:nc) = c(:)%b
-    dom%porv(1:nc) = c(:)%por
-    dom%areav(1:nc) = c(:)%area
-    dom%skinv(1:nc) = c(:)%skin
-
-    where(c(:)%unconfinedFlag)
-       dom%Syv(1:nc) = c(:)%Sy
-       dom%Kzv(1:nc) = c(:)%Kz
-    elsewhere
-       dom%Syv(1:nc) = -huge(1.0)
-       dom%Kzv(1:nc) = -huge(1.0)     
-    end where
-    where(c(:)%leakFlag)
-       dom%K2v(1:nc) = c(:)%K2
-       dom%Ss2v(1:nc) = c(:)%Ss2
-       dom%b2v(1:nc) = c(:)%b2
-    elsewhere
-       dom%K2v(1:nc) = -huge(1.0)
-       dom%Ss2v(1:nc) = -huge(1.0)
-       dom%b2v(1:nc) = -huge(1.0)
-    end where
-
-    ! ellipses are second
-    dom%Kv(nc+1:nEl) = e(:)%K
-    dom%Ssv(nc+1:nEl) = e(:)%Ss
-    dom%bv(nc+1:nEl) = e(:)%b
-    dom%porv(nc+1:nEl) = e(:)%por
-    dom%areav(nc+1:nEl) = e(:)%area
-    dom%skinv(nc+1:nEl) = e(:)%skin
-
-    where(e(:)%unconfinedFlag)
-       dom%Syv(nc+1:nEl) = e(:)%Sy
-       dom%Kzv(nc+1:nEl) = e(:)%Kz
-    elsewhere
-       dom%Syv(nc+1:nEl) = -huge(1.0)
-       dom%Kzv(nc+1:nEl) = -huge(1.0)
-    end where
-    where(e(:)%LeakFlag)
-       dom%K2v(nc+1:nEl) = e(:)%K2
-       dom%Ss2v(nc+1:nEl) = e(:)%Ss2
-       dom%b2v(nc+1:nEl) = e(:)%b2
-    elsewhere
-       dom%K2v(nc+1:nEl) = -huge(1.0)
-       dom%Ss2v(nc+1:nEl) = -huge(1.0)
-       dom%b2v(nc+1:nEl) = -huge(1.0)
-    end where
+    write(16,*) c(:)%alpha,'  ||    circle hydraulic diffusivity'
+    write(16,*) e(:)%alpha,'  ||    ellipse hydraulic diffusivity'
 
     ! re-calculation parameter
     read(15,*) sol%calc
