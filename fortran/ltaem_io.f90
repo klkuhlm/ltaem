@@ -82,7 +82,6 @@ contains
        read(15,*) c(:)%n
        read(15,*) c(:)%m
        read(15,*) c(:)%ibnd
-       read(15,*) c(:)%spec
        read(15,*) c(:)%CalcIn
        read(15,*) c(:)%r
        read(15,*) c(:)%x
@@ -90,7 +89,8 @@ contains
        read(15,*) c(:)%k
        read(15,*) c(:)%Ss
        read(15,*) c(:)%por
-       read(15,*) c(:)%area
+       read(15,*) c(:)%areaQ ! area source strength (flux)
+       read(15,*) c(:)%bdryQ ! streng of specified value on bdry (head or flux) 
        do j=1,size(c,dim=1)
           read(15,'(I)', advance='no') c(j)%AreaTime 
           if (c(j)%AreaTime > -1) then
@@ -142,7 +142,6 @@ contains
        write(16,*) c(:)%m,'  ||   number of circular matching locations'
        write(16,*) c(:)%ibnd, '  ||    circle ibnd array'
        write(16,*) c(:)%match, '  ||    circle matching array'
-       write(16,*) c(:)%spec, '  ||    circle boundary specified head/flux strength'
        write(16,*) c(:)%calcin, '  ||    calculate inside this circle?'
        write(16,*) c(:)%r, '  ||    circle radius'
        write(16,*) c(:)%x, '  ||    circle center x'
@@ -150,7 +149,8 @@ contains
        write(16,*) c(:)%k, '  ||    circle aquifer k'
        write(16,*) c(:)%ss, '  ||    circle aquifer Ss'
        write(16,*) c(:)%por, '  ||    circle aquifer porosity'
-       write(16,*) c(:)%area, '  ||    circle area rch rate'
+       write(16,*) c(:)%areaQ, '  ||    circle area rch rate'
+       write(16,*) c(:)%bdryQ, '  ||    circle boundry rch rate or head'
        write(16,*) c(:)%leakFlag, '  ||     circle leaky type'
        write(16,*) c(:)%aquitardK, '  ||     circle leaky aquitard K'
        write(16,*) c(:)%aquitardSs, '  ||     circle leaky aquitard Ss'
@@ -183,7 +183,8 @@ contains
        read(15,*) e(:)%k
        read(15,*) e(:)%Ss
        read(15,*) e(:)%por
-       read(15,*) e(:)%area
+       read(15,*) e(:)%areaQ
+       read(15,*) e(:)%bdryQ
        do j=1,size(c,dim=1)
           read(15,'(I)', advance='no') e(j)%AreaTime 
           if (e(j)%AreaTime > -1) then
@@ -236,7 +237,6 @@ contains
        write(16,*) e(:)%ms,'  ||   size of "infinite" Mathieu matrices'
        write(16,*) e(:)%ibnd, '  ||    ellipse ibnd array'
        write(16,*) e(:)%match, '  ||    ellipse matching array'
-       write(16,*) e(:)%spec, '  ||    ellipse boundary specified head/flux strength'
        write(16,*) e(:)%calcin, '  ||    calculate inside this ellipse?'
        write(16,*) e(:)%r, '  ||    ellipse radius (eta)'
        write(16,*) e(:)%x, '  ||    ellipse center x'
@@ -246,7 +246,8 @@ contains
        write(16,*) e(:)%k, '  ||    ellipse aquifer k'
        write(16,*) e(:)%ss, '  ||    ellipse aquifer Ss'
        write(16,*) e(:)%por, '  ||    ellipse aquifer porosity'
-       write(16,*) e(:)%area, '  ||     ellipse area rch rate'
+       write(16,*) e(:)%areaQ, '  ||     ellipse area rch rate'
+       write(16,*) e(:)%bdryQ, '  ||     ellipse boundary rch rate or head'
        write(16,*) e(:)%leakFlag, '  ||     ellipse leaky type'
        write(16,*) e(:)%aquitardK, '  ||     ellipse leaky aquitard K'
        write(16,*) e(:)%aquitardSs, '  ||     ellipse leaky aquitard Ss'

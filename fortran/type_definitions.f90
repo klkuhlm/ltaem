@@ -20,7 +20,7 @@ module element_specs
   end type domain
   
   type, public :: time
-     ! all element inherit this time behavior
+     ! all elements inherit the time behavior from this type
 
      ! time behavior / parameters 
      ! 1 = step on,              tpar(1)  = on time
@@ -38,7 +38,7 @@ module element_specs
      !                tpar(n+2:2*n+1) = strength at each of n steps 
      ! (is multiplied by constant strength too -- you probably want to set that to unity)
 
-     ! type of time behavior for AREA/Boundary Head/Flux 1=step, 2=pulse, 3=stair, ...
+     ! type of time behavior for AREA/Boundary Head/Flux (see above)
      integer :: AreaTime, BdryTime
 
      ! parameters related to different time behaviors (on, off, etc)
@@ -52,7 +52,7 @@ module element_specs
 
      ! porosity, constant area source term
      ! main aquifer hydraulic conductivity and Ss for element
-     real(DP) :: por, area, k, Ss, b, alpha
+     real(DP) :: por, k, Ss, b, alpha
 
      ! leaky-related (adjoining aquitard/aquifer parameters)
      integer :: leakFlag
@@ -61,6 +61,9 @@ module element_specs
      ! unconfined-related (flag, specific yield, and vertical K)
      integer ::  unconfinedFlag
      real(DP) :: Sy, Kz
+
+     ! specified value across area of element (including background)
+     real(DP) :: areaQ    
 
      ! whether to calculate solution (Helmholtz eqn) inside element
      ! and whether to compute storage (using mass conservation ODE) inside element
@@ -84,8 +87,8 @@ module element_specs
      ! whether inclusion is a matching(T) or specified(F) inclusion
      logical :: match
 
-     ! specified value on bdry of inclusion
-     real(DP) :: spec    
+     ! specified value along boundary area of element
+     real(DP) :: bdryQ
 
      ! dimensionless skin at boundary of element 
      real(DP) :: dskin
@@ -124,7 +127,7 @@ module element_specs
   end type ellipse
 
   type :: INVLT
-     ! INVerse Laplace Transform parameters
+     ! Inverse Laplace Transform parameters
 
      ! abcissa of convergence, LT tolerance
      real(DP) :: alpha, tol
@@ -162,7 +165,7 @@ module element_specs
      complex(DP), allocatable :: Gm(:,:,:)
   end type solution
 
-  ! PARticle related parameters (one for each particle)
+  ! particle related parameters (one for each particle)
   !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   type :: particle
   
