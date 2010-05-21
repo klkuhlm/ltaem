@@ -5,19 +5,24 @@ module bessel_functions
 
   use Complex_Bessel, only : cbesk, cbesi
   use constants, only : DP
-
   implicit none
 
   private
   public :: bK, bI, bId, bIk
 
   interface bK
-     module procedure besk_zsingle, besk_zvect, besk_zvect_nsingle, besk_zscal
+     module procedure besk_zscal, besk_zvect, besk_zmat
   end interface bK
-
   interface bI
-     module procedure besi_zsingle, besi_zvect, besi_zscal
+     module procedure besi_zscal, besi_zvect, besi_zmat
   end interface bI
+
+  interface bKD
+     module procedure beskd_zscal, beskd_zvect, beskd_zmat
+  end interface bkd
+  interface bID
+     module procedure besid_zscal, besid_zvect, besid_zmat
+  end interface bid
 
 contains
 
@@ -93,33 +98,69 @@ contains
 
   ! use recurrance relationships for derivatives
   !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-  ! this does not include the derivative of the argument
+  ! these routines do not include the derivative of the argument
   !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-  subroutine bId(z,n,I,ID)
-    complex(DP), intent(in) :: z
+  subroutine besId_zmat(z,n,I,ID)
+    complex(DP), dimension(:,:), intent(in) :: z
+    integer, intent(in) :: n
+    complex(DP), intent(out), dimension(size(z,1),size(z,2),0:n-1) :: I, ID
+
+    I(:,:,0:n-1) = bI(z,n)
+    ID(:,:,1:n-2) = 0.5_DP*(I(:,:,0:n-3) + I(:,:,2:n-1))      ! middle
+    ID(:,:,0) = I(:,:,1)                                      ! low end
+    ID(:,:,n-1) = I(:,:,n-2) - real(n-1,DP)/z(:,:)*I(:,:,n-1) ! high end
+  end subroutine besId_zmat
+
+  subroutine besId_zvect(z,n,I,ID)
+    complex(DP), dimension(:), intent(in) :: z
+    integer, intent(in) :: n
+    complex(DP), intent(out), dimension(size(z,1),0:n-1) :: I, ID
+    complex(DP), dimension(size(z,1),1,0:n-1) :: tI, tId
+    call besId_zmat(spread(z,2,1),n,tI,tId)
+    I = tI(:,1,:)
+    ID = tId(:,1,:)
+  end subroutine besId_zvect
+
+  subroutine besId_zscal(z,n,I,ID)
+    complex(DP) intent(in) :: z
     integer, intent(in) :: n
     complex(DP), intent(out), dimension(0:n-1) :: I, ID
+    complex(DP), dimension(1,1,0:n-1) :: tI, tId
+    call besId_zmat(spread([z],2,1),n,tI,tId)
+    I = tI(1,1,:)
+    ID = tId(1,1,:)
+  end subroutine besId_zscal
 
-    I(0:n-1) = bI(z,n)
-    ID(1:n-2) = 0.5_DP*(I(0:n-3) + I(2:n-1))   ! middle
-    ID(0) = I(1)                               ! low end
-    ID(n-1) = I(n-2) - real(n-1,DP)/z*I(n-1)   ! high end
-  end subroutine bId
+  subroutine besKd_zmat(z,n,K,KD)
+    complex(DP), dimension(:,:), intent(in) :: z
+    integer, intent(in) :: n
+    complex(DP), intent(out), dimension(size(z,1),size(z,2),0:n-1) :: K, KD
 
-  ! use recurrance relationships for derivatives
-  !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-  ! this does not include the derivative of the argument
-  !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-  subroutine bKd(z,n,K,KD)
-    complex(DP), intent(in) :: z
+    K(:,:,0:n-1) = bK(z,n)
+    KD(:,:,1:n-2) = -0.5_DP*(K(:,:,0:n-3) + K(:,:,2:n-1))        ! middle
+    KD(:,:,0) = - K(:,:,1)                                       ! low end
+    KD(:,:,n-1) = -(K(:,:,n-2) + real(n-1,DP)/z(:,:)*K(:,:,n-1)) ! high end
+  end subroutine besKd_zmat
+
+  subroutine besKd_zvect(z,n,K,KD)
+    complex(DP), dimension(:), intent(in) :: z
+    integer, intent(in) :: n
+    complex(DP), intent(out), dimension(size(z,1),0:n-1) :: K, KD
+    complex(DP), dimension(size(z,1),1,0:n-1) :: tK, tKd
+    call besKd_zmat(spread(z,2,1),n,tK,tKd)
+    K = tK(:,1,:)
+    KD = tKd(:,1,:)
+  end subroutine besKd_zvect
+
+  subroutine besKd_zscal(z,n,K,KD)
+    complex(DP) intent(in) :: z
     integer, intent(in) :: n
     complex(DP), intent(out), dimension(0:n-1) :: K, KD
-
-    K(0:n-1) = bK(z,n)
-    KD(1:n-2) = -0.5_DP*(K(0:n-3) + K(2:n-1))    ! middle
-    KD(0) = - K(1)                               ! low end
-    KD(n-1) = -(K(n-2) + real(n-1,DP)/z*K(n-1))  ! high end
-  end subroutine bKd
+    complex(DP), dimension(1,1,0:n-1) :: tK, tKd
+    call besKd_zmat(spread([z],2,1),n,tK,tKd)
+    K = tK(1,1,:)
+    KD = tKd(1,1,:)
+  end subroutine besKd_zscal
 
 end module bessel_functions
 

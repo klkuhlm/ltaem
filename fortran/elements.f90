@@ -10,10 +10,7 @@ module elements
   ! p being a vector (during inversion) or a scalar (during matching)
 
   interface CircleHead
-     module procedure Circle_Head_match_self, Circle_Head_match_other, Circle_Head_calc
-  end interface
-  interface CircleFlux
-     module procedure CircleFlux_match, CircleFlux_calc
+     module procedure Circle_match_self, Circle_match_other, Circle_Head_calc
   end interface
 
   interface EllipseHead
@@ -32,7 +29,7 @@ module elements
 
 contains
 
-  function circle_head_match_self(c,p,dom) result(res)
+  function circle_match_self(c,p,dom) result(res)
     use constants, only : DP, PI
     use utilities, only : outer_prod
     use element_specs, only : circle, domain
@@ -42,11 +39,10 @@ contains
     type(circle), intent(in) :: c
     type(domain), intent(in) :: dom
     complex(DP), dimension(:), intent(in) :: p
-    complex(DP), dimension(c%M,4*c%n+2,size(p,1)) :: res    
+    complex(DP), dimension(c%M*(2-abs(c%ibnd)),4*c%n+2,size(p,1)) :: res    
 
-    integer :: nP, j, N, M
+    integer :: nP, j, N, M, lo, hi
     real(DP), dimension(0:c%N) :: vi, k(0:1)
-    real(DP), dimension(c%M,0:c%N) :: top ! trig outer prod
 
     N = c%N; M = c%M
     forall(j=0,N) vi(j)=real(j,DP)
@@ -54,14 +50,41 @@ contains
     k(0) = dom%kv(c%id)  ! K inside
     k(1) = dom%kv(dom%InclUp(c%id)) ! K of parent
 
-    top(1:M,0:N) = cos(outer_prod(c%Pcm(1:M),vi(0:N)))
-    res(1:M,1:N+1)       =  top/k(1)
-    res(1:M,2*N+2:3*N+2) = -top/k(0)
+    ! matching or specified head (always first M rows); no dependence on p
+    if (c%ibnd==0 .or. c%ibnd==-1) then
 
-    top(1:M,1:N) = sin(outer_prod(c%Pcm(1:M),vi(1:N)))
-    res(1:M,N+2:2*N+1)   =  top/k(1)
-    res(1:M,3*N+3:4*N+2) = -top/k(0)
+       ! outside cosine (a_n)
+       res(1:M,1:N,1:nP) = spread(&
+            & cos(outer_prod(c%Pcm(1:M),vi(0:N-1)))/k(1), dim=3,ncopies=nP)
 
+       ! outside sine (c_n)
+       res(1:M,N+1:2*N,1:nP) = spread(&
+            & sin(outer_prod(c%Pcm(1:M),vi(1:N-1)))/k(1), dim=3,ncopies=nP)
+
+       if (c%calcin) then
+          ! inside cosine (b_n)
+          res(1:M,2*N+2:3*N+2,1:nP) = -spread(&
+               & cos(outer_prod(c%Pcm(1:M),vi(0:N-1)))/k(0), dim=3,ncopies=nP)
+
+          ! inside sine (d_n)
+          res(1:M,3*N+3:4*N+2,1:nP) = -spread(&
+               & sin(outer_prod(c%Pcm(1:M),vi(1:N-1)))/k(0), dim=3,ncopies=nP)
+       end if
+    end if
+
+    ! matching (second M) or specified flux (first M); depends on p
+    if (c%ibnd==0 .or. c%ibnd==+1) then
+       lo = M+1 - c%ibnd*M  
+       hi = 2*M - c%ibnd*M
+       
+       allocate(besk(M,nP,0:1),kap(nP))
+       kap(1:nP) = kappa(p,c%matching)
+       besk = bK(outerprod(kap(1:nP)*r(1:nR)),2)
+
+       
+       
+    end if
+    
   end function circle_head_match_self
 
   function circle_flux_match_self(c,p,dom) result(res)
@@ -74,7 +97,7 @@ contains
     type(circle), intent(in) :: c
     type(domain), intent(in) :: dom
     complex(DP), dimension(:), intent(in) :: p
-    complex(DP), dimension(c%M,4*c%n+2,size(p,1)) :: res    
+    complex(DP), dimension(c%M*(2-abs(c%ibnd)),4*c%n+2,size(p,1)) :: res    
 
     integer :: nP, j, N, M
     real(DP), dimension(0:c%N) :: vi, k(0:1)
