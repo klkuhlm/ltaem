@@ -1,6 +1,9 @@
 module element_specs
   use constants, only : DP
   implicit none
+
+  public
+  private :: INVLT
   
   type, public :: domain
      ! number of each type of element
