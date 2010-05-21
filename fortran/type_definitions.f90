@@ -1,5 +1,5 @@
 module element_specs
-  use constants, only : DP
+  use constants, only : DP, lenFN
   implicit none
 
   public
@@ -147,7 +147,7 @@ module element_specs
      logical :: calc
      
      ! input/output filenames
-     character(128) :: outfname, infname, coefffname, elemHfName
+     character(lenFN) :: outfname, infname, coefffname, elemHfName
      
      ! output index (1= gnuplot; 2= matlab)
      integer :: output, aquitardLeak, unconfined
@@ -192,7 +192,12 @@ module element_specs
      logical :: InclIn
      
      ! results from particle tracking (for each particle)
+     ! first dimension is always 5 (t,x,y,velx,vely)
+     ! second dimension is long enough to hold all needed times
      real(DP), allocatable :: result(:,:)
+
+     ! number of time steps actuall used (some algorithms are adaptive)
+     integer :: numt
 
   end type particle
 

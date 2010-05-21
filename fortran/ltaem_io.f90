@@ -25,7 +25,6 @@ contains
     type(circle), intent(out), allocatable :: c(:)
     type(ellipse), intent(out), allocatable :: e(:)
 
-    character(128) :: subname = 'ReadInput', echofname
     integer :: ierr, j,nEl,nC,nE  ! #elements, #circles, #ellipses
 
     echofname = trim(sol%infname) + '.echo'
@@ -165,8 +164,7 @@ contains
     end if
 
     ! elliptical (includes line sources/sinks)
-    read(15,*) dom%num(2)
-    ne = dom%num(2)
+    read(15,*) dom%num(2)    ne = dom%num(2)
     if (ne > 0) then
        allocate(e(ne))
        read(15,*) e(:)%n
@@ -311,62 +309,52 @@ contains
   end subroutine readInput
 
   !******************************************************
-  subroutine writeResults(head,velx,vely,x,y,t,flag,filename,pout)
+  subroutine writeResults(flag,s,p)
     use constants, only : DP
-    use element_specs, only : parstreakskip
-    use error_handler, only : fileerror
+    use element_specs, only : solution,particle
     implicit none
-    
-    character(2) :: cht
-    character(4) :: chx
-    character(25) :: fmtstr
-    character(128) :: subname = 'WriteResults'
-    real(DP), intent(in), dimension(:,:,:) :: head,velx,vely, pout
-    real(DP), intent(in), dimension(:) :: x, y, t
-    integer, intent(in) :: flag
-    character(128), intent(in) :: filename
-    integer :: ierr, i, j, k, numt, numx, numy
 
-    numx = size(x,1); numy = size(y,1); numt = size(t,1)
+    type(solution), intent(in) :: s
+    type(particle), intent(in) :: p
+    integer, intent(in) :: flag
+
+    character(4), dimension(2) :: chint
+    ! adjust the formats of time, location, and results here
+    character(6) :: tfmt = 'ES13.5', xfmt = 'ES12.4'
+    character(9) :: hfmt = 'ES22.14e3'
+    
+    integer :: ierr, i, j, k, numt, numx, numy
 
     select case (flag)
     case (1) 
        ! ** gnuplot contour map friendly output **
        ! print results as x,y,z triplets with the given times separated by double blank lines
 
-       open(UNIT=20, FILE=filename, STATUS='REPLACE', ACTION='WRITE', IOSTAT=ierr)
-       if (ierr /= 0) call fileError(filename,ierr,subname,0)
+       open(UNIT=20, FILE=s%outFname, STATUS='REPLACE', ACTION='WRITE', IOSTAT=ierr)
+       if (ierr /= 0) outFileError(flag,s%outFname)
        
-       write (20,*) '# ltaem contour map output'
-       write (20,234) ' # t:', numt
-       write (20,234) ' # x:', numx
-       write (20,234) ' # y:', numy
-       write (20,234) ' #xy:', numx*numy     
+       write(20,*) '# ltaem contour map output'
+       write(20,'(A,I0)') ' # t: ', numt
+       write(20,'(A,I0)') ' # x: ', numx
+       write(20,'(A,I0)') ' # y: ', numy
+       write(20,'(A,I0)') ' #xy: ', numx*numy     
 
        do i = 1, numt
-          write (20,994) ' # t=',t(i)
-          write (20,*)   &
+          write(20,'(A,'//tfmt//')') ' # t= ',t(i)
+          write(20,'(A)')   &
           & '#      X          Y              head                velx                vely'
-          write (20,995) ((x(k),y(j),head(k,j,i),velx(k,j,i),vely(k,j,i),k=1,numx),j=1,numy)
-          write (20,*)  '  '
-          write (20,*)  '  ' 
+          write(20,'(2('//xfmt//',1X),3('//hfmt//',1X))') &
+               & ((x(k),y(j),head(k,j,i),velx(k,j,i),vely(k,j,i), k=1,numx), j=1,numy)
+          write(20,'(\\)')
        end do       
-
-       write(20,*) '# EOF'
-
+       write(20,'(A)') '# EOF'
        close(20)
 
-       print *, '  '
-       print *, '***********************************************************'
-       print *, ' gnuplot contour map style output written to ', trim(filename)
-       print *, '***********************************************************'
-
-234    format (A5,i5) 
-994    format (A5,ES11.5)
-995    format (1X,ES13.5,1X,ES13.5,1X,ES22.14e3,1X,ES22.14e3,1X,ES22.14e3)
+       write(*,'(\A)') '***********************************************************'
+       write(*,'(2A)') ' gnuplot contour map style output written to ', trim(filename)
+       write(*,'(A)') '***********************************************************'
 
 !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
     case (2)
        
        ! ** matlab-friendly output **
@@ -374,72 +362,63 @@ contains
        ! (x and y matricies - similar to results from matlab function meshgrid)
        
        ! x-matrix has same row repeated numy times
-       open(UNIT=20, FILE=trim(filename)//'x.dat', STATUS='REPLACE', ACTION='WRITE', IOSTAT=ierr)
-       if (ierr /= 0) call fileError(trim(filename)//'x.dat',ierr,subname,0)
-       
-       write(chx,'(i4)') numx
-       fmtstr = '('//chx//'(1x,ES22.14e3))'
-
+       open(UNIT=20, FILE=trim(s%outFname)//'_x.dat', STATUS='REPLACE', ACTION='WRITE', IOSTAT=ierr)
+       if (ierr /= 0) outFileError(flag,trim(s%outFname)//'_x.dat')
+       write(chint(1),'(i4.4)') numx
        do i = 1, numy
-          write (20,fmtstr) (x(j), j=1,numx)
+          write (20,'('//chint(1)//'(1x,'//hfmt//'))') (x(j), j=1,numx)
        end do
        close(20)
 
        ! y-matrix has same column repeated numx times
-       open(UNIT=20, FILE=trim(filename)//'y.dat', STATUS='REPLACE', ACTION='WRITE', IOSTAT=ierr)
-       if (ierr /= 0) call fileError(trim(filename)//'y.dat',ierr,subname,0)
-       
+       open(UNIT=20, FILE=trim(s%outFname)//'_y.dat', STATUS='REPLACE', ACTION='WRITE', IOSTAT=ierr)
+       if (ierr /= 0) outfileError(flag,trim(s%outFname)//'_y.dat')
        do i = 1, numy
-          write (20,fmtstr) (y(i), j=1,numx)
+          write (20,'('//chint(1)//'(1x,'//hfmt//'))') (y(i), j=1,numx)
        end do
        close(20)
        
        do k = 1, numt
-          write(cht,'(i2.2)') k
+          write(chint(2),'(i4.4)') k
 
           ! head-matrix
-          open(UNIT=20, FILE=trim(filename)//'head'//cht//'.dat', &
+          open(UNIT=20, FILE=trim(s%outFname)//'_head_'//chint(2)//'.dat', &
                & STATUS='REPLACE', ACTION='WRITE', IOSTAT=ierr)
-          if (ierr /= 0) call fileError(trim(filename)//'head'//cht//'.dat',ierr,subname,0)
-
+          if (ierr /= 0) outfileError(flag,trim(s%outFname)//'_head_'//chint(2)//'.dat')
           do i = 1, numy
-             write (20,fmtstr) (head(j,i,k), j=1,numx)
+             write (20,'('//chint(1)//'(1x,'//hfmt//'))') (head(j,i,k), j=1,numx)
           end do
           close(20)
 
           ! velx-matrix
-          open(UNIT=20, FILE=trim(filename)//'velx'//cht//'.dat', &
+          open(UNIT=20, FILE=trim(s%outfname)//'_velx_'//chint(2)//'.dat', &
                & STATUS='REPLACE', ACTION='WRITE', IOSTAT=ierr)
-          if (ierr /= 0) call fileError(trim(filename)//'velx'//cht//'.dat',ierr,subname,0)
-
+          if (ierr /= 0) outfileError(flag,trim(s%outfname)//'_velx_'//chint(2)//'.dat')
           do i = 1, numy
-             write (20,fmtstr) (velx(j,i,k), j=1,numx)
+             write (20,'('//chint(1)//'(1x,'//hfmt//'))') (velx(j,i,k), j=1,numx)
           end do
           close(20)
 
           ! vely-matrix
-          open(UNIT=20, FILE=trim(filename)//'vely'//cht//'.dat', &
+          open(UNIT=20, FILE=trim(s%outfname)//'_vely_'//chint(2)//'.dat', &
                & STATUS='REPLACE', ACTION='WRITE', IOSTAT=ierr)
-          if (ierr /= 0) call fileError(trim(filename)//'vely'//cht//'.dat',ierr,subname,0)
-
+          if (ierr /= 0) outfileError(flag,trim(s%outfname)//'_vely_'//chint(2)//'.dat')
           do i = 1, numy
-             write (20,fmtstr) (vely(j,i,k), j=1,numx)
+             write (20,'('//chint(1)//'(1x,'//hfmt//'))') (vely(j,i,k), j=1,numx)
           end do
           close(20)
        end do
 
        ! column of calculation times
-       open(UNIT=20, FILE=trim(filename)//'t.dat', STATUS='REPLACE', ACTION='WRITE', IOSTAT=ierr)
-       if (ierr /= 0) call fileError(trim(filename)//'t.dat',ierr,subname,0)
-       
-       write (20,*) (t(j), j=1,numt)
+       open(UNIT=20, FILE=trim(s%outfname)//'_t.dat', STATUS='REPLACE', ACTION='WRITE', IOSTAT=ierr)
+       if (ierr /= 0)  outfileError(flag,trim(s%outfname)//'_t.dat')
+       write (20,'('//tfmt//')') (t(j), j=1,numt)
        close(20)
 
-       print *, ' '
-       print *, '*********************************************************************'
-       print *, 'matlab output written to ', trim(filename), &
+       write(*,'(/A)') '*********************************************************************'
+       write(*,'(3A)') 'matlab output written to ', trim(filename), &
               & '{x,y,t,head{1-n},velx{1-n},vely{1-n}}.dat'
-       print *, '*********************************************************************'
+       write(*,'(A)') '*********************************************************************'
        
 !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     case (3)
@@ -447,31 +426,25 @@ contains
        ! ** gnuplot hydrograph-friendly output **
        ! column of time values at a location through time
        ! locations separated by blank lines
-       open(UNIT=20, FILE=filename, STATUS='REPLACE', ACTION='WRITE', IOSTAT=ierr)
-       if (ierr /= 0) call fileError(filename,ierr,subname,0)
+       open(UNIT=20, FILE=s%outfname, STATUS='REPLACE', ACTION='WRITE', IOSTAT=ierr)
+       if (ierr /= 0)  outfileError(flag,s%outfname)
        
-       write (20,*) '# ltaem hydrograph output'
-      
+       write (20,'(A)') '# ltaem hydrograph output'      
        do i = 1, numx
-          write (20,555) ' # location: x=',x(i),' y=',y(i)
-          write (20,*)   '#     time              head                  velx                vely'
+          write (20,'(2(A,'//xfmt//'))') ' # location: x=',x(i),' y=',y(i)
+          write (20,'(A)')   '#     time              head                  velx                vely'
           do k = 1, numt
-             write (20,556) t(k),head(i,1,k),velx(i,1,k),vely(i,1,k)
+             write (20,'(1X,'//tfmt//',3(1X,'//hfmt//'))') &
+                  & t(k),head(i,1,k),velx(i,1,k),vely(i,1,k)
           end do
-          write (20,*)  '  '
-          write (20,*)  '  '
+          write (20,'(\\)')
        end do       
-
        write(20,*) '# EOF'
-
        close(20)
-       print *, ' '
-       print *, '***********************************************************'
-       print *, 'gnuplot style output written to ', trim(filename)
-       print *, '***********************************************************'
 
-555    format (2(A,ES12.5))
-556    format (1X,ES13.5,3(1X,ES22.14e3))
+       write(*,'(\A)') '***********************************************************'
+       write(*,'(2A)') 'gnuplot style output written to ', trim(filename)
+       write(*,'(A)') '***********************************************************'
 
 !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     case (11)
@@ -479,33 +452,27 @@ contains
        ! ** gnuplot hydrograph-friendly output **
        ! column of time values at a location through time
        ! locations separated by blank lines (grid no velocity)
-       open(UNIT=20, FILE=filename, STATUS='REPLACE', ACTION='WRITE', IOSTAT=ierr)
-       if (ierr /= 0) call fileError(filename,ierr,subname,0)
+       open(UNIT=20, FILE=s%outfname, STATUS='REPLACE', ACTION='WRITE', IOSTAT=ierr)
+       if (ierr /= 0)  outfileError(flag,s%outfname)
        
-       write (20,*) '# ltaem hydrograph output'
-      
+       write (20,'(A)') '# ltaem hydrograph output'
        do i = 1, numy
           do j = 1, numx
-             write (20,155) ' # location: x=',x(j),' y=',y(i)
-             write (20,*)   '#     time              head                  velx                vely'
+             write (20,'(2(A,'//xfmt//'))') ' # location: x=',x(j),' y=',y(i)
+             write (20,'(A)')   '#     time              head                  velx                vely'
              do k = 1, numt
-                write (20,156) t(k),head(j,i,k),velx(j,i,k),vely(j,i,k)
+                write (20,'(1X,'//tfmt//',3(1X,'//hfmt//'))') &
+                     & t(k),head(j,i,k),velx(j,i,k),vely(j,i,k)
              end do
-             write (20,*)  '  '
-             write (20,*)  '  '
+             write (20,'(\\)')
           end do
-       end do
-       
+       end do       
        write(20,*) '# EOF'
-
        close(20)
-       print *, ' '
-       print *, '***********************************************************'
-       print *, 'gnuplot style output written to ', trim(filename)
-       print *, '***********************************************************'
 
-155    format (2(A,ES12.5))
-156    format (1X,ES13.5,3(1X,ES22.14e3))
+       write(*,'(\A)') '***********************************************************'
+       write(*,'(2A)') 'gnuplot style output written to ', trim(filename)
+       write(*,'(A)') '***********************************************************'
 
 !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     case (10)
@@ -515,22 +482,19 @@ contains
        ! locations separated by blank lines
 
        do i = 1, numx
-          write(chx,'(I4.4)') i
-          open(UNIT=20, FILE=trim(filename)//chx, STATUS='REPLACE', ACTION='WRITE', IOSTAT=ierr)
-          if (ierr /= 0) call fileError(filename,ierr,subname,0)
+          write(chint(1),'(I4.4)') i
+          open(UNIT=20, FILE=trim(s%outfname)//'_'//chint(1), STATUS='REPLACE', ACTION='WRITE', IOSTAT=ierr)
+          if (ierr /= 0) outfileError(flag,trim(s%outfname)//'_'//chint(1))
           do k = 1, numt
-             write (20,'(2(ES18.10,1X))') t(k),head(i,1,k)
+             write (20,'('//tfmt//',1X,'//hfmt//')') t(k),head(i,1,k)
           end do
-          write(20,*)  '  '
-          write(20,*)  '  '
-       close(20)
+          write(20,'(\\)')
+          close(20)
        end do       
 
-       print *, ' '
-       print *, '***********************************************************'
-       print *, 'inverse output written to ', trim(filename) , '0000-',chx
-       print *, '***********************************************************'
-
+       write(*,'(\A)') '***********************************************************'
+       write(*,'(4A)') 'inverse output written to ', trim(filename) , '0000-',chint(1)
+       write(*,'(A)') '***********************************************************'
 
 !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     case (4)
@@ -538,31 +502,25 @@ contains
        ! ** pathline gnuplot-style output **
        ! columns of time values for starting locations
        ! particles separated by blank lines
-       open(UNIT=20, FILE=filename, STATUS='REPLACE', ACTION='WRITE', IOSTAT=ierr)
-       if (ierr /= 0) call fileError(filename,ierr,subname,0)
+       open(UNIT=20, FILE=s%outFname, STATUS='REPLACE', ACTION='WRITE', IOSTAT=ierr)
+       if (ierr /= 0) outfileError(flag,s%outFname)
        
-       write (20,*) '# ltaem particle tracking output'
-
-
-       do i = 1, size(pout,dim=3)
-          numt = count(pout(:,1,i) /= 0)
-          write (20,*) '# particle:',i
-          write (20,*)   &
+       write (20,'(A)') '# ltaem particle tracking output'
+       do i = 1, size(p(:),dim=1)
+          numt = count(p(:)%result(1,i) /= 0)
+          write (20,'(A,I0)') '# particle: ',i
+          write (20,'(A)')   &
           & '#     time          x            y             velx          vely '
-          write (20,334) ((pout(k,j,i),j=1,5),k=1,numt)
-          write (20,*)  '  '
-          write (20,*)  '  '
+          write (20,'('//tfmt//',2'//xfmt//',2'//hfmt//')') &
+               & ((pout(k,j,i), j=1,5), k=1,numt)
+          write (20,'(\\)')
        end do       
-
        write(20,*) '# EOF'
-
        close(20)
-       print *, ' '
-       print *, '***********************************************************'
-       print *, 'particle tracking output written to ', trim(filename)
-       print *, '***********************************************************'
 
-334    format (5(1X,ES13.5))
+       write(*,'(/A)') '***********************************************************'
+       write(*,'(2A)') 'particle tracking output written to ', trim(filename)
+       write(*,'(A)') '***********************************************************'
        
 !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     case (5)
@@ -571,39 +529,36 @@ contains
        ! this requires constant time steps (can't use adaptive integration)
        ! each block is a requested time, each row a particle
 
-       open(UNIT=90, FILE=filename, STATUS='REPLACE', ACTION='WRITE', IOSTAT=ierr)
-       if (ierr /= 0) call fileError(filename,ierr,subname,0)
+       open(UNIT=90, FILE=s%outfname, STATUS='REPLACE', ACTION='WRITE', IOSTAT=ierr)
+       if (ierr /= 0) outfileError(flag,s%outFname)
        
-       write (90,*) '# ltaem particle tracking streakfile output'
+       write (90,'(A)') '# ltaem particle tracking streakfile output'
 
        ! max number of times for all particles
-       numt = maxval(count(pout(:,1,:) /= 0,dim=1))
+       numt = maxval(p(:)%numt,dim=1)
 
        do i = 1, numt, PARstreakSkip
-          write (90,*) '# time:',maxval(pout(i,1,:)) ! to ensure a non-zero time is reported
-          write (90,*) '#  particle       x            y  '
-          do j = 1, size(pout,dim=3)
-             if (pout(i,1,j) > 0) then
+          ! use maxval to ensure a non-zero time is reported
+          write (90,'(A'//tfmt//')') '# time:', maxval(p(i)%result(1,:)) 
+          write (90,'(A)') '#  particle       x            y  '
+          do j = 1, size(p,dim=1)
+             if (p(j)%result(1,i) > 0.0) then
                 ! only write particle if it has non-zero data
-                write (90,442)  j,pout(i,2:3,j)
+                write (90,'(I0,2(1X'//hfmt//'))')  j,p(j)%result(2:3,i)
              end if
           end do
-          write (90,*)  '  '
-          write (90,*)  '  '
+          write (90,'(\\)')
        end do       
-
-       write(90,*) '# EOF'
-
+       write(90,'(A)') '# EOF'
        close(90)
-       print *, ' '
-       print *, '***********************************************************'
-       print *, 'particle tracking streakfile written to ', trim(filename)
-       print *, '***********************************************************'
 
-442    format (I3,1X,2(1X,ES13.5))
+       write(*,'(\A)') '***********************************************************'
+       write(*,'(2A)') 'particle tracking streakfile written to ', trim(filename)
+       write(*,'(A)') '***********************************************************'
 
     case default
-       print *, 'invalid output code', flag
+       write(*,'(A,I0)')  'invalid output code ', flag
+       stop 
     end select
     
   end subroutine writeResults  
@@ -658,5 +613,15 @@ contains
 777 format (1x,I3,4(1x,ES13.6))
     close(40)
 
+    contains
+      function outFileError(case,fn)
+        use constants, only : lenFN
+        integer :: case
+        character(*) :: fn
+
+          write(*,'(A,1X,I0,2(1X,A))') 'writeResults: case',case,&
+               &'error opening file for output',trim(fn)
+          stop
+      end function outFileError
   end subroutine writeGeometry
 end module file_ops

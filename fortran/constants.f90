@@ -14,6 +14,9 @@ module constants
   ! on ifort (QR=16) this is quad precision, (p=33)
   integer, parameter :: QR = selected_real_kind (p=18,r=4800)
 
+  ! length of filenames 
+  integer, parameter :: lenFN = 128
+
   ! useful? constants related to pi and ln
   ! calculated to precision=33 using ifort or mathematica
   real(kind=DP), parameter :: PI =        3.141592653589793238462643383279503_DP
