@@ -88,7 +88,7 @@ contains
     if (c%ibnd==0 .or. c%ibnd==1 .or. c%ibnd==2) then
        lo = M+1-c%ibnd*M; hi = 2*M-c%ibnd*M
        allocate(Kn(0:N),dKn(0:N))
-       kap = kappa(p,par) 
+       kap = kappa(p,c%parent) 
        call bKD(kap*c%r,N+1,Kn,dKn)
 
        tmp(1:M,1:N) =       &
@@ -98,11 +98,24 @@ contains
        deallocate(Kn,dKn)
 
        if (c%ibnd==2) then
-          ! specified elemental flux (Theis well)
-          RHS(1:M) = tmp(M+1:2*M,1)*c%bdryQ
+          allocate(Kn(0:1))
+          Kn(0:1) = bK(kap*c%r,2)
           
-          ! need to handle wellbore storage and skin properly
-
+          if (.not. c%StorIn) then
+             ! specified flux (finite-radius well no storage)
+             ! a_0 coefficient is computed analytically
+             LHS(1:M,1) = 0.0
+             RHS(1:M) = time(p,c%time)*c%bdryQ/(2.0*PI*c%r*Kn(1)) * &
+                  & tmp(1:M,1)
+          else
+             ! effects of wellbore storage and skin on finite-radius
+             ! well, where a_0 is computed (generally depends on
+             ! other elements, too)
+             LHS(1:M,1) = -((2.0 + c%r**2*dskin*p/c%parent%T)/(2.0*PI*c%r) + &
+                  & (Kn(0)*c%r*p)/(2.0*PI*c%r*kap*Kn(1)*c%parent%T))
+             RHS(1:M) = time(p,c%time)*c%bdryQ/(PI*c%r*c%parent%T)
+          end if
+          deallocate(Kn)
        else
           LHS(lo:hi,1:N) = tmp(M+1:2*M,1:2*N-1)
        end if
@@ -121,19 +134,11 @@ contains
        end if
     end if
   
-    ! ibnd == {2,-2} have no contribution to LHS
+    if(c%ibnd == 0) then
+       ! area source
+       RHS(1:M) = 
+    end if
     
-    ! setup RHS (ibnd==2 handled above)
-    select case(c%ibnd)
-    case(0)
-       ! apply skin and area source
-       RHS(1:M) = 
-       RHS(M+1:2*M) = 0.0
-    case(1,-1)
-       ! apply skin and boundary source
-       RHS(1:M) = 
-    end select
-
   end subroutine circle_match_self
 
   function circle_head_match_other(c,r,p,dom,in) result(res)

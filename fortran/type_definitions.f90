@@ -52,7 +52,7 @@ module element_specs
 
      ! porosity, constant area source term
      ! main aquifer hydraulic conductivity and Ss for element
-     real(DP) :: por, k, Ss, b, alpha
+     real(DP) :: por, k, Ss, b, alpha, T
 
      ! leaky-related (adjoining aquitard/aquifer parameters)
      integer :: leakFlag

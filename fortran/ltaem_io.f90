@@ -272,8 +272,12 @@ contains
     end if
 
     ! compute secondary parameters
+    bg%alpha = bg%K/bg%Ss
     c(:)%alpha = c(:)%K/c(:)%Ss
     e(:)%alpha = e(:)%K/e(:)%Ss
+    bg%T = bg%K*bg%b
+    c(:)%T = c(:)%K*c(:)%b
+    e(:)%T = e(:)%K*e(:)%b
 
     write(16,*) c(:)%alpha,'  ||    circle hydraulic diffusivity'
     write(16,*) e(:)%alpha,'  ||    ellipse hydraulic diffusivity'
