@@ -9,15 +9,12 @@ module elements
   ! the four basic functions are overloaded for either 
   ! p being a vector (during inversion) or a scalar (during matching)
 
-  interface CircleHead
-     module procedure Circle_match_self, Circle_match_other, Circle_Head_calc
+  interface Circle_Effect
+     module procedure Circle_match_self, Circle_match_other, Circle_calc
   end interface
 
-  interface EllipseHead
-     module procedure EllipseHead_match, EllipseHead_calc
-  end interface
-  interface EllipseFlux
-     module procedure EllipseFlux_match, EllipseFlux_calc
+  interface Ellipse_Effect
+     module procedure Ellipse_match_self, Ellipse_match_other, Ellipse_calc
   end interface
 
   interface Time
@@ -49,7 +46,7 @@ contains
     complex(DP), intent(out), &
          & dimension(c%M*(2-abs(c%ibnd)), &
          &       (2*N-1)*(2-abs(c%ibnd))) :: LHS
-    complex(DP) :: dimension(2*c%M,4*(N-2)) :: tmp
+    complex(DP) :: dimension(c%M,2*N-1) :: tmp
 
     ! RHS is 2M for matching, M for spec. total head/flux,
     !   and M for spec. elemental head/flux
@@ -94,9 +91,9 @@ contains
        kap = kappa(p,par) 
        call bKD(kap*c%r,N+1,Kn,dKn)
 
-       tmp(M+1:2*M,1:N) =       &
+       tmp(1:M,1:N) =       &
             & spread(kap*dKn(0:N-1)/Kn(0:N-1), 1,M) * cmat/c%parent%K
-       tmp(M+1:2*M,N+1:2*N-1) = &
+       tmp(1:M,N+1:2*N-1) = &
             & spread(kap*dKn(1:N-1)/Kn(1:N-1), 1,M) * smat/c%parent%K
        deallocate(Kn,dKn)
 
@@ -445,14 +442,15 @@ contains
        allocate(ti(n),Q(0:n))
 
        ! unpack initial times, pumping rates and final time
-       ti(1:n) = par(1:n)
-       tf = par(n+1)
-       Q(0) = 0.0
-       Q(1:n) = par(n+2:2*n+1)
+       ti(1:n) = par(1:n); tf = par(n+1)
+       Q(0) = 0.0; Q(1:n) = par(n+2:2*n+1)
        
        mult(1:np) = (sum(spread(Q(1:n) - Q(0:n-1),2,np)*&
             & exp(-spread(ti(1:n),2,np)*spread(p(1:np),1,n)),dim=1) - &
             & sum(Q(1:n) - Q(0:n-1))*exp(-tf*p(:)))/p(:)
+    case default
+       write(*,'(A,I0)') 'Time_pvect: error in case for time behavior ',time
+       stop
     end select
   end function Time_pvect
 
