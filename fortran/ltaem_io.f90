@@ -42,15 +42,18 @@ contains
     ! solution-specific and background aquifer parameters
     read(15,*) sol%particle, sol%contour, sol%output, &
          & sol%outFname, sol%coeffFName, sol%elemHfName
-    read(15,*) bg%por, bg%k, bg%ss, bg%leakFlag, bg%aquitardK, bg%aquitardSs, bg%aquitardb
+    read(15,*) bg%por, bg%k, bg%ss, bg%leakFlag, &
+         & bg%aquitardK, bg%aquitardSs, bg%aquitardb
     read(15,*) bg%Sy, bg%kz, bg%unconfinedFlag, bg%b
 
     write(16,*) sol%particle, sol%contour, sol%output, &
          & trim(sol%outFname), trim(sol%coeffFName), trim(sol%elemHfName)&
-         & '  ||    Lparticle, Lcontour, Ioutput, out/coeff/hierarchy file names'
-    write(16,*) bg%por, bg%k, bg%ss, bg%leakFlag, bg%aquitardK, bg%aquitardSs, bg%aquitardb
-         & '  ||    por, k, Ss, leaky_type, k2, ss2, b2'
-    write(16,*) bg%Sy, bg%kz, bg%unconfinedFlag, bg%b, '  || BGSy, BGKz, unconfined flag, BGb'
+         & '  ||    particle?, contour?, output, out/coeff/hierarchy file names'
+    write(16,*) bg%por, bg%k, bg%ss, bg%leakFlag, bg%aquitardK, &
+         &bg%aquitardSs, bg%aquitardb
+         & '  ||    por, k, Ss, leaky flag, K2, Ss2, b2'
+    write(16,*) bg%Sy, bg%kz, bg%unconfinedFlag, bg%b, &
+         & '  || Sy, Kz, unconfined?, BGb'
     
     ! desired solution points/times
     read(15,*) sol%nx, sol%ny, sol%nt
@@ -59,13 +62,13 @@ contains
     read(15,*) sol%y(:)
     do j=1,sol%numt  !! modified to accommidate pest (make time a column)
        read(15,*,iostat=ierr) sol%t(j)
-       if(ierr /= 0) write(*,'(A,I0)') 'ERROR reading time ',j
+       if(ierr /= 0) write(*,'(A,I0)') 'ERROR reading time from input',j
     end do
     if (.not. sol%particle) then
        write(16,*) sol%nx, sol%ny, sol%nt, '  ||    numX, numY, numt'
-       write(16,*) sol%x(:), '  ||    xVector'
-       write(16,*) sol%y(:), '  ||    yVector'
-       write(16,*) sol%t(:), '  ||    tVector'
+       write(16,*) sol%x(:), '  ||    x Vector'
+       write(16,*) sol%y(:), '  ||    y Vector'
+       write(16,*) sol%t(:), '  ||    t Vector'
     endif
 
     ! inverse Laplace transform parameters
@@ -93,11 +96,13 @@ contains
        do j=1,size(c,dim=1)
           read(15,'(I)', advance='no') c(j)%AreaTime 
           if (c(j)%AreaTime > -1) then
+             ! functional time behavior
              allocate(c(j)%ATPar(2))
              read(15,*) c(j)%ATPar(:)
              write(15,*) c(j)%AreaTime,c(j)%ATPar(:),&
                   &'  ||  Area time behavior, par1, par2 for circle ',j
           else
+             ! piecewise-constant time behavior 
              allocate(c(j)%ATPar(-2*c(j)%AreaTime+1))
              read(15,*) c(j)%ATPar(:)
              write(16,*) c(j)%AreaTime,c(j)%ATPar(:-c(j)%AreaTime+1),' | ',&
@@ -362,7 +367,8 @@ contains
        ! (x and y matricies - similar to results from matlab function meshgrid)
        
        ! x-matrix has same row repeated numy times
-       open(UNIT=20, FILE=trim(s%outFname)//'_x.dat', STATUS='REPLACE', ACTION='WRITE', IOSTAT=ierr)
+       open(UNIT=20, FILE=trim(s%outFname)//'_x.dat', STATUS='REPLACE', &
+            & ACTION='WRITE', IOSTAT=ierr)
        if (ierr /= 0) outFileError(flag,trim(s%outFname)//'_x.dat')
        write(chint(1),'(i4.4)') numx
        do i = 1, numy
@@ -371,7 +377,8 @@ contains
        close(20)
 
        ! y-matrix has same column repeated numx times
-       open(UNIT=20, FILE=trim(s%outFname)//'_y.dat', STATUS='REPLACE', ACTION='WRITE', IOSTAT=ierr)
+       open(UNIT=20, FILE=trim(s%outFname)//'_y.dat', STATUS='REPLACE', &
+            & ACTION='WRITE', IOSTAT=ierr)
        if (ierr /= 0) outfileError(flag,trim(s%outFname)//'_y.dat')
        do i = 1, numy
           write (20,'('//chint(1)//'(1x,'//hfmt//'))') (y(i), j=1,numx)
@@ -410,7 +417,8 @@ contains
        end do
 
        ! column of calculation times
-       open(UNIT=20, FILE=trim(s%outfname)//'_t.dat', STATUS='REPLACE', ACTION='WRITE', IOSTAT=ierr)
+       open(UNIT=20, FILE=trim(s%outfname)//'_t.dat', STATUS='REPLACE', &
+            & ACTION='WRITE', IOSTAT=ierr)
        if (ierr /= 0)  outfileError(flag,trim(s%outfname)//'_t.dat')
        write (20,'('//tfmt//')') (t(j), j=1,numt)
        close(20)
@@ -432,7 +440,8 @@ contains
        write (20,'(A)') '# ltaem hydrograph output'      
        do i = 1, numx
           write (20,'(2(A,'//xfmt//'))') ' # location: x=',x(i),' y=',y(i)
-          write (20,'(A)')   '#     time              head                  velx                vely'
+          write (20,'(A)')   '#     time              head&
+               &                  velx                vely'
           do k = 1, numt
              write (20,'(1X,'//tfmt//',3(1X,'//hfmt//'))') &
                   & t(k),head(i,1,k),velx(i,1,k),vely(i,1,k)
@@ -459,7 +468,8 @@ contains
        do i = 1, numy
           do j = 1, numx
              write (20,'(2(A,'//xfmt//'))') ' # location: x=',x(j),' y=',y(i)
-             write (20,'(A)')   '#     time              head                  velx                vely'
+             write (20,'(A)')   '#     time              head&
+                  &                  velx                vely'
              do k = 1, numt
                 write (20,'(1X,'//tfmt//',3(1X,'//hfmt//'))') &
                      & t(k),head(j,i,k),velx(j,i,k),vely(j,i,k)
@@ -483,7 +493,8 @@ contains
 
        do i = 1, numx
           write(chint(1),'(I4.4)') i
-          open(UNIT=20, FILE=trim(s%outfname)//'_'//chint(1), STATUS='REPLACE', ACTION='WRITE', IOSTAT=ierr)
+          open(UNIT=20, FILE=trim(s%outfname)//'_'//chint(1), STATUS='REPLACE', &
+               &ACTION='WRITE', IOSTAT=ierr)
           if (ierr /= 0) outfileError(flag,trim(s%outfname)//'_'//chint(1))
           do k = 1, numt
              write (20,'('//tfmt//',1X,'//hfmt//')') t(k),head(i,1,k)
@@ -560,7 +571,17 @@ contains
        write(*,'(A,I0)')  'invalid output code ', flag
        stop 
     end select
-    
+
+    contains
+      function outFileError(case,fn)
+        use constants, only : lenFN
+        integer :: case
+        character(lenFN) :: fn
+
+          write(*,'(A,1X,I0,2(1X,A))') 'writeResults: case',case,&
+               &'error opening file for output',trim(fn)
+          stop
+      end function outFileError    
   end subroutine writeResults  
 
   !##################################################
@@ -571,7 +592,6 @@ contains
     
     real(DP), dimension(:,:), intent(in) :: EXm, EYm
     real(DP), dimension(:), intent(in) :: Wx, Wy, Wr, Wq
-    character(128) :: subname = 'writeGeometry', inclfname = 'circles.dat', wellfname = 'well.dat'
     integer :: ierr, m, nm, ni, nw, incl, well
     
     ni = size(EXm,2)
@@ -613,15 +633,5 @@ contains
 777 format (1x,I3,4(1x,ES13.6))
     close(40)
 
-    contains
-      function outFileError(case,fn)
-        use constants, only : lenFN
-        integer :: case
-        character(*) :: fn
-
-          write(*,'(A,1X,I0,2(1X,A))') 'writeResults: case',case,&
-               &'error opening file for output',trim(fn)
-          stop
-      end function outFileError
   end subroutine writeGeometry
 end module file_ops

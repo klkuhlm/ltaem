@@ -36,15 +36,25 @@ contains
     use bessel_functions, only : bK, bI
     implicit none
 
-    ! ibnd = {-2,-1,0,1,2} spec {el,tot} flux, match, spec {tot,el} head
-
     type(circle), intent(in) :: c
     type(domain), intent(in) :: dom
     complex(DP), intent(in) :: p
+
+    ! ibnd={-2,-1,0,1,2}: spec {el,tot} flux, match, spec {tot,el} head
+    
+    ! LHS dim=1 is 2M for matching, M for spec. total head/flux,
+    !   and 0 for specified elemental head/flux
+    ! LHS dim=2 is 4N-2 for matching, 2N-1 for spec. total head/flux
+    !   and 0 for specified elemental head/flux
     complex(DP), intent(out), &
          & dimension(c%M*(2-abs(c%ibnd)), &
          &       (2*N-1)*(2-abs(c%ibnd))) :: LHS
-    complex(DP), intent(out), dimension(c%M*(2-abs(c%ibnd))) :: RHS
+    complex(DP) :: dimension(2*c%M,4*(N-2)) :: tmp
+
+    ! RHS is 2M for matching, M for spec. total head/flux,
+    !   and M for spec. elemental head/flux
+    complex(DP), intent(out), &
+         & dimension(c%M*(2-count([c%ibnd]/=0))) :: RHS
 
     integer :: nP, j, N, M, lo, hi
     real(DP), dimension(0:c%N) :: vi, k(0:1)
@@ -61,58 +71,72 @@ contains
 
     cmat = cos(outer_prod(c%Pcm(1:M),vi(0:N-1)))
     smat = sin(outer_prod(c%Pcm(1:M),vi(1:N-1)))
+    RHS = 0.0
 
+    ! setup LHS
     ! matching or specified head (always first M rows); no dependence on p
     if (c%ibnd==0 .or. c%ibnd==-1) then
 
-       ! outside cosine
-       res(1:M,1:N) = cmat/c%parent%K
-
-       ! outside sine
-       res(1:M,N+1:2*N-1) = smat/c%parent%K
-
+       LHS(1:M,1:N) =       cmat/c%parent%K
+       LHS(1:M,N+1:2*N-1) = smat/c%parent%K
+       
        ! assume always calculate outside an element.  
        if (c%calcin) then
-          ! inside cosine
-          res(1:M,2*N:3*N-1) = -cmat/c%K
-
-          ! inside sine
-          res(1:M,3*N:4*N-2) = -smat/c%K
+          LHS(1:M,2*N:3*N-1) = -cmat/c%K
+          LHS(1:M,3*N:4*N-2) = -smat/c%K
        end if
     end if
 
     ! matching (second M) or specified flux (first M); depends on p
-    if (c%ibnd==0 .or. c%ibnd==+1) then
-       lo = M+1 - c%ibnd*M  
-       hi = 2*M - c%ibnd*M
-       
+    if (c%ibnd==0 .or. c%ibnd==1 .or. c%ibnd==2) then
+       lo = M+1-c%ibnd*M; hi = 2*M-c%ibnd*M
        allocate(Kn(0:N),dKn(0:N))
        kap = kappa(p,par) 
        call bKD(kap*c%r,N+1,Kn,dKn)
-       dKn = kap*dKn 
 
-       ! Kn cosine
-       res(lo:hi,1:N) = spread(dKn(0:N-1)/Kn(0:N-1), 1,M) * cmat/c%parent%K
-
-       ! Kn sine
-       res(lo:hi,N+1:2*N-1) = spread(dKn(1:N-1)/Kn(1:N-1), 1,M) * smat/c%parent%K
+       tmp(M+1:2*M,1:N) =       &
+            & spread(kap*dKn(0:N-1)/Kn(0:N-1), 1,M) * cmat/c%parent%K
+       tmp(M+1:2*M,N+1:2*N-1) = &
+            & spread(kap*dKn(1:N-1)/Kn(1:N-1), 1,M) * smat/c%parent%K
        deallocate(Kn,dKn)
 
+       if (c%ibnd==2) then
+          ! specified elemental flux (Theis well)
+          RHS(1:M) = tmp(M+1:2*M,1)*c%bdryQ
+          
+          ! need to handle wellbore storage and skin properly
+
+       else
+          LHS(lo:hi,1:N) = tmp(M+1:2*M,1:2*N-1)
+       end if
+    
        if (c%calcin) then
           allocate(In(0:N),dIn(0:N))
           kap = kappa(p,c%element)
           call bID(kap*c%r,N+1,In,dIn)
-          dIn = kap*dIn 
-
-          ! In cosine
-          res(lo:hi,2*N:3*N-1) = spread(dIn(0:N-1)/In(0:N-1), 1,M) * cmat/c%K
-
-          ! In sine
-          res(lo:hi,3*N:4*N-2) = spread(dIn(1:N-1)/In(1:N-1), 1,M) * smat/c%K
+          
+          LHS(lo:hi,2*N:3*N-1) = &
+               & spread(kap*dIn(0:N-1)/In(0:N-1), 1,M) * cmat/c%K
+          LHS(lo:hi,3*N:4*N-2) = &
+               & spread(kap*dIn(1:N-1)/In(1:N-1), 1,M) * smat/c%K
           deallocate(dIn,In)
+
        end if
     end if
   
+    ! ibnd == {2,-2} have no contribution to LHS
+    
+    ! setup RHS (ibnd==2 handled above)
+    select case(c%ibnd)
+    case(0)
+       ! apply skin and area source
+       RHS(1:M) = 
+       RHS(M+1:2*M) = 0.0
+    case(1,-1)
+       ! apply skin and boundary source
+       RHS(1:M) = 
+    end select
+
   end subroutine circle_match_self
 
   function circle_head_match_other(c,r,p,dom,in) result(res)

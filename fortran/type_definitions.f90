@@ -82,6 +82,7 @@ module element_specs
   
      ! type of element: -1=specified head TOTAL, 0=match, +1=specified flux TOTAL
      !                  -2=specified head ELEMENT, +2=specified flux ELEMENT
+     ! -2 doesn't really make sense from a physical perspective : not implemented
      integer :: ibnd
      
      ! whether inclusion is a matching(T) or specified(F) inclusion
