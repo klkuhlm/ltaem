@@ -10,17 +10,21 @@ module elements
   ! p being a vector (during inversion) or a scalar (during matching)
 
   interface circle_head
-     module procedure circle_match_head_self, circle_match_head_other, circle_head_calc
+     module procedure circle_match_head_self, &
+          & circle_match_head_other, circle_head_calc
   end interface
   interface circle_flux
-     module procedure circle_match_flux_self, circle_match_flux_other, circle_flux_calc
+     module procedure circle_match_flux_self, &
+          & circle_match_flux_other, circle_flux_calc
   end interface
 
   interface ellipse_head
-     module procedure ellipse_match_head_self, ellipse_match_head_other, ellipse_head_calc
+     module procedure ellipse_match_head_self, &
+          & ellipse_match_head_other, ellipse_head_calc
   end interface
   interface ellipse_flux
-     module procedure ellipse_match_flux_self, ellipse_match_flux_other, ellipse_flux_calc
+     module procedure ellipse_match_flux_self, &
+          & ellipse_match_flux_other, ellipse_flux_calc
   end interface
 
   interface time
@@ -34,7 +38,7 @@ contains
   subroutine circle_match_head_self(c,p,dom,LHS,RHS)
     use constants, only : DP, PI
     use utilities, only : outer_prod
-    use element_specs, only : circle, domain
+    use type_definitions, only : circle, domain
     implicit none
 
     type(circle), intent(in) :: c
@@ -86,7 +90,7 @@ contains
   subroutine circle_match_flux_self(c,p,dom,LHS,RHS)
     use constants, only : DP, PI
     use utilities, only : outer_prod
-    use element_specs, only : circle, domain
+    use type_definitions, only : circle, domain
     use bessel_functions, only : bK, bI
     implicit none
 
@@ -167,7 +171,7 @@ contains
   ! general time behavior function, for all elements
    function Time_pvect(p,t,area) result(mult)
     use constants, only: DP
-    use element_specs, only : time
+    use type_definitions, only : time
     implicit none
 
     type(time), intent(in) :: t
@@ -255,52 +259,49 @@ contains
 
   function kappa_pVect(p,el) result(q)
     use constants, only : DP, PI
-    use element_specs, only : element
+    use type_definitions, only : element
 
-    integer, parameter :: NTERMS = 200, MAXITER = 200
-    
     complex(DP), intent(in), dimension(:) :: p
     type(element), intent(in) :: el
     complex(DP), dimension(size(p)) :: q
 
     integer :: i, ni, np
-    complex(DP), dimension(size(p),0:CInum) :: kap2
-    complex(DP), dimension(size(p)) :: exp2z
+    complex(DP), dimension(size(p)) ::  kap2, exp2z
     complex(DP) :: boulton
 
-    np = size(p)
-    ni = CInum
+    np = size(p); ni = CInum
 
-    !! leaky-ness
-    !! ##############################
-    if(el%leakFlag == 0) then
-       !! no leaky layer, standard definition
-       q(:) = p(1:np)/el%alpha
-    else
+    if(el%leakFlag /= 0) then
        kap2(1:np) = sqrt(p(:)*el%aquitardSs/el%aquitardK)
        exp2z(1:np) = exp(-2.0*kap2(:)*el%aquitardb)
-       
-       if(el%leakFlag == 1) then
-          !! case I, no-drawdown condition at top of aquitard
-          q(:) = p(:)/el%alpha + kap2(:)*el%aquitardK/(el%b*el%K)*&
-               & (1.0 + exp2z(:))/(1.0 - exp2z(:))
-       elseif(el%leakFlag == 2) then
-          !! case II, no-flow condition at top of aquitard
-          q(:) = p(:)/el%alpha + kap2(:)*el%aquitardK/(el%b*el%K)*&
-               & (1.0 - exp2z(:))/(1.0 + exp2z(:))
-       elseif(el%leakFlag == 3) then
-          !! aquitard thickness -> infinity
-          q(:) = p(:)/el%alpha + kap2(:)*el%aquitardK/(el%b*el%K)
-       else
-          stop 'ERROR: incorrect value for leakFlag parameter -> (1,2,3)'
-       end if
     end if
     
-    !! unconfined-ness 
+    !! leaky-ness
+    !! ##############################
+    select case(el%leakFlag)
+    case(0)
+       !! no leaky layer, standard definition
+       q(:) = p(1:np)/el%alpha
+    case(1)
+       !! case I, no-drawdown condition at top of aquitard
+       q(:) = p(:)/el%alpha + kap2(:)*el%aquitardK/(el%b*el%K)*&
+            & (1.0 + exp2z(:))/(1.0 - exp2z(:))
+    case(2)
+       !! case II, no-flow condition at top of aquitard
+       q(:) = p(:)/el%alpha + kap2(:)*el%aquitardK/(el%b*el%K)*&
+            & (1.0 - exp2z(:))/(1.0 + exp2z(:))
+    case(3)
+       !! aquitard thickness -> infinity
+       q(:) = p(:)/el%alpha + kap2(:)*el%aquitardK/(el%b*el%K)
+    case default
+       stop 'ERROR: incorrect value for leakFlag parameter -> (1,2,3)'
+    end select
+
+    !! integrate neuman 72 solution and include here instead
+
+    !! unconfined-ness (if confined do nothing)
     !! ##############################
     if(el%unconfinedFlag) then
-       !! do nothing, q already computed above
-    else
        !! Boulton unconfined source (Herrera infinite sum Kernel)
        !! guess is halfway between asymptotes of cot()
        
@@ -318,7 +319,7 @@ contains
   !! scalar version useful in matching
   function kappa_pscal(p,el) result(q)
     use constants, only : DP
-    use element_specs, only : element
+    use type_definitions, only : element
 
     complex(DP), intent(in) :: p
     type(element), intent(in) :: el

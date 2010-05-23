@@ -1,4 +1,4 @@
-module element_specs
+module type_definitions
   use constants, only : DP, lenFN
   implicit none
 
@@ -202,4 +202,4 @@ module element_specs
 
   end type particle
 
-end module element_specs
+end module type_definitions

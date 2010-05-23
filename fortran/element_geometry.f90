@@ -12,7 +12,7 @@ contains
   ! initializes / calculates geometry - all global variables
   subroutine DistanceAngleCalcs(c,e,bg,dom,sol)
     use constants, only: DP, PI
-    use element_specs
+    use type_definitions
     use file_ops, only : writeGeometry
 
     type(domain), intent(inout) :: dom
@@ -128,7 +128,7 @@ contains
   !##################################################
   subroutine ElementHierarchy(dom,sol)
     use constants, only : DP
-    use element_specs, only : domain, solution
+    use type_definitions, only : domain, solution
 
     type(domain), intent(inout) :: dom
     type(solution), intent(in) :: sol
