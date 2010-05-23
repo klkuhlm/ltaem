@@ -23,5 +23,8 @@ module constants
   real(kind=DP), parameter :: LN2 =       0.693147180559945309417232121458177_DP
   real(kind=DP), parameter :: EULER =     0.5772156649015328606065120900824025_DP
 
+  ! sqrt(-1)
+  complex(kind=DP), parameter :: EYE = cmplx(0.0,1.0,DP)
+
 end module constants
 

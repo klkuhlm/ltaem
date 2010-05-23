@@ -270,7 +270,6 @@ contains
     complex(DP) :: boulton
 
     np = size(p); ni = CInum
-
     if(el%leakFlag /= 0) then
        kap2(1:np) = sqrt(p(:)*el%aquitardSs/el%aquitardK)
        exp2z(1:np) = exp(-2.0*kap2(:)*el%aquitardb)
@@ -320,7 +319,6 @@ contains
   function kappa_pscal(p,el) result(q)
     use constants, only : DP
     use type_definitions, only : element
-
     complex(DP), intent(in) :: p
     type(element), intent(in) :: el
     complex(DP) :: q

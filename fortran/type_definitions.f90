@@ -97,6 +97,14 @@ module type_definitions
      ! location of center of element
      real(DP) :: x, y 
 
+     ! vector of matching location angles
+     ! theta for circles, psi for ellipses
+     real(DP), allocatable :: Pcm(:)
+
+     ! computed geometry from this element to all others
+     complex(DP), allocatable :: Zcm(:), Zom(:), Zgm(:,:)
+     real(DP), allocatable :: Rgm(:,:), Pgm(:,:)
+
   end type matching
 
   type, extends(matching) :: circle
@@ -105,10 +113,7 @@ module type_definitions
 
      ! inclusion radius
      real(DP) :: r 
-
-     ! vector of matching locations 
-     real(DP), allocatable :: Pcm(:)
-
+     
   end type circle
 
   type, extends(matching) :: ellipse
@@ -121,9 +126,6 @@ module type_definitions
      ! inclusion elliptical 'radius', semi-focal dist, 
      ! angle major axis makes with Cartesian x axis
      real(DP) :: eta, f, theta
-
-     ! vector of matching locations 
-     real(DP), allocatable :: Pcm(:)
 
   end type ellipse
 
@@ -148,7 +150,7 @@ module type_definitions
      logical :: calc
      
      ! input/output filenames
-     character(lenFN) :: outfname, infname, coefffname, elemHfName
+     character(lenFN) :: outfname, infname, coefffname, elemHfName, geomFname
      
      ! output index (1= gnuplot; 2= matlab)
      integer :: output, aquitardLeak, unconfined

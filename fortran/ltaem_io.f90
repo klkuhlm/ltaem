@@ -41,14 +41,15 @@ contains
     
     ! solution-specific and background aquifer parameters
     read(15,*) sol%particle, sol%contour, sol%output, &
-         & sol%outFname, sol%coeffFName, sol%elemHfName
+         & sol%outFname, sol%coeffFName, sol%elemHfName, sol%geomfName
     read(15,*) bg%por, bg%k, bg%ss, bg%leakFlag, &
          & bg%aquitardK, bg%aquitardSs, bg%aquitardb
     read(15,*) bg%Sy, bg%kz, bg%unconfinedFlag, bg%b
 
     write(16,*) sol%particle, sol%contour, sol%output, &
          & trim(sol%outFname), trim(sol%coeffFName), trim(sol%elemHfName)&
-         & '  ||    particle?, contour?, output, out/coeff/hierarchy file names'
+         & trim(sol%geomFname),'  ||    particle?, contour?, output, &
+         & out/coeff/hierarchy/geometry file names'
     write(16,*) bg%por, bg%k, bg%ss, bg%leakFlag, bg%aquitardK, &
          &bg%aquitardSs, bg%aquitardb
          & '  ||    por, k, Ss, leaky flag, K2, Ss2, b2'
@@ -589,53 +590,52 @@ contains
   end subroutine writeResults  
 
   !##################################################
-  subroutine writeGeometry(EXm,EYm,Wx,Wy,Wr,Wq)
+  subroutine writeGeometry(c,e,s)
     use constants, only : DP
-    use error_handler, only : fileError
+    use type_definitions, only : circle, ellipse, solution
     implicit none
     
-    real(DP), dimension(:,:), intent(in) :: EXm, EYm
-    real(DP), dimension(:), intent(in) :: Wx, Wy, Wr, Wq
-    integer :: ierr, m, nm, ni, nw, incl, well
-    
-    ni = size(EXm,2)
-    nm = size(EXm,1)
-    nw = size(Wx,1)
+    type(circle), dimension(:), intent(in) :: c
+    type(ellipse), dimension(:), intent(in) :: e
+    type(solution), intent(in) :: s
+    integer :: nc, ne, ntot, i, j
 
-    ! write inclusions to file
-    open(UNIT=40, FILE=inclfname, STATUS='REPLACE', ACTION='WRITE', IOSTAT=ierr)
-    if (ierr /= 0) call fileError(inclfname,ierr,subname,0)
+    nc = size(c,1); ne = size(e,1)
+    ntot = nc + ne
+
+    ! write matching points to file
+    open(UNIT=40, FILE=sol%geomFname, STATUS='REPLACE', ACTION='WRITE', IOSTAT=ierr)
+    if (ierr /= 0) then
+       write(*,'(2A)') 'error opening output file for writing &
+            &element matching locations ',sol%geomFname
+       stop
+    end if
     
-    write(40,*) '# ',nm,'points along circumference of',ni,'circular elements'
-    do incl = 1,ni
-       write(40,*) '# element ',incl
-       do m = 1,nm
-          write(40,666)  EXm(m,incl),EYm(m,incl)
+    write(40,'(A)') '# points along circumference of elements'
+    do i = 1,nc
+       write(40,'(A,I0)') '# circular element ',i
+       do j = 1,c(i)%M
+          write(40,'(2(ES11.5,1X))')  c(i)%Zom(j)
        end do
-       write(40,666)  EXm(1,incl),EYm(1,incl) ! joins circle back up with beginning
-       write(40,*)    
-       write(40,*)    
+       if (c(i)%M > 1) then
+          ! joins circle back up with beginning for plotting
+          write(40,'(2(ES11.5,1X))')  c(i)%Zom(j)
+       end if
+       write(40,'(\\)')    
     end do
 
-    write(40,*) '# EOF'
-
-666 format (2(1x,ES13.6))
-    close(40)
-    
-    ! write wells to file
-    open(UNIT=40, FILE=wellfname, STATUS='REPLACE', ACTION='WRITE', IOSTAT=ierr)
-    if (ierr /= 0) call fileError(wellfname,ierr,subname,0)
-
-    write(40,*) '# ',nw,'wells'
-    write(40,*) '# id       x            y          well_r          well_Q'
-    do well = 1,nw
-       write(40,777)  well,Wx(well),Wy(well),Wr(well),Wq(well)
+    do i = 1,ne
+       write(40,'(A,I0)') '# elliptical element ',i
+       do j = 1,e(i)%M
+          write(40,'(2(ES11.5,1X))')  e(i)%Zom(j)
+       end do
+       if (e(i)%M > 1) then
+          ! joins ellipse back up with beginning for plotting
+          write(40,'(2(ES11.5,1X))')  e(i)%Zom(j)
+       end if
+       write(40,'(\\)')    
     end do
-    
-    write(40,*) '# EOF'
-    
-777 format (1x,I3,4(1x,ES13.6))
+    write(40,'(A)') '# EOF'
     close(40)
-
   end subroutine writeGeometry
 end module file_ops

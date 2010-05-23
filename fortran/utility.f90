@@ -53,17 +53,26 @@ contains
     complex(DP), dimension(size(da),size(cb)) :: c
     c = spread(da,dim=2,ncopies=size(cb))*spread(cb,dim=1,ncopies=size(da))
   end function outerprod_zd
-  
-  ! ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  elemental function cacosh(z) result(f)
+
+  ! ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  
+  pure elemental function ccosh(z) result(f)
+    use constants, only : DP
+    complex(DP), intent(in) :: z
+    complex(DP) :: f
+    real(DP) :: x,y
+    x = real(z); y = aimag(z)
+    f = cmplx(cosh(x)*cos(y),sinh(x)*sin(y),DP)
+  end function ccosh
+
+  pure elemental function cacosh(z) result(f)
     use constants, only : DP
     complex(DP), intent(in) :: z
     complex(DP) :: f
 
     if(real(z) >= 0.0) then
-       f = log(z + sqrt(z**2 - 1.0_DP))
+       f = log(z + sqrt(z**2 - 1.0))
     else
-       f = -log(z + sqrt(z**2 - 1.0_DP))
+       f = -log(z + sqrt(z**2 - 1.0))
     end if
   end function cacosh
 
