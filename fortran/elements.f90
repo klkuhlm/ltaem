@@ -46,13 +46,12 @@ contains
     complex(DP), intent(out), &
          & dimension(c%M*(2-abs(c%ibnd)), &
          &       (2*N-1)*(2-abs(c%ibnd))) :: LHS
-    complex(DP) :: dimension(c%M,2*N-1) :: tmp
-
     ! RHS is 2M for matching, M for spec. total head/flux,
     !   and M for spec. elemental head/flux
     complex(DP), intent(out), &
          & dimension(c%M*(2-count([c%ibnd]/=0))) :: RHS
 
+    complex(DP) :: dimension(c%M,2*N-1) :: tmp
     integer :: nP, j, N, M, lo, hi
     real(DP), dimension(0:c%N) :: vi, k(0:1)
     complex(DP), allocatable :: Kn(:), dKn(:), In(:), dIn(:)
@@ -72,13 +71,23 @@ contains
 
     ! setup LHS
     ! matching or specified head (always first M rows); no dependence on p
+    ! ibnd==-2 would be here, but it doesn't actually make physical sense
     if (c%ibnd==0 .or. c%ibnd==-1) then
 
        LHS(1:M,1:N) =       cmat/c%parent%K
        LHS(1:M,N+1:2*N-1) = smat/c%parent%K
        
-       ! assume always calculate outside an element.  
-       if (c%calcin) then
+       ! setup RHS
+       select case(c%ibnd)
+       case(-1)
+          ! put specified head on RHS
+          RHS(1:M) = time(p,c%time,.false.)*c%bdryQ
+       case(0)
+          ! put constant area source term effects on RHS
+          RHS(1:M) = -time(p,c%time,.true.)*c%areaQ*c%Ss/kappa(p,c%parent)**2
+       end select
+
+       if (c%ibnd==0 .or. c%calcin) then
           LHS(1:M,2*N:3*N-1) = -cmat/c%K
           LHS(1:M,3*N:4*N-2) = -smat/c%K
        end if
@@ -91,13 +100,12 @@ contains
        kap = kappa(p,c%parent) 
        call bKD(kap*c%r,N+1,Kn,dKn)
 
-       tmp(1:M,1:N) =       &
-            & spread(kap*dKn(0:N-1)/Kn(0:N-1), 1,M) * cmat/c%parent%K
-       tmp(1:M,N+1:2*N-1) = &
-            & spread(kap*dKn(1:N-1)/Kn(1:N-1), 1,M) * smat/c%parent%K
+       tmp(1:M,1:N) =       spread(kap*dKn(0:N-1)/Kn(0:N-1), 1,M)*cmat/c%parent%K
+       tmp(1:M,N+1:2*N-1) = spread(kap*dKn(1:N-1)/Kn(1:N-1), 1,M)*smat/c%parent%K
        deallocate(Kn,dKn)
 
-       if (c%ibnd==2) then
+       select case(c%ibnd)
+       case(2)
           allocate(Kn(0:1))
           Kn(0:1) = bK(kap*c%r,2)
           
@@ -105,40 +113,37 @@ contains
              ! specified flux (finite-radius well no storage)
              ! a_0 coefficient is computed analytically
              LHS(1:M,1) = 0.0
-             RHS(1:M) = time(p,c%time)*c%bdryQ/(2.0*PI*c%r*Kn(1)) * &
-                  & tmp(1:M,1)
+             RHS(1:M) = time(p,c%time,.false.)*c%bdryQ/(2.0*PI*c%r*Kn(1))*tmp(1:M,1)
           else
              ! effects of wellbore storage and skin on finite-radius
              ! well, where a_0 is computed (generally depends on
-             ! other elements, too)
+             ! other elements, too; these show up in off-diagonal sub-matrices)
              LHS(1:M,1) = -((2.0 + c%r**2*dskin*p/c%parent%T)/(2.0*PI*c%r) + &
                   & (Kn(0)*c%r*p)/(2.0*PI*c%r*kap*Kn(1)*c%parent%T))
-             RHS(1:M) = time(p,c%time)*c%bdryQ/(PI*c%r*c%parent%T)
+             RHS(1:M) = time(p,c%time,.false.)*c%bdryQ/(PI*c%r*c%parent%T)
           end if
           deallocate(Kn)
-       else
+       case(1)
+          ! put specified flux effects on RHS
           LHS(lo:hi,1:N) = tmp(M+1:2*M,1:2*N-1)
+          RHS(lo:hi) = time(p,c%time,.false.)*c%bdryQ/(2.0*PI*c%r)
+       case(0)
+          ! no area source term effects on flux matchinig
+          LHS(lo:hi,1:N) = tmp(M+1:2*M,1:2*N-1)
+          RHS(lo:hi) = 0.0 
        end if
     
-       if (c%calcin) then
+       if (c%ibnd==0 .or. c%calcin) then
           allocate(In(0:N),dIn(0:N))
           kap = kappa(p,c%element)
           call bID(kap*c%r,N+1,In,dIn)
           
-          LHS(lo:hi,2*N:3*N-1) = &
-               & spread(kap*dIn(0:N-1)/In(0:N-1), 1,M) * cmat/c%K
-          LHS(lo:hi,3*N:4*N-2) = &
-               & spread(kap*dIn(1:N-1)/In(1:N-1), 1,M) * smat/c%K
+          LHS(lo:hi,2*N:3*N-1) = spread(kap*dIn(0:N-1)/In(0:N-1), 1,M)*cmat/c%K
+          LHS(lo:hi,3*N:4*N-2) = spread(kap*dIn(1:N-1)/In(1:N-1), 1,M)*smat/c%K
           deallocate(dIn,In)
-
        end if
     end if
-  
-    if(c%ibnd == 0) then
-       ! area source
-       RHS(1:M) = 
-    end if
-    
+      
   end subroutine circle_match_self
 
   function circle_head_match_other(c,r,p,dom,in) result(res)
@@ -390,7 +395,9 @@ contains
 
     type(time), intent(in) :: t
     complex(DP), dimension(:), intent(in) :: p
+    logical, intent(in) :: area
     complex(DP), dimension(size(p,1)) :: mult
+
     integer :: n, np
     real(DP), allocatable :: ti(:),q(:)
     real(DP) :: tf
