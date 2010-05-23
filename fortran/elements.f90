@@ -9,15 +9,14 @@ module elements
   ! the four basic functions are overloaded for either 
   ! p being a vector (during inversion) or a scalar (during matching)
 
-  interface Circle_Effect
-     module procedure Circle_match_self, Circle_match_other, Circle_calc
+  interface circle_effect
+     module procedure circle_match_self, circle_match_other, circle_calc
+  end interface
+  interface ellipse_effect
+     module procedure ellipse_match_self, ellipse_match_other, ellipse_calc
   end interface
 
-  interface Ellipse_Effect
-     module procedure Ellipse_match_self, Ellipse_match_other, Ellipse_calc
-  end interface
-
-  interface Time
+  interface time
      module procedure Time_pScal, Time_pVect
   end interface
   interface kappa
@@ -25,7 +24,6 @@ module elements
   end interface
 
 contains
-
   subroutine circle_match_self(c,p,dom,LHS,RHS)
     use constants, only : DP, PI
     use utilities, only : outer_prod
@@ -37,8 +35,6 @@ contains
     type(domain), intent(in) :: dom
     complex(DP), intent(in) :: p
 
-    ! ibnd={-2,-1,0,1,2}: spec {el,tot} flux, match, spec {tot,el} head
-    
     ! LHS dim=1 is 2M for matching, M for spec. total head/flux,
     !   and 0 for specified elemental head/flux
     ! LHS dim=2 is 4N-2 for matching, 2N-1 for spec. total head/flux
@@ -53,21 +49,13 @@ contains
 
     complex(DP) :: dimension(c%M,2*N-1) :: tmp
     integer :: nP, j, N, M, lo, hi
-    real(DP), dimension(0:c%N) :: vi, k(0:1)
     complex(DP), allocatable :: Kn(:), dKn(:), In(:), dIn(:)
     complex(DP) :: kap
-
     real(DP) :: cmat(1:M,0:N-1), smat(1:M,1:N-1)
 
     N = c%N; M = c%M
-    forall(j=0,N) vi(j)=real(j,DP)
-
-    k(0) = c%K   ! K (hyd. cond.) inside
-    k(1) = c%parent%K ! K of parent
-
-    cmat = cos(outer_prod(c%Pcm(1:M),vi(0:N-1)))
-    smat = sin(outer_prod(c%Pcm(1:M),vi(1:N-1)))
-    RHS = 0.0
+    cmat = cos(outer_prod(c%Pcm(1:M), real([(j,j=0,N-1)],DP)))
+    smat = sin(outer_prod(c%Pcm(1:M), real([(j,j=1,N-1)],DP)))
 
     ! setup LHS
     ! matching or specified head (always first M rows); no dependence on p
@@ -109,18 +97,18 @@ contains
           allocate(Kn(0:1))
           Kn(0:1) = bK(kap*c%r,2)
           
-          if (.not. c%StorIn) then
-             ! specified flux (finite-radius well no storage)
-             ! a_0 coefficient is computed analytically
-             LHS(1:M,1) = 0.0
-             RHS(1:M) = time(p,c%time,.false.)*c%bdryQ/(2.0*PI*c%r*Kn(1))*tmp(1:M,1)
-          else
+          if (c%StorIn) then
              ! effects of wellbore storage and skin on finite-radius
              ! well, where a_0 is computed (generally depends on
              ! other elements, too; these show up in off-diagonal sub-matrices)
              LHS(1:M,1) = -((2.0 + c%r**2*dskin*p/c%parent%T)/(2.0*PI*c%r) + &
                   & (Kn(0)*c%r*p)/(2.0*PI*c%r*kap*Kn(1)*c%parent%T))
              RHS(1:M) = time(p,c%time,.false.)*c%bdryQ/(PI*c%r*c%parent%T)
+          else
+             ! specified flux (finite-radius well no storage)
+             ! a_0 coefficient is computed analytically
+             LHS(1:M,1) = 0.0
+             RHS(1:M) = time(p,c%time,.false.)*c%bdryQ/(2.0*PI*c%r*Kn(1))*tmp(1:M,1)
           end if
           deallocate(Kn)
        case(1)
@@ -142,8 +130,7 @@ contains
           LHS(lo:hi,3*N:4*N-2) = spread(kap*dIn(1:N-1)/In(1:N-1), 1,M)*smat/c%K
           deallocate(dIn,In)
        end if
-    end if
-      
+    end if      
   end subroutine circle_match_self
 
   function circle_head_match_other(c,r,p,dom,in) result(res)
