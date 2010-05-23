@@ -27,12 +27,13 @@ contains
 
     integer :: ierr, j,nEl,nC,nE  ! #elements, #circles, #ellipses
 
-    echofname = trim(sol%infname) + '.echo'
     open(UNIT=15, FILE=sol%infname, STATUS='OLD', ACTION='READ', IOSTAT=ierr)
     if (ierr /= 0) then
        print *, 'READINPUT: error opening input file ',sol%infname
        stop 100
     endif
+
+    echofname = trim(sol%infname) + '.echo'
     open(UNIT=16, FILE=echofname, STATUS='REPLACE', ACTION='WRITE', IOSTAT=ierr)
     if (ierr /= 0) then
        print *, 'READINPUT: error opening echo file ',echofname
