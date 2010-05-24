@@ -18,11 +18,11 @@ contains
 
     type(solution), intent(inout) :: sol
     type(particle), intent(out), allocatable :: p(:)
-
     type(domain), intent(out) :: dom
     type(element), intent(out) :: bg
     type(circle), intent(out), allocatable :: c(:)
     type(ellipse), intent(out), allocatable :: e(:)
+
     character(4) :: chint
     character(20), dimension(3) :: fmt
     character(lenFN+5) :: echofname

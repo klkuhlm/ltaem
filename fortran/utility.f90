@@ -1,6 +1,7 @@
+! some general? functions collected in one place
+
 module utility
 
-  ! $Id: utility.f90,v 1.6 2010/02/25 18:50:02 klkuhlm Exp klkuhlm $
   implicit none
   public 
 
