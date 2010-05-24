@@ -143,6 +143,10 @@ module type_definitions
      ! integrate particle lines vs. calculate at set locations/times
      logical :: particle
      integer :: nPart
+     
+     ! number of particle timesteps to skip when plotting streaklines
+     ! (only one value for all particles)
+     integer :: streakSkip
 
      ! calculate contours (thru space) vs. calculate hydrographs (thru time)
      logical :: contour
@@ -172,9 +176,6 @@ module type_definitions
   !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   type :: particle
   
-     ! number of particles
-     integer :: streakSkip
-
      ! starting x&y location, inital & final times
      real(DP) :: x, y, ti, tf
   
