@@ -8,23 +8,23 @@ module elements
   ! the four basic functions are overloaded for either 
   ! p being a vector (during inversion) or a scalar (during matching)
 
-!!$  interface circle_head
-!!$     module procedure circle_match_head_self, &
-!!$          & circle_match_head_other, circle_head_calc
-!!$  end interface
-!!$  interface circle_flux
-!!$     module procedure circle_match_flux_self, &
-!!$          & circle_match_flux_other, circle_flux_calc
-!!$  end interface
-!!$
-!!$  interface ellipse_head
-!!$     module procedure ellipse_match_head_self, &
-!!$          & ellipse_match_head_other, ellipse_head_calc
-!!$  end interface
-!!$  interface ellipse_flux
-!!$     module procedure ellipse_match_flux_self, &
-!!$          & ellipse_match_flux_other, ellipse_flux_calc
-!!$  end interface
+  interface circle_head
+     module procedure circle_match_head_self, &
+          & circle_match_head_other, circle_head_calc
+  end interface
+  interface circle_flux
+     module procedure circle_match_flux_self, &
+          & circle_match_flux_other, circle_flux_calc
+  end interface
+
+  interface ellipse_head
+     module procedure ellipse_match_head_self, &
+          & ellipse_match_head_other, ellipse_head_calc
+  end interface
+  interface ellipse_flux
+     module procedure ellipse_match_flux_self, &
+          & ellipse_match_flux_other, ellipse_flux_calc
+  end interface
 
   interface time
      module procedure Time_pScal, Time_pVect
@@ -112,9 +112,10 @@ contains
        allocate(Kn(0:N),dKn(0:N))
        kap = kappa(p,c%parent) 
        call bKD(kap*c%r,N+1,Kn,dKn)
+       dKn = kap*dKn
 
-       tmp(1:M,1:N) =       spread(kap*dKn(0:N-1)/Kn(0:N-1), 1,M)*cmat/c%parent%K
-       tmp(1:M,N+1:2*N-1) = spread(kap*dKn(1:N-1)/Kn(1:N-1), 1,M)*smat/c%parent%K
+       tmp(1:M,1:N) =       spread(dKn(0:N-1)/Kn(0:N-1), 1,M)*cmat/c%parent%K
+       tmp(1:M,N+1:2*N-1) = spread(dKn(1:N-1)/Kn(1:N-1), 1,M)*smat/c%parent%K
        deallocate(Kn,dKn)
 
        select case(c%ibnd)
@@ -150,9 +151,10 @@ contains
           allocate(In(0:N),dIn(0:N))
           kap = kappa(p,c%element)
           call bID(kap*c%r,N+1,In,dIn)
+          dIn = kap*dIn
           
-          LHS(1:M,2*N:3*N-1) = spread(kap*dIn(0:N-1)/In(0:N-1), 1,M)*cmat/c%K
-          LHS(1:M,3*N:4*N-2) = spread(kap*dIn(1:N-1)/In(1:N-1), 1,M)*smat/c%K
+          LHS(1:M,2*N:3*N-1) = spread(dIn(0:N-1)/In(0:N-1), 1,M)*cmat/c%K
+          LHS(1:M,3*N:4*N-2) = spread(dIn(1:N-1)/In(1:N-1), 1,M)*smat/c%K
           deallocate(dIn,In)
        end if
     else
@@ -160,6 +162,55 @@ contains
        RHS = 0.0
     end if
   end subroutine circle_match_flux_self
+
+  subroutine circle_match_head_other(c,p,LHS,RHS)
+    use constants, only : DP, PI
+    use utility, only : outerprod
+    use type_definitions, only : circle
+    implicit none
+
+    type(circle), intent(in) :: c
+    complex(DP), intent(in) :: p
+
+    ! LHS dim=2 is 4N-2 for matching, 2N-1 for spec. total head
+    complex(DP), intent(out), &
+         & dimension(c%M,(2*c%N-1)*(2-abs(c%ibnd))) :: LHS
+    complex(DP), intent(out), dimension(c%M) :: RHS
+
+    integer :: j, N, M
+    real(DP) :: cmat(1:c%M,0:c%N-1), smat(1:c%M,1:c%N-1)
+
+    N = c%N; M = c%M
+    cmat = cos(outerprod(c%Pcm(1:M), real([(j,j=0,N-1)],DP)))
+    smat = sin(outerprod(c%Pcm(1:M), real([(j,j=1,N-1)],DP)))
+
+    ! setup LHS
+    ! matching or specified head (always first M rows); no dependence on p
+    ! ibnd==-2 would be here, but it doesn't actually make physical sense
+    if (c%ibnd==0 .or. c%ibnd==-1) then
+
+       LHS(1:M,1:N) =       cmat/c%parent%K
+       LHS(1:M,N+1:2*N-1) = smat/c%parent%K
+       
+       ! setup RHS
+       select case(c%ibnd)
+       case(-1)
+          ! put specified head on RHS
+          RHS(1:M) = time(p,c%time,.false.)*c%bdryQ
+       case(0)
+          ! put constant area source term effects on RHS
+          RHS(1:M) = -time(p,c%time,.true.)*c%areaQ*c%Ss/kappa(p,c%parent)**2
+       end select
+
+       if (c%ibnd==0 .or. c%calcin) then
+          LHS(1:M,2*N:3*N-1) = -cmat/c%K
+          LHS(1:M,3*N:4*N-2) = -smat/c%K
+       end if
+    else
+       LHS = 0.0
+       RHS = 0.0
+    end if
+  end subroutine circle_match_head_other
 
 
   ! ##################################################

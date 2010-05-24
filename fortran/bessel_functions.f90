@@ -31,14 +31,15 @@ contains
     complex(DP), dimension(:,:), intent(in) :: z
     integer, intent(in) :: num
     complex(DP), dimension(0:num-1,size(z,1),size(z,2)) :: besk
-    integer :: ierr1, ierr2, i,j
+    integer :: nz, ierr, i,j
+    integer, parameter :: kode = 1
 
     do i = 1, size(z,1)
        do j = 1, size(z,2)
-          call cbesk(z(i,j), 0.0_DP, 1, num, besk(0:num-1,i,j), ierr1, ierr2)
+          call cbesk(z(i,j), 0.0_DP, kode, num, besk(0:num-1,i,j), nz, ierr)
           ! either 0 or 3 are acceptable return codes
-          if ((ierr2 >= 1 .and. ierr2 <= 2) .or. ierr2 >= 4) then
-             write(*,'(A,4(1X,I0))') 'besk_matz error',ierr1,ierr2,i,j
+          if ((ierr >= 1 .and. ierr <= 2) .or. ierr >= 4) then
+             write(*,'(A,4(1X,I0))') 'besk_matz error',nz,ierr,i,j
              stop 
           end if
        end do
@@ -66,14 +67,15 @@ contains
     complex(DP), dimension(:,:), intent(in) :: z
     integer, intent(in) :: num
     complex(DP), dimension(0:num-1,size(z,1),size(z,2)) :: besi
-    integer :: ierr1, ierr2, i,j
+    integer :: nz, ierr, i,j
+    integer, parameter :: kode = 1
 
     do i = 1, size(z,1)
        do j = 1, size(z,2)
-          call cbesi(z(i,j), 0.0_DP, 1, num, besi(0:num-1,i,j), ierr1, ierr2)
+          call cbesi(z(i,j), 0.0_DP, kode, num, besi(0:num-1,i,j), nz, ierr)
           ! either 0 or 3 are acceptable return codes
-          if ((ierr2 >= 1 .and. ierr2 <= 2) .or. ierr2 >= 4) then
-             write(*,'(A,4(1X,I0))') 'besi_matz error',ierr1,ierr2,i,j
+          if ((ierr >= 1 .and. ierr <= 2) .or. ierr >= 4) then
+             write(*,'(A,4(1X,I0))') 'besi_matz error',nz,ierr,i,j
              stop 
           end if
        end do
