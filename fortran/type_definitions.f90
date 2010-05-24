@@ -78,7 +78,6 @@ module type_definitions
      ! number of matching points along other elements
      complex(DP), allocatable :: Zgm(:)
      real(DP), allocatable :: Rgm(:), Pgm(:)
-     integer :: ibnd
   end type geom
 
   type :: match_result
