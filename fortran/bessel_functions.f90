@@ -8,13 +8,13 @@ module bessel_functions
   implicit none
 
   private
-  public :: bK, bI, bId, bIk
+  public :: bK, bI, bId, bKd
 
   interface bK
-     module procedure besk_zscal, besk_zvect, besk_zmat
+     module procedure besk_zscal, besk_vectz, besk_matz
   end interface bK
   interface bI
-     module procedure besi_zscal, besi_zvect, besi_zmat
+     module procedure besi_zscal, besi_vectz, besi_matz
   end interface bI
 
   interface bKD
@@ -35,7 +35,7 @@ contains
 
     do i = 1, size(z,1)
        do j = 1, size(z,2)
-          call cbesk(z(i,j), real(first,DP), 1, num, besk(0:num-1,i,j), ierr1, ierr2)
+          call cbesk(z(i,j), 0.0_DP, 1, num, besk(0:num-1,i,j), ierr1, ierr2)
           ! either 0 or 3 are acceptable return codes
           if ((ierr2 >= 1 .and. ierr2 <= 2) .or. ierr2 >= 4) then
              write(*,'(A,4(1X,I0))') 'besk_matz error',ierr1,ierr2,i,j
@@ -51,7 +51,7 @@ contains
     integer, intent(in) :: num
     complex(DP), dimension(0:num-1,size(z,1)) :: besk
     besk = sum(besk_matz(spread(z,dim=2,ncopies=1),num),dim=3)
-  end function besk_zvect
+  end function besk_vectz
 
   ! K Bessel function for scalar argument / vector of N
   function besk_zscal(z,num) result(besk)
@@ -70,7 +70,7 @@ contains
 
     do i = 1, size(z,1)
        do j = 1, size(z,2)
-          call cbesi(z(i,j), real(first,DP), 1, num, besi(0:num-1,i,j), ierr1, ierr2)
+          call cbesi(z(i,j), 0.0_DP, 1, num, besi(0:num-1,i,j), ierr1, ierr2)
           ! either 0 or 3 are acceptable return codes
           if ((ierr2 >= 1 .and. ierr2 <= 2) .or. ierr2 >= 4) then
              write(*,'(A,4(1X,I0))') 'besi_matz error',ierr1,ierr2,i,j
@@ -86,7 +86,7 @@ contains
     integer, intent(in) :: num
     complex(DP), dimension(0:num-1,size(z,1)) :: besi
     besi = sum(besi_matz(spread(z,dim=2,ncopies=1),num),dim=3)
-  end function besi_zvect
+  end function besi_vectz
 
   ! I Bessel function for scalar argument / vector of N
   function besi_zscal(z,num) result(besi)
@@ -122,7 +122,7 @@ contains
   end subroutine besId_zvect
 
   subroutine besId_zscal(z,n,I,ID)
-    complex(DP) intent(in) :: z
+    complex(DP), intent(in) :: z
     integer, intent(in) :: n
     complex(DP), intent(out), dimension(0:n-1) :: I, ID
     complex(DP), dimension(1,1,0:n-1) :: tI, tId
@@ -134,7 +134,7 @@ contains
   subroutine besKd_zmat(z,n,K,KD)
     complex(DP), dimension(:,:), intent(in) :: z
     integer, intent(in) :: n
-    complex(DP), intent(out), dimension(size(z,1),size(z,2),0:n-1) :: K, KD
+    complex(DP), intent(out), dimension(0:n-1,size(z,1),size(z,2)) :: K, KD
 
     K(0:n-1,:,:) = bK(z,n)
     KD(1:n-2,:,:) = -0.5_DP*(K(0:n-3,:,:) + K(2:n-1,:,:))        ! middle
@@ -153,7 +153,7 @@ contains
   end subroutine besKd_zvect
 
   subroutine besKd_zscal(z,n,K,KD)
-    complex(DP) intent(in) :: z
+    complex(DP), intent(in) :: z
     integer, intent(in) :: n
     complex(DP), intent(out), dimension(0:n-1) :: K, KD
     complex(DP), dimension(0:n-1,1,1) :: tK, tKd

@@ -4,40 +4,39 @@
 
 module elements
   implicit none
-  private
 
   ! the four basic functions are overloaded for either 
   ! p being a vector (during inversion) or a scalar (during matching)
 
   interface circle_head
      module procedure circle_match_head_self, &
-          & circle_match_head_other, circle_head_calc
+          & circle_match_head_other !, circle_head_calc
   end interface
-  interface circle_flux
-     module procedure circle_match_flux_self, &
-          & circle_match_flux_other, circle_flux_calc
-  end interface
-
-  interface ellipse_head
-     module procedure ellipse_match_head_self, &
-          & ellipse_match_head_other, ellipse_head_calc
-  end interface
-  interface ellipse_flux
-     module procedure ellipse_match_flux_self, &
-          & ellipse_match_flux_other, ellipse_flux_calc
-  end interface
-
-  interface time
-     module procedure Time_pScal, Time_pVect
-  end interface
-  interface kappa
-     module procedure  kappa_pVect, kappa_pScal
-  end interface
+!!$  interface circle_flux
+!!$     module procedure circle_match_flux_self, &
+!!$          & circle_match_flux_other, circle_flux_calc
+!!$  end interface
+!!$
+!!$  interface ellipse_head
+!!$     module procedure ellipse_match_head_self, &
+!!$          & ellipse_match_head_other, ellipse_head_calc
+!!$  end interface
+!!$  interface ellipse_flux
+!!$     module procedure ellipse_match_flux_self, &
+!!$          & ellipse_match_flux_other, ellipse_flux_calc
+!!$  end interface
+!!$
+!!$  interface time
+!!$     module procedure Time_pScal, Time_pVect
+!!$  end interface
+!!$  interface kappa
+!!$     module procedure  kappa_pVect, kappa_pScal
+!!$  end interface
 
 contains
   subroutine circle_match_head_self(c,p,dom,LHS,RHS)
     use constants, only : DP, PI
-    use utilities, only : outer_prod
+    use utility, only : outerprod
     use type_definitions, only : circle, domain
     implicit none
 
@@ -50,14 +49,13 @@ contains
          & dimension(c%M,(2*N-1)*(2-abs(c%ibnd))) :: LHS
     complex(DP), intent(out), dimension(c%M) :: RHS
 
-    complex(DP) :: dimension(c%M,2*N-1) :: tmp
     integer :: j, N, M
     complex(DP) :: kap
     real(DP) :: cmat(1:M,0:N-1), smat(1:M,1:N-1)
 
     N = c%N; M = c%M
-    cmat = cos(outer_prod(c%Pcm(1:M), real([(j,j=0,N-1)],DP)))
-    smat = sin(outer_prod(c%Pcm(1:M), real([(j,j=1,N-1)],DP)))
+    cmat = cos(outerprod(c%Pcm(1:M), real([(j,j=0,N-1)],DP)))
+    smat = sin(outerprod(c%Pcm(1:M), real([(j,j=1,N-1)],DP)))
 
     ! setup LHS
     ! matching or specified head (always first M rows); no dependence on p
@@ -89,7 +87,7 @@ contains
 
   subroutine circle_match_flux_self(c,p,dom,LHS,RHS)
     use constants, only : DP, PI
-    use utilities, only : outer_prod
+    use utility, only : outerprod
     use type_definitions, only : circle, domain
     use bessel_functions, only : bK, bI
     implicit none
@@ -102,15 +100,15 @@ contains
          & dimension(c%M,(2*N-1)*(2-abs(c%ibnd))) :: LHS
     complex(DP), intent(out), dimension(c%M) :: RHS
 
-    complex(DP) :: dimension(c%M,2*N-1) :: tmp
+    complex(DP), dimension(c%M,2*N-1) :: tmp
     integer :: j, N, M
     complex(DP), allocatable :: Kn(:), dKn(:), In(:), dIn(:)
     complex(DP) :: kap
     real(DP) :: cmat(1:M,0:N-1), smat(1:M,1:N-1)
 
     N = c%N; M = c%M
-    cmat = cos(outer_prod(c%Pcm(1:M), real([(j,j=0,N-1)],DP)))
-    smat = sin(outer_prod(c%Pcm(1:M), real([(j,j=1,N-1)],DP)))
+    cmat = cos(outerprod(c%Pcm(1:M), real([(j,j=0,N-1)],DP)))
+    smat = sin(outerprod(c%Pcm(1:M), real([(j,j=1,N-1)],DP)))
 
     ! matching (second M) or specified flux (first M); depends on p
     if (c%ibnd==0 .or. c%ibnd==1 .or. c%ibnd==2) then
