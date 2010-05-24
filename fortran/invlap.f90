@@ -6,7 +6,7 @@
 module inverse_Laplace_Transform
   use constants, only : DP
   implicit none
-
+  
   private
   public :: deHoog_invlap, deHoog_pvalues
   
@@ -24,19 +24,20 @@ contains
   !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   function deHoog_invLap_vect(t,tee,fp,lap) result(ft)
     use constants, only : DP, PI
-    use element_specs, only : INVLT
-    real(DP), intent(in) :: tee    ! scaling factor
+    use type_definitions, only : INVLT
+    real(DP), intent(in) :: tee               ! scaling factor
     real(DP), intent(in), dimension(:) :: t   ! vector of times
-    complex(DP), intent(in), dimension(0:2*M) :: fp
-    real(DP), dimension(size(t)) :: ft ! output
+    type(INVLT), intent(in) :: lap            ! structure of inputs
+    complex(DP), intent(in), dimension(0:2*lap%M) :: fp
+    real(DP), dimension(size(t)) :: ft        ! output
 
-    real(DP) :: gamma
-    integer :: r, rq, n, max, nt, M
     complex(DP), dimension(0:2*lap%M,0:lap%M) :: e
     complex(DP), dimension(0:2*lap%M,1:lap%M) :: q
     complex(DP), dimension(0:2*lap%M) :: d
     complex(DP), dimension(-1:2*lap%M,size(t)) :: A,B
     complex(DP), dimension(size(t)) :: z,brem,rem
+    integer :: r, rq, n, max, nt, M
+    real(DP) :: gamma
 
     M = lap%M
     nt = size(t)
@@ -109,10 +110,10 @@ contains
 
   function deHoog_invLap_scal(t,tee,fp,lap) result(ft)
     use constants, only : DP
-    use element_specs, only : INVLT
+    use type_definitions, only : INVLT
     real(DP), intent(in) ::  t, tee 
     type(INVLT), intent(in) :: lap
-    complex(DP), intent(in), dimension(0:2*M) :: fp
+    complex(DP), intent(in), dimension(0:2*lap%M) :: fp
     real(DP) :: ft ! output
     
     ft = sum(deHoog_invLap_vect([t],tee,fp,lap))
@@ -121,13 +122,13 @@ contains
   
   function deHoog_pvalues(tee,lap) result(p)
     use constants, only : DP, PI
-    use element_specs, only : INVLT
+    use type_definitions, only : INVLT
     type(INVLT), intent(in) :: lap
     real(DP), intent(in) :: tee
-    complex(DP), dimension(2*M+1) :: p
+    complex(DP), dimension(2*lap%M+1) :: p
     integer :: i
 
-    forall (i=0:2*M)
+    forall (i=0:2*lap%M)
        p(i+1) = cmplx(lap%alpha-log(lap%tol)/(2.0_DP*tee), PI*i/tee, DP)
     end forall
     

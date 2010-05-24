@@ -3,7 +3,6 @@ module type_definitions
   implicit none
 
   public
-  private :: INVLT
   
   type, public :: domain
      ! number of each type of element
@@ -134,7 +133,9 @@ module type_definitions
 
      ! abcissa of convergence, LT tolerance
      real(DP) :: alpha, tol
-     integer :: m
+
+     ! number of Fourier series terms
+     integer :: M
   end type INVLT
 
   ! things relating to the numerical solution, independent from flow elements
