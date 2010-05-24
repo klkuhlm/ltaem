@@ -83,11 +83,10 @@ contains
        end if
     end do
 
-    ! circular element geometry
+    ! circular element self-geometry
     do i = 1,nc
        M = c(i)%M
-       allocate(c(i)%Zcm(M),c(i)%Zom(M),c(i)%Zgm(M,ntot),&
-            & c(i)%Rgm(M,ntot),c(i)%Pgm(M,ntot))
+       allocate(c(i)%Zcm(M),c(i)%Zom(M),c(i)%G(ntot))
 
        ! x,y components from center of element to points on circumference
        if (M > 1) then
@@ -99,35 +98,12 @@ contains
 
        ! x,y from Cartesian origin to point on circumference of element
        c(i)%Zom(1:M) = c(i)%Zcm(:) + cmplx(c%x,c%y,DP)
-
-       ! j == other element; i == this element
-       ! compute coordinates to points on the circumference of this ellipse
-       ! in the natural coordinates of the other element
-       do j = 1,ntot
-          if (dom%InclBg(j,i) .or. dom%InclIn(j,i) .or. dom%InclIn(i,j)) then
-             if (j <= nc) then
-                ! other element is a circle
-                c(i)%Zgm(1:M,j) = c(i)%Zom(1:M) - cmplx(c(j)%x,c(j)%y,DP)
-                c(i)%Rgm(1:M,j) = abs(c(i)%Zgm(1:M,j)) ! r, theta
-                c(i)%Pgm(1:M,j) = atan2(aimag(c(i)%Zgm(1:M,j)),real(c(i)%Zgm(1:M,j)))
-             else
-                allocate(z(M))
-                ! other element is an ellipse
-                c(i)%Zgm(1:M,j) = c(i)%Zom(1:M) - cmplx(e(j)%x,e(j)%y,DP)
-                z(1:M) = cacosh(c(i)%Zgm(:,j))*exp(-EYE*e(j)%theta)/e(j)%f
-                c(i)%Rgm(1:M,j) = real(z)  ! eta
-                c(i)%Pgm(1:M,j) = aimag(z) ! psi
-                deallocate(z)
-             end if
-          end if
-       end do       
     end do
 
     ! elliptical element self-geometry
     do i = 1,ne
        M = e(i)%M
-       allocate(e(i)%Zcm(M),e(i)%Zom(M),e(i)%Zgm(M,ntot),&
-            & e(i)%Rgm(M,ntot),e(i)%Pgm(M,ntot),z(M))
+       allocate(e(i)%Zcm(M),e(i)%Zom(M),e(i)%G(ntot))
 
        ! local elliptical coordinates
        z(1:M) = e(i)%f*ccosh(cmplx(e(i)%eta,e(i)%Pcm(1:M),DP))
@@ -140,30 +116,57 @@ contains
           ! when only one matching location move to center of line between foci
           e(i)%Zcm(1:M) = cmplx(0.0,0.0,DP)
        end if
+       deallocate(z)
 
        ! x,y from Cartesian origin to point on circumference of element
        e(i)%Zom(1:M) = e(i)%Zcm(:) + cmplx(e%x,e%y,DP)
-
-       ! j == other element; i == this element
-       ! compute coordinates to points on the circumference of this ellipse
-       ! in the natural coordinates of the other element
+    end do
+    
+    ! compute radial distances and angles to points on the circumferece of other elements
+    ! from this element (cross-geometry), in terms of the current circle's or ellipse's
+    ! coordinate system.
+    do i = 1,nc
+       ! this element a circle
+       do j = 1,ntot
+          if (dom%InclBg(j,i) .or. dom%InclIn(j,i) .or. dom%InclIn(i,j)) then
+             if (j <= nc) then
+                ! other element a circle
+                M = c(j)%M
+                allocate(c(i)%G(j)%Zgm(M),c(i)%G(j)%Rgm(M),c(i)%G(j)%Pgm(M))
+                c(i)%G(j)%Zgm(1:M) = c(j)%Zom(1:M) - cmplx(c(i)%x,c(i)%y,DP)
+             else
+                ! other element an ellipse
+                M = e(j-nc)%M
+                allocate(c(i)%G(j)%Zgm(M),c(i)%G(j)%Rgm(M),c(i)%G(j)%Pgm(M))
+                c(i)%G(j)%Zgm(1:M) = e(j-nc)%Zom(1:M) - cmplx(c(i)%x,c(i)%y,DP)
+             end if
+             c(i)%G(j)%Rgm(1:M) = abs(c(i)%G(j)%Zgm(1:M)) ! r
+             c(i)%G(j)%Pgm(1:M) = atan2(aimag(c(i)%G(j)%Zgm(1:M)), &
+                                       & real(c(i)%G(j)%Zgm(1:M))) ! theta
+          end if
+       end do
+    end do
+    do i = 1,ne
+       ! this element an ellipse
        do j = 1,ntot
           if (dom%InclBg(j,i+nc) .or. dom%InclIn(j,i+nc) .or. dom%InclIn(i+nc,j)) then
              if (j <= nc) then
-                ! other element is a circle
-                e(i)%Zgm(1:M,j) = e(i)%Zom(1:M) - cmplx(c(j)%x,c(j)%y,DP)
-                e(i)%Rgm(1:M,j) = abs(e(i)%Zgm(1:M,j))
-                e(i)%Pgm(1:M,j) = atan2(aimag(e(i)%Zgm(1:M,j)),real(e(i)%Zgm(1:M,j)))
+                ! other element a circle
+                M = c(j)%M
+                allocate(e(i)%G(j)%Zgm(M),e(i)%G(j)%Rgm(M),e(i)%G(j)%Pgm(M),z(M))
+                e(i)%G(j)%Zgm(1:M) = c(j)%Zom(1:M) - cmplx(e(i)%x,e(i)%y,DP)
              else
-                ! other element is an ellipse
-                e(i)%Zgm(1:M,j) = e(i)%Zom(1:M) - cmplx(e(j)%x,e(j)%y,DP)
-                z(1:M) = cacosh(e(i)%Zgm(:,j))*exp(-EYE*e(j)%theta)/e(j)%f
-                e(i)%Rgm(1:M,j) = real(z)  ! eta
-                e(i)%Pgm(1:M,j) = aimag(z) ! psi
+                ! other element an ellipse
+                M = e(j-nc)%M
+                allocate(e(i)%G(j)%Zgm(M),e(i)%G(j)%Rgm(M),e(i)%G(j)%Pgm(M),z(M))
+                e(i)%G(j)%Zgm(1:M) = e(j-nc)%Zom(1:M) - cmplx(e(i)%x,e(i)%y,DP)
              end if
+             z(1:M) = cacosh(e(i)%G(j)%Zgm(1:M))*exp(-EYE*e(i)%theta)/e(i)%f
+             e(i)%G(j)%Rgm(1:M) = real(z)  ! eta
+             e(i)%G(j)%Pgm(1:M) = aimag(z) ! psi
+             deallocate(z)
           end if
        end do
-       deallocate(z)
     end do
 
     ! create listing of points on circumference of circles for plotting

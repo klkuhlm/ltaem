@@ -74,6 +74,12 @@ module type_definitions
 
   end type element
     
+  type :: geom
+     ! number of matching points along other elements
+     complex(DP), allocatable :: Zgm(:)
+     real(DP), allocatable :: Rgm(:), Pgm(:)
+  end type geom
+
   type, extends(element) :: matching
      ! number of FS terms, number of matching points on circles/ellipses
      ! for lines/wells can be one (e.g., borehole storage) or zero (known Q)
@@ -101,8 +107,8 @@ module type_definitions
      real(DP), allocatable :: Pcm(:)
 
      ! computed geometry from this element to all others
-     complex(DP), allocatable :: Zcm(:), Zom(:), Zgm(:,:)
-     real(DP), allocatable :: Rgm(:,:), Pgm(:,:)
+     complex(DP), allocatable :: Zcm(:), Zom(:)
+     type(geom), allocatable :: G(:) ! number of elements
 
   end type matching
 

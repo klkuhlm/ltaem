@@ -618,7 +618,7 @@ contains
        stop
     end if
     
-    write(40,'(A)') '# points along circumference of elements'
+    write(40,'(A)') '# points along circumference of circular and elliptical elements'
     do i = 1,nc
        write(40,'(A,I0)') '# circular element ',i
        do j = 1,c(i)%M

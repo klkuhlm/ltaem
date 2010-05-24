@@ -163,7 +163,7 @@ contains
     end if
   end subroutine circle_match_flux_self
 
-  subroutine circle_match_head_other(c,p,LHS,RHS)
+  subroutine circle_match_head_other(c,r,p,LHS,RHS)
     use constants, only : DP, PI
     use utility, only : outerprod
     use type_definitions, only : circle
