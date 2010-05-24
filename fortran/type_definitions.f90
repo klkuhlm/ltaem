@@ -58,7 +58,7 @@ module type_definitions
      real(DP) :: aquitardK, aquitardSs, aquitardb
 
      ! unconfined-related (flag, specific yield, and vertical K)
-     integer ::  unconfinedFlag
+     logical ::  unconfinedFlag
      real(DP) :: Sy, Kz
 
      ! specified value across area of element (including background)

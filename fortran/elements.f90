@@ -8,10 +8,10 @@ module elements
   ! the four basic functions are overloaded for either 
   ! p being a vector (during inversion) or a scalar (during matching)
 
-  interface circle_head
-     module procedure circle_match_head_self, &
-          & circle_match_head_other !, circle_head_calc
-  end interface
+!!$  interface circle_head
+!!$     module procedure circle_match_head_self, &
+!!$          & circle_match_head_other, circle_head_calc
+!!$  end interface
 !!$  interface circle_flux
 !!$     module procedure circle_match_flux_self, &
 !!$          & circle_match_flux_other, circle_flux_calc
@@ -25,33 +25,31 @@ module elements
 !!$     module procedure ellipse_match_flux_self, &
 !!$          & ellipse_match_flux_other, ellipse_flux_calc
 !!$  end interface
-!!$
-!!$  interface time
-!!$     module procedure Time_pScal, Time_pVect
-!!$  end interface
-!!$  interface kappa
-!!$     module procedure  kappa_pVect, kappa_pScal
-!!$  end interface
+
+  interface time
+     module procedure Time_pScal, Time_pVect
+  end interface
+  interface kappa
+     module procedure  kappa_pVect, kappa_pScal
+  end interface
 
 contains
-  subroutine circle_match_head_self(c,p,dom,LHS,RHS)
+  subroutine circle_match_head_self(c,p,LHS,RHS)
     use constants, only : DP, PI
     use utility, only : outerprod
-    use type_definitions, only : circle, domain
+    use type_definitions, only : circle
     implicit none
 
     type(circle), intent(in) :: c
-    type(domain), intent(in) :: dom
     complex(DP), intent(in) :: p
 
     ! LHS dim=2 is 4N-2 for matching, 2N-1 for spec. total head
     complex(DP), intent(out), &
-         & dimension(c%M,(2*N-1)*(2-abs(c%ibnd))) :: LHS
+         & dimension(c%M,(2*c%N-1)*(2-abs(c%ibnd))) :: LHS
     complex(DP), intent(out), dimension(c%M) :: RHS
 
     integer :: j, N, M
-    complex(DP) :: kap
-    real(DP) :: cmat(1:M,0:N-1), smat(1:M,1:N-1)
+    real(DP) :: cmat(1:c%M,0:c%N-1), smat(1:c%M,1:c%N-1)
 
     N = c%N; M = c%M
     cmat = cos(outerprod(c%Pcm(1:M), real([(j,j=0,N-1)],DP)))
@@ -85,26 +83,25 @@ contains
     end if
   end subroutine circle_match_head_self
 
-  subroutine circle_match_flux_self(c,p,dom,LHS,RHS)
+  subroutine circle_match_flux_self(c,p,LHS,RHS)
     use constants, only : DP, PI
     use utility, only : outerprod
-    use type_definitions, only : circle, domain
+    use type_definitions, only : circle
     use bessel_functions, only : bK, bI
     implicit none
 
     type(circle), intent(in) :: c
-    type(domain), intent(in) :: dom
     complex(DP), intent(in) :: p
 
     complex(DP), intent(out), &
-         & dimension(c%M,(2*N-1)*(2-abs(c%ibnd))) :: LHS
+         & dimension(c%M,(2*c%N-1)*(2-abs(c%ibnd))) :: LHS
     complex(DP), intent(out), dimension(c%M) :: RHS
 
-    complex(DP), dimension(c%M,2*N-1) :: tmp
+    complex(DP), dimension(c%M,2*c%N-1) :: tmp
     integer :: j, N, M
     complex(DP), allocatable :: Kn(:), dKn(:), In(:), dIn(:)
     complex(DP) :: kap
-    real(DP) :: cmat(1:M,0:N-1), smat(1:M,1:N-1)
+    real(DP) :: cmat(1:c%M,0:c%N-1), smat(1:c%M,1:c%N-1)
 
     N = c%N; M = c%M
     cmat = cos(outerprod(c%Pcm(1:M), real([(j,j=0,N-1)],DP)))
@@ -129,7 +126,7 @@ contains
              ! effects of wellbore storage and skin on finite-radius
              ! well, where a_0 is computed (generally depends on
              ! other elements, too; these show up in off-diagonal sub-matrices)
-             LHS(1:M,1) = -((2.0 + c%r**2*dskin*p/c%parent%T)/(2.0*PI*c%r) + &
+             LHS(1:M,1) = -((2.0 + c%r**2*c%dskin*p/c%parent%T)/(2.0*PI*c%r) + &
                   & (Kn(0)*c%r*p)/(2.0*PI*c%r*kap*Kn(1)*c%parent%T))
              RHS(1:M) = time(p,c%time,.false.)*c%bdryQ/(PI*c%r*c%parent%T)
           else
@@ -147,7 +144,7 @@ contains
           ! no area source term effects on flux matchinig
           LHS(1:M,1:N) = tmp(M+1:2*M,1:2*N-1)
           RHS(1:M) = 0.0 
-       end if
+       end select
     
        if (c%ibnd==0 .or. c%calcin) then
           allocate(In(0:N),dIn(0:N))
@@ -177,22 +174,22 @@ contains
     logical, intent(in) :: area
     complex(DP), dimension(size(p,1)) :: mult
 
-    integer :: n, np
-    real(DP), allocatable :: ti(:),q(:)
+    integer :: n, np, flag
+    real(DP), allocatable :: ti(:),q(:),par(:)
     real(DP) :: tf
     
     np = size(p,1)
     if (area) then
-       time = t%areaTime
+       flag = t%areaTime
        allocate(par(size(t%ATPar)))
        par = t%AtPar
     else
-       time = t%BdryTime
+       flag = t%BdryTime
        allocate(par(size(t%BTPar)))
        par = t%BTPar
     end if
 
-    select case(time)
+    select case(flag)
     case(1)
        ! step on at time=par1
        mult(1:np) = exp(-par(1)*p)/p
@@ -229,7 +226,7 @@ contains
             & ((1.0 + exp(-par(1)*p/2.0))*p)
     case(:-1)
        !! arbitrary piecewise constant pumping rate with n steps, from ti(1) to tf
-       n = abs(time)
+       n = abs(flag)
        allocate(ti(n),Q(0:n))
 
        ! unpack initial times, pumping rates and final time
@@ -240,15 +237,19 @@ contains
             & exp(-spread(ti(1:n),2,np)*spread(p(1:np),1,n)),dim=1) - &
             & sum(Q(1:n) - Q(0:n-1))*exp(-tf*p(:)))/p(:)
     case default
-       write(*,'(A,I0)') 'Time_pvect: error in case for time behavior ',time
+       write(*,'(A,I0)') 'Time_pvect: error in case for time behavior ',flag
        stop
     end select
   end function Time_pvect
 
   ! wrapper to allow calling time routine with scalar p
-  function Time_pscal(p,t) result(mult)
+  function Time_pscal(p,t,area) result(mult)
+    use constants, only : DP
+    use type_definitions, only : time
+
     type(time), intent(in) :: t
     complex(DP), intent(in) :: p
+    logical, intent(in) :: area
     complex(DP) :: mult
 
     mult = sum(Time_pVect([p],t,area))
@@ -263,11 +264,11 @@ contains
     type(element), intent(in) :: el
     complex(DP), dimension(size(p)) :: q
 
-    integer :: i, ni, np
+    integer :: np
     complex(DP), dimension(size(p)) ::  kap2, exp2z
     complex(DP) :: boulton
 
-    np = size(p); ni = CInum
+    np = size(p)
     if(el%leakFlag /= 0) then
        kap2(1:np) = sqrt(p(:)*el%aquitardSs/el%aquitardK)
        exp2z(1:np) = exp(-2.0*kap2(:)*el%aquitardb)
