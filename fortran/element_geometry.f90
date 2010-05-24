@@ -38,12 +38,14 @@ contains
        forall (j = 1:c(i)%M)
           c(i)%Pcm(j) = -PI + 2.0*PI/c(i)%M*real(j-1,DP)
        end forall
+       c(i)%id = i ! global ID
     end do
     do i=1,ne
        allocate(e(i)%Pcm(e(i)%M))
        forall (j = 1:e(i)%M)
           e(i)%Pcm(j) = -PI + 2.0*PI/e(i)%M*real(j-1,DP)
        end forall
+       e(i)%id = i+nc ! global ID
     end do
 
     call ElementHierarchy(dom,sol)
@@ -132,13 +134,15 @@ contains
              if (j <= nc) then
                 ! other element a circle
                 M = c(j)%M
-                allocate(c(i)%G(j)%Zgm(M),c(i)%G(j)%Rgm(M),c(i)%G(j)%Pgm(M))
+                allocate(c(i)%G(j)%Zgm(M), c(i)%G(j)%Rgm(M), c(i)%G(j)%Pgm(M))
                 c(i)%G(j)%Zgm(1:M) = c(j)%Zom(1:M) - cmplx(c(i)%x,c(i)%y,DP)
+                c(i)%G(j)%ibnd = c(j)%ibnd
              else
                 ! other element an ellipse
                 M = e(j-nc)%M
                 allocate(c(i)%G(j)%Zgm(M),c(i)%G(j)%Rgm(M),c(i)%G(j)%Pgm(M))
                 c(i)%G(j)%Zgm(1:M) = e(j-nc)%Zom(1:M) - cmplx(c(i)%x,c(i)%y,DP)
+                c(i)%G(j)%ibnd = e(j-nc)%ibnd
              end if
              c(i)%G(j)%Rgm(1:M) = abs(c(i)%G(j)%Zgm(1:M)) ! r
              c(i)%G(j)%Pgm(1:M) = atan2(aimag(c(i)%G(j)%Zgm(1:M)), &
@@ -155,11 +159,13 @@ contains
                 M = c(j)%M
                 allocate(e(i)%G(j)%Zgm(M),e(i)%G(j)%Rgm(M),e(i)%G(j)%Pgm(M),z(M))
                 e(i)%G(j)%Zgm(1:M) = c(j)%Zom(1:M) - cmplx(e(i)%x,e(i)%y,DP)
+                e(i)%G(j)%ibnd = c(j)%ibnd
              else
                 ! other element an ellipse
                 M = e(j-nc)%M
                 allocate(e(i)%G(j)%Zgm(M),e(i)%G(j)%Rgm(M),e(i)%G(j)%Pgm(M),z(M))
                 e(i)%G(j)%Zgm(1:M) = e(j-nc)%Zom(1:M) - cmplx(e(i)%x,e(i)%y,DP)
+                e(i)%G(j)%ibnd = e(j-nc)%ibnd
              end if
              z(1:M) = cacosh(e(i)%G(j)%Zgm(1:M))*exp(-EYE*e(i)%theta)/e(i)%f
              e(i)%G(j)%Rgm(1:M) = real(z)  ! eta

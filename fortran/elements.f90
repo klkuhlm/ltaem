@@ -34,24 +34,22 @@ module elements
   end interface
 
 contains
-  subroutine circle_match_head_self(c,p,LHS,RHS)
+  function circle_match_head_self(c,p) result(r)
     use constants, only : DP, PI
     use utility, only : outerprod
-    use type_definitions, only : circle
+    use type_definitions, only : circle, match_result
     implicit none
 
     type(circle), intent(in) :: c
     complex(DP), intent(in) :: p
-
-    ! LHS dim=2 is 4N-2 for matching, 2N-1 for spec. total head
-    complex(DP), intent(out), &
-         & dimension(c%M,(2*c%N-1)*(2-abs(c%ibnd))) :: LHS
-    complex(DP), intent(out), dimension(c%M) :: RHS
+    type(match_result) :: r
 
     integer :: j, N, M
     real(DP) :: cmat(1:c%M,0:c%N-1), smat(1:c%M,1:c%N-1)
 
     N = c%N; M = c%M
+    ! LHS dim=2 is 4N-2 for matching, 2N-1 for spec. total head
+    allocate(r%LHS(M,(2*N-1)*(2-abs(c%ibnd))), r%RHS(M))
     cmat = cos(outerprod(c%Pcm(1:M), real([(j,j=0,N-1)],DP)))
     smat = sin(outerprod(c%Pcm(1:M), real([(j,j=1,N-1)],DP)))
 
@@ -60,42 +58,39 @@ contains
     ! ibnd==-2 would be here, but it doesn't actually make physical sense
     if (c%ibnd==0 .or. c%ibnd==-1) then
 
-       LHS(1:M,1:N) =       cmat/c%parent%K
-       LHS(1:M,N+1:2*N-1) = smat/c%parent%K
+       r%LHS(1:M,1:N) =       cmat/c%parent%K
+       r%LHS(1:M,N+1:2*N-1) = smat/c%parent%K
        
        ! setup RHS
        select case(c%ibnd)
        case(-1)
           ! put specified head on RHS
-          RHS(1:M) = time(p,c%time,.false.)*c%bdryQ
+          r%RHS(1:M) = time(p,c%time,.false.)*c%bdryQ
        case(0)
           ! put constant area source term effects on RHS
-          RHS(1:M) = -time(p,c%time,.true.)*c%areaQ*c%Ss/kappa(p,c%parent)**2
+          r%RHS(1:M) = -time(p,c%time,.true.)*c%areaQ*c%Ss/kappa(p,c%parent)**2
        end select
 
        if (c%ibnd==0 .or. c%calcin) then
-          LHS(1:M,2*N:3*N-1) = -cmat/c%K
-          LHS(1:M,3*N:4*N-2) = -smat/c%K
+          r%LHS(1:M,2*N:3*N-1) = -cmat/c%K
+          r%LHS(1:M,3*N:4*N-2) = -smat/c%K
        end if
     else
-       LHS = 0.0
-       RHS = 0.0
+       r%LHS = -huge(1.0)
+       r%RHS =  huge(1.0)
     end if
-  end subroutine circle_match_head_self
+  end function circle_match_head_self
 
-  subroutine circle_match_flux_self(c,p,LHS,RHS)
+  function circle_match_flux_self(c,p) result(r)
     use constants, only : DP, PI
-    use utility, only : outerprod
+    use utility, only : outerprod, match_result
     use type_definitions, only : circle
     use bessel_functions, only : bK, bI
     implicit none
 
     type(circle), intent(in) :: c
     complex(DP), intent(in) :: p
-
-    complex(DP), intent(out), &
-         & dimension(c%M,(2*c%N-1)*(2-abs(c%ibnd))) :: LHS
-    complex(DP), intent(out), dimension(c%M) :: RHS
+    type(match_result) :: r
 
     complex(DP), dimension(c%M,2*c%N-1) :: tmp
     integer :: j, N, M
@@ -104,6 +99,7 @@ contains
     real(DP) :: cmat(1:c%M,0:c%N-1), smat(1:c%M,1:c%N-1)
 
     N = c%N; M = c%M
+    allocate(r%LHS(M,(2*N-1)*(2-abs(c%ibnd))), r%RHS(M))
     cmat = cos(outerprod(c%Pcm(1:M), real([(j,j=0,N-1)],DP)))
     smat = sin(outerprod(c%Pcm(1:M), real([(j,j=1,N-1)],DP)))
 
@@ -127,24 +123,24 @@ contains
              ! effects of wellbore storage and skin on finite-radius
              ! well, where a_0 is computed (generally depends on
              ! other elements, too; these show up in off-diagonal sub-matrices)
-             LHS(1:M,1) = -((2.0 + c%r**2*c%dskin*p/c%parent%T)/(2.0*PI*c%r) + &
+             r%LHS(1:M,1) = -((2.0 + c%r**2*c%dskin*p/c%parent%T)/(2.0*PI*c%r) + &
                   & (Kn(0)*c%r*p)/(2.0*PI*c%r*kap*Kn(1)*c%parent%T))
-             RHS(1:M) = time(p,c%time,.false.)*c%bdryQ/(PI*c%r*c%parent%T)
+             r%RHS(1:M) = time(p,c%time,.false.)*c%bdryQ/(PI*c%r*c%parent%T)
           else
              ! specified flux (finite-radius well no storage)
              ! a_0 coefficient is computed analytically
-             LHS(1:M,1) = 0.0
-             RHS(1:M) = time(p,c%time,.false.)*c%bdryQ/(2.0*PI*c%r*Kn(1))*tmp(1:M,1)
+             r%LHS(1:M,1) = 0.0
+             r%RHS(1:M) = time(p,c%time,.false.)*c%bdryQ/(2.0*PI*c%r*Kn(1))*tmp(1:M,1)
           end if
           deallocate(Kn)
        case(1)
           ! put specified flux effects on RHS
-          LHS(1:M,1:N) = tmp(M+1:2*M,1:2*N-1)
-          RHS(1:M) = time(p,c%time,.false.)*c%bdryQ/(2.0*PI*c%r)
+          r%LHS(1:M,1:N) = tmp(M+1:2*M,1:2*N-1)
+          r%RHS(1:M) = time(p,c%time,.false.)*c%bdryQ/(2.0*PI*c%r)
        case(0)
           ! no area source term effects on flux matchinig
-          LHS(1:M,1:N) = tmp(M+1:2*M,1:2*N-1)
-          RHS(1:M) = 0.0 
+          r%LHS(1:M,1:N) = tmp(M+1:2*M,1:2*N-1)
+          r%RHS(1:M) = 0.0 
        end select
     
        if (c%ibnd==0 .or. c%calcin) then
@@ -153,64 +149,87 @@ contains
           call bID(kap*c%r,N+1,In,dIn)
           dIn = kap*dIn
           
-          LHS(1:M,2*N:3*N-1) = spread(dIn(0:N-1)/In(0:N-1), 1,M)*cmat/c%K
-          LHS(1:M,3*N:4*N-2) = spread(dIn(1:N-1)/In(1:N-1), 1,M)*smat/c%K
+          r%LHS(1:M,2*N:3*N-1) = spread(dIn(0:N-1)/In(0:N-1), 1,M)*cmat/c%K
+          r%LHS(1:M,3*N:4*N-2) = spread(dIn(1:N-1)/In(1:N-1), 1,M)*smat/c%K
           deallocate(dIn,In)
        end if
     else
-       LHS = 0.0
-       RHS = 0.0
+       r%LHS = -huge(1.0)
+       r%RHS =  huge(1.0)
     end if
   end subroutine circle_match_flux_self
 
-  subroutine circle_match_head_other(c,r,p,LHS,RHS)
+  function circle_match_head_other(c,el,dom,p) result(r)
     use constants, only : DP, PI
     use utility, only : outerprod
-    use type_definitions, only : circle
+    use type_definitions, only : circle, domain, matching, match_result
     implicit none
 
-    type(circle), intent(in) :: c
+    type(circle), intent(in) :: c ! source circle
+    type(matching), intent(in) :: el ! target element (circle or ellipse)
+    type(domain), intent(in) :: dom
     complex(DP), intent(in) :: p
+    type(match_result) :: r 
 
-    ! LHS dim=2 is 4N-2 for matching, 2N-1 for spec. total head
-    complex(DP), intent(out), &
-         & dimension(c%M,(2*c%N-1)*(2-abs(c%ibnd))) :: LHS
-    complex(DP), intent(out), dimension(c%M) :: RHS
+    integer :: src, targ, N, M
+    real(DP), allocatable :: cmat(:,:), smat(:,:)
+    complex(DP), allocatable :: Kn(:,:), Kn0(:), In(:,:), In0(:)
+    complex(DP), allocatable :: tmp(:,:)
+    complex(DP) :: kap
+    
+    N = c%N ! number of coefficients in the source circular element
+    targ = el%id 
+    src = c%id
 
-    integer :: j, N, M
-    real(DP) :: cmat(1:c%M,0:c%N-1), smat(1:c%M,1:c%N-1)
+    ! can the target element "see" the outside of the source element?
+    if (dom%inclBg(src,targ)) then
+       ! number of matching locations on other element to compute effects 
+       ! of the current circle at
+       M = el%M
+       allocate(r%LHS(M,(2*N-1)*(2-abs(el%ibnd))), r%RHS(M), &
+            & cmat(M,0:N-1), smat(M,1:N-1), tmp(M,2*N-1))
+          
+          cmat = cos(outerprod(c%G(i)%Pgm(1:M), real([(j,j=0,N-1)],DP)))
+          smat = sin(outerprod(c%G(i)%Pgm(1:M), real([(j,j=1,N-1)],DP)))
 
-    N = c%N; M = c%M
-    cmat = cos(outerprod(c%Pcm(1:M), real([(j,j=0,N-1)],DP)))
-    smat = sin(outerprod(c%Pcm(1:M), real([(j,j=1,N-1)],DP)))
+          ! setup LHS (head effects due to source element)
+          if (el%ibnd==0 .or. el%ibnd==-1) then
+             allocate(Kn(M,0:N-1),Kn0(0:N-1))
+             kap = kappa(p,c%parent)
+             Kn(0:N-1,1:M) = transpose(bK(kap*c%G(i)%Rgm(1:M),N))
+             Kn0(0:N-1) = bK(kap*c%r,N)
 
-    ! setup LHS
-    ! matching or specified head (always first M rows); no dependence on p
-    ! ibnd==-2 would be here, but it doesn't actually make physical sense
-    if (c%ibnd==0 .or. c%ibnd==-1) then
+             tmp(1:M,1:N) =       Kn(0:N-1,:)/spread(Kn0(0:N-1),1,M)*cmat/c%parent%K
+             tmp(1:M,N+1:2*N-1) = Kn(1:N-1,:)/spread(Kn0(1:N-1),1,M)*smat/c%parent%K
+             deallocate(Kn,Kn0)
+          end if
+          
+          if (c%ibnd == 2) then
+             
+          end if
+          
 
-       LHS(1:M,1:N) =       cmat/c%parent%K
-       LHS(1:M,N+1:2*N-1) = smat/c%parent%K
-       
-       ! setup RHS
-       select case(c%ibnd)
-       case(-1)
-          ! put specified head on RHS
-          RHS(1:M) = time(p,c%time,.false.)*c%bdryQ
-       case(0)
-          ! put constant area source term effects on RHS
-          RHS(1:M) = -time(p,c%time,.true.)*c%areaQ*c%Ss/kappa(p,c%parent)**2
-       end select
-
-       if (c%ibnd==0 .or. c%calcin) then
-          LHS(1:M,2*N:3*N-1) = -cmat/c%K
-          LHS(1:M,3*N:4*N-2) = -smat/c%K
+          ! setup RHS
+          select case(el%ibnd)
+          case(-1)
+                ! put specified head on RHS
+                RHS(1:M) = time(p,c%time,.false.)*c%bdryQ
+             case(0)
+                ! put constant area source term effects on RHS
+                RHS(1:M) = -time(p,c%time,.true.)*c%areaQ*c%Ss/kappa(p,c%parent)**2
+             end select
+             
+             if (c%ibnd==0 .or. c%calcin) then
+                LHS(1:M,2*N:3*N-1) = -cmat/c%K
+                LHS(1:M,3*N:4*N-2) = -smat/c%K
+             end if
+          else
+             LHS = 0.0
+             RHS = 0.0
+          end if
        end if
-    else
-       LHS = 0.0
-       RHS = 0.0
-    end if
-  end subroutine circle_match_head_other
+    end do
+  end function circle_match_head_other
 
 
   ! ##################################################

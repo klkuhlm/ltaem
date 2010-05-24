@@ -78,7 +78,13 @@ module type_definitions
      ! number of matching points along other elements
      complex(DP), allocatable :: Zgm(:)
      real(DP), allocatable :: Rgm(:), Pgm(:)
+     integer :: ibnd
   end type geom
+
+  type :: match_result
+     ! structure for storing intermediate results
+     complex(DP), allocatable :: LHS(:,:), RHS(:)
+  end type match_result
 
   type, extends(element) :: matching
      ! number of FS terms, number of matching points on circles/ellipses
