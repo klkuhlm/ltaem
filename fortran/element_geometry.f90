@@ -17,18 +17,13 @@ contains
     use utility, only : ccosh, cacosh
 
     type(domain), intent(inout) :: dom
-    type(circle), intent(in), dimension(:) :: c
-    type(ellipse), intent(in), dimension(:) :: e
-    type(element), intent(in) :: bg
+    type(circle),  target, intent(inout), dimension(:) :: c
+    type(ellipse), target, intent(inout), dimension(:) :: e
+    type(element), target, intent(inout) :: bg
     type(solution), intent(in) :: sol
 
-    ! x/y distances from wells to points on circumference of elements
-    real(DP), dimension(CIm,WLnum,CInum) :: CIXwm, CIYwm
-    ! x/y distances from center of other circles to circumference of elements
-    real(DP), dimension(CIm,CInum,CInum) :: CIXgm, CIYgm
-    real(DP) :: rm 
-    integer :: i, ne, nc, ntot, par, M
-    complex(DP), allocatable :: z
+    integer :: i, j, ne, nc, ntot, par, M
+    complex(DP), allocatable :: z(:)
 
     nc = dom%num(1)
     ne = dom%num(2)
@@ -40,14 +35,14 @@ contains
     ! each element can have a different number of matching locations
     do i=1,nc
        allocate(c(i)%Pcm(c(i)%M))
-       forall (phi = 1:c(i)%M)
-          c(i)%Pcm(phi) = -PI + 2.0*PI/c(i)%M*real(phi-1,DP)
+       forall (j = 1:c(i)%M)
+          c(i)%Pcm(j) = -PI + 2.0*PI/c(i)%M*real(j-1,DP)
        end forall
     end do
     do i=1,ne
        allocate(e(i)%Pcm(e(i)%M))
-       forall (phi = 1:e(i)%M)
-          e(i)%Pcm(phi) = -PI + 2.0*PI/e(i)%M*real(phi-1,DP)
+       forall (j = 1:e(i)%M)
+          e(i)%Pcm(j) = -PI + 2.0*PI/e(i)%M*real(j-1,DP)
        end forall
     end do
 
@@ -57,37 +52,35 @@ contains
     bg%parent => null()  ! background has no parent
     do i=1,nc
        par = dom%InclUp(i) 
-       select case(par)
-       case(0)
+       if (par==0) then
           ! circle has background as parent
           c(i)%parent => bg
-       case(1:nc)
+       elseif (par <= nc) then
           ! circle has another circle as parent
           c(i)%parent => c(par)%element
-       case(nc+1:ntot)   
+       elseif (par <= ntot) then
           ! circle has ellipse as parent
           c(i)%parent => e(par)%element
-       case default
+       else
           write(*,'(A,(1X,I0))') 'error in parent element index',par,i
           stop 200
-       end select
+       end if
     end do
     do i=1,ne
        par = dom%InclUp(nc+i) 
-       select case(par)
-       case(0)
+       if (par == 0) then
           ! ellipse has background as parent
           e(i)%parent => bg
-       case(1:nc)
+       elseif (par <= nc) then
           ! ellipse has circle as parent
           e(i)%parent => c(par)%element
-       case(nc+1:ntot) 
+       elseif (par <= ntot) then 
           ! ellipse has another ellipse as parent
           e(i)%parent => e(par)%element
-       case default
+       else
           write(*,'(A,(1X,I0))') 'error in parent element index',par,i
           stop 201
-       end select
+       end if
     end do
 
     ! circular element geometry
@@ -137,7 +130,7 @@ contains
             & e(i)%Rgm(M,ntot),e(i)%Pgm(M,ntot),z(M))
 
        ! local elliptical coordinates
-       z(1:M) = e(i)%f*ccosh(cmplx(e(i)%eta,e(i)%Pcm(1:M)))
+       z(1:M) = e(i)%f*ccosh(cmplx(e(i)%eta,e(i)%Pcm(1:M),DP))
 
        ! x,y components from center of element to points on circumference
        ! account for rotation of local elliptical coordinates
@@ -174,7 +167,7 @@ contains
     end do
 
     ! create listing of points on circumference of circles for plotting
-    call writeGeometry(c,e)    
+    call writeGeometry(c,e,sol)    
   end subroutine DistanceAngleCalcs
 
   !##################################################
@@ -186,7 +179,8 @@ contains
     type(domain), intent(inout) :: dom
     type(solution), intent(in) :: sol
     integer :: nc,ne,ntot, line
-
+    character(4) :: chint
+    
     nc = dom%num(1)
     ne = dom%num(2)
     ntot = sum(dom%num)
@@ -196,21 +190,25 @@ contains
     open(unit=75, file=sol%elemHfName, status='old', action='read')
     open(unit=57, file=trim(sol%elemHfName)//'.echo',status='replace',action='write')
 
+    write(chint,'(I4.4)') ntot
     do line = 0,ntot
        read(75,*) dom%InclIn(line,1:ntot)
     end do
     do line = 0,ntot
-       write(57,*) dom%InclIn(line,1:ntot),'InclIn(',line,',1:',ni,')'
+       write(57,'('//chint//'(L1,1X),2(A,I0),A)')  &
+            & dom%InclIn(line,1:ntot),'InclIn(',line,',1:',ntot,')'
     end do
 
     read(75,*) dom%InclUp(1:ntot)
-    write(57,*) InclUp(1:ni),'InclUp(1:',ni,')'
+    write(57,'('//chint//'(I0,1X),A,I0,A)') &
+         & dom%InclUp(1:ntot),'InclUp(1:',ntot,')'
 
     do line = 1,ntot
        read(75,*) dom%InclBg(line,1:ntot)
     end do    
     do line = 1,ntot
-       write(57,*) dom%InclBg(line,1:ni), 'InclBg(',line,',1:',ni,')'
+       write(57,'('//chint//'(L1,1X),2(A,I0),A)') &
+            & dom%InclBg(line,1:ntot), 'InclBg(',line,',1:',ntot,')'
     end do
 
     close(75)
