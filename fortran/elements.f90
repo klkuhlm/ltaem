@@ -8,23 +8,23 @@ module elements
   ! the four basic functions are overloaded for either 
   ! p being a vector (during inversion) or a scalar (during matching)
 
-  interface circle_head
-     module procedure circle_match_head_self, &
-          & circle_match_head_other, circle_head_calc
-  end interface
-  interface circle_flux
-     module procedure circle_match_flux_self, &
-          & circle_match_flux_other, circle_flux_calc
-  end interface
-
-  interface ellipse_head
-     module procedure ellipse_match_head_self, &
-          & ellipse_match_head_other, ellipse_head_calc
-  end interface
-  interface ellipse_flux
-     module procedure ellipse_match_flux_self, &
-          & ellipse_match_flux_other, ellipse_flux_calc
-  end interface
+!!$  interface circle_head
+!!$     module procedure circle_match_head_self, &
+!!$          & circle_match_head_other, circle_head_calc
+!!$  end interface
+!!$  interface circle_flux
+!!$     module procedure circle_match_flux_self, &
+!!$          & circle_match_flux_other, circle_flux_calc
+!!$  end interface
+!!$
+!!$  interface ellipse_head
+!!$     module procedure ellipse_match_head_self, &
+!!$          & ellipse_match_head_other, ellipse_head_calc
+!!$  end interface
+!!$  interface ellipse_flux
+!!$     module procedure ellipse_match_flux_self, &
+!!$          & ellipse_match_flux_other, ellipse_flux_calc
+!!$  end interface
 
   interface time
      module procedure Time_pScal, Time_pVect
@@ -83,8 +83,8 @@ contains
 
   function circle_match_flux_self(c,p) result(r)
     use constants, only : DP, PI
-    use utility, only : outerprod, match_result
-    use type_definitions, only : circle
+    use utility, only : outerprod
+    use type_definitions, only : circle, match_result
     use bessel_functions, only : bK, bI
     implicit none
 
@@ -157,12 +157,13 @@ contains
        r%LHS = -huge(1.0)
        r%RHS =  huge(1.0)
     end if
-  end subroutine circle_match_flux_self
+  end function circle_match_flux_self
 
   function circle_match_head_other(c,el,dom,p) result(r)
     use constants, only : DP, PI
     use utility, only : outerprod
     use type_definitions, only : circle, domain, matching, match_result
+    use bessel_functions, only : bK, bI
     implicit none
 
     type(circle), intent(in) :: c ! source circle
@@ -171,7 +172,7 @@ contains
     complex(DP), intent(in) :: p
     type(match_result) :: r 
 
-    integer :: src, targ, N, M
+    integer :: j, src, targ, N, M
     real(DP), allocatable :: cmat(:,:), smat(:,:)
     complex(DP), allocatable :: Kn(:,:), Kn0(:), In(:,:), In0(:)
     complex(DP), allocatable :: tmp(:,:)
@@ -186,8 +187,8 @@ contains
        M = el%M
        allocate(r%LHS(M,(2*N-1)*(2-abs(el%ibnd))), r%RHS(M), &
             & cmat(M,0:N-1), smat(M,1:N-1))
-       cmat = cos(outerprod(c%G(i)%Pgm(1:M), real([(j,j=0,N-1)],DP)))
-       smat = sin(outerprod(c%G(i)%Pgm(1:M), real([(j,j=1,N-1)],DP)))
+       cmat = cos(outerprod(c%G(targ)%Pgm(1:M), real([(j,j=0,N-1)],DP)))
+       smat = sin(outerprod(c%G(targ)%Pgm(1:M), real([(j,j=1,N-1)],DP)))
     end if
     
     ! can the target element "see" the outside of the source element?
@@ -199,7 +200,7 @@ contains
        if (el%ibnd==0 .or. el%ibnd==-1) then
           allocate(Kn(M,0:N-1),Kn0(0:N-1))
           kap = kappa(p,c%parent)
-          Kn(0:N-1,1:M) = transpose(bK(kap*c%G(i)%Rgm(1:M),N))
+          Kn(0:N-1,1:M) = transpose(bK(kap*c%G(targ)%Rgm(1:M),N))
           Kn0(0:N-1) = bK(kap*c%r,N)
 
           ! head effects on other element
@@ -209,33 +210,32 @@ contains
 
           select case (c%ibnd)
           case(2)
-             allocate(Kn(0:1))
+             allocate(Kn0(0:1))
              kap = kappa(p,c%parent)
-             Kn(0:1) = bK(kap*c%r,2)
+             Kn0(0:1) = bK(kap*c%r,2)
 
              if (c%StorIn) then
                 ! wellbore storage and skin from finite-radius well
-                r%LHS(1:M,1) = -Kn(0)*((2.0 + c%r**2*c%dskin*p/c%parent%T)/(2.0*PI*c%r) + &
-                     & (Kn(0)*c%r*p)/(2.0*PI*c%r*kap*Kn(1)*c%parent%T))*tmp(1:M,1)
+                r%LHS(1:M,1) = -Kn0(0)*((2.0 + c%r**2*c%dskin*p/c%parent%T)/(2.0*PI*c%r) + &
+                     & (Kn0(0)*c%r*p)/(2.0*PI*c%r*kap*Kn0(1)*c%parent%T))*tmp(1:M,1)
                 r%RHS(1:M) = 0.0
              else
                 ! specified flux (finite-radius well no storage)
                 R%LHS(1:M,1) = 0.0
-                r%RHS(1:M,1) = Kn(0)*time(p,c%time,.false.)*c%bdryQ/(2.0*PI*c%r*Kn(1))*tmp(1:M,1)
+                r%RHS(1:M) = Kn0(0)*time(p,c%time,.false.)*c%bdryQ/(2.0*PI*c%r*Kn0(1))*tmp(1:M,1)
              end if
           case(-1,0,1)
              r%LHS(1:M,1:2*N-1) = tmp(1:M,1:2*N-1)
           end select
        end if
-
-    elseif(dom%InclIn(src,targ))
+    elseif (dom%InclIn(src,targ)) then
        ! can target element "see" the inside of the source element?
        !  i.e., is the source element the parent?
 
        if (el%ibnd==0 .or. el%ibnd==-1) then
           allocate(In(M,0:N-1),In0(0:N-1))
           kap = kappa(p,c%element)
-          In(0:N-1,1:M) = transpose(bI(kap*c%G(i)%Rgm(1:M),N))
+          In(0:N-1,1:M) = transpose(bI(kap*c%G(targ)%Rgm(1:M),N))
           In0(0:N-1) = bI(kap*c%r,N)
 
           ! head effects on other element
@@ -250,6 +250,7 @@ contains
     use constants, only : DP, PI
     use utility, only : outerprod
     use type_definitions, only : circle, domain, matching, match_result
+    use bessel_functions, only : bK, bI
     implicit none
 
     type(circle), intent(in) :: c ! source circle
@@ -258,7 +259,7 @@ contains
     complex(DP), intent(in) :: p
     type(match_result) :: r 
 
-    integer :: src, targ, N, M
+    integer :: j, src, targ, N, M
     real(DP), allocatable :: cmat(:,:), smat(:,:)
     complex(DP), allocatable :: Kn(:,:), Kn0(:), In(:,:), In0(:)
     complex(DP), allocatable :: tmp(:,:)
@@ -273,8 +274,8 @@ contains
        M = el%M
        allocate(r%LHS(M,(2*N-1)*(2-abs(el%ibnd))), r%RHS(M), &
             & cmat(M,0:N-1), smat(M,1:N-1))
-       cmat = cos(outerprod(c%G(i)%Pgm(1:M), real([(j,j=0,N-1)],DP)))
-       smat = sin(outerprod(c%G(i)%Pgm(1:M), real([(j,j=1,N-1)],DP)))
+       cmat = cos(outerprod(c%G(targ)%Pgm(1:M), real([(j,j=0,N-1)],DP)))
+       smat = sin(outerprod(c%G(targ)%Pgm(1:M), real([(j,j=1,N-1)],DP)))
     end if
     
     ! can the target element "see" the outside of the source element?
@@ -286,7 +287,7 @@ contains
        if (el%ibnd==0 .or. el%ibnd==-1) then
           allocate(Kn(M,0:N-1),Kn0(0:N-1))
           kap = kappa(p,c%parent)
-          Kn(0:N-1,1:M) = transpose(bK(kap*c%G(i)%Rgm(1:M),N))
+          Kn(0:N-1,1:M) = transpose(bK(kap*c%G(targ)%Rgm(1:M),N))
           Kn0(0:N-1) = bK(kap*c%r,N)
 
           ! head effects on other element
@@ -296,33 +297,32 @@ contains
 
           select case (c%ibnd)
           case(2)
-             allocate(Kn(0:1))
+             allocate(Kn0(0:1))
              kap = kappa(p,c%parent)
-             Kn(0:1) = bK(kap*c%r,2)
+             Kn0(0:1) = bK(kap*c%r,2)
 
              if (c%StorIn) then
                 ! wellbore storage and skin from finite-radius well
-                r%LHS(1:M,1) = -Kn(0)*((2.0 + c%r**2*c%dskin*p/c%parent%T)/(2.0*PI*c%r) + &
-                     & (Kn(0)*c%r*p)/(2.0*PI*c%r*kap*Kn(1)*c%parent%T))*tmp(1:M,1)
+                r%LHS(1:M,1) = -Kn0(0)*((2.0 + c%r**2*c%dskin*p/c%parent%T)/(2.0*PI*c%r) + &
+                     & (Kn0(0)*c%r*p)/(2.0*PI*c%r*kap*Kn0(1)*c%parent%T))*tmp(1:M,1)
                 r%RHS(1:M) = 0.0
              else
                 ! specified flux (finite-radius well no storage)
                 R%LHS(1:M,1) = 0.0
-                r%RHS(1:M,1) = Kn(0)*time(p,c%time,.false.)*c%bdryQ/(2.0*PI*c%r*Kn(1))*tmp(1:M,1)
+                r%RHS(1:M) = Kn0(0)*time(p,c%time,.false.)*c%bdryQ/(2.0*PI*c%r*Kn0(1))*tmp(1:M,1)
              end if
           case(-1,0,1)
              r%LHS(1:M,1:2*N-1) = tmp(1:M,1:2*N-1)
           end select
        end if
-
-    elseif(dom%InclIn(src,targ))
+    elseif (dom%InclIn(src,targ)) then
        ! can target element "see" the inside of the source element?
        !  i.e., is the source element the parent?
 
        if (el%ibnd==0 .or. el%ibnd==-1) then
           allocate(In(M,0:N-1),In0(0:N-1))
           kap = kappa(p,c%element)
-          In(0:N-1,1:M) = transpose(bI(kap*c%G(i)%Rgm(1:M),N))
+          In(0:N-1,1:M) = transpose(bI(kap*c%G(targ)%Rgm(1:M),N))
           In0(0:N-1) = bI(kap*c%r,N)
 
           ! head effects on other element
