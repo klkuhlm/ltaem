@@ -130,7 +130,7 @@ contains
              ! specified flux (finite-radius well no storage)
              ! a_0 coefficient is computed analytically
              r%LHS(1:M,1) = 0.0
-             r%RHS(1:M) = time(p,c%time,.false.)*c%bdryQ/(2.0*PI*c%r*Kn(1))*tmp(1:M,1)
+             r%RHS(1:M) = Kn(0)*time(p,c%time,.false.)*c%bdryQ/(2.0*PI*c%r*Kn(1))*tmp(1:M,1)
           end if
           deallocate(Kn)
        case(1)
@@ -176,7 +176,7 @@ contains
     complex(DP), allocatable :: Kn(:,:), Kn0(:), In(:,:), In0(:)
     complex(DP), allocatable :: tmp(:,:)
     complex(DP) :: kap
-    
+
     N = c%N ! number of coefficients in the source circular element
     targ = el%id 
     src = c%id
@@ -188,47 +188,42 @@ contains
        M = el%M
        allocate(r%LHS(M,(2*N-1)*(2-abs(el%ibnd))), r%RHS(M), &
             & cmat(M,0:N-1), smat(M,1:N-1), tmp(M,2*N-1))
-          
-          cmat = cos(outerprod(c%G(i)%Pgm(1:M), real([(j,j=0,N-1)],DP)))
-          smat = sin(outerprod(c%G(i)%Pgm(1:M), real([(j,j=1,N-1)],DP)))
 
-          ! setup LHS (head effects due to source element)
-          if (el%ibnd==0 .or. el%ibnd==-1) then
-             allocate(Kn(M,0:N-1),Kn0(0:N-1))
-             kap = kappa(p,c%parent)
-             Kn(0:N-1,1:M) = transpose(bK(kap*c%G(i)%Rgm(1:M),N))
-             Kn0(0:N-1) = bK(kap*c%r,N)
+       cmat = cos(outerprod(c%G(i)%Pgm(1:M), real([(j,j=0,N-1)],DP)))
+       smat = sin(outerprod(c%G(i)%Pgm(1:M), real([(j,j=1,N-1)],DP)))
 
-             tmp(1:M,1:N) =       Kn(0:N-1,:)/spread(Kn0(0:N-1),1,M)*cmat/c%parent%K
-             tmp(1:M,N+1:2*N-1) = Kn(1:N-1,:)/spread(Kn0(1:N-1),1,M)*smat/c%parent%K
-             deallocate(Kn,Kn0)
-          end if
-          
-          if (c%ibnd == 2) then
-             
-          end if
-          
+       ! setup LHS (head effects due to source element)
+       if (el%ibnd==0 .or. el%ibnd==-1) then
+          allocate(Kn(M,0:N-1),Kn0(0:N-1))
+          kap = kappa(p,c%parent)
+          Kn(0:N-1,1:M) = transpose(bK(kap*c%G(i)%Rgm(1:M),N))
+          Kn0(0:N-1) = bK(kap*c%r,N)
 
-          ! setup RHS
-          select case(el%ibnd)
-          case(-1)
-                ! put specified head on RHS
-                RHS(1:M) = time(p,c%time,.false.)*c%bdryQ
-             case(0)
-                ! put constant area source term effects on RHS
-                RHS(1:M) = -time(p,c%time,.true.)*c%areaQ*c%Ss/kappa(p,c%parent)**2
-             end select
-             
-             if (c%ibnd==0 .or. c%calcin) then
-                LHS(1:M,2*N:3*N-1) = -cmat/c%K
-                LHS(1:M,3*N:4*N-2) = -smat/c%K
-             end if
-          else
-             LHS = 0.0
-             RHS = 0.0
-          end if
+          tmp(1:M,1:N) =       Kn(0:N-1,:)/spread(Kn0(0:N-1),1,M)*cmat/c%parent%K
+          tmp(1:M,N+1:2*N-1) = Kn(1:N-1,:)/spread(Kn0(1:N-1),1,M)*smat/c%parent%K
+          deallocate(Kn,Kn0)
        end if
-    end do
+
+       select case (c%ibnd)
+       case(2)
+          allocate(Kn(0:1))
+          kap = kappa(p,c%parent)
+          Kn(0:1) = bK(kap*c%r,2)
+
+          if (c%StorIn) then
+             ! effects of wellbore storage and skin on finite-radius well
+             r%LHS(1:M,1) = -Kn(0)*((2.0 + c%r**2*c%dskin*p/c%parent%T)/(2.0*PI*c%r) + &
+                  & (Kn(0)*c%r*p)/(2.0*PI*c%r*kap*Kn(1)*c%parent%T))*tmp(1:M,1)
+             r%RHS(1:M) = 0.0
+          else
+             ! specified flux (finite-radius well no storage)
+             R%LHS(1:M,1) = 0.0
+             r%RHS(1:M,1) = Kn(0)*time(p,c%time,.false.)*c%bdryQ/(2.0*PI*c%r*Kn(1))*tmp(1:M,1)
+          end if
+       case(-1,0,1)
+          r%LHS(1:M,1:2*N-1) = tmp(1:M,1:2*N-1)
+       end select
+    end if
   end function circle_match_head_other
 
 
