@@ -228,11 +228,10 @@ contains
           end select
        end if
 
-    ! can target element "see" the inside of the source element (is the source element the parent)?
     elseif(dom%InclIn(src,targ))
-       
-       ! setup LHS (head effects due to source element)
-       ! for constant head (-1), or matching (0)
+       ! can target element "see" the inside of the source element?
+       !  i.e., is the source element the parent?
+
        if (el%ibnd==0 .or. el%ibnd==-1) then
           allocate(In(M,0:N-1),In0(0:N-1))
           kap = kappa(p,c%element)
@@ -246,6 +245,93 @@ contains
        end if
     end if
   end function circle_match_head_other
+
+  function circle_match_flux_other(c,el,dom,p) result(r)
+    use constants, only : DP, PI
+    use utility, only : outerprod
+    use type_definitions, only : circle, domain, matching, match_result
+    implicit none
+
+    type(circle), intent(in) :: c ! source circle
+    type(matching), intent(in) :: el ! target element (circle or ellipse)
+    type(domain), intent(in) :: dom
+    complex(DP), intent(in) :: p
+    type(match_result) :: r 
+
+    integer :: src, targ, N, M
+    real(DP), allocatable :: cmat(:,:), smat(:,:)
+    complex(DP), allocatable :: Kn(:,:), Kn0(:), In(:,:), In0(:)
+    complex(DP), allocatable :: tmp(:,:)
+    complex(DP) :: kap
+
+    N = c%N ! number of coefficients in the source circular element
+    targ = el%id 
+    src = c%id
+
+    if (dom%inclBg(src,targ) .or. dom%InclIn(src,targ)) then
+       ! common stuff between both branches below
+       M = el%M
+       allocate(r%LHS(M,(2*N-1)*(2-abs(el%ibnd))), r%RHS(M), &
+            & cmat(M,0:N-1), smat(M,1:N-1))
+       cmat = cos(outerprod(c%G(i)%Pgm(1:M), real([(j,j=0,N-1)],DP)))
+       smat = sin(outerprod(c%G(i)%Pgm(1:M), real([(j,j=1,N-1)],DP)))
+    end if
+    
+    ! can the target element "see" the outside of the source element?
+    if (dom%inclBg(src,targ)) then
+       allocate(tmp(M,2*N-1))
+
+       ! setup LHS (head effects due to source element)
+       ! for constant head (-1), or matching (0)
+       if (el%ibnd==0 .or. el%ibnd==-1) then
+          allocate(Kn(M,0:N-1),Kn0(0:N-1))
+          kap = kappa(p,c%parent)
+          Kn(0:N-1,1:M) = transpose(bK(kap*c%G(i)%Rgm(1:M),N))
+          Kn0(0:N-1) = bK(kap*c%r,N)
+
+          ! head effects on other element
+          tmp(1:M,1:N) =       Kn(0:N-1,:)/spread(Kn0(0:N-1),1,M)*cmat/c%parent%K
+          tmp(1:M,N+1:2*N-1) = Kn(1:N-1,:)/spread(Kn0(1:N-1),1,M)*smat/c%parent%K
+          deallocate(Kn,Kn0)
+
+          select case (c%ibnd)
+          case(2)
+             allocate(Kn(0:1))
+             kap = kappa(p,c%parent)
+             Kn(0:1) = bK(kap*c%r,2)
+
+             if (c%StorIn) then
+                ! wellbore storage and skin from finite-radius well
+                r%LHS(1:M,1) = -Kn(0)*((2.0 + c%r**2*c%dskin*p/c%parent%T)/(2.0*PI*c%r) + &
+                     & (Kn(0)*c%r*p)/(2.0*PI*c%r*kap*Kn(1)*c%parent%T))*tmp(1:M,1)
+                r%RHS(1:M) = 0.0
+             else
+                ! specified flux (finite-radius well no storage)
+                R%LHS(1:M,1) = 0.0
+                r%RHS(1:M,1) = Kn(0)*time(p,c%time,.false.)*c%bdryQ/(2.0*PI*c%r*Kn(1))*tmp(1:M,1)
+             end if
+          case(-1,0,1)
+             r%LHS(1:M,1:2*N-1) = tmp(1:M,1:2*N-1)
+          end select
+       end if
+
+    elseif(dom%InclIn(src,targ))
+       ! can target element "see" the inside of the source element?
+       !  i.e., is the source element the parent?
+
+       if (el%ibnd==0 .or. el%ibnd==-1) then
+          allocate(In(M,0:N-1),In0(0:N-1))
+          kap = kappa(p,c%element)
+          In(0:N-1,1:M) = transpose(bI(kap*c%G(i)%Rgm(1:M),N))
+          In0(0:N-1) = bI(kap*c%r,N)
+
+          ! head effects on other element
+          r%LHS(1:M,1:N) =       In(0:N-1,:)/spread(In0(0:N-1),1,M)*cmat/c%K
+          r%LHS(1:M,N+1:2*N-1) = In(1:N-1,:)/spread(In0(1:N-1),1,M)*smat/c%K
+          deallocate(In,In0)
+       end if
+    end if
+  end function circle_match_flux_other
 
 
   ! ##################################################
