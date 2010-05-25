@@ -282,7 +282,7 @@ contains
     if (dom%inclBg(src,targ)) then
        allocate(tmp(M,2*N-1))
 
-       ! setup LHS (head effects due to source element)
+       ! setup LHS (flux effects due to source element)
        ! for constant head (-1), or matching (0)
        if (el%ibnd==0 .or. el%ibnd==-1) then
           allocate(Kn(M,0:N-1),Kn0(0:N-1))
