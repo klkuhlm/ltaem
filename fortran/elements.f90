@@ -46,12 +46,15 @@ contains
 
     integer :: j, N, M
     real(DP) :: cmat(1:c%M,0:c%N-1), smat(1:c%M,1:c%N-1)
+    real(DP), dimension(0:c%N-1) :: vi
 
     N = c%N; M = c%M
+    vi = real([(j,j=0,N-1)],DP)
+
     ! LHS dim=2 is 4N-2 for matching, 2N-1 for spec. total head
     allocate(r%LHS(M,(2*N-1)*(2-abs(c%ibnd))), r%RHS(M))
-    cmat = cos(outerprod(c%Pcm(1:M), real([(j,j=0,N-1)],DP)))
-    smat = sin(outerprod(c%Pcm(1:M), real([(j,j=1,N-1)],DP)))
+    cmat = cos(outerprod(c%Pcm(1:M), vi(0:N-1)))
+    smat = sin(outerprod(c%Pcm(1:M), vi(1:N-1)))
 
     ! setup LHS
     ! matching or specified head (always first M rows); no dependence on p
@@ -97,11 +100,14 @@ contains
     complex(DP), allocatable :: Kn(:), dKn(:), In(:), dIn(:)
     complex(DP) :: kap
     real(DP) :: cmat(1:c%M,0:c%N-1), smat(1:c%M,1:c%N-1)
+    real(DP), dimension(0:c%N-1) :: vi
 
     N = c%N; M = c%M
+    vi = real([(j,j=0,N-1)],DP)
+
     allocate(r%LHS(M,(2*N-1)*(2-abs(c%ibnd))), r%RHS(M))
-    cmat = cos(outerprod(c%Pcm(1:M), real([(j,j=0,N-1)],DP)))
-    smat = sin(outerprod(c%Pcm(1:M), real([(j,j=1,N-1)],DP)))
+    cmat = cos(outerprod(c%Pcm(1:M), vi(0:N-1)))
+    smat = sin(outerprod(c%Pcm(1:M), vi(1:N-1)))
 
     ! matching (second M) or specified flux (first M); depends on p
     if (c%ibnd==0 .or. c%ibnd==1 .or. c%ibnd==2) then
@@ -174,21 +180,22 @@ contains
 
     integer :: j, src, targ, N, M
     real(DP), allocatable :: cmat(:,:), smat(:,:)
+    real(DP), dimension(0:c%N-1) :: vi
     complex(DP), allocatable :: Kn(:,:), Kn0(:), In(:,:), In0(:)
     complex(DP), allocatable :: tmp(:,:)
     complex(DP) :: kap
 
     N = c%N ! number of coefficients in the source circular element
-    targ = el%id 
-    src = c%id
+    targ = el%id; src = c%id
+    vi = real([(j,j=0,N-1)],DP)
 
     if (dom%inclBg(src,targ) .or. dom%InclIn(src,targ)) then
        ! common stuff between both branches below
        M = el%M
        allocate(r%LHS(M,(2*N-1)*(2-abs(el%ibnd))), r%RHS(M), &
             & cmat(M,0:N-1), smat(M,1:N-1))
-       cmat = cos(outerprod(c%G(targ)%Pgm(1:M), real([(j,j=0,N-1)],DP)))
-       smat = sin(outerprod(c%G(targ)%Pgm(1:M), real([(j,j=1,N-1)],DP)))
+       cmat = cos(outerprod(c%G(targ)%Pgm(1:M), vi(0:N-1)))
+       smat = sin(outerprod(c%G(targ)%Pgm(1:M), vi(1:N-1)))
 
        ! can the target element "see" the outside of the source element?
        if (dom%inclBg(src,targ)) then
@@ -199,7 +206,7 @@ contains
           if (el%ibnd==0 .or. el%ibnd==-1) then
              allocate(Kn(M,0:N-1),Kn0(0:N-1))
              kap = kappa(p,c%parent)
-             Kn(0:N-1,1:M) = transpose(bK(kap*c%G(targ)%Rgm(1:M),N))
+             Kn(0:N-1,1:M) = bK(kap*c%G(targ)%Rgm(1:M),N)
              Kn0(0:N-1) = bK(kap*c%r,N)
 
              ! head effects on other element
@@ -234,7 +241,7 @@ contains
           if (el%ibnd==0 .or. el%ibnd==-1) then
              allocate(In(M,0:N-1),In0(0:N-1))
              kap = kappa(p,c%element)
-             In(0:N-1,1:M) = transpose(bI(kap*c%G(targ)%Rgm(1:M),N))
+             In(0:N-1,1:M) = bI(kap*c%G(targ)%Rgm(1:M),N)
              In0(0:N-1) = bI(kap*c%r,N)
 
              ! head effects on other element
@@ -261,21 +268,22 @@ contains
 
     integer :: j, src, targ, N, M
     real(DP), allocatable :: cmat(:,:), smat(:,:)
+    real(DP), dimension(0:c%N-1) :: vi
     complex(DP), allocatable :: Kn(:,:), Kn0(:), In(:,:), In0(:)
-    complex(DP), allocatable :: tmp(:,:,:)
+    complex(DP), allocatable :: dPot_dR(:,:), dPot_dP(:,:), dPot_dX(:,:), dPot_dY(:,:)
     complex(DP) :: kap
 
     N = c%N ! number of coefficients in the source circular element
-    targ = el%id
-    src = c%id
+    targ = el%id; src = c%id
+    vi = real([(j,j=0,N-1)],DP)
 
     if (dom%inclBg(src,targ) .or. dom%InclIn(src,targ)) then
        ! common stuff between both branches below
        M = el%M
        allocate(r%LHS(M,(2*N-1)*(2-abs(el%ibnd))), r%RHS(M), &
             & cmat(M,0:N-1), smat(M,1:N-1))
-       cmat = cos(outerprod(c%G(targ)%Pgm(1:M), real([(j,j=0,N-1)],DP)))
-       smat = sin(outerprod(c%G(targ)%Pgm(1:M), real([(j,j=1,N-1)],DP)))
+       cmat = cos(outerprod(c%G(targ)%Pgm(1:M), vi(0:N-1)))
+       smat = sin(outerprod(c%G(targ)%Pgm(1:M), vi(1:N-1)))
 
        ! can the target element "see" the outside of the source element?
        if (dom%inclBg(src,targ)) then
@@ -286,25 +294,29 @@ contains
           if (el%ibnd==0 .or. el%ibnd==-1) then
 
              ! flux effects of source circle on target element
-             ! part 1: derivative wrt radius of source element
-             allocate(Kn(M,0:N),dKn(M,0:N),Kn0(0:N-1))
+             allocate(Kn(M,0:N),dKn(M,0:N),Kn0(0:N-1), &
+                  & dPot_dR(M,2*N-1),dPot_dP(M,2*N-1),dPot_dX(M,2*N-1),dPot_dY(M,2*N-1))
              kap = kappa(p,c%parent) 
              call bKD(kap*c%G(targ)%Rgm(1:M),N+1,Kn,dKn)
              Kn0(0:N-1) = bK(kap*c%r,N)
              dKn = kap*dKn
-             
-             tmp(1:M,1:N,1) =       spread(dKn(0:N-1)/Kn(0:N-1), 1,M)*cmat/c%parent%K
-             tmp(1:M,N+1:2*N-1,1) = spread(dKn(1:N-1)/Kn(1:N-1), 1,M)*smat/c%parent%K
+
+             ! part 1: derivative wrt radius of source element             
+             dPot_dR(1:M,1:N) =       dKn(0:N-1)/spread(Kn(0:N-1),1,M)*cmat/c%parent%K
+             dPot_dR(1:M,N+1:2*N-1) = dKn(1:N-1)/spread(Kn(1:N-1),1,M)*smat/c%parent%K
              deallocate(dKn)
 
              ! part 2: derivative wrt angle of source element
-             tmp(1:M,1:N,2) =       Kn(0:N-1,:)/spread(Kn0(0:N-1),1,M)*cmat/c%parent%K
-             tmp(1:M,N+1:2*N-1,2) = Kn(1:N-1,:)/spread(Kn0(1:N-1),1,M)*smat/c%parent%K
+             dPot_dP(1:M,1:N) =       -Kn(0:N-1,:)*spread(vi(0:N-1)/Kn0(0:N-1),1,M)*smat/c%parent%K
+             dPot_dP(1:M,N+1:2*N-1) =  Kn(1:N-1,:)*spread(vi(1:N-1)/Kn0(1:N-1),1,M)*cmat/c%parent%K
+             deallocate(Kn)
 
              ! part 3: project these from cylindrical onto Cartesian coordinates
-
+             dPot_dX(:,:) = dPot_dR()*(blah + blah) + dPot_dP()*(foo + bar)
+             dPot_dY(:,:) = dPot_dR()*(blah + blah) + dPot_dP()*(foo + bar)
 
              ! part 4: project from Cartesian to "radial" coordinate of target element
+             r%LHS(:,:) = 
 
              deallocate(Kn,Kn0)
 
