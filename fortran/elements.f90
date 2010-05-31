@@ -3,32 +3,35 @@
 ! behaviors, and the routine for computing general kappa for MHE.
 
 module elements
+  use constants, only : DP, PI
+  use kappa_mod
+  use time_mod
+
   implicit none
 
   ! the four basic functions are overloaded for either 
   ! p being a vector (during inversion) or a scalar (during matching)
 
-!!$  interface circle_head
-!!$     module procedure circle_match_head_self, &
-!!$          & circle_match_head_other, circle_head_calc
-!!$  end interface
-!!$  interface circle_flux
-!!$     module procedure circle_match_flux_self, &
-!!$          & circle_match_flux_other, circle_flux_calc
-!!$  end interface
-!!$
-!!$  interface ellipse_head
-!!$     module procedure ellipse_match_head_self, &
-!!$          & ellipse_match_head_other, ellipse_head_calc
-!!$  end interface
-!!$  interface ellipse_flux
-!!$     module procedure ellipse_match_flux_self, &
-!!$          & ellipse_match_flux_other, ellipse_flux_calc
-!!$  end interface
+  interface circle_head
+     module procedure circle_match_head_self, &
+          & circle_match_head_other, circle_head_calc
+  end interface
+  interface circle_flux
+     module procedure circle_match_flux_self, &
+          & circle_match_flux_other, circle_flux_calc
+  end interface
+
+  interface ellipse_head
+     module procedure ellipse_match_head_self, &
+          & ellipse_match_head_other, ellipse_head_calc
+  end interface
+  interface ellipse_flux
+     module procedure ellipse_match_flux_self, &
+          & ellipse_match_flux_other, ellipse_flux_calc
+  end interface
 
 contains
   function circle_match_head_self(c,p) result(r)
-    use constants, only : DP, PI
     use utility, only : outerprod
     use type_definitions, only : circle, match_result
     implicit none
@@ -78,7 +81,6 @@ contains
   end function circle_match_head_self
 
   function circle_match_flux_self(c,p) result(r)
-    use constants, only : DP, PI
     use utility, only : outerprod
     use type_definitions, only : circle, match_result
     use bessel_functions, only : bK, bI
@@ -159,7 +161,6 @@ contains
   end function circle_match_flux_self
 
   function circle_match_head_other(c,el,dom,p) result(r)
-    use constants, only : DP, PI
     use utility, only : outerprod
     use type_definitions, only : circle, domain, matching, match_result
     use bessel_functions, only : bK, bI
@@ -247,7 +248,6 @@ contains
   end function circle_match_head_other
 
   function circle_match_flux_other(c,el,dom,p) result(r)
-    use constants, only : DP, PI
     use utility, only : outerprod
     use type_definitions, only : circle, domain, matching, match_result
     use bessel_functions, only : bK, bI
@@ -352,7 +352,5 @@ contains
     end if
 
   end function circle_match_flux_other
-
-
 
 end module elements
