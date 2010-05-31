@@ -21,6 +21,7 @@ contains
     type(ellipse), target, intent(inout), dimension(:) :: e
     type(element), target, intent(inout) :: bg
     type(solution), intent(in) :: sol
+    type(matching), pointer :: other => null()
 
     integer :: i, j, ne, nc, ntot, par, M
     complex(DP), allocatable :: z(:)
@@ -132,19 +133,17 @@ contains
        do j = 1,ntot
           if (dom%InclBg(j,i) .or. dom%InclIn(j,i) .or. dom%InclIn(i,j)) then
              if (j <= nc) then
-                ! other element a circle
-                M = c(j)%M
-                allocate(c(i)%G(j)%Zgm(M), c(i)%G(j)%Rgm(M), c(i)%G(j)%Pgm(M))
-                c(i)%G(j)%Zgm(1:M) = c(j)%Zom(1:M) - cmplx(c(i)%x,c(i)%y,DP)
+                other => c(j)%matching    ! other element a circle             
              else
-                ! other element an ellipse
-                M = e(j-nc)%M
-                allocate(c(i)%G(j)%Zgm(M),c(i)%G(j)%Rgm(M),c(i)%G(j)%Pgm(M))
-                c(i)%G(j)%Zgm(1:M) = e(j-nc)%Zom(1:M) - cmplx(c(i)%x,c(i)%y,DP)
+                other => e(j-nc)%matching ! other element an ellipse
              end if
+             M = other%M    
+             allocate(c(i)%G(j)%Zgm(M), c(i)%G(j)%Rgm(M), c(i)%G(j)%Pgm(M))
+             c(i)%G(j)%Zgm(1:M) = other%Zom(1:M) - cmplx(c(i)%x,c(i)%y,DP)
              c(i)%G(j)%Rgm(1:M) = abs(c(i)%G(j)%Zgm(1:M)) ! r
              c(i)%G(j)%Pgm(1:M) = atan2(aimag(c(i)%G(j)%Zgm(1:M)), &
                                        & real(c(i)%G(j)%Zgm(1:M))) ! theta
+             deallocate(other)
           end if
        end do
     end do
@@ -153,20 +152,18 @@ contains
        do j = 1,ntot
           if (dom%InclBg(j,i+nc) .or. dom%InclIn(j,i+nc) .or. dom%InclIn(i+nc,j)) then
              if (j <= nc) then
-                ! other element a circle
-                M = c(j)%M
-                allocate(e(i)%G(j)%Zgm(M),e(i)%G(j)%Rgm(M),e(i)%G(j)%Pgm(M),z(M))
-                e(i)%G(j)%Zgm(1:M) = c(j)%Zom(1:M) - cmplx(e(i)%x,e(i)%y,DP)
+                other => c(j)%matching    ! other element a circle
              else
-                ! other element an ellipse
-                M = e(j-nc)%M
-                allocate(e(i)%G(j)%Zgm(M),e(i)%G(j)%Rgm(M),e(i)%G(j)%Pgm(M),z(M))
-                e(i)%G(j)%Zgm(1:M) = e(j-nc)%Zom(1:M) - cmplx(e(i)%x,e(i)%y,DP)
+                other => e(j-nc)%matching ! other element an ellipse
              end if
+             M = other%M    
+             allocate(e(i)%G(j)%Zgm(M),e(i)%G(j)%Rgm(M),e(i)%G(j)%Pgm(M),z(M))
+             e(i)%G(j)%Zgm(1:M) = other%Zom(1:M) - cmplx(e(i)%x,e(i)%y,DP)
              z(1:M) = cacosh(e(i)%G(j)%Zgm(1:M))*exp(-EYE*e(i)%theta)/e(i)%f
              e(i)%G(j)%Rgm(1:M) = real(z)  ! eta
              e(i)%G(j)%Pgm(1:M) = aimag(z) ! psi
-             deallocate(z)
+             e(i)%G(j)%metric(1:M)
+             deallocate(z,other)
           end if
        end do
     end do

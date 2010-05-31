@@ -294,22 +294,35 @@ contains
              Kn0(0:N-1) = bK(kap*c%r,N)
              dKn = kap*dKn
 
-             ! part 1: derivative wrt radius of source element             
-             dPot_dR(1:M,1:N) =       dKn(0:N-1)/spread(Kn(0:N-1),1,M)*cmat/c%parent%K
-             dPot_dR(1:M,N+1:2*N-1) = dKn(1:N-1)/spread(Kn(1:N-1),1,M)*smat/c%parent%K
+             ! derivative wrt radius of source element             
+             dPot_dR(:,1:N) =       dKn(0:N-1)/spread(Kn(0:N-1),1,M)*cmat/c%parent%K
+             dPot_dR(:,N+1:2*N-1) = dKn(1:N-1)/spread(Kn(1:N-1),1,M)*smat/c%parent%K
              deallocate(dKn)
 
-             ! part 2: derivative wrt angle of source element
-             dPot_dP(1:M,1:N) =       -Kn(0:N-1,:)*spread(vi(0:N-1)/Kn0(0:N-1),1,M)*smat/c%parent%K
-             dPot_dP(1:M,N+1:2*N-1) =  Kn(1:N-1,:)*spread(vi(1:N-1)/Kn0(1:N-1),1,M)*cmat/c%parent%K
+             ! derivative wrt angle of source element
+             dPot_dP(:,1:N) =      -Kn(0:N-1,:)*spread(vi(0:N-1)/Kn0(0:N-1),1,M)*smat/c%parent%K
+             dPot_dP(:,N+1:2*N-1) = Kn(1:N-1,:)*spread(vi(1:N-1)/Kn0(1:N-1),1,M)*cmat/c%parent%K
              deallocate(Kn)
 
-             ! part 3: project these from cylindrical onto Cartesian coordinates
-             dPot_dX(:,:) = dPot_dR()*(blah + blah) + dPot_dP()*(foo + bar)
-             dPot_dY(:,:) = dPot_dR()*(blah + blah) + dPot_dP()*(foo + bar)
+             ! project these from cylindrical onto Cartesian coordinates
+             dPot_dX = dPot_dR*spread(cos(c%G(targ)%Pgm),2,2*N-1) - &
+                     & dPot_dP*spread(sin(c%G(targ)%Pgm)/c%G(targ)%Rgm,2,2*N-1)
 
-             ! part 4: project from Cartesian to "radial" coordinate of target element
-             r%LHS(:,:) = 
+             dPot_dY = dPot_dR*spread(sin(c%G(targ)%Pgm),2,2*N-1) + &
+                     & dPot_dP*spread(cos(c%G(targ)%Pgm)/c%G(targ)%Rgm,2,2*N-1)
+
+             ! project from Cartesian to "radial" coordinate of target element
+             if (el%id <= dom%num(1)) then
+                ! other element is a circle
+                r%LHS = dPot_dX*spread() + dPot_dY*spread()
+
+             else
+                ! other element is an ellipse
+                r%LHS = dPot_dX*spread(cos()*sinh()*f**2*(cosh(2*) - cos(2*))) + &
+                      & dPot_dY*spread()
+
+             end if
+             
 
              deallocate(Kn,Kn0)
 
@@ -353,4 +366,7 @@ contains
 
   end function circle_match_flux_other
 
+  
+
 end module elements
+
