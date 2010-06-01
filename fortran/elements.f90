@@ -176,7 +176,6 @@ contains
     real(DP), allocatable :: cmat(:,:), smat(:,:)
     real(DP), dimension(0:c%N-1) :: vi
     complex(DP), allocatable :: Kn(:,:), Kn0(:), In(:,:), In0(:)
-    complex(DP), allocatable :: tmp(:,:)
     complex(DP) :: kap
 
     N = c%N ! number of coefficients in the source circular element
@@ -193,7 +192,6 @@ contains
 
        ! can the target element "see" the outside of the source element?
        if (dom%inclBg(src,targ)) then
-          allocate(tmp(M,2*N-1))
 
           ! setup LHS (head effects due to source element)
           ! for constant head (-1), or matching (0)
@@ -204,8 +202,8 @@ contains
              Kn0(0:N-1) = bK(kap*c%r,N)
 
              ! head effects on other element
-             tmp(1:M,1:N) =       Kn(0:N-1,:)/spread(Kn0(0:N-1),1,M)*cmat/c%parent%K
-             tmp(1:M,N+1:2*N-1) = Kn(1:N-1,:)/spread(Kn0(1:N-1),1,M)*smat/c%parent%K
+             r%LHS(1:M,1:N) =       Kn(0:N-1,:)/spread(Kn0(0:N-1),1,M)*cmat/c%parent%K
+             r%LHS(1:M,N+1:2*N-1) = Kn(1:N-1,:)/spread(Kn0(1:N-1),1,M)*smat/c%parent%K
              deallocate(Kn,Kn0)
 
              select case (c%ibnd)
@@ -217,15 +215,15 @@ contains
                 if (c%StorIn) then
                    ! wellbore storage and skin from finite-radius well
                    r%LHS(1:M,1) = -Kn0(0)*((2.0 + c%r**2*c%dskin*p/c%parent%T)/(2.0*PI*c%r) + &
-                        & (Kn0(0)*c%r*p)/(2.0*PI*c%r*kap*Kn0(1)*c%parent%T))*tmp(1:M,1)
+                        & (Kn0(0)*c%r*p)/(2.0*PI*c%r*kap*Kn0(1)*c%parent%T))*r%LHS(1:M,1)
                    r%RHS(1:M) = 0.0
                 else
                    ! specified flux (finite-radius well no storage)
-                   R%LHS(1:M,1) = 0.0
-                   r%RHS(1:M) = Kn0(0)*time(p,c%time,.false.)*c%bdryQ/(2.0*PI*c%r*Kn0(1))*tmp(1:M,1)
+                   r%RHS(1:M) = Kn0(0)*time(p,c%time,.false.)*c%bdryQ/(2.0*PI*c%r*Kn0(1))*r%LHS(1:M,1)
+                   r%LHS(1:M,1) = 0.0
                 end if
              case(-1,0,1)
-                r%LHS(1:M,1:2*N-1) = tmp(1:M,1:2*N-1)
+                ! do nothing, results already in LHS
              end select
           end if
        else
@@ -264,7 +262,6 @@ contains
     real(DP), dimension(0:c%N-1) :: vi
     complex(DP), allocatable :: Kn(:,:), dKn(:,:), Kn0(:), In(:,:), dIn(:,:), In0(:)
     complex(DP), allocatable :: dPot_dR(:,:), dPot_dP(:,:), dPot_dX(:,:), dPot_dY(:,:)
-    complex(DP), allocatable :: tmp(:,:,:)
     complex(DP) :: kap
 
     N = c%N ! number of coefficients in the source circular element
@@ -281,7 +278,6 @@ contains
 
        ! can the target element "see" the outside of the source element?
        if (dom%inclBg(src,targ)) then
-          allocate(tmp(M,2*N-1,2))
 
           ! setup LHS (flux effects due to source element)
           ! for constant head (-1), or matching (0)
@@ -300,10 +296,15 @@ contains
              dPot_dR(:,N+1:2*N-1) = dKn(1:N-1,:)/spread(Kn0(1:N-1),1,M)*smat/c%parent%K
              deallocate(dKn)
 
-             ! derivative wrt angle of source element
-             dPot_dP(:,1:N) =      -Kn(0:N-1,:)*spread(vi(0:N-1)/Kn0(0:N-1),1,M)*smat/c%parent%K
-             dPot_dP(:,N+1:2*N-1) = Kn(1:N-1,:)*spread(vi(1:N-1)/Kn0(1:N-1),1,M)*cmat/c%parent%K
-             deallocate(Kn)
+             select case (c%ibnd)
+             case(2)
+                ! radially-symmetric, angular derivative zero by default
+                dPot_dP(:,:) = 0.0
+             case(-1,0,1)
+                ! derivative wrt angle of source element for more general circular elements
+                dPot_dP(:,1:N) =      -Kn(0:N-1,:)*spread(vi(0:N-1)/Kn0(0:N-1),1,M)*smat/c%parent%K
+                dPot_dP(:,N+1:2*N-1) = Kn(1:N-1,:)*spread(vi(1:N-1)/Kn0(1:N-1),1,M)*cmat/c%parent%K
+             end select
 
              ! project these from cylindrical onto Cartesian coordinates
              dPot_dX = dPot_dR*spread(cos(c%G(targ)%Pgm),2,2*N-1) - &
@@ -315,34 +316,32 @@ contains
              ! project from Cartesian to "radial" coordinate of target element
              if (el%id <= dom%num(1)) then
                 ! other element is a circle
-                r%LHS = dPot_dX*spread(cos(el%Pcm),2,2*N-1) + &
-                      & dPot_dY*spread(sin(el%Pcm),2,2*N-1)
+                select case(el%ibnd)
+                case(2)
+                   if (el%StorIn) then
+                      ! other element is a well with wellbore storage (Type III BC)
+                      r%LHS(:,1:N) =       Kn(0:N-1,:)/spread(Kn0(0:N-1),1,M)*smat/c%parent%K
+                      r%LHS(:,N+1:2*N-1) = Kn(1:N-1,:)/spread(Kn0(1:N-1),1,M)*cmat/c%parent%K
+
+                      ! head effects of element
+                      r%LHS = -(el%r*p/el%parent%T)*r%LHS
+
+                      ! radial flux effects of element
+                      r%LHS = r%LHS + (2.0 + el%r**2*el%dskin*p/el%parent%T)* &
+                           & (dPot_dX*spread(cos(el%Pcm),2,2*N-1) + &
+                           &  dPot_dY*spread(sin(el%Pcm),2,2*N-1))
+                   end if
+                case(-1,0)
+                   r%LHS = dPot_dX*spread(cos(el%Pcm),2,2*N-1) + &
+                         & dPot_dY*spread(sin(el%Pcm),2,2*N-1)
+                end select
+  
              else
                 ! other element is an ellipse
                 r%LHS = dPot_dX*spread(el%f*sinh(el%r)*cos(el%Pcm(1:M)),2,2*N-1) + &
                       & dPot_dY*spread(el%f*cosh(el%r)*sin(el%Pcm(1:M)),2,2*N-1)
              end if
-             deallocate(Kn,Kn0)
-
-             select case (c%ibnd)
-             case(2)
-                allocate(Kn0(0:1))
-                kap = kappa(p,c%parent)
-                Kn0(0:1) = bK(kap*c%r,2)
-
-                if (c%StorIn) then
-                   ! wellbore storage and skin from finite-radius well
-                   r%LHS(1:M,1) = -Kn0(0)*((2.0 + c%r**2*c%dskin*p/c%parent%T)/(2.0*PI*c%r) + &
-                        & (Kn0(0)*c%r*p)/(2.0*PI*c%r*kap*Kn0(1)*c%parent%T))*tmp(1:M,1)
-                   r%RHS(1:M) = 0.0
-                else
-                   ! specified flux (finite-radius well no storage)
-                   R%LHS(1:M,1) = 0.0
-                   r%RHS(1:M) = Kn0(0)*time(p,c%time,.false.)*c%bdryQ/(2.0*PI*c%r*Kn0(1))*tmp(1:M,1)
-                end if
-             case(-1,0,1)
-                r%LHS(1:M,1:2*N-1) = tmp(1:M,1:2*N-1)
-             end select
+             deallocate(Kn)
           end if
        else
           ! can target element "see" the inside of the source element?
