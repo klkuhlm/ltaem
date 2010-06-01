@@ -192,7 +192,7 @@ contains
        read(15,*) e(:)%ms
        read(15,*) e(:)%ibnd
        read(15,*) e(:)%CalcIn
-       read(15,*) e(:)%eta
+       read(15,*) e(:)%r   ! eta
        read(15,*) e(:)%x
        read(15,*) e(:)%y
        read(15,*) e(:)%f
@@ -260,7 +260,7 @@ contains
        write(16,fmt(1)) e(:)%ibnd, '  ||    ellipse ibnd array'
        write(16,fmt(2)) e(:)%match, '  ||    ellipse matching array'
        write(16,fmt(2)) e(:)%calcin, '  ||    calculate inside this ellipse?'
-       write(16,fmt(3)) e(:)%eta, '  ||    ellipse radius (eta)'
+       write(16,fmt(3)) e(:)%r, '  ||    ellipse radius (eta)'
        write(16,fmt(3)) e(:)%x, '  ||    ellipse center x'
        write(16,fmt(3)) e(:)%y, '  ||    ellipse center y'
        write(16,fmt(3)) e(:)%x, '  ||    ellipse semi-focal length'

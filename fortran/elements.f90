@@ -12,23 +12,23 @@ module elements
   ! the four basic functions are overloaded for either 
   ! p being a vector (during inversion) or a scalar (during matching)
 
-  interface circle_head
-     module procedure circle_match_head_self, &
-          & circle_match_head_other, circle_head_calc
-  end interface
-  interface circle_flux
-     module procedure circle_match_flux_self, &
-          & circle_match_flux_other, circle_flux_calc
-  end interface
-
-  interface ellipse_head
-     module procedure ellipse_match_head_self, &
-          & ellipse_match_head_other, ellipse_head_calc
-  end interface
-  interface ellipse_flux
-     module procedure ellipse_match_flux_self, &
-          & ellipse_match_flux_other, ellipse_flux_calc
-  end interface
+!!$  interface circle_head
+!!$     module procedure circle_match_head_self, &
+!!$          & circle_match_head_other, circle_head_calc
+!!$  end interface
+!!$  interface circle_flux
+!!$     module procedure circle_match_flux_self, &
+!!$          & circle_match_flux_other, circle_flux_calc
+!!$  end interface
+!!$
+!!$  interface ellipse_head
+!!$     module procedure ellipse_match_head_self, &
+!!$          & ellipse_match_head_other, ellipse_head_calc
+!!$  end interface
+!!$  interface ellipse_flux
+!!$     module procedure ellipse_match_flux_self, &
+!!$          & ellipse_match_flux_other, ellipse_flux_calc
+!!$  end interface
 
 contains
   function circle_match_head_self(c,p) result(r)
@@ -262,8 +262,9 @@ contains
     integer :: j, src, targ, N, M
     real(DP), allocatable :: cmat(:,:), smat(:,:)
     real(DP), dimension(0:c%N-1) :: vi
-    complex(DP), allocatable :: Kn(:,:), Kn0(:), In(:,:), In0(:)
+    complex(DP), allocatable :: Kn(:,:), dKn(:,:), Kn0(:), In(:,:), dIn(:,:), In0(:)
     complex(DP), allocatable :: dPot_dR(:,:), dPot_dP(:,:), dPot_dX(:,:), dPot_dY(:,:)
+    complex(DP), allocatable :: tmp(:,:,:)
     complex(DP) :: kap
 
     N = c%N ! number of coefficients in the source circular element
@@ -280,7 +281,7 @@ contains
 
        ! can the target element "see" the outside of the source element?
        if (dom%inclBg(src,targ)) then
-          allocate(tmp(M,2*N-1),2)
+          allocate(tmp(M,2*N-1,2))
 
           ! setup LHS (flux effects due to source element)
           ! for constant head (-1), or matching (0)
@@ -295,8 +296,8 @@ contains
              dKn = kap*dKn
 
              ! derivative wrt radius of source element             
-             dPot_dR(:,1:N) =       dKn(0:N-1)/spread(Kn(0:N-1),1,M)*cmat/c%parent%K
-             dPot_dR(:,N+1:2*N-1) = dKn(1:N-1)/spread(Kn(1:N-1),1,M)*smat/c%parent%K
+             dPot_dR(:,1:N) =       dKn(0:N-1,:)/spread(Kn0(0:N-1),1,M)*cmat/c%parent%K
+             dPot_dR(:,N+1:2*N-1) = dKn(1:N-1,:)/spread(Kn0(1:N-1),1,M)*smat/c%parent%K
              deallocate(dKn)
 
              ! derivative wrt angle of source element
@@ -314,16 +315,13 @@ contains
              ! project from Cartesian to "radial" coordinate of target element
              if (el%id <= dom%num(1)) then
                 ! other element is a circle
-                r%LHS = dPot_dX*spread() + dPot_dY*spread()
-
+                r%LHS = dPot_dX*spread(cos(el%Pcm),2,2*N-1) + &
+                      & dPot_dY*spread(sin(el%Pcm),2,2*N-1)
              else
                 ! other element is an ellipse
-                r%LHS = dPot_dX*spread(cos()*sinh()*f**2*(cosh(2*) - cos(2*))) + &
-                      & dPot_dY*spread()
-
+                r%LHS = dPot_dX*spread(el%f*sinh(el%r)*cos(el%Pcm(1:M)),2,2*N-1) + &
+                      & dPot_dY*spread(el%f*cosh(el%r)*sin(el%Pcm(1:M)),2,2*N-1)
              end if
-             
-
              deallocate(Kn,Kn0)
 
              select case (c%ibnd)

@@ -107,6 +107,11 @@ module type_definitions
      ! location of center of element
      real(DP) :: x, y 
 
+     ! "radius" of element (eta for ellipses)
+     ! semi-focal distance (zero for circles)
+     ! angle of rotation (zero for circles)
+     real(DP) :: r, f, theta
+
      ! vector of matching location angles
      ! theta for circles, psi for ellipses
      real(DP), allocatable :: Pcm(:)
@@ -121,8 +126,7 @@ module type_definitions
      ! Circular Inclusion related parameters
      ! well is special case of circle
 
-     ! inclusion radius
-     real(DP) :: r 
+     ! no special circle-only parameters
      
   end type circle
 
@@ -132,10 +136,6 @@ module type_definitions
 
      ! size of MF infinite matrix
      integer :: ms
-
-     ! inclusion elliptical 'radius', semi-focal dist, 
-     ! angle major axis makes with Cartesian x axis
-     real(DP) :: eta, f, theta
 
   end type ellipse
 

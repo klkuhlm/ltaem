@@ -108,8 +108,8 @@ contains
        M = e(i)%M
        allocate(e(i)%Zcm(M),e(i)%Zom(M),e(i)%G(ntot))
 
-       ! local elliptical coordinates
-       z(1:M) = e(i)%f*ccosh(cmplx(e(i)%eta,e(i)%Pcm(1:M),DP))
+       ! local elliptical coordinates (r is eta)
+       z(1:M) = e(i)%f*ccosh(cmplx(e(i)%r,e(i)%Pcm(1:M),DP))
 
        ! x,y components from center of element to points on circumference
        ! account for rotation of local elliptical coordinates
