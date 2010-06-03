@@ -1,8 +1,7 @@
 ! this module contains the basic functions defining the head or flux 
-! effects of a circular or elliptical element, as well as the time
-! behaviors, and the routine for computing general kappa for MHE.
+! effects of a circular element.
 
-module elements
+module circular_elements
   use constants, only : DP, PI
   use kappa_mod
   use time_mod
@@ -12,23 +11,12 @@ module elements
   ! the four basic functions are overloaded for either 
   ! p being a vector (during inversion) or a scalar (during matching)
 
-!!$  interface circle_head
-!!$     module procedure circle_match_head_self, &
-!!$          & circle_match_head_other, circle_head_calc
-!!$  end interface
-!!$  interface circle_flux
-!!$     module procedure circle_match_flux_self, &
-!!$          & circle_match_flux_other, circle_flux_calc
-!!$  end interface
-!!$
-!!$  interface ellipse_head
-!!$     module procedure ellipse_match_head_self, &
-!!$          & ellipse_match_head_other, ellipse_head_calc
-!!$  end interface
-!!$  interface ellipse_flux
-!!$     module procedure ellipse_match_flux_self, &
-!!$          & ellipse_match_flux_other, ellipse_flux_calc
-!!$  end interface
+  interface circle_head
+     module procedure circle_match_head_self, circle_match_head_other
+  end interface
+  interface circle_flux
+     module procedure circle_match_flux_self, circle_match_flux_other
+  end interface
 
 contains
   function circle_match_head_self(c,p) result(r)
@@ -248,7 +236,7 @@ contains
   function circle_match_flux_other(c,el,dom,p) result(r)
     use utility, only : outerprod
     use type_definitions, only : circle, domain, matching, match_result
-    use bessel_functions, only : bK, bI
+    use bessel_functions, only : bK, bI, dbK, dbI
     implicit none
 
     type(circle), intent(in) :: c ! source circle
@@ -406,7 +394,5 @@ contains
 
   end function circle_match_flux_other
 
-  
-
-end module elements
+end module circular_elements
 

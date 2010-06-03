@@ -8,7 +8,7 @@ module bessel_functions
   implicit none
 
   private
-  public :: bK, bI, bId, bKd
+  public :: bK, bI, dbI, dbK
 
   interface bK
      module procedure besk_zscal, besk_vectz, besk_matz
@@ -17,12 +17,12 @@ module bessel_functions
      module procedure besi_zscal, besi_vectz, besi_matz
   end interface bI
 
-  interface bKD
+  interface dbK
      module procedure beskd_zscal, beskd_zvect, beskd_zmat
-  end interface bkd
-  interface bID
+  end interface dbK
+  interface dbI
      module procedure besid_zscal, besid_zvect, besid_zmat
-  end interface bid
+  end interface dbI
 
 contains
 
