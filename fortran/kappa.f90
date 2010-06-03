@@ -20,7 +20,6 @@ contains
 
     integer :: np
     complex(DP), dimension(size(p)) ::  kap2, exp2z
-    complex(DP) :: boulton
 
     np = size(p)
     if(el%leakFlag /= 0) then
@@ -49,18 +48,14 @@ contains
        stop 'ERROR: incorrect value for leakFlag parameter -> (1,2,3)'
     end select
 
-    !! integrate neuman 72 solution and include here instead
-
     !! unconfined-ness (if confined do nothing)
     !! ##############################
     if(el%unconfinedFlag) then
-       !! Boulton unconfined source (Herrera infinite sum Kernel)
-       !! guess is halfway between asymptotes of cot()
+
+       ! results of integrating Neuman 1972 unconfined solution from 0 -> b in z
+       ! Kz parameter is integrated away?
+       q(1:np) = q(:) + el%Sy*p(:)/(el%b*el%K)
        
-       ! scrap Herrera's infinite sum for Boulton's original
-       ! rough-n-ready alpha, with a semi-physical expression for it
-       boulton = 3.0*el%Kz/(el%b*el%Sy)
-       q(1:np) = q(:) + el%Sy*p(:)*boulton/(el%K*(boulton + p(:)))
     end if
     
     !! sources are only additive under the square root
