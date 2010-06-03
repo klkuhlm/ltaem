@@ -341,21 +341,64 @@ contains
                 r%LHS = dPot_dX*spread(el%f*sinh(el%r)*cos(el%Pcm(1:M)),2,2*N-1) + &
                       & dPot_dY*spread(el%f*cosh(el%r)*sin(el%Pcm(1:M)),2,2*N-1)
              end if
-             deallocate(Kn)
+             deallocate(Kn,Kn0)
           end if
        else
           ! can target element "see" the inside of the source element?
           !  i.e., is the source element the parent?
 
           if (el%ibnd==0 .or. el%ibnd==-1) then
-             allocate(In(M,0:N-1),In0(0:N-1))
+             allocate(In(M,0:N-1),dIn(M,0:N),In0(0:N-1), &
+                  & dPot_dR(M,2*N-1),dPot_dP(M,2*N-1),dPot_dX(M,2*N-1),dPot_dY(M,2*N-1))
              kap = kappa(p,c%element)
-             In(0:N-1,1:M) = transpose(bI(kap*c%G(targ)%Rgm(1:M),N))
+             call bId(kap*c%G(targ)%Rgm(1:M),N+1,In,dIn)
              In0(0:N-1) = bI(kap*c%r,N)
+             dIn = kap*dIn
 
-             ! head effects on other element
-             r%LHS(1:M,1:N) =       In(0:N-1,:)/spread(In0(0:N-1),1,M)*cmat/c%K
-             r%LHS(1:M,N+1:2*N-1) = In(1:N-1,:)/spread(In0(1:N-1),1,M)*smat/c%K
+             ! derivative wrt radius of source element
+             dPot_dR(:,1:N) =       dIn(0:N-1,:)/spread(In0(0:N-1),1,M)*cmat/c%K
+             dPot_dR(:,N+1:2*N-1) = dIn(1:N-1,:)/spread(In0(1:N-1),1,M)*smat/c%K
+             deallocate(dIn)
+
+             ! derivative wrt angle of source element 
+             dPot_dP(:,1:N) =      -In(0:N-1,:)*spread(vi(0:N-1)/In0(0:N-1),1,M)*smat/c%K
+             dPot_dP(:,N+1:2*N-1) = In(1:N-1,:)*spread(vi(1:N-1)/In0(1:N-1),1,M)*cmat/c%K 
+
+             ! project these from cylindrical onto Cartesian coordinates
+             dPot_dX = dPot_dR*spread(cos(c%G(targ)%Pgm),2,2*N-1) - &
+                     & dPot_dP*spread(sin(c%G(targ)%Pgm)/c%G(targ)%Rgm,2,2*N-1)
+
+             dPot_dY = dPot_dR*spread(sin(c%G(targ)%Pgm),2,2*N-1) + &
+                     & dPot_dP*spread(cos(c%G(targ)%Pgm)/c%G(targ)%Rgm,2,2*N-1)
+
+             ! project from Cartesian to "radial" coordinate of target element
+             if (el%id <= dom%num(1)) then
+                ! other element is a circle
+                select case(el%ibnd)
+                case(2)
+                   if (el%StorIn) then
+                      ! other element is a well with wellbore storage (Type III BC)
+                      r%LHS(:,1:N) =       In(0:N-1,:)/spread(In0(0:N-1),1,M)*smat/c%K
+                      r%LHS(:,N+1:2*N-1) = In(1:N-1,:)/spread(In0(1:N-1),1,M)*cmat/c%K
+
+                      ! head effects of element
+                      r%LHS = -(el%r*p/el%T)*r%LHS
+
+                      ! radial flux effects of element
+                      r%LHS = r%LHS + (2.0 + el%r**2*el%dskin*p/el%T)* &
+                           & (dPot_dX*spread(cos(el%Pcm),2,2*N-1) + &
+                           &  dPot_dY*spread(sin(el%Pcm),2,2*N-1))
+                   end if
+                case(-1,0)
+                   r%LHS = dPot_dX*spread(cos(el%Pcm),2,2*N-1) + &
+                         & dPot_dY*spread(sin(el%Pcm),2,2*N-1)
+                end select
+  
+             else
+                ! other element is an ellipse
+                r%LHS = dPot_dX*spread(el%f*sinh(el%r)*cos(el%Pcm(1:M)),2,2*N-1) + &
+                      & dPot_dY*spread(el%f*cosh(el%r)*sin(el%Pcm(1:M)),2,2*N-1)
+             end if
              deallocate(In,In0)
           end if
        end if
