@@ -11,70 +11,71 @@ module elliptical_elements
   ! the four basic functions are overloaded for either 
   ! p being a vector (during inversion) or a scalar (during matching)
 
-  interface circle_head
-     module procedure circle_match_head_self, circle_match_head_other
+  interface ellipse_head
+     module procedure ellipse_match_head_self, ellipse_match_head_other
   end interface
-  interface circle_flux
-     module procedure circle_match_flux_self, circle_match_flux_other
+  interface ellipse_flux
+     module procedure ellipse_match_flux_self, ellipse_match_flux_other
   end interface
 
 contains
-  function circle_match_head_self(c,p) result(r)
+  function ellipse_match_head_self(e,p) result(r)
     use utility, only : outerprod
-    use type_definitions, only : circle, match_result
+    use type_definitions, only : ellipse, match_result
+    use mathieu_functions, only : ce, se
     implicit none
 
-    type(circle), intent(in) :: c
+    type(ellipse), intent(in) :: e
     complex(DP), intent(in) :: p
     type(match_result) :: r
 
     integer :: j, N, M
-    real(DP) :: cmat(1:c%M,0:c%N-1), smat(1:c%M,1:c%N-1)
-    real(DP), dimension(0:c%N-1) :: vi
+    real(DP) :: cemat(1:e%M,0:e%N-1), semat(1:e%M,1:e%N-1)
+    real(DP), dimension(0:e%N-1) :: vi
 
-    N = c%N; M = c%M
+    N = e%N; M = e%M
     vi = real([(j,j=0,N-1)],DP)
 
     ! LHS dim=2 is 4N-2 for matching, 2N-1 for spec. total head
-    allocate(r%LHS(M,(2*N-1)*(2-abs(c%ibnd))), r%RHS(M))
-    cmat = cos(outerprod(c%Pcm(1:M), vi(0:N-1)))
-    smat = sin(outerprod(c%Pcm(1:M), vi(1:N-1)))
+    allocate(r%LHS(M,(2*N-1)*(2-abs(e%ibnd))), r%RHS(M))
+    cemat = ce(e%mat, vi(0:N-1), e%Pcm(1:M))
+    semat = se(e%mat, vi(1:N-1), e%Pcm(1:M))
 
     ! setup LHS
     ! matching or specified head (always first M rows); no dependence on p
     ! ibnd==-2 would be here, but it doesn't actually make physical sense
-    if (c%ibnd==0 .or. c%ibnd==-1) then
+    if (e%ibnd==0 .or. e%ibnd==-1) then
 
-       r%LHS(1:M,1:N) =       cmat/c%parent%K
-       r%LHS(1:M,N+1:2*N-1) = smat/c%parent%K
+       r%LHS(1:M,1:N) =       cemat/e%parent%K
+       r%LHS(1:M,N+1:2*N-1) = semat/e%parent%K
        
        ! setup RHS
-       select case(c%ibnd)
+       select case(e%ibnd)
        case(-1)
           ! put specified head on RHS
-          r%RHS(1:M) = time(p,c%time,.false.)*c%bdryQ
+          r%RHS(1:M) = time(p,e%time,.false.)*e%bdryQ
        case(0)
           ! put constant area source term effects on RHS
-          r%RHS(1:M) = -time(p,c%time,.true.)*c%areaQ*c%Ss/kappa(p,c%parent)**2
+          r%RHS(1:M) = -time(p,e%time,.true.)*e%areaQ*e%Ss/kappa(p,e%parent)**2
        end select
 
-       if (c%ibnd==0 .or. c%calcin) then
-          r%LHS(1:M,2*N:3*N-1) = -cmat/c%K
-          r%LHS(1:M,3*N:4*N-2) = -smat/c%K
+       if (e%ibnd==0 .or. e%calcin) then
+          r%LHS(1:M,2*N:3*N-1) = -cemat/e%K
+          r%LHS(1:M,3*N:4*N-2) = -semat/e%K
        end if
     else
        r%LHS = -huge(1.0)
        r%RHS =  huge(1.0)
     end if
-  end function circle_match_head_self
+  end function ellipse_match_head_self
 
-  function circle_match_flux_self(c,p) result(r)
+  function ellipse_match_flux_self(c,p) result(r)
     use utility, only : outerprod
-    use type_definitions, only : circle, match_result
+    use type_definitions, only : ellipse, match_result
     use bessel_functions, only : bK, bI
     implicit none
 
-    type(circle), intent(in) :: c
+    type(ellipse), intent(in) :: c
     complex(DP), intent(in) :: p
     type(match_result) :: r
 
@@ -146,15 +147,15 @@ contains
        r%LHS = -huge(1.0)
        r%RHS =  huge(1.0)
     end if
-  end function circle_match_flux_self
+  end function ellipse_match_flux_self
 
-  function circle_match_head_other(c,el,dom,p) result(r)
+  function ellipse_match_head_other(c,el,dom,p) result(r)
     use utility, only : outerprod
-    use type_definitions, only : circle, domain, matching, match_result
+    use type_definitions, only : ellipse, domain, matching, match_result
     use bessel_functions, only : bK, bI
     implicit none
 
-    type(circle), intent(in) :: c ! source circle
+    type(ellipse), intent(in) :: c ! source ellipse
     type(matching), intent(in) :: el ! target element (circle or ellipse)
     type(domain), intent(in) :: dom
     complex(DP), intent(in) :: p
@@ -231,15 +232,15 @@ contains
           end if
        end if
     end if
-  end function circle_match_head_other
+  end function ellipse_match_head_other
 
-  function circle_match_flux_other(c,el,dom,p) result(r)
+  function ellipse_match_flux_other(c,el,dom,p) result(r)
     use utility, only : outerprod
-    use type_definitions, only : circle, domain, matching, match_result
+    use type_definitions, only : ellipse, domain, matching, match_result
     use bessel_functions, only : bK, bI, dbK, dbI
     implicit none
 
-    type(circle), intent(in) :: c ! source circle
+    type(ellipse), intent(in) :: c ! source ellipse
     type(matching), intent(in) :: el ! target element (circle or ellipse)
     type(domain), intent(in) :: dom
     complex(DP), intent(in) :: p
@@ -271,7 +272,7 @@ contains
           ! for constant head (-1), or matching (0)
           if (el%ibnd==0 .or. el%ibnd==-1) then
 
-             ! flux effects of source circle on target element
+             ! flux effects of source ellipse on target element
              allocate(Kn(M,0:N),dKn(M,0:N),Kn0(0:N-1), &
                   & dPot_dR(M,2*N-1),dPot_dP(M,2*N-1),dPot_dX(M,2*N-1),dPot_dY(M,2*N-1))
              kap = kappa(p,c%parent) 
@@ -392,7 +393,7 @@ contains
        end if
     end if
 
-  end function circle_match_flux_other
+  end function ellipse_match_flux_other
 
 end module elliptical_elements
 

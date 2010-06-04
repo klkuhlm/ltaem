@@ -1,5 +1,6 @@
 module type_definitions
   use constants, only : DP, lenFN
+  use mathieu_functions, only : mathieu
   implicit none
 
   public
@@ -133,6 +134,9 @@ module type_definitions
   type, extends(matching) :: ellipse
      ! Elliptical Inclusion related parameters
      ! line is special case of ellipse
+
+     ! structure containing matrices of mathieu function parameter
+     type(mathieu) :: mat
 
      ! size of MF infinite matrix
      integer :: ms
