@@ -95,9 +95,9 @@ contains
        cmat = cos(outerprod(c%Pcm(1:M), vi(0:N-1)))
        smat = sin(outerprod(c%Pcm(1:M), vi(1:N-1)))
 
-       allocate(Kn(0:N),dKn(0:N))
+       allocate(Kn(0:N-1),dKn(0:N-1))
        kap = kappa(p,c%parent) 
-       call bKD(kap*c%r,N+1,Kn,dKn)
+       call bKD(kap*c%r,N,Kn,dKn)
        dKn = kap*dKn
 
        r%LHS(1:M,1:N) =       spread(dKn(0:N-1)/Kn(0:N-1), 1,M)*cmat/c%parent%K
@@ -132,9 +132,9 @@ contains
        end select
     
        if (c%ibnd==0 .or. c%calcin) then
-          allocate(In(0:N),dIn(0:N))
+          allocate(In(0:N-1),dIn(0:N-1))
           kap = kappa(p,c%element)
-          call bID(kap*c%r,N+1,In,dIn)
+          call bID(kap*c%r,N,In,dIn)
           dIn = kap*dIn
           
           r%LHS(1:M,2*N:3*N-1) = spread(dIn(0:N-1)/In(0:N-1), 1,M)*cmat/c%K
@@ -271,7 +271,7 @@ contains
           if (el%ibnd==0 .or. el%ibnd==-1) then
 
              ! flux effects of source circle on target element
-             allocate(Kn(M,0:N),dKn(M,0:N),Kn0(0:N-1), &
+             allocate(Kn(M,0:N-1),dKn(M,0:N-1),Kn0(0:N-1), &
                   & dPot_dR(M,2*N-1),dPot_dP(M,2*N-1),dPot_dX(M,2*N-1),dPot_dY(M,2*N-1))
              kap = kappa(p,c%parent) 
              call bKD(kap*c%G(targ)%Rgm(1:M),N+1,Kn,dKn)
@@ -335,7 +335,7 @@ contains
           !  i.e., is the source element the parent?
 
           if (el%ibnd==0 .or. el%ibnd==-1) then
-             allocate(In(M,0:N-1),dIn(M,0:N),In0(0:N-1), &
+             allocate(In(M,0:N-1),dIn(M,0:N-1),In0(0:N-1), &
                   & dPot_dR(M,2*N-1),dPot_dP(M,2*N-1),dPot_dX(M,2*N-1),dPot_dY(M,2*N-1))
              kap = kappa(p,c%element)
              call bId(kap*c%G(targ)%Rgm(1:M),N+1,In,dIn)

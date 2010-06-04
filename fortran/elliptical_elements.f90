@@ -71,14 +71,15 @@ contains
     end if
   end function ellipse_match_head_self
 
-  function ellipse_match_flux_self(c,p) result(r)
+  function ellipse_match_flux_self(e,p,idx) result(r)
     use utility, only : outerprod
     use type_definitions, only : ellipse, match_result
     use mathieu_functions, only : ce, se, Ke, Ko, dKe, dKo, Ie, Io, dIe, dIo
     implicit none
 
-    type(ellipse), intent(in) :: c
+    type(ellipse), intent(in) :: e
     complex(DP), intent(in) :: p
+    integer, intent(in) :: idx
     type(match_result) :: r
 
     integer :: j, N, M
@@ -91,14 +92,18 @@ contains
     vi = real([(j,j=0,N-1)],DP)
 
     allocate(r%LHS(M,(2*N-1)*(2-abs(e%ibnd))), r%RHS(M))
-    cemat = ce(vi(0:N-1),e%Pcm(1:M))
-    semat = se(vi(1:N-1),e%Pcm(1:M))
 
     ! matching (second M) or specified flux (first M); depends on p
     if (e%ibnd==0 .or. e%ibnd==1 .or. e%ibnd==2) then
-       allocate(mK(0:N,2),dmK(0:N,2))
-       kap = kappa(p,e%parent) 
-       call bKD(kap*e%r,N+1,Kn,dKn)
+       cemat = ce(e%mat(idx), vi(0:N-1), e%Pcm(1:M))
+       semat = se(e%mat(idx), vi(1:N-1), e%Pcm(1:M))
+
+       allocate(mK(0:N-1,0:1),dmK(0:N-1,0:1))
+       mK(0:N-1,0) = Ke(e%mat(idx), vi(0:N-1), e%r) ! even
+       mK(1:N-1,1) = Ko(e%mat(idx), vi(1:N-1), e%r) ! odd
+       dmK(0:N-1,0) = dKe(e%mat(idx), vi(0:N-1), e%r) ! even
+       dmK(1:N-1,1) = dKo(e%mat(idx), vi(1:N-1), e%r) ! odd      
+
        dKn = kap*dKn
 
        r%LHS(1:M,1:N) =       spread(dKn(0:N-1)/Kn(0:N-1), 1,M)*cmat/e%parent%K
