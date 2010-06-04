@@ -19,14 +19,15 @@ module elliptical_elements
   end interface
 
 contains
-  function ellipse_match_head_self(e,p) result(r)
+  function ellipse_match_head_self(e,p,idx) result(r)
     use utility, only : outerprod
     use type_definitions, only : ellipse, match_result
-    use mathieu_functions, only : ce, se
+    use mathieu_functions, only : mathieu_init, ce, se
     implicit none
 
     type(ellipse), intent(in) :: e
     complex(DP), intent(in) :: p
+    integer, intent(in) :: idx  ! indicates which value of p (global state)
     type(match_result) :: r
 
     integer :: j, N, M
@@ -39,16 +40,13 @@ contains
     ! LHS dim=2 is 4N-2 for matching, 2N-1 for spec. total head
     allocate(r%LHS(M,(2*N-1)*(2-abs(e%ibnd))), r%RHS(M))
 
-    ! assume this routine is being called first.  Initialize 
-    ! Mathieu function routines here.
-
-    cemat = ce(e%mat, vi(0:N-1), e%Pcm(1:M))
-    semat = se(e%mat, vi(1:N-1), e%Pcm(1:M))
-
     ! setup LHS
     ! matching or specified head (always first M rows); no dependence on p
     ! ibnd==-2 would be here, but it doesn't actually make physical sense
     if (e%ibnd==0 .or. e%ibnd==-1) then
+
+       cemat = ce(e%mat(idx), vi(0:N-1), e%Pcm(1:M))
+       semat = se(e%mat(idx), vi(1:N-1), e%Pcm(1:M))
 
        r%LHS(1:M,1:N) =       cemat/e%parent%K
        r%LHS(1:M,N+1:2*N-1) = semat/e%parent%K

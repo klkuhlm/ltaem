@@ -54,7 +54,7 @@ contains
     ! this subroutine computes the eigenvalues given at least a value for the
     ! Mathieu parameter (q), the norm and matrix size (M) are optional
 
-    use constants, only : DP, CZERO
+    use constants, only : DP
     use utility, only : diagonal
 
     interface ! LAPACK 3.2.1 eigenvalue/eigenfunction routine
@@ -138,7 +138,7 @@ contains
     end if
 
     di = 1 ! dummy integer for lapack
-    dc(1) = CZERO ! dummy complex for lapack
+    dc(1) = 0.0 ! dummy complex for lapack
 
     !$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
     ! even coefficients (a) of even order
@@ -147,7 +147,7 @@ contains
     !$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 
     ! main diagonal/ r counting from 0:m-1 like McLachlan
-    Coeff(:,:) = CZERO
+    Coeff(:,:) = 0.0
     forall(i=1:M-1) 
        Coeff(i+1,i+1) = cmplx((2*i)**2, 0, DP)
     end forall
@@ -184,7 +184,7 @@ contains
     ! De_{2n+1} in eqn 3.14 of St&Sp
     !$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 
-    Coeff(:,:) = CZERO
+    Coeff(:,:) = 0.0
     Coeff(1,1) = 1.0_DP + q
     
     forall(i=1:m-1) 
@@ -214,7 +214,7 @@ contains
     
     ! this one not shifted by one, since 2n+2 -> 2n 
     !! (but starting from one, rather than zero)
-    Coeff(:,:) = CZERO 
+    Coeff(:,:) = 0.0
     forall(i=1:m) 
        Coeff(i,i) = cmplx((2*i)**2, 0, DP)
     end forall
@@ -240,7 +240,7 @@ contains
     ! Do_{2n+1} of eqn 3.18 in St&Sp
     !$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 
-    Coeff(:,:) = CZERO
+    Coeff(:,:) = 0.0
     Coeff(1,1) = 1.0_DP - q
     forall(i=1:m-1) 
        Coeff(i+1,i+1) = cmplx((2*i+1)**2, 0, DP)
@@ -293,7 +293,7 @@ contains
   ! ce(q) is called Se(-q) by Blanch, or Qe(q) by Alhargan
   ! functions here use identities in 7.02 of Blanch's AMS#59 publication
   function ce_vect_nz(mf,n,z) result(ce)
-    use constants, only : DP, PIOV2
+    use constants, only : DP, PI
     use utility, only : outerprod
 
     ! external arguments
@@ -315,10 +315,10 @@ contains
     j = floor(n/2.0)
     
     ce(EV,:) = sum(spread(mf%A(:,j(EV),0),3,nz)* &
-         & spread(cos(outerprod(2*v,PIOV2-z)),2,nje),dim=1)
+         & spread(cos(outerprod(2*v,PI/2.0-z)),2,nje),dim=1)
 
     ce(OD,:) = sum(spread(mf%B(:,j(OD),1),3,nz)* &
-         & spread(sin(outerprod(2*v+1,PIOV2-z)),2,njo),dim=1)
+         & spread(sin(outerprod(2*v+1,PI/2.0-z)),2,njo),dim=1)
 
   end function ce_vect_nz
 
@@ -327,7 +327,7 @@ contains
   ! for vector order and argument (returns an outer-product type result)
   ! se is called So(-q) by Blanch and Qo(q) by Alhargan
   function se_vect_nz(mf,n,z) result(se)
-    use constants, only : DP, PIOV2
+    use constants, only : DP, PI
     use utility, only : outerprod
     integer, dimension(:), intent(in) :: n
     real(DP), dimension(:), intent(in) :: z
@@ -347,10 +347,10 @@ contains
     where (n==0) j = 0
 
     se(EV,:) = sum(spread(mf%B(:,j(EV),0),3,nz)* &
-         & spread(sin(outerprod(2*v+2,PIOV2-z)),2,nje),dim=1)
+         & spread(sin(outerprod(2*v+2,PI/2.0-z)),2,nje),dim=1)
 
     se(OD,:) = sum(spread(mf%A(:,j(OD),1),3,nz)* &
-         & spread(cos(outerprod(2*v+1,PIOV2-z)),2,njo),dim=1)
+         & spread(cos(outerprod(2*v+1,PI/2.0-z)),2,njo),dim=1)
 
     where (spread(n,2,nz) == 0) se = -huge(1.0)  ! se_0() is invalid
   end function se_vect_nz
@@ -359,7 +359,7 @@ contains
   ! derivative of even angular modified mathieu function (q<0)
   ! for vector order and argument (returns an outer-product type result)
   function Dce_vect_nz(mf,n,z) result(Dce)
-    use constants, only : DP, PIOV2
+    use constants, only : DP, PI
     use utility, only : outerprod
     integer, dimension(:), intent(in) :: n
     real(DP), dimension(:), intent(in) :: z
@@ -378,10 +378,10 @@ contains
     j = floor(n/2.0)
 
     Dce(EV,:) = sum(spread(spread(2*v,2,nje)*mf%A(:,j(EV),0),3,nz)* &
-         & spread(sin(outerprod(2*v,PIOV2-z)),2,nje),dim=1)
+         & spread(sin(outerprod(2*v,PI/2.0-z)),2,nje),dim=1)
 
     Dce(OD,:) = -sum(spread(spread(2*v+1,2,njo)*mf%B(:,j(OD),1),3,nz)* &
-         & spread(cos(outerprod(2*v+1,PIOV2-z)),2,njo),dim=1)
+         & spread(cos(outerprod(2*v+1,PI/2.0-z)),2,njo),dim=1)
 
   end function Dce_vect_nz
 
@@ -389,7 +389,7 @@ contains
   ! derivative of odd angular modified mathieu function (q<0)
   ! for vector order and argument (returns an outer-product type result)
   function Dse_vect_nz(mf,n,z) result(Dse)
-    use constants, only : DP, PIOV2
+    use constants, only : DP, PI
     use utility, only : outerprod
     integer, dimension(:), intent(in) :: n
     real(DP), dimension(:), intent(in) :: z
@@ -409,10 +409,10 @@ contains
     where (n==0) j=0
 
     Dse(EV,:) = -sum(spread(spread(2*v+2,2,nje)*mf%B(:,j(EV),0),3,nz)* &
-         & spread(cos(outerprod(2*v+2,PIOV2-z)),2,nje),dim=1)
+         & spread(cos(outerprod(2*v+2,PI/2.0-z)),2,nje),dim=1)
 
     Dse(OD,:) = sum(spread(spread(2*v+1,2,njo)*mf%A(:,j(OD),1),3,nz)* &
-         & spread(sin(outerprod(2*v+1,PIOV2-z)),2,njo),dim=1)
+         & spread(sin(outerprod(2*v+1,PI/2.0-z)),2,njo),dim=1)
 
     where (spread(n,2,nz) == 0) Dse = -huge(1.0)  ! se_0() is undefined
   end function Dse_vect_nz
@@ -1191,7 +1191,7 @@ contains
   !! these are SCALED results, un-scaling is done in the MF routines
 
   subroutine BesselI_val(arg,n,I)
-    use constants, only : DP, SMALL
+    use constants, only : DP
     use complex_bessel, only : cbesi
     complex(DP), intent(in), dimension(:) :: arg
     integer, intent(in) :: n
@@ -1248,7 +1248,7 @@ contains
   end subroutine BesselI_val_and_deriv
 
   subroutine BesselK_val(arg,n,K)
-    use constants, only : DP, LARGE
+    use constants, only : DP
     use complex_bessel, only : cbesk
     complex(DP), intent(in), dimension(:) :: arg
     integer, intent(in) :: n

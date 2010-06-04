@@ -73,6 +73,9 @@ module type_definitions
      ! the parent element
      type(element), pointer :: parent => null()
 
+     ! structure containing matrices of mathieu function parameters
+     type(mathieu), allocatable(:) :: mat
+
   end type element
     
   type :: geom
@@ -134,9 +137,6 @@ module type_definitions
   type, extends(matching) :: ellipse
      ! Elliptical Inclusion related parameters
      ! line is special case of ellipse
-
-     ! structure containing matrices of mathieu function parameter
-     type(mathieu) :: mat
 
      ! size of MF infinite matrix
      integer :: ms
