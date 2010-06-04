@@ -1,5 +1,5 @@
 ! this module contains the basic functions defining the head or flux 
-! effects of a circular element.
+! effects of an elliptical element.
 
 module elliptical_elements
   use constants, only : DP, PI
@@ -38,6 +38,10 @@ contains
 
     ! LHS dim=2 is 4N-2 for matching, 2N-1 for spec. total head
     allocate(r%LHS(M,(2*N-1)*(2-abs(e%ibnd))), r%RHS(M))
+
+    ! assume this routine is being called first.  Initialize 
+    ! Mathieu function routines here.
+
     cemat = ce(e%mat, vi(0:N-1), e%Pcm(1:M))
     semat = se(e%mat, vi(1:N-1), e%Pcm(1:M))
 
@@ -72,75 +76,74 @@ contains
   function ellipse_match_flux_self(c,p) result(r)
     use utility, only : outerprod
     use type_definitions, only : ellipse, match_result
-    use bessel_functions, only : bK, bI
+    use mathieu_functions, only : ce, se, Ke, Ko, dKe, dKo, Ie, Io, dIe, dIo
     implicit none
 
     type(ellipse), intent(in) :: c
     complex(DP), intent(in) :: p
     type(match_result) :: r
 
-    complex(DP), dimension(c%M,2*c%N-1) :: tmp
     integer :: j, N, M
-    complex(DP), allocatable :: Kn(:), dKn(:), In(:), dIn(:)
+    complex(DP), allocatable :: mK(:,:), dmK(:,:), mI(:,:), dmI(:,:)
     complex(DP) :: kap
-    real(DP) :: cmat(1:c%M,0:c%N-1), smat(1:c%M,1:c%N-1)
-    real(DP), dimension(0:c%N-1) :: vi
+    real(DP) :: cmat(1:e%M,0:e%N-1), smat(1:e%M,1:e%N-1)
+    real(DP), dimension(0:e%N-1) :: vi
 
-    N = c%N; M = c%M
+    N = e%N; M = e%M
     vi = real([(j,j=0,N-1)],DP)
 
-    allocate(r%LHS(M,(2*N-1)*(2-abs(c%ibnd))), r%RHS(M))
-    cmat = cos(outerprod(c%Pcm(1:M), vi(0:N-1)))
-    smat = sin(outerprod(c%Pcm(1:M), vi(1:N-1)))
+    allocate(r%LHS(M,(2*N-1)*(2-abs(e%ibnd))), r%RHS(M))
+    cemat = ce(vi(0:N-1),e%Pcm(1:M))
+    semat = se(vi(1:N-1),e%Pcm(1:M))
 
     ! matching (second M) or specified flux (first M); depends on p
-    if (c%ibnd==0 .or. c%ibnd==1 .or. c%ibnd==2) then
-       allocate(Kn(0:N),dKn(0:N))
-       kap = kappa(p,c%parent) 
-       call bKD(kap*c%r,N+1,Kn,dKn)
+    if (e%ibnd==0 .or. e%ibnd==1 .or. e%ibnd==2) then
+       allocate(mK(0:N,2),dmK(0:N,2))
+       kap = kappa(p,e%parent) 
+       call bKD(kap*e%r,N+1,Kn,dKn)
        dKn = kap*dKn
 
-       tmp(1:M,1:N) =       spread(dKn(0:N-1)/Kn(0:N-1), 1,M)*cmat/c%parent%K
-       tmp(1:M,N+1:2*N-1) = spread(dKn(1:N-1)/Kn(1:N-1), 1,M)*smat/c%parent%K
+       r%LHS(1:M,1:N) =       spread(dKn(0:N-1)/Kn(0:N-1), 1,M)*cmat/e%parent%K
+       r%LHS(1:M,N+1:2*N-1) = spread(dKn(1:N-1)/Kn(1:N-1), 1,M)*smat/e%parent%K
        deallocate(Kn,dKn)
 
-       select case(c%ibnd)
+       select case(e%ibnd)
        case(2)
           allocate(Kn(0:1))
-          Kn(0:1) = bK(kap*c%r,2)
+          Kn(0:1) = bK(kap*e%r,2)
           
-          if (c%StorIn) then
+          if (e%StorIn) then
              ! effects of wellbore storage and skin on finite-radius
              ! well, where a_0 is computed (generally depends on
              ! other elements, too; these show up in off-diagonal sub-matrices)
-             r%LHS(1:M,1) = -Kn(0)*((2.0 + c%r**2*c%dskin*p/c%parent%T)/(2.0*PI*c%r) + &
-                  & (Kn(0)*c%r*p)/(2.0*PI*c%r*kap*Kn(1)*c%parent%T))*tmp(1:M,1)
-             r%RHS(1:M) = time(p,c%time,.false.)*c%bdryQ/(PI*c%r*c%parent%T)
+             r%LHS(1:M,1) = -Kn(0)*((2.0 + e%r**2*e%dskin*p/e%parent%T)/(2.0*PI*e%r) + &
+                  & (Kn(0)*e%r*p)/(2.0*PI*e%r*kap*Kn(1)*e%parent%T))*tmp(1:M,1)
+             r%RHS(1:M) = time(p,e%time,.false.)*e%bdryQ/(PI*e%r*e%parent%T)
           else
              ! specified flux (finite-radius well no storage)
              ! a_0 coefficient is computed analytically
              r%LHS(1:M,1) = 0.0
-             r%RHS(1:M) = Kn(0)*time(p,c%time,.false.)*c%bdryQ/(2.0*PI*c%r*Kn(1))*tmp(1:M,1)
+             r%RHS(1:M) = Kn(0)*time(p,e%time,.false.)*e%bdryQ/(2.0*PI*e%r*Kn(1))*tmp(1:M,1)
           end if
           deallocate(Kn)
        case(1)
           ! put specified flux effects on RHS
           r%LHS(1:M,1:N) = tmp(M+1:2*M,1:2*N-1)
-          r%RHS(1:M) = time(p,c%time,.false.)*c%bdryQ/(2.0*PI*c%r)
+          r%RHS(1:M) = time(p,e%time,.false.)*e%bdryQ/(2.0*PI*e%r)
        case(0)
           ! no area source term effects on flux matchinig
           r%LHS(1:M,1:N) = tmp(M+1:2*M,1:2*N-1)
           r%RHS(1:M) = 0.0 
        end select
     
-       if (c%ibnd==0 .or. c%calcin) then
+       if (e%ibnd==0 .or. e%calcin) then
           allocate(In(0:N),dIn(0:N))
-          kap = kappa(p,c%element)
-          call bID(kap*c%r,N+1,In,dIn)
+          kap = kappa(p,e%element)
+          call bID(kap*e%r,N+1,In,dIn)
           dIn = kap*dIn
           
-          r%LHS(1:M,2*N:3*N-1) = spread(dIn(0:N-1)/In(0:N-1), 1,M)*cmat/c%K
-          r%LHS(1:M,3*N:4*N-2) = spread(dIn(1:N-1)/In(1:N-1), 1,M)*smat/c%K
+          r%LHS(1:M,2*N:3*N-1) = spread(dIn(0:N-1)/In(0:N-1), 1,M)*cmat/e%K
+          r%LHS(1:M,3*N:4*N-2) = spread(dIn(1:N-1)/In(1:N-1), 1,M)*smat/e%K
           deallocate(dIn,In)
        end if
     else
