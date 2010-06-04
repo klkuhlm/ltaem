@@ -45,8 +45,8 @@ contains
     ! ibnd==-2 would be here, but it doesn't actually make physical sense
     if (e%ibnd==0 .or. e%ibnd==-1) then
 
-       cemat = ce(e%mat(idx), vi(0:N-1), e%Pcm(1:M))
-       semat = se(e%mat(idx), vi(1:N-1), e%Pcm(1:M))
+       cemat = ce(e%parent%mat(idx), vi(0:N-1), e%Pcm(1:M))
+       semat = se(e%parent%mat(idx), vi(1:N-1), e%Pcm(1:M))
 
        r%LHS(1:M,1:N) =       cemat/e%parent%K
        r%LHS(1:M,N+1:2*N-1) = semat/e%parent%K
@@ -83,7 +83,7 @@ contains
     type(match_result) :: r
 
     integer :: j, N, M
-    complex(DP), allocatable :: mK(:,:), dmK(:,:), mI(:,:), dmI(:,:)
+    complex(DP), allocatable :: mR(:,:), dmR(:,:)
     complex(DP) :: kap
     real(DP) :: cmat(1:e%M,0:e%N-1), smat(1:e%M,1:e%N-1)
     real(DP), dimension(0:e%N-1) :: vi
@@ -95,59 +95,48 @@ contains
 
     ! matching (second M) or specified flux (first M); depends on p
     if (e%ibnd==0 .or. e%ibnd==1 .or. e%ibnd==2) then
-       cemat = ce(e%mat(idx), vi(0:N-1), e%Pcm(1:M))
-       semat = se(e%mat(idx), vi(1:N-1), e%Pcm(1:M))
+       cemat = ce(e%parent%mat(idx), vi(0:N-1), e%Pcm(1:M)) ! outside
+       semat = se(e%parent%mat(idx), vi(1:N-1), e%Pcm(1:M))
 
-       allocate(mK(0:N-1,0:1),dmK(0:N-1,0:1))
-       mK(0:N-1,0) = Ke(e%mat(idx), vi(0:N-1), e%r) ! even
-       mK(1:N-1,1) = Ko(e%mat(idx), vi(1:N-1), e%r) ! odd
-       dmK(0:N-1,0) = dKe(e%mat(idx), vi(0:N-1), e%r) ! even
-       dmK(1:N-1,1) = dKo(e%mat(idx), vi(1:N-1), e%r) ! odd      
+       allocate(mR(0:N-1,0:1),dmR(0:N-1,0:1))
+       mR(0:N-1,0) =   Ke(e%parent%mat(idx), vi(0:N-1), e%r) ! even fn
+       mR(1:N-1,1) =   Ko(e%parent%mat(idx), vi(1:N-1), e%r) ! odd fn
+       dmR(0:N-1,0) = dKe(e%parent%mat(idx), vi(0:N-1), e%r) ! even deriv
+       dmR(1:N-1,1) = dKo(e%parent%mat(idx), vi(1:N-1), e%r) ! odd deriv
 
-       dKn = kap*dKn
+       r%LHS(1:M,1:N) =       spread(dmR(0:N-1,0)/mR(0:N-1,0), 1,M)*cemat/e%parent%K
+       r%LHS(1:M,N+1:2*N-1) = spread(dmR(1:N-1,1)/mR(1:N-1,1), 1,M)*semat/e%parent%K
+       deallocate(mR,dmR)
 
-       r%LHS(1:M,1:N) =       spread(dKn(0:N-1)/Kn(0:N-1), 1,M)*cmat/e%parent%K
-       r%LHS(1:M,N+1:2*N-1) = spread(dKn(1:N-1)/Kn(1:N-1), 1,M)*smat/e%parent%K
-       deallocate(Kn,dKn)
-
-       select case(e%ibnd)
-       case(2)
-          allocate(Kn(0:1))
-          Kn(0:1) = bK(kap*e%r,2)
-          
-          if (e%StorIn) then
-             ! effects of wellbore storage and skin on finite-radius
-             ! well, where a_0 is computed (generally depends on
-             ! other elements, too; these show up in off-diagonal sub-matrices)
-             r%LHS(1:M,1) = -Kn(0)*((2.0 + e%r**2*e%dskin*p/e%parent%T)/(2.0*PI*e%r) + &
-                  & (Kn(0)*e%r*p)/(2.0*PI*e%r*kap*Kn(1)*e%parent%T))*tmp(1:M,1)
-             r%RHS(1:M) = time(p,e%time,.false.)*e%bdryQ/(PI*e%r*e%parent%T)
-          else
-             ! specified flux (finite-radius well no storage)
-             ! a_0 coefficient is computed analytically
-             r%LHS(1:M,1) = 0.0
-             r%RHS(1:M) = Kn(0)*time(p,e%time,.false.)*e%bdryQ/(2.0*PI*e%r*Kn(1))*tmp(1:M,1)
-          end if
-          deallocate(Kn)
-       case(1)
-          ! put specified flux effects on RHS
-          r%LHS(1:M,1:N) = tmp(M+1:2*M,1:2*N-1)
-          r%RHS(1:M) = time(p,e%time,.false.)*e%bdryQ/(2.0*PI*e%r)
-       case(0)
-          ! no area source term effects on flux matchinig
-          r%LHS(1:M,1:N) = tmp(M+1:2*M,1:2*N-1)
-          r%RHS(1:M) = 0.0 
-       end select
+!!$       select case(e%ibnd)
+!!$       case(2)
+!!$          ! specified flux (finite-radius well no storage)
+!!$          ! a_0 coefficient is computed analytically
+!!$          r%LHS(1:M,1) = 0.0
+!!$          r%RHS(1:M) = Kn(0)*time(p,e%time,.false.)*e%bdryQ/(2.0*PI*e%r*Kn(1))*tmp(1:M,1)
+!!$       case(1)
+!!$          ! put specified flux effects on RHS
+!!$          r%LHS(1:M,1:N) = tmp(M+1:2*M,1:2*N-1)
+!!$          r%RHS(1:M) = time(p,e%time,.false.)*e%bdryQ/(2.0*PI*e%r)
+!!$       case(0)
+!!$          ! no area source term effects on flux matchinig
+!!$          r%LHS(1:M,1:N) = tmp(M+1:2*M,1:2*N-1)
+!!$          r%RHS(1:M) = 0.0 
+!!$       end select
     
        if (e%ibnd==0 .or. e%calcin) then
-          allocate(In(0:N),dIn(0:N))
-          kap = kappa(p,e%element)
-          call bID(kap*e%r,N+1,In,dIn)
-          dIn = kap*dIn
+          cemat = ce(e%mat(idx), vi(0:N-1), e%Pcm(1:M)) ! inside
+          semat = se(e%mat(idx), vi(1:N-1), e%Pcm(1:M))
+
+          allocate(mR(0:N-1,0:1),dmR(0:N-1,0:1))
+          mR(0:N-1,0) =   Ie(e%mat(idx), vi(0:N-1), e%r)
+          mR(1:N-1,1) =   Io(e%mat(idx), vi(1:N-1), e%r)
+          dmR(0:N-1,0) = dIe(e%mat(idx), vi(0:N-1), e%r)
+          dmR(1:N-1,1) = dIo(e%mat(idx), vi(1:N-1), e%r)
           
-          r%LHS(1:M,2*N:3*N-1) = spread(dIn(0:N-1)/In(0:N-1), 1,M)*cmat/e%K
-          r%LHS(1:M,3*N:4*N-2) = spread(dIn(1:N-1)/In(1:N-1), 1,M)*smat/e%K
-          deallocate(dIn,In)
+          r%LHS(1:M,2*N:3*N-1) = spread(dmR(0:N-1,0)/mR(0:N-1,0), 1,M)*cemat/e%K
+          r%LHS(1:M,3*N:4*N-2) = spread(dmR(1:N-1,1)/mR(1:N-1,1), 1,M)*semat/e%K
+          deallocate(dmR,mR)
        end if
     else
        r%LHS = -huge(1.0)
@@ -155,23 +144,23 @@ contains
     end if
   end function ellipse_match_flux_self
 
-  function ellipse_match_head_other(c,el,dom,p) result(r)
+  function ellipse_match_head_other(e,el,dom,p,idx) result(r)
     use utility, only : outerprod
     use type_definitions, only : ellipse, domain, matching, match_result
-    use bessel_functions, only : bK, bI
+    use mathieu_functions, only : ce, se, Ke, Ko, Ie, Io
     implicit none
 
-    type(ellipse), intent(in) :: c ! source ellipse
+    type(ellipse), intent(in) :: e ! source ellipse
     type(matching), intent(in) :: el ! target element (circle or ellipse)
     type(domain), intent(in) :: dom
     complex(DP), intent(in) :: p
+    integer, intent(in) :: idx
     type(match_result) :: r 
 
     integer :: j, src, targ, N, M
-    real(DP), allocatable :: cmat(:,:), smat(:,:)
+    real(DP), allocatable :: cemat(:,:), semat(:,:)
     real(DP), dimension(0:c%N-1) :: vi
-    complex(DP), allocatable :: Kn(:,:), Kn0(:), In(:,:), In0(:)
-    complex(DP) :: kap
+    complex(DP), allocatable :: mR(:,:,:), mR0(:,:)
 
     N = c%N ! number of coefficients in the source circular element
     targ = el%id; src = c%id
@@ -181,20 +170,21 @@ contains
        ! common stuff between both branches below
        M = el%M
        allocate(r%LHS(M,(2*N-1)*(2-abs(el%ibnd))), r%RHS(M), &
-            & cmat(M,0:N-1), smat(M,1:N-1))
-       cmat = cos(outerprod(c%G(targ)%Pgm(1:M), vi(0:N-1)))
-       smat = sin(outerprod(c%G(targ)%Pgm(1:M), vi(1:N-1)))
+            & cemat(M,0:N-1), semat(M,1:N-1))
 
        ! can the target element "see" the outside of the source element?
        if (dom%inclBg(src,targ)) then
+          cemat = ce(e%parent%mat(idx), vi(0:N-1), e%G(targ)%Pgm(1:M))
+          semat = se(e%parent%mat(idx), vi(1:N-1), e%G(targ)%Pgm(1:M))
 
           ! setup LHS (head effects due to source element)
           ! for constant head (-1), or matching (0)
           if (el%ibnd==0 .or. el%ibnd==-1) then
-             allocate(Kn(M,0:N-1),Kn0(0:N-1))
-             kap = kappa(p,c%parent)
-             Kn(0:N-1,1:M) = bK(kap*c%G(targ)%Rgm(1:M),N)
-             Kn0(0:N-1) = bK(kap*c%r,N)
+             allocate(mR(M,0:N-1,0:1),mR0(0:N-1,0:1))
+             mR(1:M,0:N-1,0) = Ke(e%parent%mat(idx), vi(0:N-1), e%G(targ)%Rgm(1:M))
+             mR(1:M,1:N-1,1) = Ko(e%parent%mat(idx), vi(1:N-1), e%G(targ)%Rgm(1:M))
+             mR0(0:N-1,0) = Ke(e%parent%mat(idx), vi(0:N-1), e%r)
+             mR0(1:N-1,1) = Ko(e%parent%mat(idx), vi(1:N-1), e%r)
 
              ! head effects on other element
              r%LHS(1:M,1:N) =       Kn(0:N-1,:)/spread(Kn0(0:N-1),1,M)*cmat/c%parent%K
