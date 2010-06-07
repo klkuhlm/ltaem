@@ -108,21 +108,21 @@ contains
        r%LHS(1:M,N+1:2*N-1) = spread(dmR(1:N-1,1)/mR(1:N-1,1), 1,M)*semat/e%parent%K
        deallocate(mR,dmR)
 
-!!$       select case(e%ibnd)
-!!$       case(2)
-!!$          ! specified flux (finite-radius well no storage)
-!!$          ! a_0 coefficient is computed analytically
-!!$          r%LHS(1:M,1) = 0.0
-!!$          r%RHS(1:M) = Kn(0)*time(p,e%time,.false.)*e%bdryQ/(2.0*PI*e%r*Kn(1))*tmp(1:M,1)
-!!$       case(1)
-!!$          ! put specified flux effects on RHS
-!!$          r%LHS(1:M,1:N) = tmp(M+1:2*M,1:2*N-1)
-!!$          r%RHS(1:M) = time(p,e%time,.false.)*e%bdryQ/(2.0*PI*e%r)
-!!$       case(0)
-!!$          ! no area source term effects on flux matchinig
-!!$          r%LHS(1:M,1:N) = tmp(M+1:2*M,1:2*N-1)
-!!$          r%RHS(1:M) = 0.0 
-!!$       end select
+       select case(e%ibnd)
+       case(2)
+          ! specified flux (line source/sink)
+          ! a_n & b_n coefficients computed analytically
+          r%RHS(1:M) = Kn(0)*time(p,e%time,.false.)*e%bdryQ/(2.0*PI*e%r*Kn(1))*r%LHS(1:M,1)
+          r%LHS(1:M,1) = 0.0
+       case(1)
+          ! put specified flux effects on RHS
+          r%LHS(1:M,1:N) = tmp(M+1:2*M,1:2*N-1)
+          r%RHS(1:M) = time(p,e%time,.false.)*e%bdryQ/(2.0*PI*e%r)
+       case(0)
+          ! no area source term effects on flux matchinig
+          r%LHS(1:M,1:N) = tmp(M+1:2*M,1:2*N-1)
+          r%RHS(1:M) = 0.0 
+       end select
     
        if (e%ibnd==0 .or. e%calcin) then
           cemat = ce(e%mat(idx), vi(0:N-1), e%Pcm(1:M)) ! inside
@@ -230,24 +230,24 @@ contains
     end if
   end function ellipse_match_head_other
 
-  function ellipse_match_flux_other(c,el,dom,p) result(r)
+  function ellipse_match_flux_other(e,el,dom,p,idx) result(r)
     use utility, only : outerprod
     use type_definitions, only : ellipse, domain, matching, match_result
     use bessel_functions, only : bK, bI, dbK, dbI
     implicit none
 
-    type(ellipse), intent(in) :: c ! source ellipse
+    type(ellipse), intent(in) :: e ! source ellipse
     type(matching), intent(in) :: el ! target element (circle or ellipse)
     type(domain), intent(in) :: dom
     complex(DP), intent(in) :: p
+    integer, intent(in) :: idx
     type(match_result) :: r
 
     integer :: j, src, targ, N, M
-    real(DP), allocatable :: cmat(:,:), smat(:,:)
+    real(DP), allocatable :: cemat(:,:), semat(:,:)
     real(DP), dimension(0:c%N-1) :: vi
-    complex(DP), allocatable :: Kn(:,:), dKn(:,:), Kn0(:), In(:,:), dIn(:,:), In0(:)
-    complex(DP), allocatable :: dPot_dR(:,:), dPot_dP(:,:), dPot_dX(:,:), dPot_dY(:,:)
-    complex(DP) :: kap
+    complex(DP), allocatable :: mR(:,:,:), dmR(:,:,:), mR0(:,:)
+    complex(DP), allocatable :: dPot_dEta(:,:), dPot_dPsi(:,:), dPot_dX(:,:), dPot_dY(:,:)
 
     N = c%N ! number of coefficients in the source circular element
     targ = el%id; src = c%id
@@ -257,9 +257,9 @@ contains
        ! common stuff between both branches below
        M = el%M
        allocate(r%LHS(M,(2*N-1)*(2-abs(el%ibnd))), r%RHS(M), &
-            & cmat(M,0:N-1), smat(M,1:N-1))
-       cmat = cos(outerprod(c%G(targ)%Pgm(1:M), vi(0:N-1)))
-       smat = sin(outerprod(c%G(targ)%Pgm(1:M), vi(1:N-1)))
+            & cemat(M,0:N-1), semat(M,1:N-1))
+       cemat = ce(e%parent%mat(idx), vi(0:N-1), e%G(targ)%Pgm(1:M))
+       semat = se(e%parent%mat(idx), vi(1:N-1), e%G(targ)%Pgm(1:M))
 
        ! can the target element "see" the outside of the source element?
        if (dom%inclBg(src,targ)) then
@@ -269,34 +269,39 @@ contains
           if (el%ibnd==0 .or. el%ibnd==-1) then
 
              ! flux effects of source ellipse on target element
-             allocate(Kn(M,0:N),dKn(M,0:N),Kn0(0:N-1), &
-                  & dPot_dR(M,2*N-1),dPot_dP(M,2*N-1),dPot_dX(M,2*N-1),dPot_dY(M,2*N-1))
-             kap = kappa(p,c%parent) 
-             call bKD(kap*c%G(targ)%Rgm(1:M),N+1,Kn,dKn)
-             Kn0(0:N-1) = bK(kap*c%r,N)
-             dKn = kap*dKn
+             allocate(mR(M,0:N,0:1), dmR(M,0:N,0:1), mR0(0:N-1,0:1), &
+                  & dPot_dEta(M,2*N-1), dPot_dPsi(M,2*N-1),&
+                  & dPot_dX(M,2*N-1), dPot_dY(M,2*N-1))
+             mR(1:M,0:N-1,0) =   Ke(e%parent%mat(idx), vi(0:N-1), e%G(targ)%Rgm(1:M))
+             mR(1:M,1:N-1,1) =   Ko(e%parent%mat(idx), vi(1:N-1), e%G(targ)%Rgm(1:M))
+             dmR(1:M,0:N-1,0) = dKe(e%parent%mat(idx), vi(0:N-1), e%G(targ)%Rgm(1:M))
+             dmR(1:M,1:N-1,1) = dKo(e%parent%mat(idx), vi(1:N-1), e%G(targ)%Rgm(1:M))
+             mR0(0:N-1,0) =      Ke(e%parent%mat(idx), vi(0:N-1), e%r)
+             mR0(1:N-1,1) =      Ko(e%parent%mat(idx), vi(1:N-1), e%r)
 
              ! derivative wrt radius of source element             
-             dPot_dR(:,1:N) =       dKn(0:N-1,:)/spread(Kn0(0:N-1),1,M)*cmat/c%parent%K
-             dPot_dR(:,N+1:2*N-1) = dKn(1:N-1,:)/spread(Kn0(1:N-1),1,M)*smat/c%parent%K
+             dPot_dEta(:,1:N) =       dmR(0:N-1,:,0)/spread(mR0(0:N-1,0),1,M)*cemat/c%parent%K
+             dPot_dEta(:,N+1:2*N-1) = dmR(1:N-1,:,1)/spread(mR0(1:N-1,1),1,M)*semat/c%parent%K
              deallocate(dKn)
 
              select case (c%ibnd)
              case(2)
                 ! radially-symmetric, angular derivative zero by default
-                dPot_dP(:,:) = 0.0
+                dPot_dPsi(:,:) = 0.0
              case(-1,0,1)
                 ! derivative wrt angle of source element for more general circular elements
-                dPot_dP(:,1:N) =      -Kn(0:N-1,:)*spread(vi(0:N-1)/Kn0(0:N-1),1,M)*smat/c%parent%K
-                dPot_dP(:,N+1:2*N-1) = Kn(1:N-1,:)*spread(vi(1:N-1)/Kn0(1:N-1),1,M)*cmat/c%parent%K
+                dPot_dPsi(:,1:N) =       mR(0:N-1,:,0)/spread(mR0(0:N-1,0),1,M)* &
+                     & dce(e%parent%mat(idx), vi(0:N-1), e%G(targ)%Pgm(1:M))/c%parent%K
+                dPot_dPsi(:,N+1:2*N-1) = mR(1:N-1,:,1)/spread(mR0(1:N-1,1),1,M)* &
+                     & dse(e%parent%mat(idx), vi(0:N-1), e%G(targ)%Pgm(1:M))/c%parent%K
              end select
 
-             ! project these from cylindrical onto Cartesian coordinates
-             dPot_dX = dPot_dR*spread(cos(c%G(targ)%Pgm),2,2*N-1) - &
-                     & dPot_dP*spread(sin(c%G(targ)%Pgm)/c%G(targ)%Rgm,2,2*N-1)
-
-             dPot_dY = dPot_dR*spread(sin(c%G(targ)%Pgm),2,2*N-1) + &
-                     & dPot_dP*spread(cos(c%G(targ)%Pgm)/c%G(targ)%Rgm,2,2*N-1)
+             ! project these from elliptical onto Cartesian coordinates
+!!$             dPot_dX = dPot_dEta*spread(cos(c%G(targ)%Pgm),2,2*N-1) - &
+!!$                     & dPot_dPsi*spread(sin(c%G(targ)%Pgm)/c%G(targ)%Rgm,2,2*N-1)
+!!$
+!!$             dPot_dY = dPot_dEta*spread(sin(c%G(targ)%Pgm),2,2*N-1) + &
+!!$                     & dPot_dPsi*spread(cos(c%G(targ)%Pgm)/c%G(targ)%Rgm,2,2*N-1)
 
              ! project from Cartesian to "radial" coordinate of target element
              if (el%id <= dom%num(1)) then
