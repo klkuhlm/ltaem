@@ -18,19 +18,22 @@ subroutine matrix_solution(c,e,dom,p,idx)
   
   complex(DP), allocatable :: A(:,:)
   type(match_result), allocatable(:,:,:) :: res 
+  integer, allocatable :: row(:,:), col(:,:)
   integer :: nc, ne, ntot, i, j
   
   nc = size(c,1)
   ne = size(e,1)
   ntot = nc + ne
   
-  allocate(res(ntot,ntot,2))
+  allocate(res(ntot,ntot,2),row(ntot,0:2),col(ntot,0:2))
 
   ! accumulate results into matrices of structures
   do i = 1, nc
      ! circle on self
      res(i,i,1) = circle_head(c(i),p)
      res(i,i,2) = circle_flux(c(i),p)
+     
+     col(i,1) = size(res(i,i,1)%LHS,2)
      
      ! circle on other circle
      do j = 1, nc
@@ -47,11 +50,19 @@ subroutine matrix_solution(c,e,dom,p,idx)
      end do
   end do
 
+  where (c(1:nc)%ibnd == 0)
+     row(1:nc,1) = 2*c(1:nc)%M
+  elsewhere
+     row(1:nc,1) = c(1:nc)%M
+  end where
+
   do i = 1, ne
      ! ellipse on self
      res(nc+i,nc+i,1) = ellipse_head(e(i),p)
      res(nc+i,nc+i,2) = ellipse_flux(e(i),p)
      
+     col(i+nc,1) = size(res(nc+i,nc+i)%LHS,2)
+
      ! ellipse on other circle
      do j = 1, nc
         res(nc+i,j,1) = circle_head(e(i),c(j)%matching,dom,p)
@@ -67,9 +78,27 @@ subroutine matrix_solution(c,e,dom,p,idx)
      end do
   end do
   
+  where (e(1:ne)%ibnd == 0)
+     row(nc+1:ntot,1) = 2*e(1:ne)%M
+  elsewhere
+     row(nc+1:ntot,1) = e(1:ne)%M
+  end where
+
+  allocate(A(sum(row),sum(col)))
+
+  forall (i=1:ntot)
+     row(i,0) = 1 + sum(row(1:i-1))  ! lower bound
+     row(i,2) = sum(row(1:i))        ! upper bound
+     col(i,0) = 1 + sum(col(1:i-1))
+     col(i,2) = sum(col(1:i))
+  end forall
+
   ! convert structures into single matrix for solution via least squares
-  do j = 1, nc
-     
+  do i=1,ntot
+     do j=1,ntot
+        
+        A(row(i,0),row(j,2)) = res(i,j)
+     end do
   end do
   
 end subroutine matrix_solution

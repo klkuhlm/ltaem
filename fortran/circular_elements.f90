@@ -116,7 +116,7 @@ contains
              ! well, where a_0 is computed (generally depends on
              ! other elements, too; these show up in off-diagonal sub-matrices)
              r%LHS(1:M,1) = -Kn(0)*((2.0 + c%r**2*c%dskin*p/c%parent%T)/(2.0*PI*c%r) + &
-                  & (Kn(0)*c%r*p)/(2.0*PI*c%r*kap*Kn(1)*c%parent%T))*r%LHS(1:M,1)
+                  & (Kn(0)*c%r*p)/(2.0*PI*c%r*kap*Kn(1)*c%parent%T))*r%LHS(31:M,1)
              r%RHS(1:M) = time(p,c%time,.false.)*c%bdryQ/(PI*c%r*c%parent%T)
           else
              ! specified flux (finite-radius well no storage)
