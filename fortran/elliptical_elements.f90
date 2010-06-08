@@ -8,6 +8,9 @@ module elliptical_elements
 
   implicit none
 
+  private
+  public :: ellipse_head, ellipse_flux
+
   ! the four basic functions are overloaded for either 
   ! p being a vector (during inversion) or a scalar (during matching)
 

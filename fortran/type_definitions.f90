@@ -124,6 +124,9 @@ module type_definitions
      complex(DP), allocatable :: Zcm(:), Zom(:)
      type(geom), allocatable :: G(:) ! number of elements
 
+     ! coefficients determined through matching
+     complex(DP), allocatable :: coeff
+     
   end type matching
 
   type, extends(matching) :: circle

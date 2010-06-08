@@ -7,6 +7,8 @@ module circular_elements
   use time_mod
 
   implicit none
+  private
+  public :: circle_head, circle_flux
 
   ! the four basic functions are overloaded for either 
   ! p being a vector (during inversion) or a scalar (during matching)
