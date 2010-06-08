@@ -125,11 +125,11 @@ contains
     complex(DP), intent(in) :: p
     type(match_result) :: r 
 
-    integer :: j, src, targ, N, M
+    integer :: j, src, targ, N, M, lo, hi
     real(DP), allocatable :: cmat(:,:), smat(:,:)
     real(DP), dimension(0:c%N-1) :: vi
     complex(DP), allocatable :: Bn(:,:), dBn(:,:), Bn0(:)
-    complex(DP), allocatable :: dPot_dR(:,:), dPot_dP(:,:), dPot_dX(:,:), dPot_dY(:,:
+    complex(DP), allocatable :: dPot_dR(:,:), dPot_dP(:,:), dPot_dX(:,:), dPot_dY(:,:)
     complex(DP) :: kap
 
     N = c%N ! number of coefficients in the source circular element

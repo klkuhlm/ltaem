@@ -162,7 +162,6 @@ contains
              z(1:M) = cacosh(e(i)%G(j)%Zgm(1:M))*exp(-EYE*e(i)%theta)/e(i)%f
              e(i)%G(j)%Rgm(1:M) = real(z)  ! eta
              e(i)%G(j)%Pgm(1:M) = aimag(z) ! psi
-             e(i)%G(j)%metric(1:M)
              deallocate(z,other)
           end if
        end do

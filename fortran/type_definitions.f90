@@ -74,7 +74,7 @@ module type_definitions
      type(element), pointer :: parent => null()
 
      ! structure containing matrices of mathieu function parameters
-     type(mathieu), allocatable(:) :: mat
+     type(mathieu), allocatable :: mat(:)
 
   end type element
     
