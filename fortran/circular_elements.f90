@@ -8,70 +8,16 @@ module circular_elements
 
   implicit none
   private
-  public :: circle_head, circle_flux
 
   ! the four basic functions are overloaded for either 
   ! p being a vector (during inversion) or a scalar (during matching)
 
-  interface circle_head
-     module procedure circle_match_head_self, circle_match_head_other
-  end interface
-  interface circle_flux
-     module procedure circle_match_flux_self, circle_match_flux_other
+  interface circle_match
+     module procedure circle_match_self, circle_match_other
   end interface
 
 contains
-  function circle_match_head_self(c,p) result(r)
-    use utility, only : outerprod
-    use type_definitions, only : circle, match_result
-    implicit none
-
-    type(circle), intent(in) :: c
-    complex(DP), intent(in) :: p
-    type(match_result) :: r
-
-    integer :: j, N, M
-    real(DP) :: cmat(1:c%M,0:c%N-1), smat(1:c%M,1:c%N-1)
-    real(DP), dimension(0:c%N-1) :: vi
-
-    N = c%N; M = c%M
-    vi = real([(j,j=0,N-1)],DP)
-
-    ! LHS dim=2 is 4N-2 for matching, 2N-1 for spec. total head
-    allocate(r%LHS(M,(2*N-1)*(2-abs(c%ibnd))), r%RHS(M))
-
-    ! setup LHS
-    ! matching or specified head (always first M rows); no dependence on p
-    ! ibnd==-2 would be here, but it doesn't actually make physical sense
-    if (c%ibnd==0 .or. c%ibnd==-1) then
-
-       cmat = cos(outerprod(c%Pcm(1:M), vi(0:N-1)))
-       smat = sin(outerprod(c%Pcm(1:M), vi(1:N-1)))
-
-       r%LHS(1:M,1:N) =       cmat/c%parent%K
-       r%LHS(1:M,N+1:2*N-1) = smat/c%parent%K
-       
-       ! setup RHS
-       select case(c%ibnd)
-       case(-1)
-          ! put specified head on RHS
-          r%RHS(1:M) = time(p,c%time,.false.)*c%bdryQ
-       case(0)
-          ! put constant area source term effects on RHS
-          r%RHS(1:M) = -time(p,c%time,.true.)*c%areaQ*c%Ss/kappa(p,c%parent)**2
-       end select
-
-       if (c%ibnd==0 .or. c%calcin) then
-          r%LHS(1:M,2*N:3*N-1) = -cmat/c%K
-          r%LHS(1:M,3*N:4*N-2) = -smat/c%K
-       end if
-    else
-       r%LHS = -huge(1.0)
-       r%RHS =  huge(1.0)
-    end if
-  end function circle_match_head_self
-
-  function circle_match_flux_self(c,p) result(r)
+  function circle_match_self(c,p) result(r)
     use utility, only : outerprod
     use type_definitions, only : circle, match_result
     use bessel_functions, only : bK, bI
@@ -81,7 +27,7 @@ contains
     complex(DP), intent(in) :: p
     type(match_result) :: r
 
-    integer :: j, N, M
+    integer :: j, N, M, lo, hi
     complex(DP), allocatable :: Kn(:), dKn(:), In(:), dIn(:)
     complex(DP) :: kap
     real(DP) :: cmat(1:c%M,0:c%N-1), smat(1:c%M,1:c%N-1)
@@ -90,64 +36,86 @@ contains
     N = c%N; M = c%M
     vi = real([(j,j=0,N-1)],DP)
 
-    allocate(r%LHS(M,(2*N-1)*(2-abs(c%ibnd))), r%RHS(M))
+    ! LHS dim=2 is 4N-2 for matching or calc_in (always assume calc_out), 2N-1 for spec. total head
+    if (c%ibnd == 0) then
+       allocate(r%LHS(2*M,4*N-2), r%RHS(2*M))
+       lo = M+1; hi = 2*M
+    elseif (c%calcin) then
+       allocate(r%LHS(M,4*N-2), r%RHS(M))
+       lo = 1; hi = M
+    else
+       allocate(r%LHS(M,2*N-1), r%RHS(M))
+       lo = 1;  hi = M
+    end if
 
-    ! matching (second M) or specified flux (first M); depends on p
-    if (c%ibnd==0 .or. c%ibnd==1 .or. c%ibnd==2) then
-       cmat = cos(outerprod(c%Pcm(1:M), vi(0:N-1)))
-       smat = sin(outerprod(c%Pcm(1:M), vi(1:N-1)))
+    cmat = cos(outerprod(c%Pcm(1:M), vi(0:N-1)))
+    smat = sin(outerprod(c%Pcm(1:M), vi(1:N-1)))
 
+    ! setup LHS
+    ! matching or specified total head
+    if (c%ibnd == 0 .or. c%ibnd == -1) then
+       r%LHS(1:M,1:N) =       cmat/c%parent%K ! a_n head
+       r%LHS(1:M,N+1:2*N-1) = smat/c%parent%K ! b_n head
+
+       if (c%ibnd == 0 .or. c%calcin) then
+          r%LHS(1:M,2*N:3*N-1) = -cmat/c%K ! c_n head
+          r%LHS(1:M,3*N:4*N-2) = -smat/c%K ! d_n head
+       end if
+    end if
+    
+    ! matching or specified total flux
+    if (c%ibnd == 0 .or. c%ibnd == +1) then
        allocate(Kn(0:N-1),dKn(0:N-1))
        kap = kappa(p,c%parent) 
-       call bKD(kap*c%r,N,Kn,dKn)
-       dKn = kap*dKn
+       call bKD(kap*c%r,N,Kn,dKn); dKn = kap*dKn
 
-       r%LHS(1:M,1:N) =       spread(dKn(0:N-1)/Kn(0:N-1), 1,M)*cmat/c%parent%K
-       r%LHS(1:M,N+1:2*N-1) = spread(dKn(1:N-1)/Kn(1:N-1), 1,M)*smat/c%parent%K
+       r%LHS(lo:hi,1:N) =       spread(dKn(0:N-1)/Kn(0:N-1), 1,M)*cmat ! a_n flux
+       r%LHS(lo:hi,N+1:2*N-1) = spread(dKn(1:N-1)/Kn(1:N-1), 1,M)*smat ! b_n flux
        deallocate(Kn,dKn)
-
-       select case(c%ibnd)
-       case(2)
-          allocate(Kn(0:1))
-          Kn(0:1) = bK(kap*c%r,2)
-          
-          if (c%StorIn) then
-             ! effects of wellbore storage and skin on finite-radius
-             ! well, where a_0 is computed (generally depends on
-             ! other elements, too; these show up in off-diagonal sub-matrices)
-             r%LHS(1:M,1) = -Kn(0)*((2.0 + c%r**2*c%dskin*p/c%parent%T)/(2.0*PI*c%r) + &
-                  & (Kn(0)*c%r*p)/(2.0*PI*c%r*kap*Kn(1)*c%parent%T))*r%LHS(31:M,1)
-             r%RHS(1:M) = time(p,c%time,.false.)*c%bdryQ/(PI*c%r*c%parent%T)
-          else
-             ! specified flux (finite-radius well no storage)
-             ! a_0 coefficient is computed analytically
-             r%RHS(1:M) = Kn(0)*time(p,c%time,.false.)*c%bdryQ/(2.0*PI*c%r*Kn(1))*r%LHS(1:M,1)
-             r%LHS(1:M,1) = 0.0
-          end if
-          deallocate(Kn)
-       case(1)
-          ! put specified flux effects on RHS
-          r%RHS(1:M) = time(p,c%time,.false.)*c%bdryQ/(2.0*PI*c%r)
-       case(0)
-          ! no area source term effects on flux matchinig
-          r%RHS(1:M) = 0.0 
-       end select
-    
-       if (c%ibnd==0 .or. c%calcin) then
+       
+       if (c%ibnd == 0 .or. c%calcin) then
           allocate(In(0:N-1),dIn(0:N-1))
           kap = kappa(p,c%element)
-          call bID(kap*c%r,N,In,dIn)
-          dIn = kap*dIn
+          call bID(kap*c%r,N,In,dIn); dIn = kap*dIn
           
-          r%LHS(1:M,2*N:3*N-1) = spread(dIn(0:N-1)/In(0:N-1), 1,M)*cmat/c%K
-          r%LHS(1:M,3*N:4*N-2) = spread(dIn(1:N-1)/In(1:N-1), 1,M)*smat/c%K
+          r%LHS(lo:hi,2*N:3*N-1) = spread(dIn(0:N-1)/In(0:N-1), 1,M)*cmat ! c_n flux
+          r%LHS(lo:hi,3*N:4*N-2) = spread(dIn(1:N-1)/In(1:N-1), 1,M)*smat ! d_n flux
           deallocate(dIn,In)
        end if
-    else
-       r%LHS = -huge(1.0)
-       r%RHS =  huge(1.0)
     end if
-  end function circle_match_flux_self
+    
+    ! setup RHS
+    select case(c%ibnd)
+    case(-1)
+       ! put specified head on RHS
+       r%RHS(1:M) = time(p,c%time,.false.)*c%bdryQ
+    case(0)
+       ! put constant area source term effects on RHS
+       r%RHS(1:M) = -time(p,c%time,.true.)*c%areaQ*c%Ss/kappa(p,c%parent)**2
+       r%RHS(M+1:2*M) = 0.0 ! area source has no flux effects
+    case(1)
+       ! put specified flux effects on RHS
+       r%RHS(1:M) = time(p,c%time,.false.)*c%bdryQ/(2.0*PI*c%r)
+    case(2)
+       allocate(Kn(0:1))
+       Kn(0:1) = bK(kap*c%r,2)
+          
+       if (c%StorIn) then
+          ! effects of wellbore storage and skin on finite-radius
+          ! well, where a_0 is computed (generally depends on
+          ! other elements, too; these show up in off-diagonal sub-matrices)
+          r%LHS(1:M,1) = -Kn(0)*((2.0 + c%r**2*c%dskin*p/c%parent%T)/(2.0*PI*c%r) + &
+               & (Kn(0)*c%r*p)/(2.0*PI*c%r*kap*Kn(1)*c%parent%T))*r%LHS(1:M,1)
+          r%RHS(1:M) = time(p,c%time,.false.)*c%bdryQ/(PI*c%r*c%parent%T)
+       else
+          ! specified flux (finite-radius well no storage)
+          ! a_0 coefficient is computed analytically
+          r%RHS(1:M) = Kn(0)*time(p,c%time,.false.)*c%bdryQ/(2.0*PI*c%r*Kn(1))*r%LHS(1:M,1)
+          r%LHS(1:M,1) = 0.0
+       end if
+       deallocate(Kn)
+    end select
+  end function circle_match_self
 
   function circle_match_head_other(c,el,dom,p) result(r)
     use utility, only : outerprod
