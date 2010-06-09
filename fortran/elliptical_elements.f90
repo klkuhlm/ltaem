@@ -8,6 +8,7 @@ module elliptical_elements
 
   implicit none
   private
+  public :: ellipse_match
 
   interface ellipse_match
      module procedure ellipse_match_self, ellipse_match_other
@@ -22,7 +23,7 @@ contains
 
     type(ellipse), intent(in) :: e
     complex(DP), intent(in) :: p
-    integer, inten(in) :: idx ! indicates which value of p (global state)
+    integer, intent(in) :: idx ! indicates which value of p (global state)
     type(match_result) :: r
 
     integer :: j, N, M, lo, hi, nmax
@@ -30,7 +31,6 @@ contains
     complex(DP) :: kap
     real(DP) :: cemat(1:e%M,0:e%N-1,0:1), semat(1:e%M,1:e%N-1,0:1)
     real(DP), dimension(0:e%N-1) :: vi
-    real(DP), allocatable :: vs(:,:)
 
     N = e%N; M = e%M
     vi = real([(j,j=0,N-1)],DP)
@@ -105,36 +105,33 @@ contains
     case(2)
        ! specified flux (line-source of specified strength)
        ! even coefficients are computed analytically (odd are zero by symmetry)
-       allocate(vs(0:e%ms-1,2))
-       vs(:,1) = real([(j,j=0,e%ms-1)],DP) ! vector of integers
-       vs(:,2) = (-1.0_DP)**vs(0:e%ms-1,1) ! vector of signs
-       nmax = size(vs(0:N-1,2),1)
-       r%RHS(1:M) = time(p,e%time,.false.)*e%bdryQ/(2.0*PI)* &
-            & Ke(e%parent%mat(idx), vi(0:N-1:2), e%r)/dKe(e%parent%mat(idx), vi(0:N-1:2), e%r)&
-            & sum(spread(-vs(0:N-1:2,2)*sum(&
-            & spread(vs(0:e%ms,2),2,nmax)*conjg(e%mat(idx)%A(:,0:nmax,0))/ &
-            & (1.0_DP - vs(0:e%ms,2)**2),dim=1),dim=1,ncopies=M)*r%LHS(1:M,0:2*N-1:2),dim=2)
-       deallocate(vs)
+       r%RHS(1:M) = sum(spread(line(e,p,idx),1,M)*r%LHS(1:M,0:N-1:2),dim=2)
+       r%LHS(1:M,1) = 0.0
     end select
   end function ellipse_match_self
 
-  function ellipse_match_other(e,el,dom,p) result(r)
+  function ellipse_match_other(e,el,dom,p,idx) result(r)
     use utility, only : outerprod
     use type_definitions, only : ellipse, domain, matching, match_result
-    use bessel_functions, only : bK, bI
+    use mathieu_functions, only : ce, se, dce, dse, Ke, Ko, dKe, dKo, Ie, Io, dIe, dIo
     implicit none
 
     type(ellipse), intent(in) :: e ! source ellipse
     type(matching), intent(in) :: el ! target element (circle or ellipse)
     type(domain), intent(in) :: dom
     complex(DP), intent(in) :: p
+    integer, intent(in) :: idx
     type(match_result) :: r 
 
-    integer :: j, src, targ, N, M, lo, hi
-    real(DP), allocatable :: cmat(:,:), smat(:,:)
+    integer :: j, src, targ, N, M, lo, hi, nmax
+    real(DP), allocatable :: cemat(:,:), semat(:,:), dcemat(:,:), dsemat(:,:) 
     real(DP), dimension(0:e%N-1) :: vi
-    complex(DP), allocatable :: Bn(:,:), dBn(:,:), Bn0(:)
+    real(DP), allocatable :: vs(:,:)
+    complex(DP), allocatable :: RMn(:,:,:), dRMn(:,:,:), RMn0(:,:)
     complex(DP), allocatable :: dPot_dR(:,:), dPot_dP(:,:), dPot_dX(:,:), dPot_dY(:,:)
+    real(DP), allocatable :: hsq(:)
+    complex(DP), allocatable :: tmp(:,:)
+    real(DP) :: K
     complex(DP) :: kap
 
     N = e%N ! number of coefficients in the source elliptical element
@@ -151,10 +148,8 @@ contains
           allocate(r%LHS(M,2*N-1), r%RHS(M))
           lo = 1;  hi = M
        end if
-
-       cmat = cos(outerprod(e%G(targ)%Pgm(1:M), vi(0:N-1)))
-       smat = sin(outerprod(e%G(targ)%Pgm(1:M), vi(1:N-1)))
-       allocate(Bn(M,0:N-1),Bn0(0:N-1))
+       
+       allocate(RMn(M,0:N-1,0:1), RMn0(0:N-1,0:1), cemat(1:M,0:N-1), semat(1:M,1:N-1))
 
        ! setup LHS 
        ! for matching or specified total head target elements
@@ -162,82 +157,117 @@ contains
 
           if (dom%inclBg(src,targ)) then
              ! can the target element "see" the outside of the source element?
-             ! use exterior Bessel functions (Kn)
-             kap = kappa(p,e%parent)
-             Bn(0:N-1,1:M) = bK(kap*e%G(targ)%Rgm(1:M),N)
-             Bn0(0:N-1) =    bK(kap*e%r,N)
+             ! use exterior angular and radial modified Mathieu functions
+             cemat(:,0:N-1) =   ce(e%parent%mat(idx), vi(0:N-1), e%G(targ)%Pgm(1:M))
+             RMn(0:N-1,1:M,0) = Ke(e%parent%mat(idx), vi(0:N-1), e%G(targ)%Rgm(1:M))
+             RMn0(0:N-1,0) =    Ke(e%parent%mat(idx), vi(0:N-1), e%r)
+             if (.not. e%ibnd == 2) then
+                ! odd functions not needed for line sources
+                semat(:,1:N-1) =   se(e%parent%mat(idx), vi(1:N-1), e%G(targ)%Pgm(1:M))
+                RMn(1:N-1,1:M,1) = Ko(e%parent%mat(idx), vi(1:N-1), e%G(targ)%Rgm(1:M))
+                RMn0(1:N-1,1) =    Ko(e%parent%mat(idx), vi(1:N-1), e%r)
+                nmax = N
+             end if
+             K = e%parent%K
+             nmax = 2*N-1
           else
              ! can target element "see" the inside of the source element?
              ! i.e., is the source element the parent?
-             ! use interior Bessel functions (In)
-             kap = kappa(p,e%element)
-             Bn(0:N-1,1:M) = bI(kap*e%G(targ)%Rgm(1:M),N)
-             Bn0(0:N-1) =    bI(kap*e%r,N)
+             ! use interior angular and radial modified Mathieu functions
+             cemat(:,0:N-1) =   ce(e%mat(idx), vi(0:N-1), e%G(targ)%Pgm(1:M))
+             semat(:,1:N-1) =   se(e%mat(idx), vi(1:N-1), e%G(targ)%Pgm(1:M))
+             RMn(0:N-1,1:M,0) = Ie(e%mat(idx), vi(0:N-1), e%G(targ)%Rgm(1:M))
+             RMn(1:N-1,1:M,1) = Io(e%mat(idx), vi(1:N-1), e%G(targ)%Rgm(1:M))
+             RMn0(0:N-1,0) =    Ie(e%mat(idx), vi(0:N-1), e%r)
+             RMn0(1:N-1,1) =    Io(e%mat(idx), vi(1:N-1), e%r)
+             K = e%K
+             nmax = 2*N-1
           end if
           
           ! head effects on other element
-          r%LHS(1:M,1:N) =       Bn(0:N-1,:)/spread(Bn0(0:N-1),1,M)*cmat/e%parent%K ! a_n || c_n
-          r%LHS(1:M,N+1:2*N-1) = Bn(1:N-1,:)/spread(Bn0(1:N-1),1,M)*smat/e%parent%K ! b_n || d_n
+          r%LHS(1:M,1:N) =       RMn(0:N-1,:,0)/spread(RMn0(0:N-1,0),1,M)*cemat/K ! a_n || c_n
+          if (.not. e%ibnd == 2) then
+             r%LHS(1:M,N+1:2*N-1) = RMn(1:N-1,:,1)/spread(RMn0(1:N-1,1),1,M)*semat/K ! b_n || d_n
+          end if
           
           if (e%ibnd == 2 .and. dom%inclBg(src,targ)) then
-             if (e%StorIn) then
-                ! wellbore storage and skin from finite-radius well
-                r%LHS(1:M,1) = -Bn0(0)*((2.0 + e%r**2*e%dskin*p/e%parent%T)/(2.0*PI*e%r) + &
-                     & (Bn0(0)*e%r*p)/(2.0*PI*e%r*kap*Bn0(1)*e%parent%T))*r%LHS(1:M,1)
-                r%RHS(1:M) = 0.0
-             else
-                ! specified flux (finite-radius well no storage)
-                r%RHS(1:M) = Bn0(0)*time(p,e%time,.false.)*e%bdryQ/(2.0*PI*e%r*Bn0(1))*r%LHS(1:M,1)
-                r%LHS(1:M,1) = 0.0
-             end if
+             ! head effects of a specified flux line source or sink
+             r%RHS(1:M) = sum(spread(line(e,p,idx),1,M)*r%LHS(1:M,0:N-1:2),2)
+             r%LHS(1:M,:) = 0.0
           end if
        end if
           
        ! for matching, specified total flux, or specified elemental flux target element
        if (el%ibnd == 0 .or. el%ibnd == +1 .or. el%ibnd == +2) then
-          allocate(dBn(M,0:N-1), dPot_dR(M,2*N-1), dPot_dP(M,2*N-1), &
-               & dPot_dX(M,2*N-1),dPot_dY(M,2*N-1))
+          allocate(dRMn(M,0:N-1), dcemat(1:M,0:N-1), dsemat(1:M,1:N-1), &
+               & dPot_dR(M,2*N-1), dPot_dP(M,2*N-1), dPot_dX(M,2*N-1),dPot_dY(M,2*N-1))
 
-          ! flux effects of source circle on target element
+          ! flux effects of source ellpise on target element
           if (dom%inclBg(src,targ)) then
-             ! use exterior Bessel functions (Kn)
-             kap = kappa(p,e%parent) 
-             call bKD(kap*e%G(targ)%Rgm(1:M),N+1,Bn,dBn)
-             dBn = kap*dBn
-             Bn0(0:N-1) = bK(kap*e%r,N)
+             ! use exterior angular and radial modified mathieu functions
+             if (.not. el%ibnd == 0) then
+                cemat(:,0:N-1) =   ce(e%parent%mat(idx), vi(0:N-1), e%G(targ)%Pgm(1:M))
+                RMn(0:N-1,1:M,0) = Ke(e%parent%mat(idx), vi(0:N-1), e%G(targ)%Rgm(1:M))
+                RMn0(0:N-1,0) =    Ke(e%parent%mat(idx), vi(0:N-1), e%r)
+                if (.not. e%ibnd == 2) then
+                   ! line sources don't need odd functions
+                   semat(:,1:N-1) =   se(e%parent%mat(idx), vi(1:N-1), e%G(targ)%Pgm(1:M))
+                   RMn(1:N-1,1:M,1) = Ko(e%parent%mat(idx), vi(1:N-1), e%G(targ)%Rgm(1:M))
+                   RMn0(1:N-1,1) =    Ko(e%parent%mat(idx), vi(1:N-1), e%r)
+                end if
+                K = e%parent%K
+             end if
+             dcemat(:,0:N-1) =   dce(e%parent%mat(idx), vi(0:N-1), e%G(targ)%Pgm(1:M))
+             dRMn(0:N-1,1:M,0) = dKe(e%parent%mat(idx), vi(0:N-1), e%G(targ)%Rgm(1:M))
+             if (.not. e%ibnd == 2) then
+                dsemat(:,1:N-1) =   dse(e%parent%mat(idx), vi(1:N-1), e%G(targ)%Pgm(1:M))
+                dRMn(1:N-1,1:M,1) = dKo(e%parent%mat(idx), vi(1:N-1), e%G(targ)%Rgm(1:M))
+             end if
           else
-             ! use interior Bessel functions (In)
-             kap = kappa(p,e%element)
-             call bId(kap*e%G(targ)%Rgm(1:M),N+1,Bn,dBn)
-             dBn = kap*dBn
-             Bn0(0:N-1) = bI(kap*e%r,N)
+             ! use interior angular and radial modified Mathieu functions
+             if (.not. el%ibnd == 0) then
+                cemat(:,0:N-1) =   ce(e%mat(idx), vi(0:N-1), e%G(targ)%Pgm(1:M))
+                semat(:,1:N-1) =   se(e%mat(idx), vi(1:N-1), e%G(targ)%Pgm(1:M))
+                RMn(0:N-1,1:M,0) = Ie(e%mat(idx), vi(0:N-1), e%G(targ)%Rgm(1:M))
+                RMn(1:N-1,1:M,1) = Io(e%mat(idx), vi(1:N-1), e%G(targ)%Rgm(1:M))
+                RMn0(0:N-1,0) =    Ie(e%mat(idx), vi(0:N-1), e%r)
+                RMn0(1:N-1,1) =    Io(e%mat(idx), vi(1:N-1), e%r)
+             end if
+             dcemat(:,0:N-1) =   dce(e%mat(idx), vi(0:N-1), e%G(targ)%Pgm(1:M))
+             dsemat(:,1:N-1) =   dse(e%mat(idx), vi(1:N-1), e%G(targ)%Pgm(1:M))
+             dRMn(0:N-1,1:M,0) = dIe(e%mat(idx), vi(0:N-1), e%G(targ)%Rgm(1:M))
+             dRMn(1:N-1,1:M,1) = dIo(e%mat(idx), vi(1:N-1), e%G(targ)%Rgm(1:M))
+             K = e%K
           end if
 
           ! derivative wrt radius of source element
-          dPot_dR(1:M,1:N) =       dBn(1:M,0:N-1)/spread(Bn0(0:N-1),1,M)*cmat
-          dPot_dR(1:M,N+1:2*N-1) = dBn(1:M,1:N-1)/spread(Bn0(1:N-1),1,M)*smat
-
-          if (el%ibnd == 2 .and. dom%inclBg(src,targ)) then
-             if (e%StorIn) then
-                ! wellbore storage and skin from finite-radius well
-                dPot_dR(1:M,1) = -Bn0(0)*((2.0 + e%r**2*e%dskin*p/e%parent%T)/(2.0*PI*e%r) + &
-                     & (Bn0(0)*e%r*p)/(2.0*PI*e%r*kap*Bn0(1)*e%parent%T))*dPot_dR(1:M,1)
-             else
-                ! specified flux (finite-radius well no storage)
-                dPot_dR(1:M,1) = Bn0(0)*time(p,e%time,.false.)*e%bdryQ/(2.0*PI*e%r*Bn0(1))*dPot_dR(1:M,1)
-             end if
-             dPot_dP(:,:) = 0.0 ! wells are radially-symmetric; no angular deriv. contribution
-          else
-             ! derivative wrt angle of source element for more general elliptical elements
-             dPot_dP(1:M,1:N) =      -Bn(0:N-1,:)*spread(vi(0:N-1)/Bn0(0:N-1),1,M)*smat
-             dPot_dP(1:M,N+1:2*N-1) = Bn(1:N-1,:)*spread(vi(1:N-1)/Bn0(1:N-1),1,M)*cmat
+          dPot_dR(1:M,1:N) =       dRMn(1:M,0:N-1,0)/spread(RMn0(0:N-1,0),1,M)*cemat
+          if (.not. e%ibnd == 2) then
+             dPot_dR(1:M,N+1:2*N-1) = dRMn(1:M,1:N-1,1)/spread(RMn0(1:N-1,1),1,M)*semat
           end if
 
-          ! project these from cylindrical onto Cartesian coordinates
-          dPot_dX = dPot_dR*spread(cos(e%G(targ)%Pgm),2,2*N-1) - &
-               & dPot_dP*spread(sin(e%G(targ)%Pgm)/e%G(targ)%Rgm,2,2*N-1)
-          dPot_dY = dPot_dR*spread(sin(e%G(targ)%Pgm),2,2*N-1) + &
-               & dPot_dP*spread(cos(e%G(targ)%Pgm)/e%G(targ)%Rgm,2,2*N-1)
+          ! derivative wrt angle of source element 
+          dPot_dP(1:M,1:N) =       RMn(0:N-1,:,0)/spread(RMn0(0:N-1,0),1,M)*dcemat
+          if (.not. e%ibnd == 2) then
+             dPot_dP(1:M,N+1:2*N-1) = RMn(1:N-1,:,1)/spread(RMn0(1:N-1,1),1,M)*dsemat
+          else
+             dPot_dP(1:M,N+1:2*N-1) = huge(1.0)
+          end if
+
+          if (el%ibnd == 2 .and. dom%inclBg(src,targ)) then
+             ! radial derivative of line source 
+             dPot_dR(1:M,0:N-1:2) = spread(line(e,p,idx),1,M)*dPot_dR(1:M,0:N-1:2)
+             ! angular derivative of line source
+             dPot_dP(1:M,0:N-1:2) = spread(line(e,p,idx),1,M)*dPot_dP(1:M,0:N-1:2)
+          end if
+
+          ! project these from elliptical onto Cartesian coordinates
+          allocate(hsq(size(e%G(targ)%Rgm)))
+          hsq = (e%f/2.0*(cosh(2.0*e%G(targ)%Rgm) - cos(2.0*e%G(targ)%Pgm))) ! less a common factor f
+          dPot_dX = (dPot_dR*spread(sinh(e%G(targ)%Rgm)*cos(e%G(targ)%Pgm),2,2*N-1) - &
+                   & dPot_dP*spread(cosh(e%G(targ)%Rgm)*sin(e%G(targ)%Pgm),2,2*N-1))/hsq
+          dPot_dY = (dPot_dR*spread(cosh(e%G(targ)%Rgm)*sin(e%G(targ)%Pgm),2,2*N-1) + &
+                   & dPot_dP*spread(sinh(e%G(targ)%Rgm)*cos(e%G(targ)%Pgm),2,2*N-1))/hsq
           
           ! project from Cartesian to "radial" coordinate of target element
           if (el%id <= dom%num(1)) then
@@ -245,32 +275,72 @@ contains
              if (el%ibnd == 2) then
                 if (el%StorIn) then
                    ! other element is a well with wellbore storage (Type III BC)
-                   r%LHS(1:M,1:N) =       Bn(0:N-1,:)/spread(Bn0(0:N-1),1,M)*smat/e%parent%K
-                   r%LHS(1:M,N+1:2*N-1) = Bn(1:N-1,:)/spread(Bn0(1:N-1),1,M)*cmat/e%parent%K
+                   r%LHS(1:M,1:N) =       RMn(0:N-1,:,0)/spread(RMn0(0:N-1,0),1,M)*semat/K
+                   if (.not. e%ibnd == 2) then
+                      r%LHS(1:M,N+1:2*N-1) = RMn(1:N-1,:,1)/spread(RMn0(1:N-1,1),1,M)*cemat/K
+                   end if
                    
-                   ! head effects of element
-                   r%LHS(1:M,:) = -(el%r*p/el%parent%T)*r%LHS(1:M,:)
+                   ! head effects of source element
+                   r%LHS(1:M,1:nmax) = -(el%r*p/el%parent%T)*r%LHS(1:M,1:nmax)
                    
                    ! radial flux effects of element
-                   r%LHS(1:M,:) = r%LHS + (2.0 + el%r**2*el%dskin*p/el%parent%T)* &
-                        & (dPot_dX*spread(cos(el%Pcm),2,2*N-1) + &
-                        &  dPot_dY*spread(sin(el%Pcm),2,2*N-1))
+                   r%LHS(1:M,1:nmax) = r%LHS + (2.0 + el%r**2*el%dskin*p/el%parent%T)* &
+                        & (dPot_dX*spread(cos(el%Pcm),2,nmax) + &
+                        &  dPot_dY*spread(sin(el%Pcm),2,nmax))
+                else
+                   continue
+                   ! wells without wellbore storage are specified and don't
+                   ! need to have head/flux computed along their boundary
                 end if
              else
                 ! other element is a circle without wellbore storage
-                r%LHS(lo:hi,:) = dPot_dX*spread(cos(el%Pcm),2,2*N-1) + &
-                               & dPot_dY*spread(sin(el%Pcm),2,2*N-1)
+                r%LHS(lo:hi,1:nmax) = dPot_dX*spread(cos(el%Pcm),2,nmax) + &
+                                    & dPot_dY*spread(sin(el%Pcm),2,nmax)
              end if
           else
-             ! other element is an ellipse
-             r%LHS(lo:hi,:) = dPot_dX*spread(el%f*sinh(el%r)*cos(el%Pcm(1:M)),2,2*N-1) + &
-                            & dPot_dY*spread(el%f*cosh(el%r)*sin(el%Pcm(1:M)),2,2*N-1)
+             ! other element is a different ellipse
+             r%LHS(lo:hi,1:nmax) = dPot_dX*spread(el%f*sinh(el%r)*cos(el%Pcm(1:M)),2,nmax) + &
+                                 & dPot_dY*spread(el%f*cosh(el%r)*sin(el%Pcm(1:M)),2,nmax)
           end if
-          deallocate(dBn,dPot_dR,dPot_dP,dPot_dX,dPot_dY)
+          deallocate(dRMn,dPot_dR,dPot_dP,dPot_dX,dPot_dY)
        end if
-       deallocate(Bn,Bn0)
+       deallocate(RMn,RMn0)
     end if
-  end function circle_match_other
+    
+    if (e%ibnd == 2) then
+       ! reshape results for line source case
+       allocate(tmp(1:hi,1:N))
+       tmp(1:hi,1:N) = r%LHS(1:hi,1:N)
+       deallocate(r%LHS)
+       allocate(r%LHS(1:hi,1:ceiling(N/2.0)))
+       r%LHS(1:hi,1:ceiling(N/2.0)) = tmp(1:hi,1:N:2)
+       deallocate(tmp)
+    end if
+    
+  end function ellipse_match_other
+  
+  function line(e,p,idx) result(a2n)
+    ! this function returns the coefficients for a specified-flux line source
+    use type_definitions, only : ellipse
+    use mathieu_functions, only : Ke,dKe
+    type(ellipse), intent(in) :: e
+    complex(DP), intent(in) :: p
+    integer, intent(in) :: idx
+    complex(DP), dimension(ceiling(e%N/2.0)) :: a2n ! only even coefficients of even order
+    real(DP), dimension(0:e%ms-1) :: vs,vi
+    integer :: i, N, nmax, MS
 
+    N = e%N; MS = e%ms
+    vi = real([(i,i=0,MS-1)],DP)  ! integer vector
+    vs = (-1.0_DP)**vi(0:MS-1)    ! sign vector
+    
+    ! factor of 4 different from Kuhlman&Neuman paper
+    ! include Radial/dRadial MF here to balance with those in general solution
+    a2n(1:nmax) = time(p,e%time,.false.)*e%bdryQ/(2.0*PI)* &
+            & Ke(e%parent%mat(idx), vi(0:N-1:2), e%r) / dKe(e%parent%mat(idx), vi(0:N-1:2), e%r)* &
+            & (-vs(0:N-1:2))*sum(spread(vs(0:MS-1)/(1.0_DP - vi(0:MS-1)**2),dim=2,ncopies=nmax)* &
+            & conjg(e%mat(idx)%A(1:MS,0:nmax-1,0)),dim=1)
+
+  end function line
 end module elliptical_elements
 

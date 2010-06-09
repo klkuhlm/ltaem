@@ -8,6 +8,7 @@ module circular_elements
 
   implicit none
   private
+  public :: circle_match
 
   interface circle_match
      module procedure circle_match_self, circle_match_other
@@ -97,16 +98,13 @@ contains
        Bn(0:1) = bK(kap*c%r,2)
           
        if (c%StorIn) then
-          ! effects of wellbore storage and skin on finite-radius
-          ! well, where a_0 is computed (generally depends on
-          ! other elements, too; these show up in off-diagonal sub-matrices)
-          r%LHS(1:M,1) = -Bn(0)*((2.0 + c%r**2*c%dskin*p/c%parent%T)/(2.0*PI*c%r) + &
-               & (Bn(0)*c%r*p)/(2.0*PI*c%r*kap*Bn(1)*c%parent%T))*r%LHS(1:M,1)
+          ! effects of wellbore storage and skin on finite-radius well
+          ! effects of other elements on this one show up in off-diagonals
+          r%LHS(1:M,1) = storwell(c,p)*r%LHS(1:M,1)
           r%RHS(1:M) = time(p,c%time,.false.)*c%bdryQ/(PI*c%r*c%parent%T)
        else
           ! specified flux (finite-radius well no storage)
-          ! a_0 coefficient is computed analytically
-          r%RHS(1:M) = Bn(0)*time(p,c%time,.false.)*c%bdryQ/(2.0*PI*c%r*Bn(1))*r%LHS(1:M,1)
+          r%RHS(1:M) = well(c,p)*r%LHS(1:M,1)
           r%LHS(1:M,1) = 0.0
        end if
        deallocate(Bn)
@@ -126,6 +124,7 @@ contains
     type(match_result) :: r 
 
     integer :: j, src, targ, N, M, lo, hi
+    real(DP) :: K
     real(DP), allocatable :: cmat(:,:), smat(:,:)
     real(DP), dimension(0:c%N-1) :: vi
     complex(DP), allocatable :: Bn(:,:), dBn(:,:), Bn0(:)
@@ -161,6 +160,7 @@ contains
              kap = kappa(p,c%parent)
              Bn(0:N-1,1:M) = bK(kap*c%G(targ)%Rgm(1:M),N)
              Bn0(0:N-1) =    bK(kap*c%r,N)
+             K = c%parent%K
           else
              ! can target element "see" the inside of the source element?
              ! i.e., is the source element the parent?
@@ -168,21 +168,21 @@ contains
              kap = kappa(p,c%element)
              Bn(0:N-1,1:M) = bI(kap*c%G(targ)%Rgm(1:M),N)
              Bn0(0:N-1) =    bI(kap*c%r,N)
+             K = c%K
           end if
           
           ! head effects on other element
-          r%LHS(1:M,1:N) =       Bn(0:N-1,:)/spread(Bn0(0:N-1),1,M)*cmat/c%parent%K ! a_n || c_n
-          r%LHS(1:M,N+1:2*N-1) = Bn(1:N-1,:)/spread(Bn0(1:N-1),1,M)*smat/c%parent%K ! b_n || d_n
+          r%LHS(1:M,1:N) =       Bn(0:N-1,:)/spread(Bn0(0:N-1),1,M)*cmat/K ! a_n || c_n
+          r%LHS(1:M,N+1:2*N-1) = Bn(1:N-1,:)/spread(Bn0(1:N-1),1,M)*smat/K ! b_n || d_n
           
           if (c%ibnd == 2 .and. dom%inclBg(src,targ)) then
              if (c%StorIn) then
                 ! wellbore storage and skin from finite-radius well
-                r%LHS(1:M,1) = -Bn0(0)*((2.0 + c%r**2*c%dskin*p/c%parent%T)/(2.0*PI*c%r) + &
-                     & (Bn0(0)*c%r*p)/(2.0*PI*c%r*kap*Bn0(1)*c%parent%T))*r%LHS(1:M,1)
+                r%LHS(1:M,1) = storwell(c,p)*r%LHS(1:M,1)
                 r%RHS(1:M) = 0.0
              else
                 ! specified flux (finite-radius well no storage)
-                r%RHS(1:M) = Bn0(0)*time(p,c%time,.false.)*c%bdryQ/(2.0*PI*c%r*Bn0(1))*r%LHS(1:M,1)
+                r%RHS(1:M) = well(c,p)*r%LHS(1:M,1)
                 r%LHS(1:M,1) = 0.0
              end if
           end if
@@ -200,12 +200,14 @@ contains
              call bKD(kap*c%G(targ)%Rgm(1:M),N+1,Bn,dBn)
              dBn = kap*dBn
              Bn0(0:N-1) = bK(kap*c%r,N)
+             K = c%parent%K
           else
              ! use interior Bessel functions (In)
              kap = kappa(p,c%element)
              call bId(kap*c%G(targ)%Rgm(1:M),N+1,Bn,dBn)
              dBn = kap*dBn
              Bn0(0:N-1) = bI(kap*c%r,N)
+             K = c%K
           end if
 
           ! derivative wrt radius of source element
@@ -215,13 +217,12 @@ contains
           if (el%ibnd == 2 .and. dom%inclBg(src,targ)) then
              if (c%StorIn) then
                 ! wellbore storage and skin from finite-radius well
-                dPot_dR(1:M,1) = -Bn0(0)*((2.0 + c%r**2*c%dskin*p/c%parent%T)/(2.0*PI*c%r) + &
-                     & (Bn0(0)*c%r*p)/(2.0*PI*c%r*kap*Bn0(1)*c%parent%T))*dPot_dR(1:M,1)
+                dPot_dR(1:M,1) = storwell(c,p)*dPot_dR(1:M,1)
              else
                 ! specified flux (finite-radius well no storage)
-                dPot_dR(1:M,1) = Bn0(0)*time(p,c%time,.false.)*c%bdryQ/(2.0*PI*c%r*Bn0(1))*dPot_dR(1:M,1)
+                dPot_dR(1:M,1) = well(c,p)*dPot_dR(1:M,1)
              end if
-             dPot_dP(:,:) = 0.0 ! wells are radially-symmetric; no angular deriv. contribution
+             dPot_dP(:,:) = 0.0 ! wells are azimuthally-symmetric
           else
              ! derivative wrt angle of source element for more general circular elements
              dPot_dP(1:M,1:N) =      -Bn(0:N-1,:)*spread(vi(0:N-1)/Bn0(0:N-1),1,M)*smat
@@ -230,9 +231,9 @@ contains
 
           ! project these from cylindrical onto Cartesian coordinates
           dPot_dX = dPot_dR*spread(cos(c%G(targ)%Pgm),2,2*N-1) - &
-               & dPot_dP*spread(sin(c%G(targ)%Pgm)/c%G(targ)%Rgm,2,2*N-1)
+                  & dPot_dP*spread(sin(c%G(targ)%Pgm)/c%G(targ)%Rgm,2,2*N-1)
           dPot_dY = dPot_dR*spread(sin(c%G(targ)%Pgm),2,2*N-1) + &
-               & dPot_dP*spread(cos(c%G(targ)%Pgm)/c%G(targ)%Rgm,2,2*N-1)
+                  & dPot_dP*spread(cos(c%G(targ)%Pgm)/c%G(targ)%Rgm,2,2*N-1)
           
           ! project from Cartesian to "radial" coordinate of target element
           if (el%id <= dom%num(1)) then
@@ -240,8 +241,8 @@ contains
              if (el%ibnd == 2) then
                 if (el%StorIn) then
                    ! other element is a well with wellbore storage (Type III BC)
-                   r%LHS(1:M,1:N) =       Bn(0:N-1,:)/spread(Bn0(0:N-1),1,M)*smat/c%parent%K
-                   r%LHS(1:M,N+1:2*N-1) = Bn(1:N-1,:)/spread(Bn0(1:N-1),1,M)*cmat/c%parent%K
+                   r%LHS(1:M,1:N) =       Bn(0:N-1,:)/spread(Bn0(0:N-1),1,M)*smat/K
+                   r%LHS(1:M,N+1:2*N-1) = Bn(1:N-1,:)/spread(Bn0(1:N-1),1,M)*cmat/K
                    
                    ! head effects of element
                    r%LHS(1:M,:) = -(el%r*p/el%parent%T)*r%LHS(1:M,:)
@@ -250,6 +251,10 @@ contains
                    r%LHS(1:M,:) = r%LHS + (2.0 + el%r**2*el%dskin*p/el%parent%T)* &
                         & (dPot_dX*spread(cos(el%Pcm),2,2*N-1) + &
                         &  dPot_dY*spread(sin(el%Pcm),2,2*N-1))
+                else
+                   continue
+                   ! wells without wellbore storage are specified and don't
+                   ! need to have head/flux computed along their boundary
                 end if
              else
                 ! other element is a circle without wellbore storage
@@ -267,5 +272,34 @@ contains
     end if
   end function circle_match_other
 
+  function well(c,p) result(a0)
+    ! this function returns the a_0 coefficient for a simple "well"
+    use type_definitions, only : circle
+    use bessel_functions, only : bK
+    type(circle), intent(in) :: c
+    complex(DP), intent(in) :: p
+    complex(DP) :: a0, Kn(0:1)
+    
+    Kn(0:1) = bK(kappa(p,c%parent)*c%r,2)
+    a0 = Kn(0)*time(p,c%time,.false.)*c%bdryQ/(2.0*PI*c%r*Kn(1))
+    
+  end function well
+  
+  function storwell(c,p) result(a0)
+    ! this function returns the a_0 coefficient for a
+    ! well with wellbore storage and skin
+    use type_definitions, only : circle
+    use bessel_functions, only : bK
+    
+    type(circle), intent(in) :: c
+    complex(DP), intent(in) :: p
+    complex(DP) :: a0, kap, Kn(0:1)
+    
+    kap = kappa(p,c%parent)
+    Kn(0:1) = bK(kap*c%r,2)
+    a0 = -Kn(0)*((2.0 + c%r**2*c%dskin*p/c%parent%T)/(2.0*PI*c%r) + &
+               & (Kn(0)*c%r*p)/(2.0*PI*c%r*kap*Kn(1)*c%parent%T))
+    
+  end function storwell
 end module circular_elements
 
