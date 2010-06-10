@@ -1,6 +1,6 @@
 # $Id: Makefile,v 1.1 2007/03/15 00:16:09 kris Exp kris $
 EXTERNAL=cbessel.o
-KKLOW=special_functions.o bessel_functions.o invlap.o file_ops.o calcshareddata.o shared_matching_data.o
+KKLOW=utility.o bessel_functions.o mathieu_functions2.o
 
 # 
 ################################
@@ -16,29 +16,11 @@ BLASLIB=/Users/klkuhlm/src/GotoBLAS2/libgoto2.a -lpthread
 # main-program related
 ####################################
 ## matching.o not used
-KKHIGH=wells.o circ_passive_elements.o matching.o calc_routines.o particle_integration.o circular_geometry.o 
+KKHIGH=kappa.o time.o ltaem_io.o invlap.o solultion.o ellipse_mathieu_init.o circular_elements.o elliptical_elements.o calc_routines.o particle_integration.o circular_geometry.o 
 MAIN=ltaem_main.o
 TARG=ltaem
 
-OBJS=constants.o element_specs.o $(EXTERNAL) $(KKLOW) $(KKHIGH)
-
-# give warnings for underflow from Bessel functions
-DEBUG=-Dbessuf 
-
-# for the dependency-generation
-F90OBJS=constants.o element_specs.o $(KKLOW) $(KKHIGH)
-F90SRC=./external/cbessel.f90 $(patsubst %.o,%.f90,$(F90OBJS) $(MAIN)) 
-
-########### g95 ##########
-#F90=g95
-#DFLAGS=-O0 -Wall -Wextra -fbounds-check -freal=nan -finteger=-999999 -flogical=false -ftrace=full
-#WUNFLAG=-Wunused-module-vars -Wunused-module-procs -Wunused-parameter
-#W1FLAG=-Wno=140,141
-#W2FLAG=-Wno=159
-#W3FLAG=-Wno=136
-#W5FLAG=-Wno=165
-#PFLAGS=-O3 -march=nocona -funroll-loops -fomit-frame-pointer
-################################
+OBJS=constants.o type_definitions.o $(EXTERNAL) $(KKLOW) $(KKHIGH)
 
 ########## ifort (work) related ##########
 #F90=ifort
@@ -47,13 +29,13 @@ F90SRC=./external/cbessel.f90 $(patsubst %.o,%.f90,$(F90OBJS) $(MAIN))
 #LINKFLAG=-O3
 ###################################
 
-#### gfortran 4.2.X (system version) ################# 
+#### gfortran 4.4 (system version) ################# 
 F90=gfortran
-DFLAGS=-W -O0 -fbounds-check -frange-check -Wall
-PFLAGS=-O3 -march=nocona
+DFLAGS=-O0 -fbounds-check -frange-check -Wall -Wextra 
+PFLAGS=-O3 -march=native
 ###################################
 
-#### gfortran 4.4 (trunk) #################
+#### gfortran 4.6 (trunk) #################
 #F90=gfortran-trunk
 #DFLAGS=-W -g -O0 -fbounds-check -frange-check -static
 #PFLAGS=-O3 -march=nocona -static
@@ -72,41 +54,35 @@ main: $(OBJS) $(MAIN)
 cbessel.o : ./external/cbessel.f90
 	$(F90) -c $(PFLAGS) $(W1FLAG) -o $@ $<
 
-# warning 136: unused module variable
-file_ops.o :  file_ops.f90
-	$(F90) -c $(FLAGS) $(W3FLAG) -o $@ $<
-
-## include output generated using "make dep" below
-cbessel.o complex_bessel.mod: ./external/cbessel.f90
-constants.o constants.mod: constants.f90
-element_specs.o element_specs.mod: constants.mod element_specs.f90
-special_functions.o matrix_inverse.mod bessel_functions.mod error_handler.mod: constants.mod complex_bessel.mod special_functions.f90
-invlap.o inverse_laplace_transform.mod: constants.mod invlap.f90
-file_ops.o file_ops.mod: constants.mod error_handler.mod element_specs.mod file_ops.f90
-calcshareddata.o calc_shared_data.mod: constants.mod calcshareddata.f90
-shared_matching_data.o shared_matching_data.mod: constants.mod shared_matching_data.f90
-wells.o wells.mod: bessel_functions.mod element_specs.mod constants.mod wells.f90
-circ_passive_elements.o circ_passive_elements.mod: element_specs.mod wells.mod bessel_functions.mod constants.mod shared_matching_data.mod circ_passive_elements.f90
-matching.o matching_old.mod: circ_passive_elements.mod wells.mod matrix_inverse.mod shared_matching_data.mod bessel_functions.mod element_specs.mod constants.mod matching.f90
-#match_matrix.o matching_new.mod: wells.mod matrix_inverse.mod shared_matching_data.mod bessel_functions.mod element_specs.mod constants.mod match_matrix.f90
-calc_routines.o calc_routines.mod: wells.mod bessel_functions.mod element_specs.mod constants.mod calc_routines.f90
-particle_integration.o particle_integrate.mod: error_handler.mod calc_routines.mod calc_shared_data.mod element_specs.mod inverse_laplace_transform.mod constants.mod particle_integration.f90
-circular_geometry.o circular_geometry.mod: file_ops.mod shared_matching_data.mod element_specs.mod constants.mod circular_geometry.f90
-ltaem_main.o: particle_integrate.mod circular_geometry.mod calc_routines.mod matching_old.mod inverse_laplace_transform.mod error_handler.mod file_ops.mod element_specs.mod calc_shared_data.mod constants.mod ltaem_main.f90
-bessel_functions.o bessel_functions_deriv.mod: constants.mod complex_bessel.mod bessel_functions.f90
-
 %.o: %.f
 	$(F90) -c $(PFLAGS) -o $@ $<
 
 %.o: %.f90
 	$(F90) -c $(FLAGS) -o $@ $<
 
-
-
 clean:
 	rm -f *.o *.mod $(TARG)
 
-# create list of dependencies using compiler
-dep:
-	g95 -M -cpp $(F90SRC) > dep.out && echo -e "\n\t***\ndependencies output to dep.out\n\t***\n"
+
+# dependency listing 
+# "provides" : "depends on"
+cbessel.o complex_bessel.mod : ./external/cbessel.f90
+constants.o constants.mod : constants.f90
+type_definitions.o type_definitions.mod : constants.mod mathieu_functions.mod type_definitions.f90
+utility.o utility.mod : constants.mod 
+bessel_functions.o bessel_functions.mod : complex_bessel.mod constants.mod bessel_functions.f90
+mathieu_functions2.o mathieu_functions.mod : constants.mod mathieu_functions.f90
+kappa.o kappa_mod.mod : constants.mod type_definitions.mod kappa.f90
+time.o  time_mod.mod  : constants.mod type_definitions.mod time.f90
+ltaem_io.o file_ops.mod : type_definitions.mod constants.mod ltaem_io.f90
+invlap.o inverse_laplace_transform.mod : constants.mod type_definitions.mod invlap.f90
+solultion.o solution.mod : constants.mod type_definitions.mod circular_elements.mod elliptical_elements.mod solution.f90
+ellipse_mathieu_init.o ellipse_mathieu_init.mod : constants.mod mathieu_functions.mod type_definitions.mod kappa_mod.mod ellipse_mathieu_init.f90
+circular_elements.o circular_elements.mod : constants.mod kappa_mod.mod time_mod.mod utility.mod type_definitions.mod bessel_functions.mod circular_elements.f90
+elliptical_elements.o elliptical_elements.mod : constants.mod kappa_mod.mod time_mod.mod utility.mod type_definitions.mod mathieu_functions.mod elliptical_elements.f90
+calc_routines.o 
+element_geometry.o geometry.mod : constants.mod type_definitions.mod file_ops.mod utility.mod element_geometry.f90
+ltaem_main.o : constants.mod type_definitions.mod file_ops.mod inverse_laplace_transform.mod solution.mod calc_routines.mod element_geometry.mod ellipse_mathieu_init.mod ltaem_main.f90
+
+
 

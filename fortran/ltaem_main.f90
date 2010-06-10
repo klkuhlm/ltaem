@@ -7,12 +7,13 @@
 
 program ltaem_main
   use constants, only : DP, PI
+  use type_definitions, only : domain, element, circle, ellipse, solution, INVLT, particle
   use file_ops, only : readinput, writeresults
   use inverse_Laplace_Transform, only : invlap => deHoog_invlap, pvalues => deHoog_pvalues
-  use matching_old
+  use solution, only : matrix_solution
   use calc_routines
-  use circular_geometry, only : DistanceAngleCalcs
-  use particle_integrate
+  use element_geometry, only : distanceAngleCalcs
+  use ellipse_mathieu_init, only : ellipse_init
 
   implicit none
 
@@ -179,40 +180,6 @@ program ltaem_main
      end if
 
   end if ! re-calculate coefficients
-
-  !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-  if(sol%particle) then ! integrate along particle path
-
-     write(*,'(A)') 'compute solution for tracking particles'
-     allocate(parnumdt(sol%nPart))
-
-     parnumdt(:) = ceiling((p(:)%tf - p(:)%ti)/p(:)%dt)
-
-     do i = 1,sol%nPart
-        allocate(p(i)%result(0:parnumdt(i),5))
-        p(:)%result(:,:) = 0.0        
-     end do
-
-     ! cycle over particles, integrating each
-     ! re-shape matrix s into a vector
-     tmpfname = 'calc_part_    .debug'
-
-     do part = 1, PARnum
-        write(tmpfname(11:14),'(I4.4)') part
-        open(unit=77,file=tmpfname,action='write',status='replace')
-
-        select case (PARint(part))
-        case (1)
-           call rungekuttamerson(s,tee,coeff,lbound(coeff,dim=2),part)
-        case (2)
-                 call rungekutta(s,tee,coeff,lbound(coeff,dim=2),part)
-        case (4)
-                   call fwdEuler(s,tee,coeff,lbound(coeff,dim=2),part)
-        case default
-           write(*,'(A,I3,1X,I3)') 'invalid integration code', part, PARint(part)
-        end select
-        close(77)
-     end do
 
   !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   elseif(sol%contour) then ! contour output (x,y locations outerproduct of x,y vectors)
