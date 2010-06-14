@@ -1,10 +1,11 @@
-! $Id: calc_routines.f90,v 1.6 2008/12/10 02:46:59 kris Exp kris $
+
+
 module calc_routines
   use constants, only : DP
   implicit none
 
   private
-  public :: headCalc, velxCalc, velyCalc, freecalcmem
+  public :: headCalc, velxCalc, velyCalc
 
   ! assuming velx to be called before vely - much of calculation will be saved
   ! in these module-wide variables
@@ -14,79 +15,68 @@ module calc_routines
 contains
 
   !##################################################
-  function headCalc(p,calcX,calcY,calcCoeff) result(H)
-    use element_specs, only : CIn,CInum,WLnum,kv,sv,CIWellIn,CIInclUp,&
-         & CIr,CICalcIn,CIInclIn,CIArea,sv
-    use constants, only : DP, PI, CZERO, RZERO
-    use bessel_functions
-    use wells, only : wellHead, circTimeArea
-    use leaky_q
+  function headCalc(Z,p,sol,dom,c,e) result(H)
+    use type_definitions, only : solution, domain, circle, ellipse
+    use constants, only : DP, PI
+    use bessel_functions, only : bK, bI
+    use mathieu_functions, only : Ke, Ko, Ie, Io, ce, se
+    use kappa_mod
+    use time_mod
 
-    complex(DP), dimension(:), intent(in) :: p
-    real(DP), intent(in) :: calcX,calcY
-    complex(DP), dimension(1:,0:,1:), intent(in) :: calcCoeff
+    complex(DP), intent(in) :: Z  ! location for calculation (complex coordinates)
+    complex(DP), dimension(:), intent(in) :: p  ! vector of Laplace parameters
+    type(solution), intent(inout) :: sol 
+    type(domain), intent(in) :: dom
+    type(circle), dimension(:), intent(in) :: c
+    type(ellipse), dimension(:), intent(in) :: e
 
-    complex(DP), dimension(size(p,1)) :: H  !! f(p)
-    complex(DP), dimension(size(p,1), 0:CIn, CInum) :: a,b,c,d
-    complex(DP), dimension(size(p,1),0:CInum) :: q
+    complex(DP), dimension(size(p,1)) :: H  
     complex(DP), dimension(size(p,1),0:CIn) :: PotInclPar
     complex(DP), dimension(size(p,1),0:CIn, CInum) :: PotInclBg, PotInclIn
     complex(DP), dimension(size(p,1),WLnum) :: PotWell
-    complex(DP), dimension(size(p,1),0:CIn) :: beskRcp, beskR0, besiRcp, besiR0
     real(DP), dimension(CInum) :: Rcp, Pcp
     real(DP), dimension(WLnum) :: Rwp, Pwp
     
-    integer :: ni, nw, incl, inside, other, well
-    integer :: np, N, i
-    Real(DP), dimension(0:CIn) :: rk
-
-
-    ni = CINum; nw = WLnum
-    np = size(p,1)
-
-    ! number of terms in sin/bessel funciton expansion 
-    N = CIn;
-
-    forall (i = 0:N)
-       rk(i) = real(i,DP)
-    end forall
-        
-    q(1:np,0:ni) = compute_CIleaky_q(p(1:np))
-
-    b(:,0,:) = CZERO; d(:,0,:) = CZERO;
+    real(DP), allocatable :: rk(:)
+    integer :: nc, ne, ntot, np, N
     
-    ! coefficients passed through module
-    a(1:np, 0:N, 1:ni) = calcCoeff(1:np, 0:N, 1:ni)
-    b(1:np, 1:N, 1:ni) = calcCoeff(1:np, N+1:2*N, 1:ni)      ! b_0 not included
-    c(1:np, 0:N, 1:ni) = calcCoeff(1:np, 2*N+1:3*N+1, 1:ni)
-    d(1:np, 1:N, 1:ni) = calcCoeff(1:np, 3*N+2:4*N+1, 1:ni)
-
+    nc = dom%num(1); ne = dom%num(2)
+    ntot = nc + ne
+    np = size(p,1)
+    
     ! determine which inclusion this point is in, and related geometry
-    call CalcLocation(CalcX,CalcY,inside,Rcp,Pcp,Rwp,Pwp) !Pwp not used here
-
-    ! effects of wells inside or outside inclusion
-    PotWell = CZERO
-    do well = 1,nw 
-       if (CIWellIn(inside,well)) then
-          PotWell(1:np,well) = WellHead(well,p(:),q(:,inside),Rwp(well))
-       end if
-    end do
+    call CalcLocation(Z,e,c,dom,Rgp,Pgp,inside) 
     
     !##################################################
-    !! calculation point is outside all inclusions
+    !! calculation point is outside all elements (background)
     if (inside == 0) then
-       PotInclBg = CZERO
-       do incl = 1,ni
-          if (CIInclUp(incl) == 0) then  ! if inclusion is in background
+       H = 0.0
+       do j = 1,nc
+          if (dom%InclUp(j) == 0) then  ! circle is also in background
+             N = c(j)%N
+             kap = kappa(p,c%parent%element)
 
-             beskR0(1:np,0:N) = besselk(CIr(incl)*q(:,0),0,N+1)
-             beskRcp(1:np,0:N) = besselk(Rcp(incl)*q(:,0),0,N+1)
+             H(:) = H + sum(bK(Rcp(j)*kap,N) / bK(c(j)%r*kap,N)* &
+                  & ( c(j)%C(:)%coeff(0:N)*    spread(cos(rk(0:N)*Pcp(incl)),1,np) + &
+                  &   c(j)%C(:)%coeff(N+1:2*N)*spread(sin(rk(0:N)*Pcp(incl)),1,np) ),)
 
              PotInclBg(1:np,0:N,incl) = beskRcp(:,0:N)/beskR0(:,0:N)* &
                   & ( a(:,0:N,incl)*spread(cos(rk(0:N)*Pcp(incl)),1,np) + &
                   &   b(:,0:N,incl)*spread(sin(rk(0:N)*Pcp(incl)),1,np) )
           end if
-       end do ! for ni
+       end do
+       
+       do j = 1,ne
+          if (dom%InclUp(nc+j) == 0) then  ! ellipse is also in background
+
+             Kr0(1:np,0:N)  = besselk(CIr(incl)*q(:,0),0,N+1)
+             KRgp(1:np,0:N) = besselk(Rcp(incl)*q(:,0),0,N+1)
+
+             PotInclBg(1:np,0:N,incl) = beskRcp(:,0:N)/beskR0(:,0:N)* &
+                  & ( a(:,0:N,incl)*spread(cos(rk(0:N)*Pcp(incl)),1,np) + &
+                  &   b(:,0:N,incl)*spread(sin(rk(0:N)*Pcp(incl)),1,np) )
+          end if
+       end do
 
        ! result for invlap (head, not discharge potential)
 
@@ -358,61 +348,73 @@ contains
   end function velYCalc
 
   !##################################################
-  subroutine calcLocation(CalcX,CalcY,inside,Rcp,Pcp,Rwp,Pwp)
-    use constants, only : DP
-    use element_specs, only : CInum, CIx, CIy, CIr, CIInclUp, CIInclIn, WLnum, &
-         & WLx, WLy, CIWellIn,  WLr
+  subroutine calcLocation(Z,e,c,dom,Rgp,Pgp,inside)
+    use constants, only : DP, EYE
+    use type_definitions, only : circle, ellipse, domain
+    use utility, only : ccosh, cacosh
 
-    real(DP), intent(in) :: CalcX, CalcY
+    complex(DP), intent(in) :: Z
+    type(circle), dimension(:), intent(in) :: c
+    type(ellipse), dimension(:), intent(in) :: e
+    real(DP), dimension(sum(dom%num)), intent(out) :: Rgp, Pgp
     integer, intent(out) :: inside
-    real(DP), dimension(1:CInum), intent(out) :: Rcp, Pcp
-    real(DP), dimension(1:WLnum), intent(out) :: Rwp, Pwp
-    real(DP), dimension(1:CInum) :: Xcp, Ycp
-    real(DP), dimension(1:WLnum) :: Xwp, Ywp
-    integer :: incl, well, first, second, third, ni, nw, k
-    integer, dimension(CInum) :: inout
 
-    ni = CInum; nw = WLnum
+    complex(DP), dimension(sum(dom%num)) :: Zgp
+    integer, dimension(sum(dom%num)) :: inout
 
-    !! this routine should be replaced or share code with the similar routine
-    !! in circular_geometry.f90 which is more complicated, but much more general than this
+    complex(DP) :: tmp
+    integer :: nc, ne, ntot, j, first, second, third, k
+
+    nc = dom%num(1); ne = dom%num(2)
+    ntot = nc + ne
 
     ! determine if observation point is inside an inclusion
-    inout(1:ni) = 0
+    inout(1:ntot) = 0
     k = 0;
 
-    do incl = 1,ni
-       ! components of vector from center of inclusion to observation point
-       Xcp(incl) = CalcX - CIx(incl)
-       Ycp(incl) = CalcY - CIy(incl)
-       Rcp(incl) = sqrt(Xcp(incl)**2 + Ycp(incl)**2)
-       Pcp(incl) = atan2(Ycp(incl), Xcp(incl))
-       if (Rcp(incl) <= CIr(incl)) then    ! inside or on boundary
+    do j = 1, nc
+       ! components of vector from center of circle to observation point
+       Zgp(j) = Z - cmplx(c(j)%x,c(j)%y,DP)
+       Rgp(j) = abs(Zgp(j))
+       Pgp(j) = atan2(aimag(Zgp(j)), real(Zgp(j)))
+       if (Rgp(j) <= c(j)%r) then    ! inside or on boundary
           k = k + 1;
-          inout(k) = incl;
+          inout(k) = j;
        end if
     end do
 
-    if (ni > 0) then
+    do j = nc+1, ntot
+       ! components of vector from center of ellipse to observation point
+       Zgp(j) = Z - cmplx(e(j-nc)%x,e(j-nc)%y,DP)
+       tmp = cacosh(Zgp(j))*exp(-EYE*e(j-nc)%theta)/e(j-nc)%f
+       Rgp(j) = real(tmp)
+       Pgp(j) = aimag(tmp)
+       if (Rgp(j) <= e(j-nc)%r) then    ! inside or on boundary
+          k = k + 1;
+          inout(k) = j;
+       end if
+    end do
+
+    if (ntot > 0) then
        select case (k)
-       case (0) !background
+       case (0) ! inside nothing (background)
           inside = 0
-       case (1) !one inclusion
+       case (1) ! inside one element
           inside = inout(1)
-       case (2) !two inclusions 
-          if (CIInclUp(inout(1)) == 0) then
+       case (2) ! inside two elements
+          if (dom%InclUp(inout(1)) == 0) then
              inside = inout(2);
           else
              inside = inout(1);
           end if
-       case (3) !three inclusions
+       case (3) ! inside three elements
           do first = 1,3
              do second = 1,3
                 if (second /= first) then
                    do third = 1,3
                       if ((third /= first) .and. (third /= second)) then
-                         if (CIInclIn(inout(first),inout(second))  .and. &
-                              & CIInclIn(inout(third),inout(first))) then 
+                         if (dom%InclIn(inout(first),inout(second))  .and. &
+                              & dom%InclIn(inout(third),inout(first))) then 
                             inside = inout(second)
                          end if
                       end if
@@ -421,7 +423,8 @@ contains
              end do
           end do
        case default
-          stop 'ERROR: more than triply-nested inclusions'
+          write(*,*) 'CALCLOCATION ERROR: more than triply-nested inclusions', dom%InclIn
+          stop 
        end select
     else
        inside = 0
@@ -429,26 +432,16 @@ contains
        Rcp = 0.0; Pcp = 0.0
     end if
 
-    ! determine geometry to pertinant wells from observation point
-    forall (well = 1:nw, CIWellIn(inside,well))
-       Xwp(well) = CalcX - WLx(well)
-       Ywp(well) = CalcY - WLy(well)
-       Rwp(well) = sqrt(Xwp(well)**2 + Ywp(well)**2)
-       Pwp(well) = atan2(Ywp(well),Xwp(well))
-    end forall
-
-    ! move observation points inside wells to edge of wells
-    do well = 1,nw 
-       if (Rwp(well) < WLr(well)) then
-          Rwp(well) = WLr(well)
+    ! move observation points inside ibnd==2 elements
+    do j = 1,nc 
+       if (Rgp(j) < c(j)%r) then
+          Rgp(j) = c(j)%r
        end if
     end do
-
+    do j = 1,ne 
+       if (Rgp(nc+j) < e(j)%r) then
+          Rgp(nc+j) = e(j)%r
+       end if
+    end do
   end subroutine  calcLocation
-
- ! free memory shared between velx and vely calcs
-  subroutine freecalcmem()
-    deallocate(CIdPot_dAng, CIdPot_dR)
-  end subroutine freecalcmem
-
 end module calc_routines

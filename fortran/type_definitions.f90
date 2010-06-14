@@ -84,6 +84,10 @@ module type_definitions
      real(DP), allocatable :: Rgm(:), Pgm(:), metric(:)
   end type geom
 
+  type :: coeff_type
+     complex(DP), allocatable :: coeff
+  end type coeff_type
+
   type :: match_result
      ! structure for storing intermediate results
      complex(DP), allocatable :: LHS(:,:), RHS(:)
@@ -125,7 +129,7 @@ module type_definitions
      type(geom), allocatable :: G(:) ! number of elements
 
      ! coefficients determined through matching
-     complex(DP), allocatable :: coeff(:)
+     type(coeff_type), allocatable :: C(:)
      
   end type matching
 

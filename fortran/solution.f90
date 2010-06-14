@@ -112,13 +112,13 @@ contains
     ! put results into local coeff variables
     do i=1,nc
        ! circles
-       allocate( c(i)%coeff(1:col(i,1)) )
-       c(i)%coeff(:) = b(col(i,0):col(i,2))
+       allocate(c(i)%c(idx)%coeff(col(i,1)))
+       c(i)%c(idx)%coeff(:) = b(col(i,0):col(i,2))
     end do
     do i=1,ne
        ! ellipses
-       allocate(e(i)%coeff(1:col(nc+i,1)))
-       e(i)%coeff(:) = b(col(nc+i,0):col(nc+i,2))
+       allocate(e(i)%c(idx)%coeff(col(nc+i,1)))
+       e(i)%c(idx)%coeff(:) = b(col(nc+i,0):col(nc+i,2))
     end do
     deallocate(A,b,row,col)
 

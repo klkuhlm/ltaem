@@ -11,7 +11,7 @@ program ltaem_main
   use file_ops, only : readinput, writeresults
   use inverse_Laplace_Transform, only : invlap => deHoog_invlap, pvalues => deHoog_pvalues
   use solution, only : matrix_solution
-  use calc_routines
+  use calc_routines, only : 
   use element_geometry, only : distanceAngleCalcs
   use ellipse_mathieu_init, only : ellipse_init
 
@@ -34,7 +34,7 @@ program ltaem_main
   real(DP), allocatable :: logt(:), tee(:)
   integer, allocatable :: nt(:), run(:)
   complex(DP), allocatable :: s(:,:)
-  integer :: ilogt, iminlogt, imaxlogt, lot, hit, lop, hip, ierr, lo
+  integer :: ilogt, iminlogt, imaxlogt, lot, hit, lop, hip, ierr, lo, np
   character(20) :: tmpfname
 
   real(DP), parameter :: MOST = 0.99_DP  ! 'most' of a log-cycle
@@ -65,31 +65,8 @@ program ltaem_main
   if (sol%calc) then
      if (sol%particle) then   ! particle tracking
         
-        ! need to do something better here about particles starting at t=0?
-        do i=1, sol%nPart
-           if (p(i)%ti < 1.0D-5) then
-              p(i)%ti = 1.0D-5
-              write(*,'(A,I0,A)') '^^^^ start time for particle ',i,' reset to 1.0E-5 ^^^^'
-           end if
-        end do
-        
-        iminlogt = floor(  minval(log10(p(:)%ti)))
-        imaxlogt = ceiling(maxval(log10(p(:)%tf)))
-
-        allocate(s(2*INVm+1,iminlogt:imaxlogt), nt(iminlogt:imaxlogt), &
-             & tee(iminlogt:imaxlogt))
-
-        nt(iminlogt:imaxlogt) = 1
-
-        do ilogt = iminlogt, imaxlogt
-           tee(ilogt) = min(10.0_DP**(ilogt + MOST), maxval(p(:)%tf))*2.0
-           s(:,ilogt) = pvalues(tee(ilogt),lap)
-        end do
-
-        ! to make it possible for particles / contours to share code...
-        imaxlogt = imaxlogt + 1
-
-        deallocate(run)
+        stop 'no particle tracking yet'
+        ! not worrying about particle tracking right now
         
      !^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
      else   ! contour maps / hydrographs
@@ -114,15 +91,18 @@ program ltaem_main
 
      ! only do matching if there is at least one matching element
      if(count(e(:)%match) + count(c(:)%match) > 0) then
-
-
-!!$        allocate(coeff(2*INVm+1, iminlogt:imaxlogt-1, 0:4*CIn+1, CInum), &
-!!$             & Gm(1:4*CIn+2, 1:2*CIm, 1:CInum))
         
-        coeff = CZERO
-     
         ! calculate coefficients for each value of Laplace parameter
         ! ** common between particle tracking and contours/hydrographs **
+
+        ! allocate containers for coefficients
+        np = product(size(s))
+        do j = 1, size(c,1)
+           allocate(c(j)%C(np))
+        end do
+        do j = 1, size(e,1)
+           allocate(e(j)%C(np))
+        end do
 
         do ilogt = iminlogt,imaxlogt-1
            write(*,'(A,I3)') 'log t=',ilogt
@@ -130,10 +110,6 @@ program ltaem_main
            do j = 1,2*lap%m+1
               if (nt(ilogt) > 0) then
                  write(*,'(I4,1X,2(A,ES10.3),A)') j, '(',real(s(j,ilogt)),',',aimag(s(j,ilogt)),')'
-                 ! compute generalized inverse of A matrix
-                 call circInverse_old(s(j,ilogt),Gm)  
-!!$               ! use direct approach to solve once
-!!$              call circInverse_matrix(s(j,ilogt),coeff(j,ilogt,0:4*CIn+1,1:CInum))  
 
                  if (j > 1) then  ! copy previous as initial guess
                     coeff(j,ilogt,0:4*CIn+1,1:CInum) = coeff(j-1,ilogt,0:4*CIn+1,1:CInum)
