@@ -57,8 +57,8 @@ contains
              kap = kappa(p,c%parent%element)
 
              H(:) = H + sum(bK(Rcp(j)*kap,N) / bK(c(j)%r*kap,N)* &
-                  & ( c(j)%C(:)%coeff(0:N)*    spread(cos(rk(0:N)*Pcp(incl)),1,np) + &
-                  &   c(j)%C(:)%coeff(N+1:2*N)*spread(sin(rk(0:N)*Pcp(incl)),1,np) ),)
+                  & ( c(j)%coeff(:,0:N)*    spread(cos(rk(0:N)*Pcp(incl)),1,np) + &
+                  &   c(j)%coeff(:,N+1:2*N)*spread(sin(rk(0:N)*Pcp(incl)),1,np) ),)
 
              PotInclBg(1:np,0:N,incl) = beskRcp(:,0:N)/beskR0(:,0:N)* &
                   & ( a(:,0:N,incl)*spread(cos(rk(0:N)*Pcp(incl)),1,np) + &

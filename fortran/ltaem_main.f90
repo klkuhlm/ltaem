@@ -77,7 +77,7 @@ program ltaem_main
         iminlogt =   floor(minval(logt(:)))
         imaxlogt = ceiling(maxval(logt(:)))
 
-        allocate(s(2*INVm+1,iminlogt:imaxlogt-1), nt(iminlogt:imaxlogt-1), &
+        allocate(s(2*lap%m+1,iminlogt:imaxlogt-1), nt(iminlogt:imaxlogt-1), &
              & tee(iminlogt:imaxlogt-1))
 
         do ilogt = iminlogt, imaxlogt-1
@@ -95,14 +95,7 @@ program ltaem_main
         ! calculate coefficients for each value of Laplace parameter
         ! ** common between particle tracking and contours/hydrographs **
 
-        ! allocate containers for coefficients
-        np = product(size(s))
-        do j = 1, size(c,1)
-           allocate(c(j)%C(np))
-        end do
-        do j = 1, size(e,1)
-           allocate(e(j)%C(np))
-        end do
+        sol%totalnP = product(shape(s))
 
         do ilogt = iminlogt,imaxlogt-1
            write(*,'(A,I3)') 'log t=',ilogt
@@ -145,7 +138,7 @@ program ltaem_main
 
         read(77,*) iminlogt,imaxlogt,nt,s,tee
         allocate(coeff(2*lap%m+1, iminlogt:imaxlogt-1, 0:4*CIn+1, CInum), &
-             & s(2*INVm+1,iminlogt:imaxlogt-1), nt(iminlogt:imaxlogt-1), &
+             & s(2*lap%m+1,iminlogt:imaxlogt-1), nt(iminlogt:imaxlogt-1), &
              & tee(iminlogt:imaxlogt-1))
 
         ! read needed data calculated in previous run from file

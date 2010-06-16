@@ -84,10 +84,6 @@ module type_definitions
      real(DP), allocatable :: Rgm(:), Pgm(:), metric(:)
   end type geom
 
-  type :: coeff_type
-     complex(DP), allocatable :: coeff
-  end type coeff_type
-
   type :: match_result
      ! structure for storing intermediate results
      complex(DP), allocatable :: LHS(:,:), RHS(:)
@@ -129,7 +125,7 @@ module type_definitions
      type(geom), allocatable :: G(:) ! number of elements
 
      ! coefficients determined through matching
-     type(coeff_type), allocatable :: C(:)
+     type(coeff), allocatable :: coeff(:,:)
      
   end type matching
 
@@ -166,7 +162,9 @@ module type_definitions
      ! integrate particle lines vs. calculate at set locations/times
      logical :: particle
      integer :: nPart
-     
+
+     integer :: totalnP ! total number of laplace parameters
+
      ! number of particle timesteps to skip when plotting streaklines
      ! (only one value for all particles)
      integer :: streakSkip

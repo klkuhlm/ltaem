@@ -5,7 +5,7 @@
 module solution
 
 contains
-  subroutine matrix_solution(c,e,dom,p,idx)
+  subroutine matrix_solution(c,e,dom,sol,p,idx)
     use constants, only : DP
     use type_definitions, only : circle, ellipse, domain, match_result
     use circular_elements
@@ -27,6 +27,7 @@ contains
     type(circle), dimension(:), intent(inout) :: c
     type(ellipse), dimension(:), intent(inout) :: e
     type(domain), intent(in) :: dom
+    type(solution), intent(in) :: sol
     complex(DP), intent(in) :: p
 
     complex(DP), allocatable :: A(:,:), b(:)
@@ -112,13 +113,17 @@ contains
     ! put results into local coeff variables
     do i=1,nc
        ! circles
-       allocate(c(i)%c(idx)%coeff(col(i,1)))
-       c(i)%c(idx)%coeff(:) = b(col(i,0):col(i,2))
+       if (.not. allocated(c(i)%coeff)) then
+          allocate(c(i)%coeff(sol%totalnP,col(i,1)))
+       end if
+       c(i)%coeff(idx,:) = b(col(i,0):col(i,2))
     end do
     do i=1,ne
        ! ellipses
-       allocate(e(i)%c(idx)%coeff(col(nc+i,1)))
-       e(i)%c(idx)%coeff(:) = b(col(nc+i,0):col(nc+i,2))
+       if (.not. allocated(c(i)%coeff)) then
+          allocate(e(i)%coeff(sol%totalnp,col(nc+i,1)))
+       end if
+       e(i)%coeff(idx,:) = b(col(nc+i,0):col(nc+i,2))
     end do
     deallocate(A,b,row,col)
 
