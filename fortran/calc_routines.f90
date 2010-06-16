@@ -15,7 +15,7 @@ module calc_routines
 contains
 
   !##################################################
-  function headCalc(Z,p,sol,dom,c,e) result(H)
+  function headCalc(Z,p,lo,hi,sol,dom,c,e,bg) result(H)
     use type_definitions, only : solution, domain, circle, ellipse
     use constants, only : DP, PI
     use bessel_functions, only : bK, bI
@@ -25,10 +25,12 @@ contains
 
     complex(DP), intent(in) :: Z  ! location for calculation (complex coordinates)
     complex(DP), dimension(:), intent(in) :: p  ! vector of Laplace parameters
+    integer, intent(in) :: lo,hi  ! lower and upper bounds of p relative to overall s
     type(solution), intent(inout) :: sol 
     type(domain), intent(in) :: dom
     type(circle), dimension(:), intent(in) :: c
     type(ellipse), dimension(:), intent(in) :: e
+    type(element), intent(in) :: bg
 
     complex(DP), dimension(size(p,1)) :: H  
     complex(DP), dimension(size(p,1),0:CIn) :: PotInclPar
@@ -36,51 +38,71 @@ contains
     complex(DP), dimension(size(p,1),WLnum) :: PotWell
     real(DP), dimension(CInum) :: Rcp, Pcp
     real(DP), dimension(WLnum) :: Rwp, Pwp
-    
-    real(DP), allocatable :: rk(:)
-    integer :: nc, ne, ntot, np, N
+    complex(DP), allocatable :: aa(:,:),bb(:,:),cc(:,:),dd(:,:) ! local coefficients
+    complex(DP), allocatable :: RMRgp(:,:,:), RMR0(:,:,:), AM(:,:,:) ! radial / angular MF
+
+    real(DP), allocatable :: vr(:)
+    integer, allocatable :: vi(:)
+    integer :: nc, ne, ntot, np, N, j, i
     
     nc = dom%num(1); ne = dom%num(2)
     ntot = nc + ne
     np = size(p,1)
+    if (hi-lo+1 /= np) then
+       write(*,'(A,3(1X,I0))') 'ERROR: lo,hi do not match dimensions of p',lo,hi,size(p,1)
+       stop
+    end if
     
     ! determine which inclusion this point is in, and related geometry
     call CalcLocation(Z,e,c,dom,Rgp,Pgp,inside) 
     
     !##################################################
-    !! calculation point is outside all elements (background)
+    !! calculation point is outside all elements (in background)
     if (inside == 0) then
        H = 0.0
        do j = 1,nc
           if (dom%InclUp(j) == 0) then  ! circle is also in background
              N = c(j)%N
-             kap = kappa(p,c%parent%element)
+             kap = kappa(p(:),c%parent%element)
+             allocate(vr(0:N),aa(np,N),bb(np,N))
+             vr = real([(i,i=0,N-1)],DP)
+             aa(1:np,1:N) = c(j)%A(lo:hi,1:N)
+             bb(1:np,1) = 0.0 ! insert zero to make odd/even same shape
+             bb(1:np,2:N) = c(j)%A(lo:hi,N+1:2*N-1)
 
-             H(:) = H + sum(bK(Rcp(j)*kap,N) / bK(c(j)%r*kap,N)* &
-                  & ( c(j)%coeff(:,0:N)*    spread(cos(rk(0:N)*Pcp(incl)),1,np) + &
-                  &   c(j)%coeff(:,N+1:2*N)*spread(sin(rk(0:N)*Pcp(incl)),1,np) ),)
-
-             PotInclBg(1:np,0:N,incl) = beskRcp(:,0:N)/beskR0(:,0:N)* &
-                  & ( a(:,0:N,incl)*spread(cos(rk(0:N)*Pcp(incl)),1,np) + &
-                  &   b(:,0:N,incl)*spread(sin(rk(0:N)*Pcp(incl)),1,np) )
+             H(1:np) = H + sum(bK(Rgp(j)*kap,N) / bK(c(j)%r*kap,N)* &
+                  & ( aa(1:N)*spread(cos(vr(0:N-1)*Pgp(j)),1,np) + &
+                  &   bb(1:N)*spread(sin(vr(0:N-1)*Pgp(j)),1,np) ),dim=2)
+             deallocate(vr,aa,bb)
           end if
        end do
        
        do j = 1,ne
           if (dom%InclUp(nc+j) == 0) then  ! ellipse is also in background
+             allocate(vi(0:N),RMRgp(np,N,0:1),RMR0(np,N,0:1), &
+                  & AM(np,N,0:1),aa(np,N),bb(np,N))
+             vi = [(i,i=0,N-1)]
+             aa(1:np,1:N) = e(j)%A(lo:hi,1:N)
+             bb(1:np,2:N) = e(j)%A(lo:hi,N+1:2*N-1)
 
-             Kr0(1:np,0:N)  = besselk(CIr(incl)*q(:,0),0,N+1)
-             KRgp(1:np,0:N) = besselk(Rcp(incl)*q(:,0),0,N+1)
+             do i=1,np
+                RMRgp(i,0:N-1,0) = Ke(bg%mat(lo+i-1),vi(0:N-1),Rgp(j))
+                RMRgp(i,1:N-1,1) = Ko(bg%mat(lo+i-1),vi(1:N-1),Rgp(j))
+                 RMR0(i,0:N-1,0) = Ke(bg%mat(lo+i-1),vi(0:N-1),e(j)%r)
+                 RMR0(i,1:N-1,1) = Ko(bg%mat(lo+i-1),vi(1:N-1),e(j)%r)
+                   AM(i,0:N-1,0) = ce(bg%mat(lo+i-1),vi(0:N-1),Pgp(j))
+                   AM(i,1:N-1,1) = se(bg%mat(lo+i-1),vi(0:N-1),Pgp(j))
+             end do
 
-             PotInclBg(1:np,0:N,incl) = beskRcp(:,0:N)/beskR0(:,0:N)* &
-                  & ( a(:,0:N,incl)*spread(cos(rk(0:N)*Pcp(incl)),1,np) + &
-                  &   b(:,0:N,incl)*spread(sin(rk(0:N)*Pcp(incl)),1,np) )
+             H(1:np) = H + &
+                  & sum(RMRgp(:,0:N-1,0)/RMR0(:,0:N-1,0)*aa(:,1:N)*AM(:,0:N-1,0), 2) + &
+                  & sum(RMRgp(:,1:N-1,1)/RMR0(:,1:N-1,1)*bb(:,2:N)*AM(:,1:N-1,1), 2)
+             deallocate(vi,RMRgp,RMR0,AM,aa,bb)
           end if
        end do
 
        ! result for invlap (head, not discharge potential)
-
-       H(1:np) = (sum(sum(PotInclBg,dim=3),dim=2) + sum(PotWell,dim=2))/kv(0)
+       H(1:np) = H(:)/bg%k
 
     !##################################################
     !! calculation point is inside (or on bdry of) an inclusion
