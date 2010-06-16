@@ -8,12 +8,12 @@ module circular_elements
 
   implicit none
   private
-  public :: circle_match
+  public :: circle_match, circle_calc, circle_calc_deriv
 
   interface circle_match
      module procedure circle_match_self, circle_match_other
   end interface
-
+    
 contains
   function circle_match_self(c,p) result(r)
     use utility, only : outerprod
@@ -298,8 +298,51 @@ contains
     kap = kappa(p,c%parent)
     Kn(0:1) = bK(kap*c%r,2)
     a0 = -Kn(0)*((2.0 + c%r**2*c%dskin*p/c%parent%T)/(2.0*PI*c%r) + &
-               & (Kn(0)*c%r*p)/(2.0*PI*c%r*kap*Kn(1)*c%parent%T))
-    
+               & (Kn(0)*c%r*p)/(2.0*PI*c%r*kap*Kn(1)*c%parent%T))    
   end function storwell
+
+  function circle_calc(p,c,lo,hi,Rgp,Pgp,inside) result(H)
+    use type_definitions, only : circle
+    use bessel_functions, only : bK, bI
+    use kappa_mod
+
+    complex(DP), dimension(:), intent(in) :: p
+    type(circle), intent(in) :: c
+    integer, intent(in) :: lo,hi 
+    real(DP), intent(in) :: Rgp, Pgp
+    logical, intent(in) :: inside
+    complex(DP), dimension(size(p,1)) :: H
+
+    real(DP), dimension(c%N) :: vr
+    complex(DP), dimension(size(p,1),c%N) :: aa,bb,BRgp,BR0
+    integer :: n0, np
+
+    N = c%N
+    np = size(p,1)
+    vr = real([(i,i=0,N-1)],DP)
+
+    if (inside) then
+       if (c%match) then
+          n0 = 2*N ! inside of matching circle
+       else
+          n0 = 1   ! inside of specified boundary circle
+       end if
+       kap = kappa(p(:),c%element)
+       BRgp(1:np,0:N-1) = bK(Rgp*kap,N)
+       BR0(1:np,0:N-1) =  bK(c%r*kap,N)
+    else
+       n0 = 1
+       kap = kappa(p(:),c%parent%element)
+       BRgp(1:np,0:N-1) = bI(Rgp*kap,N)
+       BR0(1:np,0:N-1) =  bI(c%r*kap,N)
+    end if
+    aa(1:np,1:N) = c%coeff(lo:hi,n0:n0+N-1)
+    bb(1:np,1) = 0.0 ! insert zero to make odd/even same shape
+    bb(1:np,2:N) = c%coeff(lo:hi,n0+N:n0+2*N-2)
+    H(1:np) = sum(BRgp(:,:)/BR0(:,:)* &
+         & ( aa(:,1:N)*spread(cos(vr(0:N-1)*Pgp),1,np) + &
+         &   bb(:,1:N)*spread(sin(vr(0:N-1)*Pgp),1,np) ),dim=2)
+  end function circle_calc
+
 end module circular_elements
 

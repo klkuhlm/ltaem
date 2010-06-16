@@ -114,16 +114,16 @@ contains
     do i=1,nc
        ! circles
        if (.not. allocated(c(i)%A)) then
-          allocate(c(i)%A(sol%totalnP,col(i,1)))
+          allocate(c(i)%coeff(sol%totalnP,col(i,1)))
        end if
-       c(i)%A(idx,:) = b(col(i,0):col(i,2))
+       c(i)%coeff(idx,:) = b(col(i,0):col(i,2))
     end do
     do i=1,ne
        ! ellipses
        if (.not. allocated(c(i)%A)) then
-          allocate(e(i)%A(sol%totalnp,col(nc+i,1)))
+          allocate(e(i)%coeff(sol%totalnp,col(nc+i,1)))
        end if
-       e(i)%A(idx,:) = b(col(nc+i,0):col(nc+i,2))
+       e(i)%coeff(idx,:) = b(col(nc+i,0):col(nc+i,2))
     end do
     deallocate(A,b,row,col)
 

@@ -328,5 +328,58 @@ contains
             & (-vs(0:N-1:2))*sum(arg(:,:)*conjg(e%mat(idx)%A(1:MS,0:nmax-1,0)),dim=1)
 
   end function line
+
+  function ellipse_calc(p,e,lo,hi,Rgp,Pgp,inside) result(H)
+    use type_definitions, only : ellipse
+    use bessel_functions, only : Ke,Ko, Ie,Io, ce,se
+
+    complex(DP), dimension(:), intent(in) :: p
+    type(ellipse), intent(in) :: e
+    integer, intent(in) :: lo,hi 
+    real(DP), intent(in) :: Rgp, Pgp
+    logical, intent(in) :: inside
+    complex(DP), dimension(size(p,1)) :: H
+
+    integer, dimension(c%N) :: vi
+    complex(DP), dimension(size(p,1),e%N) :: aa,bb
+    complex(DP), dimenions(size(p,1),e%N,0:1) :: RMRgp,RMR0,AM
+    integer :: n0, np, i, j
+
+    N = c%N
+    np = size(p,1)
+    vi = [(i,i=0,N-1)]
+
+    if (inside) then
+       if (c%match) then
+          n0 = 2*N ! inside of matching ellipse
+       else
+          n0 = 1   ! inside of specified boundary ellipse
+       end if
+       do i=1,np
+          j = lo+i-1
+          RMRgp(j,0:N-1,0) = Ie(e%mat(j),vi(0:N-1),Rgp)
+          RMRgp(j,1:N-1,1) = Io(e%mat(j),vi(1:N-1),Rgp)
+          RMR0(j,0:N-1,0) =  Ie(e%mat(j),vi(0:N-1),e%r)
+          RMR0(j,1:N-1,1) =  Io(e%mat(j),vi(1:N-1),e%r)
+          AM(j,0:N-1,0) =    ce(e%mat(j),vi(0:N-1),Pgp)
+          AM(j,1:N-1,1) =    se(e%mat(j),vi(0:N-1),Pgp)
+       end do
+    else
+       n0 = 1
+       do i=1,np
+          j = lo+i-1
+          RMRgp(j,0:N-1,0) = Ke(e%parent%mat(j),vi(0:N-1),Rgp)
+          RMRgp(j,1:N-1,1) = Ko(e%parent%mat(j),vi(1:N-1),Rgp)
+          RMR0(j,0:N-1,0) =  Ke(e%parent%mat(j),vi(0:N-1),e%r)
+          RMR0(j,1:N-1,1) =  Ko(e%parent%mat(j),vi(1:N-1),e%r)
+          AM(j,0:N-1,0) =    ce(e%parent%mat(j),vi(0:N-1),Pgp)
+          AM(j,1:N-1,1) =    se(e%parent%mat(j),vi(0:N-1),Pgp)
+       end do
+    end if
+    aa(1:np,1:N) = e%coeff(lo:hi,n0:n0+N-1)
+    bb(1:np,2:N) = e%coeff(lo:hi,n0+N:n0+2*N-2)
+    H(1:np) = sum(RMRgp(:,0:N-1,0)/RMR0(:,0:N-1,0)*aa(:,1:N)*AM(:,0:N-1,0), 2) + &
+            & sum(RMRgp(:,1:N-1,1)/RMR0(:,1:N-1,1)*bb(:,2:N)*AM(:,1:N-1,1), 2)
+  end function ellipse_calc
 end module elliptical_elements
 

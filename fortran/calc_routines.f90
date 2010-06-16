@@ -38,11 +38,8 @@ contains
     complex(DP), dimension(size(p,1),WLnum) :: PotWell
     real(DP), dimension(CInum) :: Rcp, Pcp
     real(DP), dimension(WLnum) :: Rwp, Pwp
-    complex(DP), allocatable :: aa(:,:),bb(:,:),cc(:,:),dd(:,:) ! local coefficients
     complex(DP), allocatable :: RMRgp(:,:,:), RMR0(:,:,:), AM(:,:,:) ! radial / angular MF
 
-    real(DP), allocatable :: vr(:)
-    integer, allocatable :: vi(:)
     integer :: nc, ne, ntot, np, N, j, i
     
     nc = dom%num(1); ne = dom%num(2)
@@ -52,52 +49,23 @@ contains
        write(*,'(A,3(1X,I0))') 'ERROR: lo,hi do not match dimensions of p',lo,hi,size(p,1)
        stop
     end if
-    
+
     ! determine which inclusion this point is in, and related geometry
     call CalcLocation(Z,e,c,dom,Rgp,Pgp,inside) 
+    H = 0.0
     
     !##################################################
     !! calculation point is outside all elements (in background)
     if (inside == 0) then
-       H = 0.0
        do j = 1,nc
           if (dom%InclUp(j) == 0) then  ! circle is also in background
-             N = c(j)%N
-             kap = kappa(p(:),c%parent%element)
-             allocate(vr(0:N),aa(np,N),bb(np,N))
-             vr = real([(i,i=0,N-1)],DP)
-             aa(1:np,1:N) = c(j)%A(lo:hi,1:N)
-             bb(1:np,1) = 0.0 ! insert zero to make odd/even same shape
-             bb(1:np,2:N) = c(j)%A(lo:hi,N+1:2*N-1)
-
-             H(1:np) = H + sum(bK(Rgp(j)*kap,N) / bK(c(j)%r*kap,N)* &
-                  & ( aa(1:N)*spread(cos(vr(0:N-1)*Pgp(j)),1,np) + &
-                  &   bb(1:N)*spread(sin(vr(0:N-1)*Pgp(j)),1,np) ),dim=2)
-             deallocate(vr,aa,bb)
+             H(1:np) = H(:) + circle_calc(p(:),c(j),lo,hi,Rgp(j),Pgp(j),.false.)
           end if
        end do
        
        do j = 1,ne
           if (dom%InclUp(nc+j) == 0) then  ! ellipse is also in background
-             allocate(vi(0:N),RMRgp(np,N,0:1),RMR0(np,N,0:1), &
-                  & AM(np,N,0:1),aa(np,N),bb(np,N))
-             vi = [(i,i=0,N-1)]
-             aa(1:np,1:N) = e(j)%A(lo:hi,1:N)
-             bb(1:np,2:N) = e(j)%A(lo:hi,N+1:2*N-1)
-
-             do i=1,np
-                RMRgp(i,0:N-1,0) = Ke(bg%mat(lo+i-1),vi(0:N-1),Rgp(j))
-                RMRgp(i,1:N-1,1) = Ko(bg%mat(lo+i-1),vi(1:N-1),Rgp(j))
-                 RMR0(i,0:N-1,0) = Ke(bg%mat(lo+i-1),vi(0:N-1),e(j)%r)
-                 RMR0(i,1:N-1,1) = Ko(bg%mat(lo+i-1),vi(1:N-1),e(j)%r)
-                   AM(i,0:N-1,0) = ce(bg%mat(lo+i-1),vi(0:N-1),Pgp(j))
-                   AM(i,1:N-1,1) = se(bg%mat(lo+i-1),vi(0:N-1),Pgp(j))
-             end do
-
-             H(1:np) = H + &
-                  & sum(RMRgp(:,0:N-1,0)/RMR0(:,0:N-1,0)*aa(:,1:N)*AM(:,0:N-1,0), 2) + &
-                  & sum(RMRgp(:,1:N-1,1)/RMR0(:,1:N-1,1)*bb(:,2:N)*AM(:,1:N-1,1), 2)
-             deallocate(vi,RMRgp,RMR0,AM,aa,bb)
+             H(1:np) = H(:) + ellipse_calc(p(:),e(j),lo,hi,Rgp(nc+j),Pgp(nc+j),.false.)
           end if
        end do
 
@@ -105,37 +73,35 @@ contains
        H(1:np) = H(:)/bg%k
 
     !##################################################
-    !! calculation point is inside (or on bdry of) an inclusion
     else
-       PotInclPar = CZERO; PotInclIn = CZERO
-       if (CIcalcin(inside)) then
-          
-          besiRcp(1:np,0:N) = besseli(Rcp(inside)*q(1:np,inside),0,N+1)
-          besiR0(1:np,0:N) = besseli(CIr(inside)*q(1:np,inside),0,N+1)
-          
-          ! "parent" inclusion, which calculation point is within
-
-          PotInclPar(1:np,0:N) = besiRcp(1:np,0:N)/besiR0(1:np,0:N)* &
-               & ( c(1:np,0:N,inside)*spread(cos(rk(0:N)*Pcp(inside)),1,np) + &
-               &   d(1:np,0:N,inside)*spread(sin(rk(0:N)*Pcp(inside)),1,np) )
-
-          ! effects of any inclusions which may be inside same parent too
-          do other = 1,ni
-             if (CIInclIn(inside,other)) then
-                beskRcp(1:np,0:N) = besselk(Rcp(other)*q(1:np,inside),0,N+1)
-                beskR0(1:np,0:N) = besselk(CIr(other)*q(1:np,inside),0,N+1)
-
-                PotInclIn(1:np,0:N,other) = beskRcp(1:np,0:N)/beskR0(1:np,0:N)* &
-                     & ( a(1:np,0:N,other)*spread(cos(rk(0:N)*Pcp(other)),1,np) + &
-                     &   b(1:np,0:N,other)*spread(sin(rk(0:N)*Pcp(other)),1,np) )
-             end if
-          end do
-       end if  !if CIcalcin
-
-       ! result for invlap (head, not discharge potential)
-       H(1:np) = (sum(PotWell,dim=2) + sum(sum(PotInclIn,dim=3),dim=2) + sum(PotInclPar,dim=2) + &
-            & CIarea(inside)*circTimeArea(inside,p(:))*sv(inside)/q(:,inside)**2)/kv(inside)
-    end if ! inout
+       if (inside <= nc) then
+          !! calculation point is inside (or on bdry of) a circular element
+          if (c(inside)%calcin) then
+             H(1:np) = H(:) + circle_calc(p(:),c(inside),lo,hi,Rgp(inside),Pgp(inside),.true.)
+          end if
+       else 
+          ! calculation point is inside or on the boundary of an elliptical element
+          if (e(inside-nc)%calcin) then
+             H(1:np) = H(:) + ellipse_calc(p(:),e(inside-nc),lo,hi,Rgp(inside),Pgp(inside),.true.)
+          end if
+       end if
+       ! effects of any other elements which may be inside same circle/ellipse too
+       do other = 1,nc
+          ! other element is a circle
+          if (dom%InclIn(inside,other)) then
+             H(1:np) = H(:) + circle_calc(p(:),c(other),lo,hi,Rgp(other),Pgp(other),.false.)
+          end if
+       end do
+       do other = 1,ne
+          ! other element is an ellipse
+          if (dom%InclIn(inside,other+nc)) then
+             H(1:np) = H(:) + ellipse_calc(p(:),e(other),lo,hi,Rgp(nc+other),Pgp(nc+other),.false.)
+          end if
+       end do
+       
+       ! apply potential source term on inside of element
+       H(1:np) = H*CIarea(inside)*circTimeArea(inside,p(:))*sv(inside)/q(:,inside)**2/kv(inside)
+    end if
   end function headCalc
 
   !##################################################
