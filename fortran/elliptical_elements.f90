@@ -8,7 +8,7 @@ module elliptical_elements
 
   implicit none
   private
-  public :: ellipse_match, ellipse_calc
+  public :: ellipse_match, ellipse_calc, ellipse_deriv
 
   interface ellipse_match
      module procedure ellipse_match_self, ellipse_match_other
@@ -381,5 +381,68 @@ contains
     H(1:np) = sum(RMRgp(:,0:N-1,0)/RMR0(:,0:N-1,0)*aa(:,1:N)*AM(:,0:N-1,0), 2) + &
             & sum(RMRgp(:,1:N-1,1)/RMR0(:,1:N-1,1)*bb(:,2:N)*AM(:,1:N-1,1), 2)
   end function ellipse_calc
+
+  function ellipse_deriv(p,e,lo,hi,Rgp,Pgp,inside) result(dH)
+    use type_definitions, only : ellipse
+    use mathieu_functions, only : Ke,Ko, Ie,Io, ce,se, dKe,dKo, dIe,dIo, dce,dse
+
+    complex(DP), dimension(:), intent(in) :: p
+    type(ellipse), intent(in) :: e
+    integer, intent(in) :: lo,hi 
+    real(DP), intent(in) :: Rgp, Pgp
+    logical, intent(in) :: inside
+    complex(DP), dimension(size(p,1),2) :: dH ! dPot_dEta, dPot_dPsi
+
+    integer, dimension(e%N) :: vi
+    complex(DP), dimension(size(p,1),e%N) :: aa,bb
+    complex(DP), dimension(size(p,1),e%N,0:1) :: RMRgp,RMR0,AM,dRMRgp,dAM
+    integer :: n0, np, i, j, N
+
+    N = e%N
+    np = size(p,1)
+    vi = [(i,i=0,N-1)]
+
+    if (inside) then
+       if (e%match) then
+          n0 = 2*N ! inside of matching ellipse
+       else
+          n0 = 1   ! inside of specified boundary ellipse
+       end if
+       do i=1,np
+          j = lo+i-1
+          RMRgp(j,0:N-1,0) = Ie(e%mat(j),vi(0:N-1),Rgp)
+          RMRgp(j,1:N-1,1) = Io(e%mat(j),vi(1:N-1),Rgp)
+          dRMRgp(j,0:N-1,0) = dIe(e%mat(j),vi(0:N-1),Rgp)
+          dRMRgp(j,1:N-1,1) = dIo(e%mat(j),vi(1:N-1),Rgp)
+          RMR0(j,0:N-1,0) =  Ie(e%mat(j),vi(0:N-1),e%r)
+          RMR0(j,1:N-1,1) =  Io(e%mat(j),vi(1:N-1),e%r)
+          AM(j,0:N-1,0) =  ce(e%mat(j),vi(0:N-1),Pgp)
+          AM(j,1:N-1,1) =  se(e%mat(j),vi(0:N-1),Pgp)
+          dAM(j,0:N-1,0) = dce(e%mat(j),vi(0:N-1),Pgp)
+          dAM(j,1:N-1,1) = dse(e%mat(j),vi(0:N-1),Pgp)
+       end do
+    else
+       n0 = 1
+       do i=1,np
+          j = lo+i-1
+          RMRgp(j,0:N-1,0) = Ke(e%parent%mat(j),vi(0:N-1),Rgp)
+          RMRgp(j,1:N-1,1) = Ko(e%parent%mat(j),vi(1:N-1),Rgp)
+          dRMRgp(j,0:N-1,0) = dKe(e%parent%mat(j),vi(0:N-1),Rgp)
+          dRMRgp(j,1:N-1,1) = dKo(e%parent%mat(j),vi(1:N-1),Rgp)
+          RMR0(j,0:N-1,0) =  Ke(e%parent%mat(j),vi(0:N-1),e%r)
+          RMR0(j,1:N-1,1) =  Ko(e%parent%mat(j),vi(1:N-1),e%r)
+          AM(j,0:N-1,0) =  ce(e%parent%mat(j),vi(0:N-1),Pgp)
+          AM(j,1:N-1,1) =  se(e%parent%mat(j),vi(0:N-1),Pgp)
+          dAM(j,0:N-1,0) = dce(e%parent%mat(j),vi(0:N-1),Pgp)
+          dAM(j,1:N-1,1) = dse(e%parent%mat(j),vi(0:N-1),Pgp)
+       end do
+    end if
+    aa(1:np,1:N) = e%coeff(lo:hi,n0:n0+N-1)
+    bb(1:np,2:N) = e%coeff(lo:hi,n0+N:n0+2*N-2)
+    dH(1:np,1) = sum(dRMRgp(:,0:N-1,0)/RMR0(:,0:N-1,0)*aa(:,1:N)*AM(:,0:N-1,0), 2) + &
+               & sum(dRMRgp(:,1:N-1,1)/RMR0(:,1:N-1,1)*bb(:,2:N)*AM(:,1:N-1,1), 2)
+    dH(1:np,2) = sum(RMRgp(:,0:N-1,0)/RMR0(:,0:N-1,0)*aa(:,1:N)*dAM(:,0:N-1,0), 2) + &
+               & sum(RMRgp(:,1:N-1,1)/RMR0(:,1:N-1,1)*bb(:,2:N)*dAM(:,1:N-1,1), 2)
+  end function ellipse_deriv
 end module elliptical_elements
 

@@ -8,7 +8,7 @@ module circular_elements
 
   implicit none
   private
-  public :: circle_match, circle_calc
+  public :: circle_match, circle_calc, circle_deriv
 
   interface circle_match
      module procedure circle_match_self, circle_match_other
@@ -18,7 +18,7 @@ contains
   function circle_match_self(c,p) result(r)
     use utility, only : outerprod
     use type_definitions, only : circle, match_result
-    use bessel_functions, only : bK, bI
+    use bessel_functions, only : bK, bI, dbK, dbI
     implicit none
 
     type(circle), intent(in) :: c
@@ -64,7 +64,7 @@ contains
     if (c%ibnd == 0 .or. c%ibnd == +1 .or. c%ibnd == 2) then
        allocate(Bn(0:N-1),dBn(0:N-1))
        kap = kappa(p,c%parent) 
-       call bKD(kap*c%r,N,Bn,dBn)
+       call dbk(kap*c%r,N,Bn,dBn)
        dBn = kap*dBn
 
        r%LHS(lo:hi,1:N) =       spread(dBn(0:N-1)/Bn(0:N-1), 1,M)*cmat ! a_n flux
@@ -114,7 +114,7 @@ contains
   function circle_match_other(c,el,dom,p) result(r)
     use utility, only : outerprod
     use type_definitions, only : circle, domain, matching, match_result
-    use bessel_functions, only : bK, bI
+    use bessel_functions, only : bK, bI, dbk, dbi
     implicit none
 
     type(circle), intent(in) :: c ! source circle
@@ -197,14 +197,14 @@ contains
           if (dom%inclBg(src,targ)) then
              ! use exterior Bessel functions (Kn)
              kap = kappa(p,c%parent) 
-             call bKD(kap*c%G(targ)%Rgm(1:M),N+1,Bn,dBn)
+             call dbk(kap*c%G(targ)%Rgm(1:M),N+1,Bn,dBn)
              dBn = kap*dBn
              Bn0(0:N-1) = bK(kap*c%r,N)
              K = c%parent%K
           else
              ! use interior Bessel functions (In)
              kap = kappa(p,c%element)
-             call bId(kap*c%G(targ)%Rgm(1:M),N+1,Bn,dBn)
+             call dbi(kap*c%G(targ)%Rgm(1:M),N+1,Bn,dBn)
              dBn = kap*dBn
              Bn0(0:N-1) = bI(kap*c%r,N)
              K = c%K
@@ -345,5 +345,57 @@ contains
          &   bb(:,1:N)*spread(sin(vr(0:N-1)*Pgp),1,np) ),dim=2)
   end function circle_calc
 
+  function circle_deriv(p,c,lo,hi,Rgp,Pgp,inside) result(dH)
+    use type_definitions, only : circle
+    use bessel_functions, only : bK, bI, dbk, dbi
+    use kappa_mod
+
+    complex(DP), dimension(:), intent(in) :: p
+    type(circle), intent(in) :: c
+    integer, intent(in) :: lo,hi 
+    real(DP), intent(in) :: Rgp, Pgp
+    logical, intent(in) :: inside
+    complex(DP), dimension(size(p,1),2) :: dH ! dPot_dR, dPot_dTheta
+
+    real(DP), dimension(c%N) :: vr
+    complex(DP), dimension(size(p,1),c%N) :: aa,bb,BRgp,BR0,dBRgp
+    integer :: n0, np, i, N
+    complex(DP), dimension(size(p,1)) :: kap
+
+    N = c%N
+    np = size(p,1)
+    vr = real([(i,i=0,N-1)],DP)
+
+    if (inside) then
+       if (c%match) then
+          n0 = 2*N ! inside of matching circle
+       else
+          n0 = 1   ! inside of specified boundary circle
+       end if
+       kap(1:np) = kappa(p(:),c%element)
+       call dbk(Rgp*kap(:),N,BRgp,dBRgp)
+       dBRgp = spread(kap(1:np),2,N)*dBRgp(:,:)
+       BR0(1:np,0:N-1) = bK(c%r*kap(:),N)
+    else
+       n0 = 1
+       kap(1:np) = kappa(p(:),c%parent)
+       call dbi(Rgp*kap(:),N,BRgp,dBRgp)
+       dBRgp = spread(kap(1:np),2,N)*dBRgp(:,:)
+       BR0(1:np,0:N-1) =  bI(c%r*kap(:),N)
+    end if
+    aa(1:np,1:N) = c%coeff(lo:hi,n0:n0+N-1)
+    bb(1:np,1) = 0.0 ! insert zero to make odd/even same shape
+    bb(1:np,2:N) = c%coeff(lo:hi,n0+N:n0+2*N-2)
+    ! dPot_dR
+    dH(1:np,1) = sum(dBRgp(:,:)/BR0(:,:)* &  
+         & ( aa(:,1:N)*spread(cos(vr(0:N-1)*Pgp),1,np) + &
+         &   bb(:,1:N)*spread(sin(vr(0:N-1)*Pgp),1,np) ),dim=2)
+    ! dPot_dTheta
+    dH(1:np,2) = sum(BRgp(:,:)/BR0(:,:)*spread(vr(0:N-1),1,np)* &  
+         & ( bb(:,1:N)*spread(cos(vr(0:N-1)*Pgp),1,np) - &
+         &   aa(:,1:N)*spread(sin(vr(0:N-1)*Pgp),1,np) ),dim=2)    
+  end function circle_deriv
+
+  
 end module circular_elements
 

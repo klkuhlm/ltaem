@@ -40,7 +40,7 @@ contains
 
     ! determine which inclusion this point is in, and related geometry
     call CalcLocation(Z,e,c,dom,Rgp,Pgp,inside) 
-    H = cmplx(0.0,0.0,DP)
+    H(1:np) = cmplx(0.0,0.0,DP)
     
     !##################################################
     !! calculation point is outside all elements (in background)
@@ -114,7 +114,7 @@ contains
     type(circle), target, dimension(:), intent(in) :: c
     type(ellipse), target, dimension(:), intent(in) :: e
     type(element), intent(in) :: bg
-    complex(DP), dimension(size(p,1),2) :: v
+    complex(DP), dimension(size(p,1),2) :: v, dH
 
     real(DP), dimension(sum(dom%num)) :: Rgp, Pgp
     type(element), pointer :: elin => null()
@@ -127,21 +127,66 @@ contains
 
     ! determine which inclusion this point is in, and related geometry
     call CalcLocation(CalcX,CalcY,inside,Rcp,Pcp,Rwp,Pwp)
-    v = cmplx(0.0,0.0,DP)
+    v(1:np,1:2) = cmplx(0.0,0.0,DP)
 
     !##################################################
     !! calculation point is outside all inclusions
     if (inside == 0) then
+       do j = 1,nc
+          if (dom%InclUp(j) == 0) then  ! circle is also in background
+             dH(1:np,1:2) = circle_deriv(p(:),c(j),lo,hi,Rgp(j),Pgp(j),.false.)
+             v(1:np,1) = v(:,1) + cos(Pgp(j))*dH(:,1) - sin(Pgp(j))*dH(:,2)/Rgp(j) ! x
+             v(1:np,2) = v(:,2) + sin(Pgp(j))*dH(:,1) + cos(Pgp(j))*dH(:,2)/Rgp(j) ! y
+          end if
+       end do
+       
+       do j = 1,ne
+          if (dom%InclUp(nc+j) == 0) then  ! ellipse is also in background
+             H(1:np,1:2) = ellipse_deriv(p(:),e(j),lo,hi,Rgp(nc+j),Pgp(nc+j),.false.)
+          end if
+       end do
+       H(1:np) = H(:)/bg%k ! convert to head
 
-       if (.not. allocated(CIdPot_dAng)) then
-          allocate(CIdPot_dAng(1:np,1:ni,0:N),CIdPot_dR(1:np,1:ni,0:N))
+    !##################################################
+    else
+       if (inside <= nc) then
+          !! calculation point is inside (or on bdry of) a circular element
+          if (c(inside)%calcin) then
+             H(1:np) = H(:) + circle_calc(p(:),c(inside),lo,hi,Rgp(inside),Pgp(inside),.true.)
+          end if
+       else 
+          ! calculation point is inside or on the boundary of an elliptical element
+          if (e(inside-nc)%calcin) then
+             H(1:np) = H(:) + ellipse_calc(p(:),e(inside-nc),lo,hi,Rgp(inside),Pgp(inside),.true.)
+          end if
        end if
+       ! effects of any other elements which may be inside same circle/ellipse too
+       do other = 1,nc
+          ! other element is a circle
+          if (dom%InclIn(inside,other)) then
+             H(1:np) = H(:) + circle_calc(p(:),c(other),lo,hi,Rgp(other),Pgp(other),.false.)
+          end if
+       end do
+       do other = 1,ne
+          ! other element is an ellipse
+          if (dom%InclIn(inside,other+nc)) then
+             H(1:np) = H(:) + ellipse_calc(p(:),e(other),lo,hi,Rgp(nc+other),Pgp(nc+other),.false.)
+          end if
+       end do
+       
+       if (inside <= nc) then
+          elin => c(inside)%element     ! circle 
+       else
+          elin => e(inside-nc)%element  ! ellipse
+       end if
+       
+       ! apply potential source term on inside of element
+       H(1:np) = H(:)*elin%areaQ*elin%Ss*time(p(:),elin%time,.true.)/kappa(p(:),elin)**2
+       H(1:np) = H(:)*elin%K ! convert to head
+    end if
 
-       ! zero out
-       CIdPot_dAng = CZERO; CIdPot_dR = CZERO;  FluxInclBg = CZERO
-
-       do incl = 1,ni
-          if (CIInclUp(incl) == 0) then  ! inclusion is in background
+       do j = 1,nc
+          if (dom%InclUp(j) == 0) then  ! circle is also in background
 
              beskRcp(1:np,0:N+1) = besselk(Rcp(incl)*q(:,0),0,N+2)
              beskR0(1:np,0:N) = besselk(CIr(incl)*q(:,0),0,N+1)
