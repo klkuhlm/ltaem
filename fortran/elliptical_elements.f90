@@ -331,7 +331,7 @@ contains
 
   function ellipse_calc(p,e,lo,hi,Rgp,Pgp,inside) result(H)
     use type_definitions, only : ellipse
-    use bessel_functions, only : Ke,Ko, Ie,Io, ce,se
+    use mathieu_functions, only : Ke,Ko, Ie,Io, ce,se
 
     complex(DP), dimension(:), intent(in) :: p
     type(ellipse), intent(in) :: e
@@ -340,17 +340,17 @@ contains
     logical, intent(in) :: inside
     complex(DP), dimension(size(p,1)) :: H
 
-    integer, dimension(c%N) :: vi
+    integer, dimension(e%N) :: vi
     complex(DP), dimension(size(p,1),e%N) :: aa,bb
-    complex(DP), dimenions(size(p,1),e%N,0:1) :: RMRgp,RMR0,AM
-    integer :: n0, np, i, j
+    complex(DP), dimension(size(p,1),e%N,0:1) :: RMRgp,RMR0,AM
+    integer :: n0, np, i, j, N
 
-    N = c%N
+    N = e%N
     np = size(p,1)
     vi = [(i,i=0,N-1)]
 
     if (inside) then
-       if (c%match) then
+       if (e%match) then
           n0 = 2*N ! inside of matching ellipse
        else
           n0 = 1   ! inside of specified boundary ellipse

@@ -125,7 +125,7 @@ module type_definitions
      type(geom), allocatable :: G(:) ! number of elements
 
      ! coefficients determined through matching
-     type(coeff), allocatable :: coeff(:,:)
+     complex(DP), allocatable :: coeff(:,:)
      
   end type matching
 

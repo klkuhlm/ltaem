@@ -8,7 +8,7 @@ module circular_elements
 
   implicit none
   private
-  public :: circle_match, circle_calc, circle_calc_deriv
+  public :: circle_match, circle_calc
 
   interface circle_match
      module procedure circle_match_self, circle_match_other
@@ -315,7 +315,8 @@ contains
 
     real(DP), dimension(c%N) :: vr
     complex(DP), dimension(size(p,1),c%N) :: aa,bb,BRgp,BR0
-    integer :: n0, np
+    integer :: n0, np, i, N
+    complex(DP), dimension(size(p,1)) :: kap
 
     N = c%N
     np = size(p,1)
@@ -332,7 +333,7 @@ contains
        BR0(1:np,0:N-1) =  bK(c%r*kap,N)
     else
        n0 = 1
-       kap = kappa(p(:),c%parent%element)
+       kap = kappa(p(:),c%parent)
        BRgp(1:np,0:N-1) = bI(Rgp*kap,N)
        BR0(1:np,0:N-1) =  bI(c%r*kap,N)
     end if
