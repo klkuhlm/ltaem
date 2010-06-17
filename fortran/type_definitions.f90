@@ -184,13 +184,11 @@ module type_definitions
      integer :: nx, ny, nt
      real(DP), allocatable :: x(:), y(:), t(:)
 
-     ! containers for time-domain final results
-     real(DP),    allocatable :: h(:,:,:), vx(:,:,:), vy(:,:,:)
+     ! containers for time-domain final results (x,y,t,[i:j])
+     real(DP),    allocatable :: h(:,:,:), v(:,:,:,:)
 
      ! container for Laplace-space intermediate results
-     complex(DP), allocatable :: hp(:), vxp(:), vyp(:)
-     complex(DP), allocatable :: coeff(:,:,:,:) 
-     complex(DP), allocatable :: Gm(:,:,:)
+     complex(DP), allocatable :: hp(:), vp(:,:)
   end type solution
 
   ! particle related parameters (one for each particle)

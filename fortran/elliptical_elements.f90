@@ -8,7 +8,7 @@ module elliptical_elements
 
   implicit none
   private
-  public :: ellipse_match
+  public :: ellipse_match, ellipse_calc
 
   interface ellipse_match
      module procedure ellipse_match_self, ellipse_match_other
