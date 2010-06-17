@@ -97,7 +97,7 @@ contains
     case(0)
        ! put constant area source term effects on RHS
        r%RHS(1:M) = -time(p,e%time,.true.)*e%areaQ*e%Ss/kappa(p,e%parent)**2
-       r%RHS(M+1:2*M) = 0.0 ! area source has no flux effects
+       r%RHS(M+1:2*M) = 0.0_DP ! area source has no flux effects
     case(1)
        ! put specified flux effects on RHS
        r%RHS(1:M) = time(p,e%time,.false.)*e%bdryQ/(2.0*PI*e%r)

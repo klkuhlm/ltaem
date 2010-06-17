@@ -146,7 +146,7 @@ contains
           if (dom%InclUp(nc+j) == 0) then  ! ellipse is also in background
              dH(1:np,1:2) = ellipse_deriv(p(:),e(j),lo,hi,Rgp(nc+j),Pgp(nc+j),.false.)
              ! project onto X and Y
-             hsq = e(j)%f/2.0*(cosh(2.0*Rgp(nc+j)) - cos(2.0*Pgp(nc+j)))
+             hsq = e(j)%f/2.0_DP*(cosh(2.0_DP*Rgp(nc+j)) - cos(2.0_DP*Pgp(nc+j)))
              v(1:np,1) = v(:,1) + (sinh(Rgp(nc+j))*cos(Pgp(nc+j))*dH(:,1) - &
                                 &  cosh(Rgp(nc+j))*sin(Pgp(nc+j))*dH(:,2))/hsq
              v(1:np,2) = v(:,2) + (cosh(Rgp(nc+j))*sin(Pgp(nc+j))*dH(:,1) + &
@@ -168,7 +168,7 @@ contains
           ! calculation point is inside or on the boundary of an elliptical element
           if (e(inside-nc)%calcin) then
              dH(1:np,1:2) = ellipse_deriv(p(:),e(inside-nc),lo,hi,Rgp(inside),Pgp(inside),.true.)
-             hsq = e(inside-nc)%f/2.0*(cosh(2.0*Rgp(inside)) - cos(2.0*Pgp(inside)))
+             hsq = e(inside-nc)%f/2.0_DP*(cosh(2.0_DP*Rgp(inside)) - cos(2.0_DP*Pgp(inside)))
              v(1:np,1) = v(:,1) + (sinh(Rgp(inside))*cos(Pgp(inside))*dH(:,1) - &
                                 &  cosh(Rgp(inside))*sin(Pgp(inside))*dH(:,2))/hsq
              v(1:np,2) = v(:,2) + (cosh(Rgp(inside))*sin(Pgp(inside))*dH(:,1) + &
@@ -188,7 +188,7 @@ contains
           ! other element is an ellipse
           if (dom%InclIn(inside,other+nc)) then
              dH(1:np,1:2) = ellipse_deriv(p(:),e(other),lo,hi,Rgp(nc+other),Pgp(nc+other),.false.)
-             hsq = e(other)%f/2.0*(cosh(2.0*Rgp(nc+other)) - cos(2.0*Pgp(nc+other)))
+             hsq = e(other)%f/2.0_DP*(cosh(2.0_DP*Rgp(nc+other)) - cos(2.0_DP*Pgp(nc+other)))
              v(1:np,1) = v(:,1) + (sinh(Rgp(nc+other))*cos(Pgp(nc+other))*dH(:,1) - &
                                 &  cosh(Rgp(nc+other))*sin(Pgp(nc+other))*dH(:,2))/hsq
              v(1:np,2) = v(:,2) + (cosh(Rgp(nc+other))*sin(Pgp(nc+other))*dH(:,1) + &
@@ -288,7 +288,7 @@ contains
     else
        inside = 0
        Zgp = cmplx(0.0,0.0,DP)
-       Rgp = 0.0; Pgp = 0.0
+       Rgp = 0.0_DP; Pgp = 0.0_DP
     end if
 
     ! move observation points inside ibnd==2 elements
