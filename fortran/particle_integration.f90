@@ -1,4 +1,3 @@
-! $Id: particle_integration.f90,v 1.3 2008/09/07 15:57:10 kris Exp kris $
 module particle_integrate
   implicit none
   private

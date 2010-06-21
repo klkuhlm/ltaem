@@ -10,54 +10,46 @@ program ltaem_main
   use type_definitions, only : domain, element, circle, ellipse, solution, INVLT, particle
   use file_ops, only : readinput, writeresults
   use inverse_Laplace_Transform, only : invlap => deHoog_invlap, pvalues => deHoog_pvalues
-  use solution, only : matrix_solution
-  use calc_routines, only : 
-  use element_geometry, only : distanceAngleCalcs
+  use solution_mod, only : matrix_solution
+  use calc_routines, only : headCalc, velCalc
+  use geometry, only : distanceAngleCalcs
   use ellipse_mathieu_init, only : ellipse_init
-
   implicit none
 
   ! structs that organize variables
-  type(domain) :: dom
+  type(domain)  :: dom
   type(element) :: bg
-  type(circle), allocatable :: c(:)
+  type(circle),  allocatable :: c(:)
   type(ellipse), allocatable :: e(:)
-
   type(solution) :: sol
-  type(INVLT) :: lap
-  type(particle), allocatable :: p(:)
+  type(particle), allocatable :: part(:)
   
-  integer :: i, j, part, tnp
-  integer, dimension(4) :: ic
-  integer, allocatable :: parnumdt(:)
-
+  integer :: i, j, tnp, idx, nc, ne, crow, ccol
   real(DP), allocatable :: logt(:), tee(:)
   integer, allocatable :: nt(:), run(:)
   complex(DP), allocatable :: s(:,:)
-  integer :: ilogt, iminlogt, imaxlogt, lot, hit, lop, hip, ierr, lo, np
-  character(20) :: tmpfname
-
-  real(DP), parameter :: MOST = 0.99_DP  ! 'most' of a log-cycle
-
-!%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-!%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  integer :: ilogt, iminlogt, imaxlogt, lot, hit, lop, hip, ierr, lo
+  character(6) :: elType
+  complex(DP) :: calcZ
 
   ! either specify here or ask for at prompt
   sol%infname = 'input'
 
   ! read in data, initialize variables, allocate major structs
-  call readInput(sol,lap,dom,bg,c,e,p)
+  call readInput(sol,dom,bg,c,e,part)
+  nc = size(c,1)
+  ne = size(e,1)
 
   ! nudge times on 'edge' of logcycle down a tiny bit to increase accuracy
   where (abs(nint(sol%t(:)) - sol%t(:)) < epsilon(sol%t(:)))
      sol%t(:) = sol%t(:) - epsilon(sol%t(:))
   end where
-
-  allocate(run(1:2*lap%m+1))
-  forall(i=0:2*lap%m) run(i+1)=i
+  
+  allocate(run(1:2*sol%m+1))
+  forall(i=0:2*sol%m) run(i+1)=i
 
   ! independent of most choices
-  call DistanceAngleCalcs()
+  call DistanceAngleCalcs(c,e,bg,dom,sol)
 
 111 continue ! come back here if error opening restart file
 
@@ -70,20 +62,22 @@ program ltaem_main
         
      !^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
      else   ! contour maps / hydrographs
-        allocate(logt(1:sol%numt))
+        allocate(logt(1:sol%nt))
 
         lo = 1
         logt(:) = log10(sol%t(:))
         iminlogt =   floor(minval(logt(:)))
         imaxlogt = ceiling(maxval(logt(:)))
 
-        allocate(s(2*lap%m+1,iminlogt:imaxlogt-1), nt(iminlogt:imaxlogt-1), &
+        allocate(s(2*sol%m+1,iminlogt:imaxlogt-1), nt(iminlogt:imaxlogt-1), &
              & tee(iminlogt:imaxlogt-1))
 
         do ilogt = iminlogt, imaxlogt-1
+           ! number of times falling in this logcycle
            nt(ilogt) = count(logt >= real(ilogt,DP) .and. logt < real(ilogt+1,DP))
-           tee(ilogt) = maxval(sol%t(lo:lo+nt(ilogt)-1))*2.0
-           s(:,ilogt) = pvalues(t(ilogt),lap)
+           ! T=2*max time in this logcycle
+           tee(ilogt) = maxval(sol%t(lo:lo+nt(ilogt)-1))*2.0 
+           s(:,ilogt) = pvalues(tee(ilogt),sol%INVLT)
            lo = lo + nt(ilogt)
         end do
         deallocate(logt,run)
@@ -95,40 +89,55 @@ program ltaem_main
         ! calculate coefficients for each value of Laplace parameter
         ! ** common between particle tracking and contours/hydrographs **
 
-        sol%totalnP = product(shape(s))
+        sol%totalnP = product(shape(s)) ! total number of Laplace parameters across all times
+        tnp = sol%totalnP
 
+        ! initialize Mathieu function matrices
+        if (ne > 0) then
+           write(*,'(A)') 'Computing Mathieu coefficients ...'
+           call ellipse_init(e,bg,reshape(s,[tnP]))
+        end if
+
+        idx = 0
+        
         do ilogt = iminlogt,imaxlogt-1
-           write(*,'(A,I3)') 'log t=',ilogt
-
-           do j = 1,2*lap%m+1
-              if (nt(ilogt) > 0) then
-                 write(*,'(I4,1X,2(A,ES10.3),A)') j, '(',real(s(j,ilogt)),',',aimag(s(j,ilogt)),')'
-
-                 if (j > 1) then  ! copy previous as initial guess
-                    coeff(j,ilogt,0:4*CIn+1,1:CInum) = coeff(j-1,ilogt,0:4*CIn+1,1:CInum)
-                 end if
-                 call matchIter(Gm, coeff(j,ilogt,0:4*CIn+1,1:CInum), s(j,ilogt),CImatchTol)
-              end if
-           end do
+           write(*,'(A,I0)') 'log t=',ilogt
+           if (nt(ilogt) > 0) then
+              do j = 1,2*sol%m+1
+                 idx = idx+ 1
+                 write(*,'(I0,1X,2(A,ES10.3),A)') j, '(',real(s(j,ilogt)),',',aimag(s(j,ilogt)),')'
+                 call matrix_solution(c,e,dom,sol,s(j,ilogt),idx)
+              end do
+           end if
         end do
 
         !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        ! save coefficient matrix to file
+        ! save coefficient matrices to file
         open(UNIT=77, FILE=sol%coeffFName, STATUS='REPLACE', ACTION='WRITE', IOSTAT=ierr)
         if (ierr /= 0) then
            print *, 'error writing intermediate coefficient matrix to file',sol%coefffname
            stop 000
         end if
-        write(77,*) iminlogt,imaxlogt,nt,s,tee
-        write(77,*) coeff
+        write(77,*) iminlogt,imaxlogt,nc,ne
+        write(77,*) nt
+        write(77,*) s
+        write(77,*) tee
+        do i = 1,nc
+           write(77,*) 'CIRCLE',i,shape(c(i)%coeff)
+           write(77,*) c(i)%coeff
+        end do
+        do i = 1,ne
+           write(77,*) 'ELLIPS',i,shape(e(i)%coeff)
+           write(77,*) e(i)%coeff
+        end do
         close(77)
-        write(*,'(A)') '<matching finished>'
+        write(*,'(A)') '  <matching finished>  '
      end if
 
   else ! do not re-calculate coefficients (this only makes sense if num matching elements > 0)
 
      if(count(e(:)%match) + count(c(:)%match) > 0) then
-        open(UNIT=77, FILE=BGCoeffFName, STATUS='OLD', ACTION='READ', IOSTAT=ierr)
+        open(UNIT=77, FILE=sol%coeffFName, STATUS='OLD', ACTION='READ', IOSTAT=ierr)
         if (ierr /= 0) then
            ! go back and recalc if no restart file
            write(*,'(A)') 'error opening restart file, recalculating...'
@@ -136,40 +145,61 @@ program ltaem_main
            goto 111
         end if
 
-        read(77,*) iminlogt,imaxlogt,nt,s,tee
-        allocate(coeff(2*lap%m+1, iminlogt:imaxlogt-1, 0:4*CIn+1, CInum), &
-             & s(2*lap%m+1,iminlogt:imaxlogt-1), nt(iminlogt:imaxlogt-1), &
+        read(77,*) iminlogt,imaxlogt,nc,ne ! scalars
+        allocate(s(2*sol%m+1,iminlogt:imaxlogt-1), nt(iminlogt:imaxlogt-1), &
              & tee(iminlogt:imaxlogt-1))
+        read(77,*) nt
+        read(77,*) s
+        sol%totalnP = product(shape(s))
+        tnp = sol%totalnP
+        read(77,*) tee
+        do i = 1,nc
+           read(77,*) elType,j,crow,ccol
+           if (elType == 'CIRCLE' .and. i == j) then
+              allocate(c(i)%coeff(crow,ccol))
+           else
+              stop 'error reading in matching results'
+           end if
+           read(777,*) c(i)%coeff
+        end do
+        do i = 1,ne
+           read(77,*) elType,j,crow,ccol
+           if (elType == 'ELLIPS' .and. i == j) then
+              allocate(e(i)%coeff(crow,ccol))
+           else
+              stop 'error reading in matching results'
+           end if
+           read(777,*) e(i)%coeff
+        end do
+
+        ! re-initialize Mathieu function matrices
+        if (ne > 0) then
+           write(*,'(A)') 'computing Mathieu coefficients ...'
+           call ellipse_init(e,bg,reshape(s,[tnp]))
+        end if
 
         ! read needed data calculated in previous run from file
-        rewind(77)
-        read(77)  iminlogt,imaxlogt,coeff,nt,s,tee,WLstorCoeff
-        close(77)
         write(*,'(A)') 'matching results read from file'
      end if
 
   end if ! re-calculate coefficients
 
   !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-  elseif(sol%contour) then ! contour output (x,y locations outerproduct of x,y vectors)
+  if(sol%contour) then ! contour output (x,y locations outerproduct of x,y vectors)
 
      write(*,'(A)') 'compute solution for plotting contours'
-     allocate(sol%h(sol%nx,sol%ny,sol%nt), sol%hp(size(s)), &
-          &   sol%vx(sol%nx,sol%ny,sol%nt), sol%vxp(size(s)), &
-          &   sol%vy(sol%nx,sol%ny,sol%nt), sol%vyp(size(s)))
-
-     ic = shape(coeff)  !! integer vector of matrix size in each dimension
-     tnp = ic(1)*ic(2)  !! total number of Laplace parameters, over all times
+     allocate(sol%h(sol%nx,sol%ny,sol%nt),   sol%hp(tnP), &
+          &   sol%v(sol%nx,sol%ny,sol%nt,2), sol%vp(tnP,2))
 
      do j = 1,sol%nx
         write (*,'(A,ES14.6E1)') 'x: ',sol%x(j)
         do i = 1,sol%ny
 
+           calcZ = cmplx(sol%x(j),sol%y(i),DP)
+
            !! compute f(p) for all values of p -- not just one log cycle of time -- at this location 
-           sol%hp(1:tnp) = headCalc(reshape(s,[tnp]),sol%x(j),sol%y(i),reshape(coeff,[tnp,ic(3:4)]))
-           sol%vxp(1:tnp) = velxCalc(reshape(s,[tnp]),sol%x(j),sol%y(i),reshape(coeff,[tnp,ic(3:4)]))
-           ! velx and vely share most of the calculations (velx _must_ be called first)
-           sol%vyp(1:tnp) = velyCalc(reshape(s,[tnp]),sol%x(j),sol%y(i))
+           sol%hp(:) =  headCalc(calcZ,reshape(s,[tnp]),1,tnp,dom,c,e,bg)
+           sol%vp(:,:) = velCalc(calcZ,reshape(s,[tnp]),1,tnp,dom,c,e,bg)
 
            !! invert solutions one log-cycle of t at a time
            do ilogt = iminlogt,imaxlogt-1
@@ -179,12 +209,11 @@ program ltaem_main
               hit = sum(nt(iminlogt:ilogt))
               
               !! group of Laplace parameters corresponding to this logcycle
-              lop = (ilogt - iminlogt)*ic(1) + 1
-              hip = lop + ic(1) - 1
+              lop = (ilogt - iminlogt)*size(s,1) + 1
+              hip = lop + size(s,1) - 1
 
-              sol%h(j,i,lot:hit) = invlap(sol%t(lot:hit),tee(ilogt),sol%hp(lop:hip),lap)
-              sol%vx(j,i,lot:hit) = invlap(sol%t(lot:hit),tee(ilogt),sol%vxp(lop:hip),lap)
-              sol%vy(j,i,lot:hit) = invlap(sol%t(lot:hit),tee(ilogt),sol%vyp(lop:hip),lap)
+              sol%h(j,i,lot:hit) =   invlap(sol%t(lot:hit),tee(ilogt),sol%hp(lop:hip),sol%INVLT)
+              sol%v(j,i,lot:hit,:) = invlap(sol%t(lot:hit),tee(ilogt),sol%vp(lop:hip,:),sol%INVLT)
            end do
         end do
      end do
@@ -193,36 +222,26 @@ program ltaem_main
 
      write(*,'(A)') 'compute solution for plotting hydrograph'
 
-     allocate(sol%h(sol%nx,1,sol%nt), sol%hp(size(s)), &
-          &   sol%vx(sol%nx,1,sol%nt), sol%vxp(size(s)), &
-          &   sol%vy(sol%nx,1,sol%nt), sol%vyp(size(s)))
+     allocate(sol%h(sol%nx,1,sol%nt), sol%hp(tnp), &
+          &   sol%v(sol%nx,1,sol%nt,2), sol%vp(tnp,2))
      
      do i = 1,sol%nx
         write(*,'(A,2(1X,ES14.7E1))') 'location:',sol%x(i),sol%y(i)
 
-        if (allocated(coeff)) then
-           ic = shape(coeff)
-           tnp = ic(1)*ic(2)   
-        else
-           tnp = size(s)
-           ic(1:4) = [0,0,0,0]
-        end if
-
-        sol%hp(1:tnp) = headCalc(reshape(s,[tnp]),sol%x(i),sol%y(i),reshape(coeff,[tnp,ic(3:4)]))
-        sol%vxp(1:tnp) = velxCalc(reshape(s,[tnp]),sol%x(i),sol%y(i),reshape(coeff,[tnp,ic(3:4)]))
-        sol%vyp(1:tnp) = velyCalc(reshape(s,[tnp]),sol%x(i),sol%y(i))
+        calcZ = cmplx(sol%x(j),sol%y(i),DP)
+        sol%hp(1:tnp) =  headCalc(calcZ,reshape(s,[tnp]),1,tnp,dom,c,e,bg)
+        sol%vp(1:tnp,:) = velCalc(calcZ,reshape(s,[tnp]),1,tnp,dom,c,e,bg)
         
         do ilogt = iminlogt,imaxlogt-1
            lot = 1 + sum(nt(iminlogt:ilogt-1))
            hit = sum(nt(iminlogt:ilogt))
 
-           lop = (ilogt - iminlogt)*ic(1) + 1
-           hip = lop + ic(1) - 1
+           lop = (ilogt - iminlogt)*size(s,1) + 1
+           hip = lop + size(s,1) - 1
 
            ! don't need second dimension of results matricies
-           sol%h(i,1,lot:hit) = invlap(sol%t(lot:hit),tee(ilogt),sol%hp(lop:hip),lap)
-           sol%vx(i,1,lot:hit) = invlap(sol%t(lot:hit),tee(ilogt),sol%vxp(lop:hip),lap)
-           sol%vy(i,1,lot:hit) = invlap(sol%t(lot:hit),tee(ilogt),sol%vyp(lop:hip),lap)
+           sol%h(i,1,lot:hit) =   invlap(sol%t(lot:hit),tee(ilogt),sol%hp(lop:hip),sol%INVLT)
+           sol%v(i,1,lot:hit,:) = invlap(sol%t(lot:hit),tee(ilogt),sol%vp(lop:hip,:),sol%INVLT)
         end do
      end do
   end if
@@ -241,7 +260,7 @@ program ltaem_main
   end if
 
   ! call subroutine to write output to file
-  call writeResults(head,velx,vely,BGx,BGy,BGt,BGoutput,BGoutfname,Presult)
+  call writeResults(sol,part)
 
 end program ltaem_main
 

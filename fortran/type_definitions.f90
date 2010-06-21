@@ -16,7 +16,6 @@ module type_definitions
      ! matrix indicating if an element is inside or in the background of
      ! a current element
      logical, allocatable :: InclIn(:,:), InclBg(:,:)
-
   end type domain
   
   type, public :: time
@@ -75,7 +74,6 @@ module type_definitions
 
      ! structure containing matrices of mathieu function parameters
      type(mathieu), allocatable :: mat(:)
-
   end type element
     
   type :: geom
@@ -126,7 +124,6 @@ module type_definitions
 
      ! coefficients determined through matching
      complex(DP), allocatable :: coeff(:,:)
-     
   end type matching
 
   type, extends(matching) :: circle
@@ -134,7 +131,6 @@ module type_definitions
      ! well is special case of circle
 
      ! no special circle-only parameters
-     
   end type circle
 
   type, extends(matching) :: ellipse
@@ -143,7 +139,6 @@ module type_definitions
 
      ! size of MF infinite matrix
      integer :: ms
-
   end type ellipse
 
   type :: INVLT
@@ -221,7 +216,5 @@ module type_definitions
 
      ! number of time steps actuall used (some algorithms are adaptive)
      integer :: numt
-
   end type particle
-
 end module type_definitions

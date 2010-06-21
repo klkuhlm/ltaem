@@ -2,7 +2,7 @@
 ! element sub-matrix routines, and constructs the larger
 ! matrix used to compute the solution via LAPACK.
 
-module solution
+module solution_mod
 
 contains
   subroutine matrix_solution(c,e,dom,sol,p,idx)
@@ -128,4 +128,4 @@ contains
     deallocate(A,b,row,col)
 
   end subroutine matrix_solution
-end module solution
+end module solution_mod

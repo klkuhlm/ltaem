@@ -12,7 +12,7 @@ contains
   ! this routine read the main input file, and allocates the main 
   ! data structures used to store data.
   subroutine readInput(sol,dom,bg,c,e,p)
-    use type_definitions
+    use type_definitions, only : solution, particle, domain, element, circle, ellipse
     use constants, only : DP, lenFN
     implicit none
 
@@ -350,14 +350,13 @@ contains
   end subroutine readInput
 
   !******************************************************
-  subroutine writeResults(flag,s,p)
+  subroutine writeResults(s,p)
     use constants, only : DP
-    use type_definitions, only : solution,particle
+    use type_definitions, only : solution, particle
     implicit none
 
     type(solution), intent(in) :: s
     type(particle), dimension(:), intent(in) :: p
-    integer, intent(in) :: flag
 
     character(4), dimension(2) :: chint
     ! adjust the formats of time, location, and results here
@@ -366,7 +365,7 @@ contains
     
     integer :: i, j, k, nt, nx, ny
 
-    select case (flag)
+    select case (s%output)
     case (1) 
        ! ** gnuplot contour map friendly output **
        ! print results as x,y,z triplets with the given times separated by double blank lines
@@ -384,8 +383,7 @@ contains
           & '#      X          Y              head'//&
           & '               velx                vely'
           write(20,'(2('//xfmt//',1X),3('//hfmt//',1X))') &
-               & ((s%x(k), s%y(j), s%h(k,j,i), s%vx(k,j,i), s%vy(k,j,i), &
-               & k=1,nx), j=1,ny)
+               & ((s%x(k), s%y(j), s%h(k,j,i), s%v(k,j,i,1:2), k=1,nx), j=1,ny)
           write(20,'(//)')
        end do       
        write(20,'(A)') '# EOF'
@@ -434,7 +432,7 @@ contains
           open(UNIT=20, FILE=trim(s%outfname)//'_velx_'//chint(2)//'.dat', &
                & STATUS='REPLACE', ACTION='WRITE')
           do i = 1, ny
-             write (20,'('//chint(1)//'(1x,'//hfmt//'))') (s%vx(j,i,k), j=1,nx)
+             write (20,'('//chint(1)//'(1x,'//hfmt//'))') (s%v(j,i,k,1), j=1,nx)
           end do
           close(20)
 
@@ -442,7 +440,7 @@ contains
           open(UNIT=20, FILE=trim(s%outfname)//'_vely_'//chint(2)//'.dat', &
                & STATUS='REPLACE', ACTION='WRITE')
           do i = 1, ny
-             write (20,'('//chint(1)//'(1x,'//hfmt//'))') (s%vy(j,i,k), j=1,nx)
+             write (20,'('//chint(1)//'(1x,'//hfmt//'))') (s%v(j,i,k,2), j=1,nx)
           end do
           close(20)
        end do
@@ -472,7 +470,7 @@ contains
                &                  velx                vely'
           do k = 1, nt
              write (20,'(1X,'//tfmt//',3(1X,'//hfmt//'))') &
-                  & s%t(k),s%h(i,1,k),s%vx(i,1,k),s%vy(i,1,k)
+                  & s%t(k),s%h(i,1,k),s%v(i,1,k,1:2)
           end do
           write (20,'(//)')
        end do       
@@ -498,7 +496,7 @@ contains
                   &                  velx                vely'
              do k = 1, nt
                 write (20,'(1X,'//tfmt//',3(1X,'//hfmt//'))') &
-                     & s%t(k),s%h(j,i,k),s%vx(j,i,k),s%vy(j,i,k)
+                     & s%t(k),s%h(j,i,k),s%v(j,i,k,1:2)
              end do
              write (20,'(//)')
           end do
@@ -591,7 +589,7 @@ contains
        write(*,'(A)') '***********************************************************'
 
     case default
-       write(*,'(A,I0)')  'invalid output code ', flag
+       write(*,'(A,I0)')  'invalid output code ',s%output
        stop 
     end select
   end subroutine writeResults  

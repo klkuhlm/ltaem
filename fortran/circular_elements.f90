@@ -64,7 +64,7 @@ contains
     if (c%ibnd == 0 .or. c%ibnd == +1 .or. c%ibnd == 2) then
        allocate(Bn(0:N-1),dBn(0:N-1))
        kap = kappa(p,c%parent) 
-       call dbk(kap*c%r,N,Bn,dBn)
+       call dBK(kap*c%r,N,Bn,dBn)
        dBn = kap*dBn
 
        r%LHS(lo:hi,1:N) =       spread(dBn(0:N-1)/Bn(0:N-1), 1,M)*cmat ! a_n flux
@@ -72,7 +72,7 @@ contains
        
        if (c%ibnd == 0 .or. (c%ibnd == 1 .and. c%calcin)) then
           kap = kappa(p,c%element)
-          call bID(kap*c%r,N,Bn,dBn)
+          call dBI(kap*c%r,N,Bn,dBn)
           dBn = kap*dBn
           
           r%LHS(lo:hi,2*N:3*N-1) = spread(dBn(0:N-1)/Bn(0:N-1), 1,M)*cmat ! c_n flux
@@ -197,14 +197,14 @@ contains
           if (dom%inclBg(src,targ)) then
              ! use exterior Bessel functions (Kn)
              kap = kappa(p,c%parent) 
-             call dbk(kap*c%G(targ)%Rgm(1:M),N+1,Bn,dBn)
+             call dBK(kap*c%G(targ)%Rgm(1:M),N+1,Bn,dBn)
              dBn = kap*dBn
              Bn0(0:N-1) = bK(kap*c%r,N)
              K = c%parent%K
           else
              ! use interior Bessel functions (In)
              kap = kappa(p,c%element)
-             call dbi(kap*c%G(targ)%Rgm(1:M),N+1,Bn,dBn)
+             call dBI(kap*c%G(targ)%Rgm(1:M),N+1,Bn,dBn)
              dBn = kap*dBn
              Bn0(0:N-1) = bI(kap*c%r,N)
              K = c%K
@@ -373,13 +373,13 @@ contains
           n0 = 1   ! inside of specified boundary circle
        end if
        kap(1:np) = kappa(p(:),c%element)
-       call dbk(Rgp*kap(:),N,BRgp,dBRgp)
+       call dBK(Rgp*kap(:),N,BRgp,dBRgp)
        dBRgp = spread(kap(1:np),2,N)*dBRgp(:,:)
        BR0(1:np,0:N-1) = bK(c%r*kap(:),N)
     else
        n0 = 1
        kap(1:np) = kappa(p(:),c%parent)
-       call dbi(Rgp*kap(:),N,BRgp,dBRgp)
+       call dBI(Rgp*kap(:),N,BRgp,dBRgp)
        dBRgp = spread(kap(1:np),2,N)*dBRgp(:,:)
        BR0(1:np,0:N-1) =  bI(c%r*kap(:),N)
     end if

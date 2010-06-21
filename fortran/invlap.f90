@@ -10,7 +10,7 @@ module inverse_Laplace_Transform
   public :: deHoog_invlap, deHoog_pvalues
   
   interface deHoog_invlap
-     module procedure deHoog_invlap_vect, deHoog_invlap_scal
+     module procedure deHoog_invlap_vect, deHoog_invlap_scal, deHoog_invlap_mat
   end interface
   
 contains
@@ -102,9 +102,7 @@ contains
     else  !! entire f(p) vector is zero
        ft = 0.0
        write(*,*) 'f(t) not computed at t=',t, ' because max|fp|=', maxval(abs(fp))
-
     end if
-
   end function deHoog_invLap_vect
 
   function deHoog_invLap_scal(t,tee,fp,lap) result(ft)
@@ -116,8 +114,20 @@ contains
     real(DP) :: ft ! output
     
     ft = sum(deHoog_invLap_vect([t],tee,fp,lap))
-
   end function deHoog_invLap_scal
+
+  function deHoog_invLap_mat(t,tee,fp,lap) result(ft)
+    use constants, only : DP
+    use type_definitions, only : INVLT
+    real(DP), dimension(:), intent(in) :: t
+    real(DP), intent(in) ::  tee
+    complex(DP), intent(in), dimension(:,:) :: fp
+    type(INVLT), intent(in) :: lap
+    real(DP), dimension(size(fp,1),size(fp,2)) :: ft ! output
+    
+    ft = reshape(deHoog_invLap_vect(t,tee,reshape(fp,[product(shape(fp))]),lap), &
+         & [size(fp,1),size(fp,2)])
+  end function deHoog_invLap_mat
   
   function deHoog_pvalues(tee,lap) result(p)
     use constants, only : DP, PI
@@ -130,7 +140,5 @@ contains
     forall (i=0:2*lap%M)
        p(i+1) = cmplx(lap%alpha-log(lap%tol)/(2.0_DP*tee), PI*i/tee, DP)
     end forall
-    
   end function deHoog_pvalues
-
 end module inverse_Laplace_Transform
