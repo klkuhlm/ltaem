@@ -25,7 +25,7 @@ contains
 
     character(4) :: chint
     character(20), dimension(3) :: fmt
-    character(45) :: lfmt
+    character(46) :: lfmt = '(I0,1X,    (ES12.5,1X),A,    (ES12.5,1X),A,I0)'
     character(lenFN+5) :: echofname
     integer :: ierr,j,ntot,nC,nE  ! #elements, #circles, #ellipses
 
@@ -115,9 +115,9 @@ contains
              ! piecewise-constant time behavior 
              allocate(c(j)%ATPar(-2*c(j)%AreaTime+1))
              read(15,*) c(j)%ATPar(:)
-             lfmt = '(I0,1X,   (ES12.5,1X),A,   (ES12.5,1X),A,I0) '
-             write(lfmt(8:10),'(I3.3)')  size(c(j)%ATPar(:-c(j)%AreaTime+1),1)
-             write(lfmt(25:27),'(I3.3)') size(c(j)%ATPar(-c(j)%AreaTime+2:),1)
+             lfmt = '(I0,1X,    (ES12.5,1X),A,    (ES12.5,1X),A,I0)'
+             write(lfmt(8:11),'(I4.4)')  size(c(j)%ATPar(:-c(j)%AreaTime+1),1)
+             write(lfmt(26:29),'(I4.4)') size(c(j)%ATPar(-c(j)%AreaTime+2:),1)
              write(16,lfmt) c(j)%AreaTime,c(j)%ATPar(:-c(j)%AreaTime+1),'| ',&
                   & c(j)%ATPar(-c(j)%AreaTime+2:), &
                   &'  ||    Area ti, tf | strength for circle ',j
@@ -133,9 +133,8 @@ contains
           else
              allocate(c(j)%BTPar(-2*c(j)%BdryTime+1))
              read(15,*) c(j)%BTPar(:)
-             lfmt = '(I0,1X,   (ES12.5,1X),A,   (ES12.5,1X),A,I0) '
-             write(lfmt(8:10),'(I3.3)')  size(c(j)%BTPar(:-c(j)%BdryTime+1),1)
-             write(lfmt(25:27),'(I3.3)') size(c(j)%BTPar(-c(j)%BdryTime+2:),1)
+             write(lfmt(8:11),'(I4.4)')  size(c(j)%BTPar(:-c(j)%BdryTime+1),1)
+             write(lfmt(26:29),'(I4.4)') size(c(j)%BTPar(-c(j)%BdryTime+2:),1)
              write(16,lfmt) c(j)%BdryTime,c(j)%BTPar(:-c(j)%BdryTime+1),' | ',&
                   & c(j)%BTPar(-c(j)%BdryTime+2:), &
                   &'  ||    Bdry ti, tf | strength for circle ',j
@@ -219,9 +218,8 @@ contains
           else
              allocate(e(j)%ATPar(-2*e(j)%AreaTime+1))
              read(15,*) e(j)%ATPar(:)
-             lfmt = '(I0,1X,   (ES12.5,1X),A,   (ES12.5,1X),A,I0) '
-             write(lfmt(8:10),'(I3.3)')  size(e(j)%ATPar(:-e(j)%AreaTime+1),1)
-             write(lfmt(25:27),'(I3.3)') size(e(j)%ATPar(-e(j)%AreaTime+2:),1)
+             write(lfmt(8:11),'(I3.3)')  size(e(j)%ATPar(:-e(j)%AreaTime+1),1)
+             write(lfmt(26:29),'(I3.3)') size(e(j)%ATPar(-e(j)%AreaTime+2:),1)
              write(16,lfmt) e(j)%AreaTime,e(j)%ATPar(:-e(j)%AreaTime+1),' | ',&
                   & e(j)%ATPar(-e(j)%AreaTime+2:), &
                   &'  ||    Area ti, tf | strength for ellipse ',j
@@ -237,9 +235,8 @@ contains
           else
              allocate(e(j)%BTPar(-2*e(j)%BdryTime+1))
              read(15,*) e(j)%BTPar(:)
-             lfmt = '(I0,1X,   (ES12.5,1X),A,   (ES12.5,1X),A,I0) '
-             write(lfmt(8:10),'(I3.3)')  size(e(j)%BTPar(:-e(j)%BdryTime+1),1)
-             write(lfmt(25:27),'(I3.3)') size(e(j)%BTPar(-e(j)%BdryTime+2:),1)
+             write(lfmt(8:11),'(I3.3)')  size(e(j)%BTPar(:-e(j)%BdryTime+1),1)
+             write(lfmt(26:29),'(I3.3)') size(e(j)%BTPar(-e(j)%BdryTime+2:),1)
              write(16,lfmt) e(j)%BdryTime,e(j)%BTPar(:-e(j)%BdryTime+1),' | ',&
                   & e(j)%BTPar(-e(j)%BdryTime+2:), &
                   &'  ||    Bdry ti, tf | strength for ellipse ',j
@@ -312,9 +309,9 @@ contains
     e(:)%T = e(:)%K*e(:)%b
 
     write(chint,'(I4.4)') dom%num(1)
-    fmt(2) = '('//chint//'(ES13.5,1X),A) ' ! circles
+    fmt(2) = '('//chint//'(ES11.5,1X),A) ' ! circles
     write(chint,'(I4.4)') dom%num(2)
-    fmt(3) = '('//chint//'(ES13.5,1X),A) ' ! ellipses
+    fmt(3) = '('//chint//'(ES11.5,1X),A) ' ! ellipses
 
     if (dom%num(1) > 0) then
        write(16,fmt(2)) c(:)%alpha,'  ||    circle hydraulic diffusivity'
@@ -324,8 +321,8 @@ contains
        write(16,fmt(3)) e(:)%alpha,'  ||    ellipse hydraulic diffusivity'
        write(16,fmt(3)) e(:)%T,'  ||    ellipse transmissivity'
     end if
-    write(16,'(ES13.5,A)') bg%alpha,'  ||    background hydraulic diffusivity'
-    write(16,'(ES13.5,A)') bg%T,'  ||    background hydraulic diffusivity'
+    write(16,'(ES11.5,A)') bg%alpha,'  ||    background hydraulic diffusivity'
+    write(16,'(ES11.5,A)') bg%T,'  ||    background hydraulic diffusivity'
 
     ! re-calculation parameter
     read(15,*) sol%calc
