@@ -32,8 +32,13 @@ program ltaem_main
   character(6) :: elType
   complex(DP) :: calcZ
 
-  ! either specify here or ask for at prompt
-  sol%infname = 'input'
+  intrinsic :: get_command_argument
+
+  call get_command_argument(1,sol%inFName)
+  if (len_trim(sol%infname) == 0) then
+     write(*,'(A)') 'no command-line filename supplied, using default input file: input.in'
+     sol%infname = 'input.in'
+  end if
 
   ! read in data, initialize variables, allocate major structs
   call readInput(sol,dom,bg,c,e,part)

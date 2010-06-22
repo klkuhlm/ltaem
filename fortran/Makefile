@@ -52,7 +52,7 @@ cbessel.o : ./external/cbessel.f90
 
 # need to use pre-processor on this file
 mathieu_functions2.o : ./mathieu_functions2.f90
-	$(F90) -c -x  $(FLAGS) -o $@ $<
+	$(F90) -c -cpp  $(FLAGS) -o $@ $<
 
 %.o: %.f
 	$(F90) -c $(FLAGS) -o $@ $<
