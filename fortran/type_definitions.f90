@@ -54,7 +54,11 @@ module type_definitions
      real(DP) :: por, k, Ss, b, alpha, T
 
      ! leaky-related (adjoining aquitard/aquifer parameters)
-     integer :: leakFlag
+     ! 0= no leakage
+     ! 1= case I, no-drawdown condition at top of aquifer
+     ! 2= case II, no-flow condition at top of aquifer
+     ! 3= aquitard thickness -> infinity (no bc)
+     integer :: leakFlag  
      real(DP) :: aquitardK, aquitardSs, aquitardb
 
      ! unconfined-related (flag, specific yield, and vertical K)
