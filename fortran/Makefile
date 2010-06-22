@@ -2,7 +2,6 @@
 EXTERNAL=cbessel.o
 KKLOW=utility.o bessel_functions.o mathieu_functions2.o
 
-# 
 ################################
 LAPACKLIB=/Users/klkuhlm/src/lapack-3.2.1/lapack_MAC.a
 BLASLIB=/Users/klkuhlm/src/GotoBLAS2/libgoto2.a -lpthread
@@ -12,14 +11,11 @@ BLASLIB=/Users/klkuhlm/src/GotoBLAS2/libgoto2.a -lpthread
 #BLASLIB=/home/kris/src/lapack-3.1.1/BLAS/SRC/blas_GFORTRAN4.4.a
 #LAPACKLIB=/home/kris/src/lapack-3.1.1/lapack_GFORTRAN4.4.a
 
-
 # main-program related
 ####################################
-## matching.o not used
 KKHIGH=kappa.o time.o ltaem_io.o invlap.o ellipse_mathieu_init.o circular_elements.o elliptical_elements.o calc_routines.o element_geometry.o solution.o
 MAIN=ltaem_main.o
 TARG=ltaem
-
 OBJS=$(EXTERNAL) constants.o $(KKLOW) type_definitions.o $(KKHIGH)
 
 ########## ifort (work) related ##########
@@ -29,17 +25,17 @@ OBJS=$(EXTERNAL) constants.o $(KKLOW) type_definitions.o $(KKHIGH)
 #LINKFLAG=-O3
 ###################################
 
-#### gfortran 4.4 (system version) ################# 
-F90=gfortran
-DFLAGS=-O0 -fbounds-check -frange-check -Wall -Wextra 
-PFLAGS=-O3 -march=native
+#### gfortran (system version) ################# 
+##F90=gfortran
+##DFLAGS=-O0 -fbounds-check -frange-check -Wall -Wextra 
+##PFLAGS=-O3 -march=native
 ###################################
 
 #### gfortran 4.6 (trunk) #################
-##F90=gfortran-4.6
-##DFLAGS=-Wall -Wextra -g -O0 -fbounds-check -frange-check 
-##PFLAGS=-O3 -march=native 
-##LINKFLAG=
+F90=gfortran-4.6
+DFLAGS=-Wall -Wextra -g -O0 -fbounds-check -frange-check 
+PFLAGS=-O3 -march=native 
+LINKFLAG=
 ###################################
 
 # switch between performance or debugging flags
@@ -56,7 +52,7 @@ cbessel.o : ./external/cbessel.f90
 
 # need to use pre-processor on this file
 mathieu_functions2.o : ./mathieu_functions2.f90
-	$(F90) -c -cpp $(FLAGS) -o $@ $<
+	$(F90) -c -x  $(FLAGS) -o $@ $<
 
 %.o: %.f
 	$(F90) -c $(FLAGS) -o $@ $<
@@ -72,7 +68,7 @@ clean:
 cbessel.o complex_bessel.mod : ./external/cbessel.f90
 constants.o constants.mod : constants.f90
 type_definitions.o type_definitions.mod : constants.mod mathieu_functions.mod type_definitions.f90
-utility.o utility.mod : constants.mod 
+utility.o utility.mod : constants.mod
 bessel_functions.o bessel_functions.mod : complex_bessel.mod constants.mod bessel_functions.f90
 mathieu_functions2.o mathieu_functions.mod : constants.mod mathieu_functions2.f90
 kappa.o kappa_mod.mod : constants.mod type_definitions.mod kappa.f90

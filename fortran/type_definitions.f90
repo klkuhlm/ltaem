@@ -172,7 +172,14 @@ module type_definitions
      ! input/output filenames
      character(lenFN) :: outfname, infname, coefffname, elemHfName, geomFname
      
-     ! output index (1= gnuplot; 2= matlab)
+     ! output index (1= Gnuplot map (x,y,z triplets; times separated by blank lines);
+     !               2= Matlab map (matrix output separate files);
+     !               3= Gnuplot hydrograph with velocity (column of times; locs sep. by blank lines);
+     !               4= pathline Gnuplot (column of times, particles separated by blank lines);
+     !               5= streakline Gnuplot (each block a requested time, each row a particle);
+     !               10= Matlab for SCEM-UA inverse (column of times, locs sep. by blank lines);
+     !               11= Gnuplot hydrograph no velocity (same as 3 no vel);)
+     ! aquitardLeak and unconfined
      integer :: output, aquitardLeak, unconfined
      
      ! x-spacing vector, y-spacing vector, time vector
