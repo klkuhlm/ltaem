@@ -25,6 +25,7 @@ contains
 
     character(4) :: chint
     character(20), dimension(3) :: fmt
+    character(45) :: lfmt
     character(lenFN+5) :: echofname
     integer :: ierr,j,ntot,nC,nE  ! #elements, #circles, #ellipses
 
@@ -52,10 +53,10 @@ contains
          & trim(sol%outFname), trim(sol%coeffFName), trim(sol%elemHfName), &
          & trim(sol%geomFname),'  ||    particle?, contour?, output,'// &
          & 'out/coeff/hierarchy/geometry file names'
-    write(16,'(3(ES13.5,1X),1L,3(1X,ES13.5),A)') bg%por, bg%k, bg%ss, &
+    write(16,'(3(ES11.5,1X),1L,3(1X,ES11.5),A)') bg%por, bg%k, bg%ss, &
          & bg%leakFlag, bg%aquitardK, bg%aquitardSs, bg%aquitardb, & 
          & '  ||    por, k, Ss, leaky flag, K2, Ss2, b2'
-    write(16,'(2(ES13.5,1X),1L,1X,ES13.5,A)') bg%Sy, bg%kz, bg%unconfinedFlag, &
+    write(16,'(2(ES11.5,1X),1L,1X,ES11.5,A)') bg%Sy, bg%kz, bg%unconfinedFlag, &
          & bg%b, '  || Sy, Kz, unconfined?, BGb'
     
     ! desired solution points/times
@@ -68,22 +69,22 @@ contains
        if(ierr /= 0) write(*,'(A,I0)') 'ERROR reading time from input',j
     end do
     if (.not. sol%particle) then
-       write(16,'(3(I0,1X,A))') sol%nx, sol%ny, sol%nt, '  ||    numX, numY, numt'
+       write(16,'(3(I0,1X),A)') sol%nx, sol%ny, sol%nt, '  ||    numX, numY, numt'
        write(chint,'(I4.4)') sol%nx
-       write(16,'('//chint//'(ES13.5,1X),A)') sol%x(:), '  ||    x Vector'
+       write(16,'('//chint//'(ES12.5,1X),A)') sol%x(:), '  ||    x Vector'
        write(chint,'(I4.4)') sol%ny
-       write(16,'('//chint//'(ES13.5,1X),A)') sol%y(:), '  ||    y Vector'
+       write(16,'('//chint//'(ES12.5,1X),A)') sol%y(:), '  ||    y Vector'
        write(chint,'(I4.4)') sol%nt
-       write(16,'('//chint//'(ES13.5,1X),A)') sol%t(:), '  ||    t Vector'
+       write(16,'('//chint//'(ES11.5,1X),A)') sol%t(:), '  ||    t Vector'
     endif
 
     ! inverse Laplace transform parameters
     read(15,*) sol%alpha, sol%tol, sol%m
     if (sol%tol < epsilon(sol%tol)) then
        sol%tol = epsilon(sol%tol)
-       write(*,'(A,ES13.5)') 'WARNING: increased INVLAP solution tolerance to ',sol%tol 
+       write(*,'(A,ES11.5)') 'WARNING: increased INVLAP solution tolerance to ',sol%tol 
     end if
-    write(16,'(2(ES13.5,1X),I0,A)') sol%alpha, sol%tol, sol%m,'  ||    alpha, tol, M'
+    write(16,'(2(ES11.5,1X),I0,A)') sol%alpha, sol%tol, sol%m,'  ||    alpha, tol, M'
 
     ! circular (includes wells)
     read(15,*) dom%num(1)
@@ -108,13 +109,16 @@ contains
              ! functional time behavior
              allocate(c(j)%ATPar(2))
              read(15,*) c(j)%ATPar(:)
-             write(15,*) c(j)%AreaTime,c(j)%ATPar(:),&
+             write(16,'(I0,2(1X,ES12.5),A,I0)') c(j)%AreaTime,c(j)%ATPar(:),&
                   &'  ||  Area time behavior, par1, par2 for circle ',j
           else
              ! piecewise-constant time behavior 
              allocate(c(j)%ATPar(-2*c(j)%AreaTime+1))
              read(15,*) c(j)%ATPar(:)
-             write(16,*) c(j)%AreaTime,c(j)%ATPar(:-c(j)%AreaTime+1),' | ',&
+             lfmt = '(I0,1X,   (ES12.5,1X),A,   (ES12.5,1X),A,I0) '
+             write(lfmt(8:10),'(I3.3)')  size(c(j)%ATPar(:-c(j)%AreaTime+1),1)
+             write(lfmt(25:27),'(I3.3)') size(c(j)%ATPar(-c(j)%AreaTime+2:),1)
+             write(16,lfmt) c(j)%AreaTime,c(j)%ATPar(:-c(j)%AreaTime+1),'| ',&
                   & c(j)%ATPar(-c(j)%AreaTime+2:), &
                   &'  ||    Area ti, tf | strength for circle ',j
           end if
@@ -124,12 +128,15 @@ contains
           if (c(j)%BdryTime > -1) then
              allocate(c(j)%BTPar(2))
              read(15,*) c(j)%BTPar(:)
-             write(15,*) c(j)%BdryTime,c(j)%BTPar(:),&
+             write(16,'(I0,2(1X,ES12.5),A,I0)') c(j)%BdryTime,c(j)%BTPar(:),&
                   &'  ||  Bdry time behavior, par1, par2 for circle ',j
           else
              allocate(c(j)%BTPar(-2*c(j)%BdryTime+1))
              read(15,*) c(j)%BTPar(:)
-             write(16,*) c(j)%BdryTime,c(j)%BTPar(:-c(j)%BdryTime+1),' | ',&
+             lfmt = '(I0,1X,   (ES12.5,1X),A,   (ES12.5,1X),A,I0) '
+             write(lfmt(8:10),'(I3.3)')  size(c(j)%BTPar(:-c(j)%BdryTime+1),1)
+             write(lfmt(25:27),'(I3.3)') size(c(j)%BTPar(-c(j)%BdryTime+2:),1)
+             write(16,lfmt) c(j)%BdryTime,c(j)%BTPar(:-c(j)%BdryTime+1),' | ',&
                   & c(j)%BTPar(-c(j)%BdryTime+2:), &
                   &'  ||    Bdry ti, tf | strength for circle ',j
           end if
@@ -207,12 +214,15 @@ contains
           if (e(j)%AreaTime > -1) then
              allocate(e(j)%ATPar(2))
              read(15,*) e(j)%ATPar(:)
-             write(15,*) e(j)%AreaTime,e(j)%ATPar(:),&
+             write(16,'(I0,2(1X,ES12.5),A,I0)') e(j)%AreaTime,e(j)%ATPar(:),&
                   &'  ||  Area time behavior, par1, par2 for ellipse ',j
           else
              allocate(e(j)%ATPar(-2*e(j)%AreaTime+1))
              read(15,*) e(j)%ATPar(:)
-             write(16,*) e(j)%AreaTime,e(j)%ATPar(:-e(j)%AreaTime+1),' | ',&
+             lfmt = '(I0,1X,   (ES12.5,1X),A,   (ES12.5,1X),A,I0) '
+             write(lfmt(8:10),'(I3.3)')  size(e(j)%ATPar(:-e(j)%AreaTime+1),1)
+             write(lfmt(25:27),'(I3.3)') size(e(j)%ATPar(-e(j)%AreaTime+2:),1)
+             write(16,lfmt) e(j)%AreaTime,e(j)%ATPar(:-e(j)%AreaTime+1),' | ',&
                   & e(j)%ATPar(-e(j)%AreaTime+2:), &
                   &'  ||    Area ti, tf | strength for ellipse ',j
           end if
@@ -222,12 +232,15 @@ contains
           if (e(j)%BdryTime > -1) then
              allocate(e(j)%BTPar(2))
              read(15,*) e(j)%BTPar(:)
-             write(15,*) e(j)%BdryTime,e(j)%BTPar(:),&
+             write(16,'(I0,2(1X,ES12.5),A,I0)') e(j)%BdryTime,e(j)%BTPar(:),&
                   &'  ||  Bdry time behavior, par1, par2 for circle ',j
           else
              allocate(e(j)%BTPar(-2*e(j)%BdryTime+1))
              read(15,*) e(j)%BTPar(:)
-             write(16,*) e(j)%BdryTime,e(j)%BTPar(:-e(j)%BdryTime+1),' | ',&
+             lfmt = '(I0,1X,   (ES12.5,1X),A,   (ES12.5,1X),A,I0) '
+             write(lfmt(8:10),'(I3.3)')  size(e(j)%BTPar(:-e(j)%BdryTime+1),1)
+             write(lfmt(25:27),'(I3.3)') size(e(j)%BTPar(-e(j)%BdryTime+2:),1)
+             write(16,lfmt) e(j)%BdryTime,e(j)%BTPar(:-e(j)%BdryTime+1),' | ',&
                   & e(j)%BTPar(-e(j)%BdryTime+2:), &
                   &'  ||    Bdry ti, tf | strength for circle ',j
           end if
@@ -303,10 +316,14 @@ contains
     write(chint,'(I4.4)') dom%num(2)
     fmt(3) = '('//chint//'(ES13.5,1X),A) ' ! ellipses
 
-    write(16,fmt(2)) c(:)%alpha,'  ||    circle hydraulic diffusivity'
-    write(16,fmt(2)) c(:)%T,'  ||    circle transmissivity'
-    write(16,fmt(3)) e(:)%alpha,'  ||    ellipse hydraulic diffusivity'
-    write(16,fmt(3)) e(:)%T,'  ||    ellipse transmissivity'
+    if (dom%num(1) > 0) then
+       write(16,fmt(2)) c(:)%alpha,'  ||    circle hydraulic diffusivity'
+       write(16,fmt(2)) c(:)%T,'  ||    circle transmissivity'
+    end if
+    if (dom%num(2) > 0) then
+       write(16,fmt(3)) e(:)%alpha,'  ||    ellipse hydraulic diffusivity'
+       write(16,fmt(3)) e(:)%T,'  ||    ellipse transmissivity'
+    end if
     write(16,'(ES13.5,A)') bg%alpha,'  ||    background hydraulic diffusivity'
     write(16,'(ES13.5,A)') bg%T,'  ||    background hydraulic diffusivity'
 
