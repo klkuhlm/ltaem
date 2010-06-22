@@ -209,7 +209,7 @@ contains
        read(15,*) e(:)%por
        read(15,*) e(:)%areaQ
        read(15,*) e(:)%bdryQ
-       do j=1,size(c,dim=1)
+       do j=1,size(e,dim=1)
           read(15,'(I3)', advance='no') e(j)%AreaTime 
           if (e(j)%AreaTime > -1) then
              allocate(e(j)%ATPar(2))
@@ -227,13 +227,13 @@ contains
                   &'  ||    Area ti, tf | strength for ellipse ',j
           end if
        end do
-       do j=1,size(c,dim=1)
+       do j=1,size(e,dim=1)
           read(15,'(I3)', advance='no') e(j)%BdryTime
           if (e(j)%BdryTime > -1) then
              allocate(e(j)%BTPar(2))
              read(15,*) e(j)%BTPar(:)
              write(16,'(I0,2(1X,ES12.5),A,I0)') e(j)%BdryTime,e(j)%BTPar(:),&
-                  &'  ||  Bdry time behavior, par1, par2 for circle ',j
+                  &'  ||  Bdry time behavior, par1, par2 for ellipse ',j
           else
              allocate(e(j)%BTPar(-2*e(j)%BdryTime+1))
              read(15,*) e(j)%BTPar(:)
@@ -242,7 +242,7 @@ contains
              write(lfmt(25:27),'(I3.3)') size(e(j)%BTPar(-e(j)%BdryTime+2:),1)
              write(16,lfmt) e(j)%BdryTime,e(j)%BTPar(:-e(j)%BdryTime+1),' | ',&
                   & e(j)%BTPar(-e(j)%BdryTime+2:), &
-                  &'  ||    Bdry ti, tf | strength for circle ',j
+                  &'  ||    Bdry ti, tf | strength for ellipse ',j
           end if
        end do
        read(15,*) e(:)%leakFlag
@@ -276,8 +276,8 @@ contains
        write(16,fmt(3)) e(:)%r, '  ||    ellipse radius (eta)'
        write(16,fmt(3)) e(:)%x, '  ||    ellipse center x'
        write(16,fmt(3)) e(:)%y, '  ||    ellipse center y'
-       write(16,fmt(3)) e(:)%x, '  ||    ellipse semi-focal length'
-       write(16,fmt(3)) e(:)%y, '  ||    ellipse angle rotation with +x axis'
+       write(16,fmt(3)) e(:)%f, '  ||    ellipse semi-focal length'
+       write(16,fmt(3)) e(:)%theta, '  ||    ellipse angle rotation with +x axis'
        write(16,fmt(3)) e(:)%k, '  ||    ellipse aquifer k'
        write(16,fmt(3)) e(:)%ss, '  ||    ellipse aquifer Ss'
        write(16,fmt(3)) e(:)%por, '  ||    ellipse aquifer porosity'
