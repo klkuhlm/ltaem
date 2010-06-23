@@ -31,6 +31,10 @@ contains
     complex(DP) :: cemat(1:e%M,0:e%N-1,0:1), semat(1:e%M,1:e%N-1,0:1)
     integer, dimension(0:e%N-1) :: vi
 
+#ifdef DEBUG
+    print *, 'ellipse_match_self: e:',e%id,' p:',p,' idx:',idx
+#endif 
+
     N = e%N; M = e%M
     vi = [(j,j=0,N-1)]
 
@@ -130,6 +134,10 @@ contains
     complex(DP), allocatable :: dPot_dR(:,:), dPot_dP(:,:), dPot_dX(:,:), dPot_dY(:,:)
     real(DP), allocatable :: hsq(:,:)
     real(DP) :: K
+
+#ifdef DEBUG
+    print *, 'ellipse_match_other: e:',e%id,' el:',el%id,' dom:',dom%num,' p:',p,' idx:',idx
+#endif    
 
     N = e%N ! number of coefficients in the source elliptical element
     targ = el%id; src = e%id
@@ -288,9 +296,7 @@ contains
                             & dPot_dY*spread(el%f*cosh(el%r)*sin(el%Pcm(1:M)),2,nmax)
 
           end if
-          deallocate(dRMn,dPot_dR,dPot_dP,dPot_dX,dPot_dY)
        end if
-       deallocate(RMn,RMn0)
     end if
     
     if (e%ibnd == 2) then
@@ -314,6 +320,10 @@ contains
     real(DP), dimension(1:e%ms,ceiling(e%N/2.0)) :: arg
     integer, dimension(0:e%ms-1) :: vi
     integer :: i, N, MS, nmax
+
+#ifdef DEBUG
+    print *, 'line: e:',e%id,' p:',p,' idx:',idx
+#endif
 
     N = e%N; MS = e%ms
     nmax = ceiling(e%N/2.0)
@@ -344,6 +354,10 @@ contains
     complex(DP), dimension(size(p,1),e%N) :: aa,bb
     complex(DP), dimension(size(p,1),e%N,0:1) :: RMRgp,RMR0,AM
     integer :: n0, np, i, j, N
+
+#ifdef DEBUG
+    print *, 'ellipse_calc: p:',p,' e:',e%id,' lo:',lo,' hi:',hi,' Rgp:',Rgp,' Pgp:',Pgp,' inside:',inside
+#endif
 
     N = e%N
     np = size(p,1)
@@ -397,6 +411,10 @@ contains
     complex(DP), dimension(size(p,1),e%N) :: aa,bb
     complex(DP), dimension(size(p,1),e%N,0:1) :: RMRgp,RMR0,AM,dRMRgp,dAM
     integer :: n0, np, i, j, N
+
+#ifdef DEBUG
+    print *, 'ellipse_deriv: p:',p,' e:',e%id,' lo:',lo,' hi:',hi,' Rgp:',Rgp,' Pgp:',Pgp,' inside:',inside
+#endif
 
     N = e%N
     np = size(p,1)

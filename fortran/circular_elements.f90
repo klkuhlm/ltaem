@@ -154,9 +154,9 @@ contains
           lo = 1;  hi = M
        end if
 
+       allocate(Bn(M,0:N-1), Bn0(0:N-1), cmat(1:M,0:N-1), smat(1:M,0:N-1))
        cmat = cos(outerprod(c%G(targ)%Pgm(1:M), vi(0:N-1)))
-       smat = sin(outerprod(c%G(targ)%Pgm(1:M), vi(1:N-1)))
-       allocate(Bn(M,0:N-1),Bn0(0:N-1))
+       smat = sin(outerprod(c%G(targ)%Pgm(1:M), vi(0:N-1)))
 
        ! setup LHS 
        ! for matching or specified total head target elements
@@ -166,7 +166,7 @@ contains
              ! can the target element "see" the outside of the source element?
              ! use exterior Bessel functions (Kn)
              kap = kappa(p,c%parent)
-             Bn(0:N-1,1:M) = bK(kap*c%G(targ)%Rgm(1:M),N)
+             Bn(1:M,0:N-1) = bK(kap*c%G(targ)%Rgm(1:M),N)
              Bn0(0:N-1) =    bK(kap*c%r,N)
              K = c%parent%K
           else
@@ -174,15 +174,15 @@ contains
              ! i.e., is the source element the parent?
              ! use interior Bessel functions (In)
              kap = kappa(p,c%element)
-             Bn(0:N-1,1:M) = bI(kap*c%G(targ)%Rgm(1:M),N)
+             Bn(1:M,0:N-1) = bI(kap*c%G(targ)%Rgm(1:M),N)
              Bn0(0:N-1) =    bI(kap*c%r,N)
              K = c%K
           end if
           
           ! head effects on other element
-          r%LHS(1:M,1:N) =       Bn(0:N-1,:)/spread(Bn0(0:N-1),1,M)*cmat/K ! a_n || c_n
-          r%LHS(1:M,N+1:2*N-1) = Bn(1:N-1,:)/spread(Bn0(1:N-1),1,M)*smat/K ! b_n || d_n
-          
+          r%LHS(1:M,1:N) =       Bn(:,0:N-1)/spread(Bn0(0:N-1),1,M)*cmat/K ! a_n || c_n
+          r%LHS(1:M,N+1:2*N-1) = Bn(:,1:N-1)/spread(Bn0(1:N-1),1,M)*smat(:,1:N-1)/K ! b_n || d_n
+
           if (c%ibnd == 2 .and. dom%inclBg(src,targ)) then
              if (c%StorIn) then
                 ! wellbore storage and skin from finite-radius well
@@ -220,7 +220,7 @@ contains
 
           ! derivative wrt radius of source element
           dPot_dR(1:M,1:N) =       dBn(1:M,0:N-1)/spread(Bn0(0:N-1),1,M)*cmat
-          dPot_dR(1:M,N+1:2*N-1) = dBn(1:M,1:N-1)/spread(Bn0(1:N-1),1,M)*smat
+          dPot_dR(1:M,N+1:2*N-1) = dBn(1:M,1:N-1)/spread(Bn0(1:N-1),1,M)*smat(:,1:N-1)
 
           if (el%ibnd == 2 .and. dom%inclBg(src,targ)) then
              if (c%StorIn) then
@@ -233,8 +233,8 @@ contains
              dPot_dP(:,:) = 0.0 ! wells are azimuthally-symmetric
           else
              ! derivative wrt angle of source element for more general circular elements
-             dPot_dP(1:M,1:N) =      -Bn(0:N-1,:)*spread(vi(0:N-1)/Bn0(0:N-1),1,M)*smat
-             dPot_dP(1:M,N+1:2*N-1) = Bn(1:N-1,:)*spread(vi(1:N-1)/Bn0(1:N-1),1,M)*cmat
+             dPot_dP(1:M,1:N) =      -Bn(:,0:N-1)*spread(vi(0:N-1)/Bn0(0:N-1),1,M)*smat(:,0:N-1)
+             dPot_dP(1:M,N+1:2*N-1) = Bn(:,1:N-1)*spread(vi(1:N-1)/Bn0(1:N-1),1,M)*cmat(:,1:N-1)
           end if
 
           ! project these from cylindrical onto Cartesian coordinates
@@ -249,8 +249,8 @@ contains
              if (el%ibnd == 2) then
                 if (el%StorIn) then
                    ! other element is a well with wellbore storage (Type III BC)
-                   r%LHS(1:M,1:N) =       Bn(0:N-1,:)/spread(Bn0(0:N-1),1,M)*smat/K
-                   r%LHS(1:M,N+1:2*N-1) = Bn(1:N-1,:)/spread(Bn0(1:N-1),1,M)*cmat/K
+                   r%LHS(1:M,1:N) =       Bn(:,0:N-1)/spread(Bn0(0:N-1),1,M)*cmat/K
+                   r%LHS(1:M,N+1:2*N-1) = Bn(:,1:N-1)/spread(Bn0(1:N-1),1,M)*smat(:,1:N-1)/K
                    
                    ! head effects of element
                    r%LHS(1:M,:) = -(el%r*p/el%parent%T)*r%LHS(1:M,:)
@@ -274,9 +274,7 @@ contains
              r%LHS(lo:hi,:) = dPot_dX*spread(el%f*sinh(el%r)*cos(el%Pcm(1:M)),2,2*N-1) + &
                             & dPot_dY*spread(el%f*cosh(el%r)*sin(el%Pcm(1:M)),2,2*N-1)
           end if
-          deallocate(dBn,dPot_dR,dPot_dP,dPot_dX,dPot_dY)
        end if
-       deallocate(Bn,Bn0)
     end if
   end function circle_match_other
 

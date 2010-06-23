@@ -33,9 +33,9 @@ OBJS=$(EXTERNAL) constants.o $(KKLOW) type_definitions.o $(KKHIGH)
 
 #### gfortran 4.6 (trunk) #################
 F90=gfortran-4.6
-DFLAGS=-Wall -Wextra -ggdb3 -O0 -fcheck=all -finit-real=snan -finit-integer=-999 -finit-logical=true -finit-character=0 -fbacktrace
+DFLAGS=-Wall -Wextra -ggdb3 -O0 -fcheck=bounds,do,mem,pointer,recursion -finit-real=snan -finit-integer=-999 -finit-logical=true -finit-character=0 -fbacktrace
 DFLAGS+=-cpp -DDEBUG
-PFLAGS=-O0 -ggdb3
+PFLAGS=-O0 -g -fno-protect-parens 
 LINKFLAG=
 ###################################
 

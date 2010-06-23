@@ -3,6 +3,7 @@
 ! matrix used to compute the solution via LAPACK.
 
 module solution_mod
+  implicit none
 
 contains
   subroutine matrix_solution(c,e,dom,sol,p,idx)
@@ -29,6 +30,7 @@ contains
     type(domain), intent(in) :: dom
     type(solution), intent(in) :: sol
     complex(DP), intent(in) :: p
+    integer, intent(in) :: idx
 
     complex(DP), allocatable :: A(:,:), b(:)
     type(match_result), allocatable :: res(:,:) ! results
@@ -58,6 +60,7 @@ contains
        ! circle on other circle
        do j=1,nc
           if(i/=j) then
+             print *, 'c on c:',i,j
              res(i,j) = circle_match(c(i),c(j)%matching,dom,p)
           end if
        end do
