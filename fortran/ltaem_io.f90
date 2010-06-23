@@ -29,17 +29,20 @@ contains
     character(lenFN+5) :: echofname
     integer :: ierr,j,ntot,nC,nE  ! #elements, #circles, #ellipses
 
-    open(UNIT=15, FILE=sol%infname, STATUS='OLD', ACTION='READ')
+    open(UNIT=15, FILE=sol%infname, STATUS='OLD', ACTION='READ', IOSTAT=ierr)
     if (ierr /= 0) then
        write(*,'(2A)') 'READINPUT: error opening input file ',sol%infname
        stop 100
     endif
 
     echofname = trim(sol%infname)//'.echo'
-    open(UNIT=16, FILE=echofname, STATUS='REPLACE', ACTION='WRITE')
+    open(UNIT=16, FILE=echofname, STATUS='REPLACE', ACTION='WRITE', IOSTAT=ierr)
     if (ierr /= 0) then
        write(*,'(2A)') 'READINPUT: error opening echo file ',echofname
        stop 101
+    else
+       ! add a file variable to set Emacs to auto-revert mode
+       write(16,'(A)') '-*-auto-revert-*-'
     endif   
     
     ! solution-specific and background aquifer parameters

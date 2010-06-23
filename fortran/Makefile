@@ -33,8 +33,8 @@ OBJS=$(EXTERNAL) constants.o $(KKLOW) type_definitions.o $(KKHIGH)
 
 #### gfortran 4.6 (trunk) #################
 F90=gfortran-4.6
-DFLAGS=-Wall -Wextra -g -O0 -fbounds-check -frange-check 
-PFLAGS=-O3 -march=native 
+DFLAGS=-Wall -Wextra -g -O0 -fcheck=all -finit-real=snan -ffpe-trap=invalid,zero,overflow,underflow -finit-integer=-999 -finit-logical=false -finit-character=0 
+PFLAGS=-O -g -march=native
 LINKFLAG=
 ###################################
 

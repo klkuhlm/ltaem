@@ -179,7 +179,7 @@ contains
 
     type(domain), intent(inout) :: dom
     type(solution), intent(in) :: sol
-    integer :: nc,ne,ntot, line
+    integer :: nc,ne,ntot, line, ierr
     character(4) :: chint
     
     nc = dom%num(1)
@@ -187,9 +187,19 @@ contains
     ntot = sum(dom%num)
 
     ! later I will write code to do this automatically
-
-    open(unit=75, file=sol%elemHfName, status='old', action='read')
-    open(unit=57, file=trim(sol%elemHfName)//'.echo',status='replace',action='write')
+    open(UNIT=75, FILE=sol%elemHfName, STATUS='old', ACTION='read', IOSTAT=ierr)
+    if (ierr /= 0) then
+       write(*,'(A)') 'ElementHierarchy: ERROR opening file '//sol%elemHFName// &
+            & ' for reading element hierarchy'
+    end if
+    open(UNIT=57, FILE=trim(sol%elemHfName)//'.echo', STATUS='replace', ACTION='write', IOSTAT=ierr)
+    if (ierr /= 0) then
+       write(*,'(A)') 'ElementHierarcy: ERROR opening file '//trim(sol%elemHfName)// &
+            &'.echo for writing element hierarchy'
+    else
+       ! add a file variable to set Emacs to auto-revert mode
+       write(57,'(A)') '-*-auto-revert-*-'  
+    end if
 
     write(chint,'(I4.4)') ntot
     do line = 0,ntot

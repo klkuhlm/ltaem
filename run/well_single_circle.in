@@ -14,9 +14,9 @@ false  true :: calcin?
 5.0D-2  3.5D-1  :: r
 0.0D0  3.0D-1  :: x0
 0.0D0  4.0D-1  :: y0
-0.0D0  3.0D-1  :: K
-0.0D0  1.0D-5  :: Ss
-0.0D0  1.5D-1  :: porosity
+1.0D0  3.0D-1  :: K
+1.0D0  1.0D-5  :: Ss
+1.0D0  1.5D-1  :: porosity
 0.0D0  0.0D-1  :: area source strength
 2.5D-1  0.0D-1  :: boundary source strength
 001  0.0D0  0.0D0  :: area time flag, tpar1, tpar2
