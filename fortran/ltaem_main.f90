@@ -165,7 +165,7 @@ program ltaem_main
            else
               stop 'error reading in matching results'
            end if
-           read(777,*) c(i)%coeff
+           read(77,*) c(i)%coeff
         end do
         do i = 1,ne
            read(77,*) elType,j,crow,ccol
@@ -174,7 +174,7 @@ program ltaem_main
            else
               stop 'error reading in matching results'
            end if
-           read(777,*) e(i)%coeff
+           read(77,*) e(i)%coeff
         end do
 
         ! re-initialize Mathieu function matrices
