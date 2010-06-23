@@ -106,14 +106,18 @@ contains
     complex(DP), dimension(:,:), intent(in) :: z
     integer, intent(in) :: n
     complex(DP), intent(out), dimension(size(z,1),size(z,2),0:n-1) :: I, ID
+    complex(DP), dimension(size(z,1),size(z,2),0:max(2,n)-1) :: Itmp
     
-    I(:,:,0:n-1) = bI(z,max(1,n))
+    Itmp(:,:,0:max(n,2)-1) = bI(z,max(2,n))
     ID(:,:,0) = I(:,:,1)   ! low end
-    if (n > 1) then
+    if (n >= 2) then
+       I = Itmp
        ID(:,:,n-1) = I(:,:,n-2) - (n-1)/z*I(:,:,n-1) ! high end
-       if (n > 2) then
+       if (n >= 3) then
           ID(:,:,1:n-2) = 0.5_DP*(I(:,:,0:n-3) + I(:,:,2:n-1)) ! middle
        end if
+    else
+       I(:,:,0) = Itmp(:,:,0)
     end if
   end subroutine besId_zmat
 
@@ -141,13 +145,17 @@ contains
     complex(DP), dimension(:,:), intent(in) :: z
     integer, intent(in) :: n
     complex(DP), intent(out), dimension(size(z,1),size(z,2),0:n-1) :: K, KD
-    K(:,:,0:n-1) = bK(z,max(n,1))
-    KD(:,:,0) = -K(:,:,1)  ! low end
-    if (n > 1) then
+    complex(DP), dimension(size(z,1),size(z,2),0:max(n,2)-1) :: Ktmp
+    Ktmp(:,:,0:max(n,2)-1) = bK(z,max(n,2))
+    KD(:,:,0) = -Ktmp(:,:,1)  ! low end
+    if (n >= 2) then
+       K = Ktmp
        KD(:,:,n-1) = -(K(:,:,n-2) + (n-1)/z*K(:,:,n-1)) ! high end
-       if (n > 2) then
+       if (n >= 3) then
           KD(:,:,1:n-2) = -0.5_DP*(K(:,:,0:n-3) + K(:,:,2:n-1)) ! middle
        end if
+    else
+       K(:,:,0) = Ktmp(:,:,0)
     end if
   end subroutine besKd_zmat
 

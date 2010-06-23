@@ -49,9 +49,7 @@ contains
        lo = 1;  hi = M
     end if
 
-    print *, 'Pcm:',shape(c%pcm(1:M)),' vi:',shape(vi(0:N-1)),' cmat:',shape(cmat)
     cmat = cos(outerprod(c%Pcm(1:M), vi(0:N-1)))
-    print *, 'Pcm:',shape(c%pcm(1:M)),' vi:',shape(vi(1:N-1)),' smat:',shape(smat)
     smat = sin(outerprod(c%Pcm(1:M), vi(1:N-1)))
 
     ! setup LHS
