@@ -6,10 +6,10 @@ KKLOW=utility.o bessel_functions.o mathieu_functions2.o
 LAPACKLIB=/Users/klkuhlm/src/lapack-3.2.1/lapack_MAC.a
 BLASLIB=/Users/klkuhlm/src/GotoBLAS2/libgoto2.a -lpthread
 
-# for trunk gfortran version
+# for intel compiler
 ################################
-#BLASLIB=/home/kris/src/lapack-3.1.1/BLAS/SRC/blas_GFORTRAN4.4.a
-#LAPACKLIB=/home/kris/src/lapack-3.1.1/lapack_GFORTRAN4.4.a
+BLASLIB=/home/klkuhlm/src/GotoBLAS2/libgoto2.a -pthread
+LAPACKLIB=/home/klkuhlm/src/lapack-3.2.1/lapack_LINUX.a
 
 # main-program related
 ####################################
@@ -19,10 +19,10 @@ TARG=ltaem
 OBJS=$(EXTERNAL) constants.o $(KKLOW) type_definitions.o $(KKHIGH)
 
 ########## ifort (work) related ##########
-#F90=ifort
-#DFLAGS=-O0 -g -traceback -cpp -warn all -check bounds -check pointers -check uninit
-#PFLAGS=-O3 -cpp
-#LINKFLAG=-O3
+F90=ifort
+DFLAGS=-O0 -g -traceback -cpp -DDEBUG -warn all -check bounds -check pointers -check uninit -check format -check output_conversion
+PFLAGS=-O0 -cpp
+LINKFLAG=-O0
 ###################################
 
 #### gfortran (system version) ################# 
