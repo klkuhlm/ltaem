@@ -31,13 +31,13 @@ LINKFLAG=-O0
 ##PFLAGS=-O3 -march=native
 ###################################
 
-#### gfortran 4.6 (trunk) #################
-F90=gfortran-4.6
-DFLAGS=-Wall -Wextra -ggdb3 -O0 -fcheck=bounds,do,mem,pointer,recursion -finit-real=snan -finit-integer=-999 -finit-logical=true -finit-character=0 -fbacktrace
-DFLAGS+=-cpp -DDEBUG
-PFLAGS=-O0 -g -fno-protect-parens 
-LINKFLAG=
-###################################
+###### gfortran 4.6 (trunk) #################
+##F90=gfortran-4.6
+##DFLAGS=-Wall -Wextra -ggdb3 -O0 -fcheck=bounds,do,mem,pointer,recursion -finit-real=snan -finit-integer=-999 -finit-logical=true -finit-character=0 -fbacktrace
+##DFLAGS+=-cpp -DDEBUG
+##PFLAGS=-O0 -g -fno-protect-parens 
+##LINKFLAG=
+#####################################
 
 # switch between performance or debugging flags
 FLAGS=$(DFLAGS)
