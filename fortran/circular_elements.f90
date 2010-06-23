@@ -137,7 +137,7 @@ contains
 
 #ifdef DEBUG
     print *, 'circle_match_other: c:',c%id,' el:',el%id,' dom:',dom%num,' p:',p
-#endif    
+#endif
 
     N = c%N ! number of coefficients in the source circular element
     targ = el%id; src = c%id
@@ -162,6 +162,7 @@ contains
        ! for matching or specified total head target elements
        if (el%ibnd == 0 .or. el%ibnd == -1) then
 
+          print *, 'check 000a'
           if (dom%inclBg(src,targ)) then
              ! can the target element "see" the outside of the source element?
              ! use exterior Bessel functions (Kn)
@@ -179,10 +180,11 @@ contains
              K = c%K
           end if
           
+          print *, 'check 000b'
           ! head effects on other element
           r%LHS(1:M,1:N) =       Bn(:,0:N-1)/spread(Bn0(0:N-1),1,M)*cmat/K ! a_n || c_n
           r%LHS(1:M,N+1:2*N-1) = Bn(:,1:N-1)/spread(Bn0(1:N-1),1,M)*smat(:,1:N-1)/K ! b_n || d_n
-
+          print *, 'check 000c'
           if (c%ibnd == 2 .and. dom%inclBg(src,targ)) then
              if (c%StorIn) then
                 ! wellbore storage and skin from finite-radius well
@@ -195,11 +197,13 @@ contains
              end if
           end if
        end if
-          
+       print *, 'check 000d'
        ! for matching, specified total flux, or specified elemental flux target element
        if (el%ibnd == 0 .or. el%ibnd == +1 .or. el%ibnd == +2) then
           allocate(dBn(M,0:N-1), dPot_dR(M,2*N-1), dPot_dP(M,2*N-1), &
                & dPot_dX(M,2*N-1),dPot_dY(M,2*N-1))
+
+          print *, 'check 001'
 
           ! flux effects of source circle on target element
           if (dom%inclBg(src,targ)) then
@@ -218,9 +222,13 @@ contains
              K = c%K
           end if
 
+          print *, 'check 002'
+
           ! derivative wrt radius of source element
           dPot_dR(1:M,1:N) =       dBn(1:M,0:N-1)/spread(Bn0(0:N-1),1,M)*cmat
           dPot_dR(1:M,N+1:2*N-1) = dBn(1:M,1:N-1)/spread(Bn0(1:N-1),1,M)*smat(:,1:N-1)
+
+          print *, 'check 003'
 
           if (el%ibnd == 2 .and. dom%inclBg(src,targ)) then
              if (c%StorIn) then
@@ -237,12 +245,16 @@ contains
              dPot_dP(1:M,N+1:2*N-1) = Bn(:,1:N-1)*spread(vi(1:N-1)/Bn0(1:N-1),1,M)*cmat(:,1:N-1)
           end if
 
+          print *, 'check 004'
+
           ! project these from cylindrical onto Cartesian coordinates
           dPot_dX = dPot_dR*spread(cos(c%G(targ)%Pgm),2,2*N-1) - &
                   & dPot_dP*spread(sin(c%G(targ)%Pgm)/c%G(targ)%Rgm,2,2*N-1)
           dPot_dY = dPot_dR*spread(sin(c%G(targ)%Pgm),2,2*N-1) + &
                   & dPot_dP*spread(cos(c%G(targ)%Pgm)/c%G(targ)%Rgm,2,2*N-1)
           
+          print *, 'check 005'
+
           ! project from Cartesian to "radial" coordinate of target element
           if (el%id <= dom%num(1)) then
              ! other element is a circle
@@ -269,13 +281,16 @@ contains
                 r%LHS(lo:hi,:) = dPot_dX*spread(cos(el%Pcm),2,2*N-1) + &
                                & dPot_dY*spread(sin(el%Pcm),2,2*N-1)
              end if
+             print *, 'check 006'
           else
              ! other element is an ellipse
              r%LHS(lo:hi,:) = dPot_dX*spread(el%f*sinh(el%r)*cos(el%Pcm(1:M)),2,2*N-1) + &
                             & dPot_dY*spread(el%f*cosh(el%r)*sin(el%Pcm(1:M)),2,2*N-1)
+             print *, 'check 007'
           end if
        end if
     end if
+    print *, 'check 010'
   end function circle_match_other
 
   function well(c,p) result(a0)

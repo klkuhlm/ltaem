@@ -48,7 +48,7 @@ contains
 
     nc = size(c,1);  ne = size(e,1)
     ntot = nc + ne
-    allocate(res(ntot,ntot),row(ntot,0:2),col(ntot,0:2))
+    allocate(res(ntot,ntot), row(ntot,0:2), col(ntot,0:2))
 
     ! accumulate results into matrices of structures
     do i=1,nc
@@ -60,14 +60,17 @@ contains
        ! circle on other circle
        do j=1,nc
           if(i/=j) then
-             print *, 'c on c:',i,j
+             print *, 'before c on c:',i,j
              res(i,j) = circle_match(c(i),c(j)%matching,dom,p)
+             print *, 'after c on c:',i,j
           end if
        end do
 
        ! circle on other ellipse
        do j=1,ne
+          print *, 'before c on e:',i,j
           res(i,j+nc) = circle_match(c(i),e(j)%matching,dom,p)
+          print *, 'after c on e:',i,j
        end do
     end do
 

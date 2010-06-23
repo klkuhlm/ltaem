@@ -6,10 +6,10 @@ KKLOW=utility.o bessel_functions.o mathieu_functions2.o
 LAPACKLIB=/Users/klkuhlm/src/lapack-3.2.1/lapack_MAC.a
 BLASLIB=/Users/klkuhlm/src/GotoBLAS2/libgoto2.a -lpthread
 
-# for intel compiler
-################################
-BLASLIB=/home/klkuhlm/src/GotoBLAS2/libgoto2.a -pthread
-LAPACKLIB=/home/klkuhlm/src/lapack-3.2.1/lapack_LINUX.a
+### for intel compiler
+##################################
+##BLASLIB=/home/klkuhlm/src/GotoBLAS2/libgoto2.a -pthread
+##LAPACKLIB=/home/klkuhlm/src/lapack-3.2.1/lapack_LINUX.a
 
 # main-program related
 ####################################
@@ -18,12 +18,12 @@ MAIN=ltaem_main.o
 TARG=ltaem
 OBJS=$(EXTERNAL) constants.o $(KKLOW) type_definitions.o $(KKHIGH)
 
-########## ifort (work) related ##########
-F90=ifort
-DFLAGS=-O0 -g -traceback -cpp -DDEBUG -warn all -check bounds -check pointers -check uninit -check format -check output_conversion
-PFLAGS=-O0 -cpp
-LINKFLAG=-O0
-###################################
+############ ifort (work) related ##########
+##F90=ifort
+##DFLAGS=-O0 -g -traceback -cpp -DDEBUG -warn all -check bounds -check pointers -check uninit -check format -check output_conversion
+##PFLAGS=-O0 -cpp
+##LINKFLAG=-O0
+#####################################
 
 #### gfortran (system version) ################# 
 ##F90=gfortran
@@ -31,13 +31,13 @@ LINKFLAG=-O0
 ##PFLAGS=-O3 -march=native
 ###################################
 
-###### gfortran 4.6 (trunk) #################
-##F90=gfortran-4.6
-##DFLAGS=-Wall -Wextra -ggdb3 -O0 -fcheck=bounds,do,mem,pointer,recursion -finit-real=snan -finit-integer=-999 -finit-logical=true -finit-character=0 -fbacktrace
-##DFLAGS+=-cpp -DDEBUG
-##PFLAGS=-O0 -g -fno-protect-parens 
-##LINKFLAG=
-#####################################
+#### gfortran 4.6 (trunk) #################
+F90=gfortran-4.6
+DFLAGS=-Wall -Wextra -ggdb3 -O0 -fcheck=bounds,do,mem,pointer,recursion -finit-real=snan -finit-integer=-999 -finit-logical=true -finit-character=0 -fbacktrace
+DFLAGS+=-cpp -DDEBUG
+PFLAGS=-O0 -ggdb3 
+LINKFLAG=
+###################################
 
 # switch between performance or debugging flags
 FLAGS=$(DFLAGS)
