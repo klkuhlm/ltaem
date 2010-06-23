@@ -89,24 +89,24 @@ contains
     ! circular element self-geometry
     do i = 1,nc
        M = c(i)%M
-       allocate(c(i)%Zcm(M),c(i)%Zom(M),c(i)%G(ntot))
+       allocate(c(i)%Zcm(M), c(i)%Zom(M), c(i)%G(ntot))
 
        ! x,y components from center of element to points on circumference
        if (M > 1) then
           c(i)%Zcm(1:M) = c(i)%r*exp(c(i)%Pcm(1:M)*EYE)
        else
           ! when only one matching point move to center of element
-          c(i)%Zcm(1:M) = cmplx(0.0,0.0,DP)
+          c(i)%Zcm(1) = cmplx(0.0,0.0,DP)
        end if
 
        ! x,y from Cartesian origin to point on circumference of element
-       c(i)%Zom(1:M) = c(i)%Zcm(:) + cmplx(c%x,c%y,DP)
+       c(i)%Zom(1:M) = c(i)%Zcm(:) + cmplx(c(i)%x,c(i)%y,DP)
     end do
 
     ! elliptical element self-geometry
     do i = 1,ne
        M = e(i)%M
-       allocate(e(i)%Zcm(M),e(i)%Zom(M),e(i)%G(ntot))
+       allocate(e(i)%Zcm(M), e(i)%Zom(M), e(i)%G(ntot), z(M))
 
        ! local elliptical coordinates (r is eta)
        z(1:M) = e(i)%f*ccosh(cmplx(e(i)%r,e(i)%Pcm(1:M),DP))
@@ -117,12 +117,12 @@ contains
           e(i)%Zcm(1:M) = z(:)*exp(EYE*e(i)%theta)
        else
           ! when only one matching location move to center of line between foci
-          e(i)%Zcm(1:M) = cmplx(0.0,0.0,DP)
+          e(i)%Zcm(1) = cmplx(0.0,0.0,DP)
        end if
        deallocate(z)
 
        ! x,y from Cartesian origin to point on circumference of element
-       e(i)%Zom(1:M) = e(i)%Zcm(:) + cmplx(e%x,e%y,DP)
+       e(i)%Zom(1:M) = e(i)%Zcm(:) + cmplx(e(i)%x,e(i)%y,DP)
     end do
     
     ! compute radial distances and angles to points on the circumferece of other elements
@@ -143,7 +143,7 @@ contains
              c(i)%G(j)%Rgm(1:M) = abs(c(i)%G(j)%Zgm(1:M)) ! r
              c(i)%G(j)%Pgm(1:M) = atan2(aimag(c(i)%G(j)%Zgm(1:M)), &
                                        & real(c(i)%G(j)%Zgm(1:M))) ! theta
-             deallocate(other)
+             other => null()
           end if
        end do
     end do
@@ -162,7 +162,8 @@ contains
              z(1:M) = cacosh(e(i)%G(j)%Zgm(1:M))*exp(-EYE*e(i)%theta)/e(i)%f
              e(i)%G(j)%Rgm(1:M) = real(z)  ! eta
              e(i)%G(j)%Pgm(1:M) = aimag(z) ! psi
-             deallocate(z,other)
+             deallocate(z)
+             other => null()
           end if
        end do
     end do

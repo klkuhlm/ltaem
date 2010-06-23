@@ -7,7 +7,7 @@ False  True  1  well_single_circle_contour.xyz  dump.out  well_single_circle.ele
 0.0125  :: t
 1.0D-6  1.0D-8  10  :: alpha, tolerance, M
 2  :: number of circular elements
-0  10 :: N
+1  10 :: N
 1  20 :: M
 2  0  :: ibnd
 false  true :: calcin?

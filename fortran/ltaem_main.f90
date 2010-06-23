@@ -104,9 +104,8 @@ program ltaem_main
         end if
 
         idx = 0
-        
         do ilogt = iminlogt,imaxlogt-1
-           write(*,'(A,I0)') 'log t=',ilogt
+           write(*,'(A,I0,A)') 'log t= 10^(',ilogt,')'
            if (nt(ilogt) > 0) then
               do j = 1,2*sol%m+1
                  idx = idx+ 1

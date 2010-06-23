@@ -40,6 +40,10 @@ contains
     complex(DP), dimension(iwork) :: WORK
     integer :: IERR
 
+#ifdef DEBUG
+    print *, 'matrix_solution: c:',c%id,' e:',e%id,' dom:',dom%num,' p:',p,' idx:',idx
+#endif
+
     nc = size(c,1);  ne = size(e,1)
     ntot = nc + ne
     allocate(res(ntot,ntot),row(ntot,0:2),col(ntot,0:2))

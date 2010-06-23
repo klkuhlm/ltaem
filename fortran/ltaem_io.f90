@@ -379,7 +379,6 @@ contains
     ! adjust the formats of time, location, and results here
     character(6) :: tfmt = 'ES13.5', xfmt = 'ES12.4'
     character(9) :: hfmt = 'ES22.14e3'
-    
     integer :: i, j, k, nt, nx, ny
 
     select case (s%output)
@@ -401,7 +400,7 @@ contains
           & '               velx                vely'
           write(20,'(2('//xfmt//',1X),3('//hfmt//',1X))') &
                & ((s%x(k), s%y(j), s%h(k,j,i), s%v(k,j,i,1:2), k=1,nx), j=1,ny)
-          write(20,'(//)')
+          write(20,'(/)')
        end do       
        write(20,'(A)') '# EOF'
        close(20)
@@ -489,7 +488,7 @@ contains
              write (20,'(1X,'//tfmt//',3(1X,'//hfmt//'))') &
                   & s%t(k),s%h(i,1,k),s%v(i,1,k,1:2)
           end do
-          write (20,'(//)')
+          write (20,'(/)')
        end do       
        write(20,*) '# EOF'
        close(20)
@@ -515,7 +514,7 @@ contains
                 write (20,'(1X,'//tfmt//',3(1X,'//hfmt//'))') &
                      & s%t(k),s%h(j,i,k),s%v(j,i,k,1:2)
              end do
-             write (20,'(//)')
+             write (20,'(/)')
           end do
        end do       
        write(20,*) '# EOF'
@@ -539,12 +538,12 @@ contains
           do k = 1, nt
              write (20,'('//tfmt//',1X,'//hfmt//')') s%t(k),s%h(i,1,k)
           end do
-          write(20,'(//)')
+          write(20,'(/)')
           close(20)
        end do       
 
        write(*,'(/A)') '***********************************************************'
-       write(*,'(4A)') 'inverse output written to ', trim(s%outfname) , '0000-',chint(1)
+       write(*,'(4A)') 'inverse output written to ',trim(s%outfname),'0000-',chint(1)
        write(*,'(A)') '***********************************************************'
 
 !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -563,7 +562,7 @@ contains
              write (20,'('//tfmt//',2'//xfmt//',2'//hfmt//')') &
                   & p(i)%result(1:5,k)
           end do
-          write (20,'(//)')
+          write (20,'(/)')
        end do       
        write(20,'(A)') '# EOF'
        close(20)
@@ -596,7 +595,7 @@ contains
                 write (90,'(I0,4(1X'//hfmt//'))')  j,p(j)%result(2:5,i)
              end if
           end do
-          write (90,'(//)')
+          write (90,'(/)')
        end do       
        write(90,'(A)') '# EOF'
        close(90)
@@ -641,9 +640,9 @@ contains
        end do
        if (c(i)%M > 1) then
           ! joins circle back up with beginning for plotting
-          write(40,'(2(ES13.5,1X))')  c(i)%Zom(j)
+          write(40,'(2(ES13.5,1X))')  c(i)%Zom(1)
        end if
-       write(40,'(//)')    
+       write(40,'(/)')    
     end do
 
     do i = 1,ne
@@ -653,9 +652,9 @@ contains
        end do
        if (e(i)%M > 1) then
           ! joins ellipse back up with beginning for plotting
-          write(40,'(2(ES13.5,1X))')  e(i)%Zom(j)
+          write(40,'(2(ES13.5,1X))')  e(i)%Zom(1)
        end if
-       write(40,'(//)')    
+       write(40,'(/)')    
     end do
     write(40,'(A)') '# EOF'
     close(40)

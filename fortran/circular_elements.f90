@@ -31,6 +31,10 @@ contains
     real(DP) :: cmat(1:c%M,0:c%N-1), smat(1:c%M,1:c%N-1)
     real(DP), dimension(0:c%N-1) :: vi
 
+#ifdef DEBUG
+    print *, 'circle_match_self: c:',c%id,' p:',p
+#endif    
+
     N = c%N; M = c%M
     vi = real([(j,j=0,N-1)],DP)
 
@@ -45,7 +49,9 @@ contains
        lo = 1;  hi = M
     end if
 
+    print *, 'Pcm:',shape(c%pcm(1:M)),' vi:',shape(vi(0:N-1)),' cmat:',shape(cmat)
     cmat = cos(outerprod(c%Pcm(1:M), vi(0:N-1)))
+    print *, 'Pcm:',shape(c%pcm(1:M)),' vi:',shape(vi(1:N-1)),' smat:',shape(smat)
     smat = sin(outerprod(c%Pcm(1:M), vi(1:N-1)))
 
     ! setup LHS
@@ -130,6 +136,10 @@ contains
     complex(DP), allocatable :: Bn(:,:), dBn(:,:), Bn0(:)
     complex(DP), allocatable :: dPot_dR(:,:), dPot_dP(:,:), dPot_dX(:,:), dPot_dY(:,:)
     complex(DP) :: kap
+
+#ifdef DEBUG
+    print *, 'circle_match_other: c:',c%id,' el:',el%id,' dom:',dom%num,' p:',p
+#endif    
 
     N = c%N ! number of coefficients in the source circular element
     targ = el%id; src = c%id
@@ -280,6 +290,10 @@ contains
     complex(DP), intent(in) :: p
     complex(DP) :: a0, Kn(0:1)
     
+#ifdef DEBUG
+    print *, 'well: c:',c%id,' p:',p
+#endif
+
     Kn(0:1) = bK(kappa(p,c%parent)*c%r,2)
     a0 = Kn(0)*time(p,c%time,.false.)*c%bdryQ/(2.0*PI*c%r*Kn(1))
     
@@ -294,7 +308,11 @@ contains
     type(circle), intent(in) :: c
     complex(DP), intent(in) :: p
     complex(DP) :: a0, kap, Kn(0:1)
-    
+
+#ifdef DEBUG
+    print *, 'storwell: c:',c%id,' p:',p
+#endif
+
     kap = kappa(p,c%parent)
     Kn(0:1) = bK(kap*c%r,2)
     a0 = -Kn(0)*((2.0 + c%r**2*c%dskin*p/c%parent%T)/(2.0*PI*c%r) + &
@@ -317,6 +335,10 @@ contains
     complex(DP), dimension(size(p,1),c%N) :: aa,bb,BRgp,BR0
     integer :: n0, np, i, N
     complex(DP), dimension(size(p,1)) :: kap
+
+#ifdef DEBUG
+    print *, 'circle_calc: p:',p,' c:',c%id,' lo:',lo,' hi:',hi,' Rgp:',Rgp,' Pgp:',Pgp,' inside:',inside
+#endif
 
     N = c%N
     np = size(p,1)
@@ -362,6 +384,10 @@ contains
     integer :: n0, np, i, N
     complex(DP), dimension(size(p,1)) :: kap
 
+#ifdef DEBUG
+    print *, 'circle_deriv: p:',p,' c:',c%id,' lo:',lo,' hi:',hi,' Rgp:',Rgp,' Pgp:',Pgp,' inside:',inside
+#endif
+
     N = c%N
     np = size(p,1)
     vr = real([(i,i=0,N-1)],DP)
@@ -395,7 +421,5 @@ contains
          & ( bb(:,1:N)*spread(cos(vr(0:N-1)*Pgp),1,np) - &
          &   aa(:,1:N)*spread(sin(vr(0:N-1)*Pgp),1,np) ),dim=2)    
   end function circle_deriv
-
-  
 end module circular_elements
 

@@ -106,10 +106,15 @@ contains
     complex(DP), dimension(:,:), intent(in) :: z
     integer, intent(in) :: n
     complex(DP), intent(out), dimension(size(z,1),size(z,2),0:n-1) :: I, ID
-    I(:,:,0:n-1) = bI(z,n)
-    ID(:,:,1:n-2) = 0.5_DP*(I(:,:,0:n-3) + I(:,:,2:n-1))      ! middle
-    ID(:,:,0) = I(:,:,1)                                      ! low end
-    ID(:,:,n-1) = I(:,:,n-2) - (n-1)/z*I(:,:,n-1) ! high end
+    
+    I(:,:,0:n-1) = bI(z,max(1,n))
+    ID(:,:,0) = I(:,:,1)   ! low end
+    if (n > 1) then
+       ID(:,:,n-1) = I(:,:,n-2) - (n-1)/z*I(:,:,n-1) ! high end
+       if (n > 2) then
+          ID(:,:,1:n-2) = 0.5_DP*(I(:,:,0:n-3) + I(:,:,2:n-1)) ! middle
+       end if
+    end if
   end subroutine besId_zmat
 
   subroutine besId_zvect(z,n,I,ID)
@@ -136,10 +141,14 @@ contains
     complex(DP), dimension(:,:), intent(in) :: z
     integer, intent(in) :: n
     complex(DP), intent(out), dimension(size(z,1),size(z,2),0:n-1) :: K, KD
-    K(:,:,0:n-1) = bK(z,n)
-    KD(:,:,1:n-2) = -0.5_DP*(K(:,:,0:n-3) + K(:,:,2:n-1))        ! middle
-    KD(:,:,0) = - K(:,:,1)                                       ! low end
-    KD(:,:,n-1) = -(K(:,:,n-2) + (n-1)/z*K(:,:,n-1)) ! high end
+    K(:,:,0:n-1) = bK(z,max(n,1))
+    KD(:,:,0) = -K(:,:,1)  ! low end
+    if (n > 1) then
+       KD(:,:,n-1) = -(K(:,:,n-2) + (n-1)/z*K(:,:,n-1)) ! high end
+       if (n > 2) then
+          KD(:,:,1:n-2) = -0.5_DP*(K(:,:,0:n-3) + K(:,:,2:n-1)) ! middle
+       end if
+    end if
   end subroutine besKd_zmat
 
   subroutine besKd_zvect(z,n,K,KD)

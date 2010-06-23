@@ -11,7 +11,7 @@ module mathieu_functions
   end type mathieu
 
   private  !! only interfaces and mathieu_init are publicly callable
-  public :: ce, Dce, se, Dse, Ke, Ko, DKe, DKo, Ie, Io, DIe, DIo, mathieu_init, print_struct
+  public :: ce, Dce, se, Dse, Ke, Ko, DKe, DKo, Ie, Io, DIe, DIo, mathieu_init, print_mathieu_type
 
   interface ce   ! even first kind angular MF
      module procedure ce_scalar_nz, ce_scalar_n, ce_scalar_z, ce_vect_nz
@@ -117,6 +117,10 @@ contains
     else
        mat%CUTOFF = 1.0D-12
     endif
+
+#ifdef DEBUG
+    print *, 'mathieu_init: q:',q,' mat%M:',mat%M,' mat%CUTOFF:',mat%CUTOFF
+#endif
 
     ! A/B 1st dimension: subscript in McLachlan notation,
     ! i.e., the position in the infinite sum
@@ -282,10 +286,6 @@ contains
      end do bufcheck
      
   end function mathieu_init
-
-  !$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
-  !$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
-  !$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 
   !############################################################
   ! even angular modified mathieu function (q<0)
@@ -1183,8 +1183,6 @@ contains
   end subroutine radderivfcnsetup
 
   !! &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-  !! &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-  !! &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
   !! these subroutnies are wrappers for the complex Bessel funcitons
   !! implemented by Amos, Algorithm 644 TOMS, Vol 21, No 4, 1995
   !!
@@ -1302,7 +1300,7 @@ contains
 
   end subroutine BesselK_val_and_deriv
 
-  subroutine print_struct(m,n)
+  subroutine print_mathieu_type(m,n)
     type(mathieu), intent(in) :: m
     integer, intent(in) :: n
     integer :: i,j
@@ -1320,6 +1318,6 @@ contains
     write(*,fmt) (' A(',j,',1:n,1):', ('(',real(m%A(j,i,1)),',',aimag(m%A(j,i,1)),')',i=1,n),j=1,n)
     write(*,fmt) (' B(',j,',1:n,0):', ('(',real(m%B(j,i,0)),',',aimag(m%B(j,i,0)),')',i=1,n),j=1,n)
     write(*,fmt) (' B(',j,',1:n,1):', ('(',real(m%B(j,i,1)),',',aimag(m%B(j,i,1)),')',i=1,n),j=1,n)
-  end subroutine print_struct
+  end subroutine print_mathieu_type
 
 end module mathieu_functions

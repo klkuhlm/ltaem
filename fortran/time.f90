@@ -26,6 +26,9 @@ contains
     real(DP), allocatable :: ti(:),q(:),par(:)
     real(DP) :: tf
     
+#ifdef DEBUG
+#endif
+
     np = size(p,1)
     if (area) then
        flag = t%areaTime

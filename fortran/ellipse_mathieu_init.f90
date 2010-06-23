@@ -14,6 +14,11 @@ contains
 
     integer :: np, i, j
     complex(DP), dimension(size(p,1)) :: kap
+
+#ifdef DEBUG
+    print *, 'ellipse_init: e:',e%id,' bg:',bg%id,' p:',p
+#endif
+
     np = size(p,1)
 
     ! allocate background
