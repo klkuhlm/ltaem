@@ -53,9 +53,11 @@ contains
     ! accumulate results into matrices of structures
     do i=1,nc
        ! circle on self
+       print *, 'before c on self:',i
        res(i,i) = circle_match(c(i),p)
        row(i,1) = size(res(i,i)%LHS,1)
        col(i,1) = size(res(i,i)%LHS,2)
+       print *, 'row',row(i,1),' col',col(i,1)
 
        ! circle on other circle
        do j=1,nc
@@ -76,26 +78,33 @@ contains
 
     do i = 1, ne
        ! ellipse on self
+       print *, 'before e on self:',i
        res(nc+i,nc+i) = ellipse_match(e(i),p,idx)
        row(i+nc,1) = size(res(nc+i,nc+i)%LHS,1)
        col(i+nc,1) = size(res(nc+i,nc+i)%LHS,2)
+       print *, 'row',row(i+nc,1),'col',col(i+nc,1)
 
        ! ellipse on other circle
        do j = 1, nc
+          print *, 'before e on c:',i,j
           res(nc+i,j) = ellipse_match(e(i),c(j)%matching,dom,p,idx)
+          print *, 'after e on c:',i,j
        end do
 
        ! ellipse on other ellipse
        do j = 1, ne
           if (i /= j) then
+             print *, 'before e on e:',i,j
              res(nc+i,j+nc) = ellipse_match(e(i),e(j)%matching,dom,p,idx)
+             print *, 'after e on e:',i,j
           end if
        end do
     end do
 
     bigM = sum(row(:,1))
     bigN = sum(col(:,1))
-    allocate(A(bigM,bigN), b(bigM))
+     allocate(A(bigM,bigN), b(bigM))
+     print *, 'N,M',bigN,bigM,shape(A),'::',shape(b)
 
     forall (i=1:ntot)
        row(i,0) = 1 + sum(row(1:i-1,1))  ! lower bound
@@ -104,6 +113,11 @@ contains
        col(i,2) = sum(col(1:i,1))
     end forall
 
+    do i=1,ntot
+       print *, 'row(:,',i,')',row(:,i)
+       print *, 'col(:,',i,')',col(:,i)
+    end do
+
     ! convert structures into single matrix for solution via least squares
     do i=1,ntot
        do j=1,ntot
@@ -111,7 +125,9 @@ contains
           b(row(i,0):row(i,2)) = res(i,j)%RHS
        end do
     end do
+    print *, 'before deallocate res'
     deallocate(res)
+    print *, 'after deallocate res'
 
     ! use LAPACK routine to solve least-squares via Q-R decomposition
     call ZGELS('N',bigM,bigN,1,A(:,:),bigM,b(:),bigM,WORK,IWORK,ierr)
