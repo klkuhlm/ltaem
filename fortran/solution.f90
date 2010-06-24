@@ -53,50 +53,50 @@ contains
     ! accumulate results into matrices of structures
     do i=1,nc
        ! circle on self
-       print *, 'before c on self:',i
+       write(*,'(A,I0)') 'before c on self: ',i
        res(i,i) = circle_match(c(i),p)
        row(i,1) = size(res(i,i)%LHS,1)
        col(i,1) = size(res(i,i)%LHS,2)
-       print *, 'row',row(i,1),' col',col(i,1)
+       write(*,'(2(A,I0))') 'row ',row(i,1),' col ',col(i,1)
 
        ! circle on other circle
        do j=1,nc
           if(i/=j) then
-             print *, 'before c on c:',i,j
+             write(*,'(A,2(1X,I0))') 'before c on c:',i,j
              res(i,j) = circle_match(c(i),c(j)%matching,dom,p)
-             print *, 'after c on c:',i,j
+             write(*,'(A,2(1X,I0))') 'after c on c:',i,j
           end if
        end do
 
        ! circle on other ellipse
        do j=1,ne
-          print *, 'before c on e:',i,j
+          write(*,'(A,2(1X,I0))') 'before c on e:',i,j
           res(i,j+nc) = circle_match(c(i),e(j)%matching,dom,p)
-          print *, 'after c on e:',i,j
+          write(*,'(A,2(1X,I0))') 'after c on e:',i,j
        end do
     end do
 
     do i = 1, ne
        ! ellipse on self
-       print *, 'before e on self:',i
+       write(*,'(A,I0)') 'before e on self: ',i
        res(nc+i,nc+i) = ellipse_match(e(i),p,idx)
        row(i+nc,1) = size(res(nc+i,nc+i)%LHS,1)
        col(i+nc,1) = size(res(nc+i,nc+i)%LHS,2)
-       print *, 'row',row(i+nc,1),'col',col(i+nc,1)
+       write(*,'(2(A,I0))') 'row ',row(i+nc,1),' col ',col(i+nc,1)
 
        ! ellipse on other circle
        do j = 1, nc
-          print *, 'before e on c:',i,j
+          write(*,'(A,2(1X,I0))') 'before e on c:',i,j
           res(nc+i,j) = ellipse_match(e(i),c(j)%matching,dom,p,idx)
-          print *, 'after e on c:',i,j
+          write(*,'(A,2(1X,I0))') 'after e on c:',i,j
        end do
 
        ! ellipse on other ellipse
        do j = 1, ne
           if (i /= j) then
-             print *, 'before e on e:',i,j
+             write(*,'(A,2(1X,I0))') 'before e on e:',i,j
              res(nc+i,j+nc) = ellipse_match(e(i),e(j)%matching,dom,p,idx)
-             print *, 'after e on e:',i,j
+             write(*,'(A,2(1X,I0))') 'after e on e:',i,j
           end if
        end do
     end do
