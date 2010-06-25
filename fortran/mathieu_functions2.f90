@@ -1206,18 +1206,18 @@ contains
        if (ierr /= 0) then
           select case(ierr)
           case(1)
-             write(*,*) "CBESI: input error, z=",arg(1:max(ubound(arg,1),5))," n=",n
+             write(*,*) "CBESI: input error, z=",arg(1:min(ubound(arg,1),5))," n=",n
              stop "CBESI: input error"
           case(2)
              write(*,*) "CBESI: overflow, z or order too &
-                  &large for unscaled output, z=",arg(1:max(ubound(arg,1),5))," n=",n
+                  &large for unscaled output, z=",arg(1:min(ubound(arg,1),5))," n=",n
              stop "CBESI: overflow, z or order too large &
                   &for unscaled output"
           case(3)
-             write(*,*) "CBESI: loss of precision, z=",arg(1:max(ubound(arg,1),5)),numzero
+             write(*,*) "CBESI: loss of precision, z=",arg(1:min(ubound(arg,1),5)),numzero
           case(4)
              write(*,*) "CBESI: overflow, z or order too &
-                  &large, z=",arg(1:max(ubound(arg,1),5))," n=",n
+                  &large, z=",arg(1:min(ubound(arg,1),5))," n=",n
              stop "CBESI: overflow, z or order too large"
           case(5)
              stop "CBESI: algorithm termination not met"
@@ -1261,18 +1261,18 @@ contains
        if (ierr /= 0) then
           select case(ierr)
           case(1)
-             write(*,*) "CBESK: input error, z=",arg(1:max(ubound(arg,1),5))," n=",n
+             write(*,*) "CBESK: input error, z=",arg(1:min(ubound(arg,1),5))," n=",n
              stop "CBESK: input error"
           case(2)
              write(*,*) "CBESK: overflow, z too small or order &
-                  &too large for unscaled output, z=",arg(1:max(ubound(arg,1),5))," n=",n
+                  &too large for unscaled output, z=",arg(1:min(ubound(arg,1),5))," n=",n
              stop "CBESK: overflow, z too small or order too &
                   &large for unscaled output"
           case(3)
-             write(*,*) "CBESK: loss of precision, z=",arg(1:max(ubound(arg,1),5)),numzero
+             write(*,*) "CBESK: loss of precision, z=",arg(1:min(ubound(arg,1),5)),numzero
           case(4)
              write(*,*) "CBESK: overflow, z too small or order &
-                  &too large, z=",arg(1:max(ubound(arg,1),5))," n=",n
+                  &too large, z=",arg(1:min(ubound(arg,1),5))," n=",n
              stop "CBESK: overflow, z too small or order too large"
           case(5)
              stop "CBESK: algorithm termination not met"

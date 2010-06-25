@@ -114,17 +114,19 @@ contains
     end forall
 
     do i=1,ntot
-       write(*,'(A,I0,A,3(1X,I3))') 'row(',i,',0:2)',row(i,0:2)
-       write(*,'(A,I0,A,3(1X,I3))') 'col(',i,',0:2)',col(i,0:2)
+       print '(A,I0,A,3(1X,I3))', 'row(',i,',0:2)',row(i,0:2)
+       print '(A,I0,A,3(1X,I3))', 'col(',i,',0:2)',col(i,0:2)
     end do
 
     ! convert structures into single matrix for solution via least squares
     do i=1,ntot
        do j=1,ntot
-          print *, 'row i,j',i,j
-          A(row(i,0):row(i,2),col(j,0):col(j,2)) = res(i,j)%LHS
-          print *, 'col'
-          b(row(i,0):row(i,2)) = res(i,j)%RHS
+          print '(A,2(1X,I0))', 'row i,j',i,j
+          print '(2(A,2(1X,I0)))','row:',row(j,0),row(j,2),' col:',col(i,0),col(i,2)
+          print '(A,2(1X,I0))', 'LHS:',shape(res(i,j)%LHS)
+          A(row(j,0):row(j,2),col(i,0):col(i,2)) = res(i,j)%LHS
+          print '(A,2(1X,I0))', 'RHS',shape(res(i,j)%RHS)
+          b(row(j,0):row(j,2)) = res(i,j)%RHS
        end do
     end do
     print *, 'before deallocate res'
