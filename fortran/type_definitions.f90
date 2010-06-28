@@ -85,7 +85,7 @@ module type_definitions
      complex(DP), allocatable :: Zgm(:)
      real(DP), allocatable :: Rgm(:), Pgm(:), metric(:)
   end type geom
-
+  
   type :: match_result
      ! structure for storing intermediate results
      complex(DP), allocatable :: LHS(:,:), RHS(:)
@@ -228,4 +228,29 @@ module type_definitions
      ! number of time steps actuall used (some algorithms are adaptive)
      integer :: numt
   end type particle
+
+contains
+  subroutine print_match_result(r)
+    type(match_result), intent(in) :: r
+    integer :: row,col,i,j
+    character(40),dimension(2) :: fmt
+
+    write(*,'(2(A,1L))') 'Allocated?  r%LHS:',allocated(r%LHS),' r%RHS:',allocated(r%RHS)
+    row = size(r%LHS,dim=1)
+    col = size(r%LHS,dim=2)
+    write(*,'(2(A,2(1X,I0)))') 'Shape: r%LHS:',shape(r%LHS),' r%RHS:',shape(r%RHS)
+    fmt(1) = '(A,I3,   (A,ES13.5E3,A,ES13.5E3,A))     '
+    write(fmt(1)(7:9),'(I3.3)') col
+    fmt(2) = '(7X,   (I15,15X))                       '
+    write(fmt(2)(5:7),'(I3.3)') col
+    write(*,fmt(2)) [(i,i=1,col)] ! headers
+    do i=1,row
+       write(*,fmt(1)) 'LHS:',i,('(',real(r%LHS(i,j)),',',aimag(r%LHS(i,j)),') ',j=1,col)
+    end do
+    do i=1,row
+       write(*,'(A,I3,(A,ES13.5E3,A,ES13.5E3,A))') 'RHS:',i,'(',real(r%RHS(i)),', ',aimag(r%RHS(i)),')'
+    end do
+    
+  end subroutine print_match_result
+  
 end module type_definitions

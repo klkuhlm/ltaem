@@ -25,7 +25,7 @@ contains
     complex(DP), intent(in) :: p
     type(match_result) :: r
 
-    integer :: j, N, M, lo, hi
+    integer :: j, N, M, lo, hi, ierr
     complex(DP), allocatable :: Bn(:), dBn(:) ! mod. bessel function (K or I)
     complex(DP) :: kap
     real(DP) :: cmat(1:c%M,0:c%N-1), smat(1:c%M,1:c%N-1)
@@ -82,7 +82,8 @@ contains
           r%LHS(lo:hi,2*N:3*N-1) = spread(dBn(0:N-1)/Bn(0:N-1), 1,M)*cmat ! c_n flux
           r%LHS(lo:hi,3*N:4*N-2) = spread(dBn(1:N-1)/Bn(1:N-1), 1,M)*smat ! d_n flux
        end if
-       deallocate(Bn,dBn)
+       deallocate(Bn,dBn,stat=ierr)
+       if (ierr /= 0) stop 'circular_elements.f90 error deallocating memory, Bn,dBn'
     end if
     
     ! setup RHS
@@ -98,9 +99,6 @@ contains
        ! put specified flux effects on RHS
        r%RHS(1:M) = time(p,c%time,.false.)*c%bdryQ/(2.0*PI*c%r)
     case(2)
-       allocate(Bn(0:1))
-       Bn(0:1) = bK(kap*c%r,2)
-          
        if (c%StorIn) then
           ! effects of wellbore storage and skin on finite-radius well
           ! effects of other elements on this one show up in off-diagonals
@@ -111,7 +109,6 @@ contains
           r%RHS(1:M) = well(c,p)*r%LHS(1:M,1)
           r%LHS(1:M,1) = 0.0
        end if
-       deallocate(Bn)
     end select
   end function circle_match_self
 
@@ -127,7 +124,7 @@ contains
     complex(DP), intent(in) :: p
     type(match_result) :: r
 
-    integer :: j, src, targ, N, M, lo, hi
+    integer :: j, src, targ, N, M, lo, hi, ierr
     real(DP) :: K
     real(DP), allocatable :: cmat(:,:), smat(:,:)
     real(DP), dimension(0:c%N-1) :: vi
@@ -274,8 +271,11 @@ contains
              r%LHS(lo:hi,:) = dPot_dX*spread(el%f*sinh(el%r)*cos(el%Pcm(1:M)),2,2*N-1) + &
                             & dPot_dY*spread(el%f*cosh(el%r)*sin(el%Pcm(1:M)),2,2*N-1)
           end if
-          deallocate(dBn, dPot_dR, dPot_dP, dPot_dX, dPot_dY)
+          deallocate(dBn, dPot_dR, dPot_dP, dPot_dX, dPot_dY,stat=ierr)
+          if (ierr /= 0) stop 'circular_elements.f90 error deallocating memory, dBn, dPot_dR, dPot_dP, dPot_dX, dPot_dY'
        end if
+       deallocate(Bn,Bn0,cmat,smat,stat=ierr)
+       if (ierr /= 0) stop 'circular_elements.f90 error deallocating memory, Bn,Bn0,cmat,smat'
     end if
   end function circle_match_other
 
@@ -285,7 +285,8 @@ contains
     use bessel_functions, only : bK
     type(circle), intent(in) :: c
     complex(DP), intent(in) :: p
-    complex(DP) :: a0, Kn(0:1)
+    complex(DP) :: a0
+    complex(DP), dimension(0:1) ::Kn
     
 #ifdef DEBUG
     print *, 'well: c:',c%id,' p:',p
@@ -304,7 +305,8 @@ contains
     
     type(circle), intent(in) :: c
     complex(DP), intent(in) :: p
-    complex(DP) :: a0, kap, Kn(0:1)
+    complex(DP) :: a0, kap
+    complex(DP), dimension(0:1) :: Kn
 
 #ifdef DEBUG
     print *, 'storwell: c:',c%id,' p:',p

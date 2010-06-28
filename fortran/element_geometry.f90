@@ -23,7 +23,7 @@ contains
     type(solution), intent(in) :: sol
     type(matching), pointer :: other => null()
 
-    integer :: i, j, ne, nc, ntot, par, M
+    integer :: i, j, ne, nc, ntot, par, M, ierr
     complex(DP), allocatable :: z(:)
 
     nc = dom%num(1)
@@ -119,7 +119,8 @@ contains
           ! when only one matching location move to center of line between foci
           e(i)%Zcm(1) = cmplx(0.0,0.0,DP)
        end if
-       deallocate(z)
+       deallocate(z,stat=ierr)
+       if (ierr /= 0) stop 'element_geometry.f90 error deallocating memory, z1'
 
        ! x,y from Cartesian origin to point on circumference of element
        e(i)%Zom(1:M) = e(i)%Zcm(:) + cmplx(e(i)%x,e(i)%y,DP)
@@ -162,7 +163,8 @@ contains
              z(1:M) = cacosh(e(i)%G(j)%Zgm(1:M))*exp(-EYE*e(i)%theta)/e(i)%f
              e(i)%G(j)%Rgm(1:M) = real(z)  ! eta
              e(i)%G(j)%Pgm(1:M) = aimag(z) ! psi
-             deallocate(z)
+             deallocate(z,stat=ierr)
+             if (ierr /= 0) stop 'element_geometry.f90 error deallocating memory, z2'
              other => null()
           end if
        end do

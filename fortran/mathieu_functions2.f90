@@ -265,7 +265,11 @@ contains
     
     mat%B(:,:,1) = mat%B(:,:,1)/spread(w,1,m)
 
-    deallocate(coeff,rwork,w,work)
+    deallocate(coeff,rwork,w,work,stat=ierr)
+    if (ierr /= 0) then 
+       write(*,'(A)')'mathieu_functions2.f90 error deallocating memory: coeff,rwork,w,work'
+       stop 9010
+    end if
 
     ! perform some heuristic checking of max allowable order
     diag = sum(abs(diagonal(mat%A(:,:,0),0)))/m

@@ -26,9 +26,10 @@ contains
     integer, intent(in) :: idx ! indicates which value of p (global state)
     type(match_result) :: r
 
-    integer :: j, N, M, lo, hi
+    integer :: j, N, M, lo, hi, ierr
     complex(DP), allocatable :: RMn(:,:), dRMn(:,:) ! mod. radial Mathieu function (K{e,o} or I{e,o})
-    complex(DP) :: cemat(1:e%M,0:e%N-1,0:1), semat(1:e%M,1:e%N-1,0:1)
+    complex(DP), dimension(1:e%M,0:e%N-1,0:1) :: cemat
+    complex(DP), dimension(1:e%M,1:e%N-1,0:1) :: semat
     integer, dimension(0:e%N-1) :: vi
 
 #ifdef DEBUG
@@ -90,7 +91,9 @@ contains
           r%LHS(lo:hi,2*N:3*N-1) = spread(dRMn(0:N-1,0)/RMn(0:N-1,0), 1,M)*cemat(:,:,0) ! c_n flux
           r%LHS(lo:hi,3*N:4*N-2) = spread(dRMn(1:N-1,1)/RMn(1:N-1,1), 1,M)*semat(:,:,1) ! d_n flux
        end if
-       deallocate(RMn,dRMn)
+       deallocate(RMn,dRMn,stat=ierr)
+       if (ierr /= 0) stop 'elliptical_elements.f90 error deallocating memory: RMn,dRMn'
+       
     end if
     
     ! setup RHS
@@ -109,8 +112,10 @@ contains
        ! specified flux (line-source of specified strength)
        ! even coefficients are computed analytically (odd are zero by symmetry)
        r%RHS(1:M) = sum(spread(line(e,p,idx),dim=1,ncopies=M)*r%LHS(1:M,1:N:2),dim=2)
-       deallocate(r%LHS)
-       allocate(r%LHS(1:M,0))
+       deallocate(r%LHS,stat=ierr)
+       if (ierr /= 0) stop 'elliptical_elements.f90 error deallocating memory: r%LHS'
+       allocate(r%LHS(1:M,0),stat=ierr)
+       if (ierr /= 0) stop 'elliptical_elements.f90 error re-allocating memory: r%LHS'
     end select
   end function ellipse_match_self
 
@@ -127,7 +132,7 @@ contains
     integer, intent(in) :: idx
     type(match_result) :: r 
 
-    integer :: j, src, targ, N, M, lo, hi, nmax
+    integer :: j, src, targ, N, M, lo, hi, nmax, ierr
     complex(DP), allocatable :: cemat(:,:), semat(:,:), dcemat(:,:), dsemat(:,:) 
     integer, dimension(0:e%N-1) :: vi
     complex(DP), allocatable :: RMn(:,:,:), dRMn(:,:,:), RMn0(:,:)
@@ -259,7 +264,8 @@ contains
                    & dPot_dP*spread(cosh(e%G(targ)%Rgm)*sin(e%G(targ)%Pgm),2,2*N-1))/hsq
           dPot_dY = (dPot_dR*spread(cosh(e%G(targ)%Rgm)*sin(e%G(targ)%Pgm),2,2*N-1) + &
                    & dPot_dP*spread(sinh(e%G(targ)%Rgm)*cos(e%G(targ)%Pgm),2,2*N-1))/hsq
-          deallocate(hsq)
+          deallocate(hsq,stat=ierr)
+          if (ierr /= 0) stop 'elliptical_elements.f90 error deallocating memory: hsq'
 
           ! project from Cartesian to "radial" coordinate of target element
           if (el%id <= dom%num(1)) then
@@ -296,14 +302,20 @@ contains
                             & dPot_dY*spread(el%f*cosh(el%r)*sin(el%Pcm(1:M)),2,nmax)
 
           end if
+          deallocate(dRMn,dcemat,dsemat,dPot_dR,dPot_dP,dPot_dX,dPot_dY,stat=ierr)
+          if (ierr /= 0) stop 'elliptical_elements.f90, error deallocating dRMn,dcemat,dsemat,dPot_dR,dPot_dP,dPot_dX,dPot_dY'
        end if
+       deallocate(RMn,RMn0,cemat,semat,stat=ierr)
+       if (ierr /= 0) stop 'elliptical_elements.f90, error deallocating RMn,RMn0,cemat,semat'
     end if
     
     if (e%ibnd == 2) then
        ! sum line source effects and move to RHS, re-setting LHS to 0 unknowns
        r%RHS(1:hi) = sum(spread(line(e,p,idx),1,hi)*r%LHS(1:hi,1:N:2))
-       deallocate(r%LHS)
-       allocate(r%LHS(1:hi,0))
+       deallocate(r%LHS,stat=ierr)
+       if (ierr /= 0) stop 'elliptical_elements.f90 error deallocating memory: r%LHS'
+       allocate(r%LHS(1:hi,0),stat=ierr)
+       if (ierr /= 0) stop 'elliptical_elements.f90 error re-allocating memory: r%LHS'
     end if
     
   end function ellipse_match_other

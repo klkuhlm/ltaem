@@ -85,7 +85,8 @@ program ltaem_main
            s(:,ilogt) = pvalues(tee(ilogt),sol%INVLT)
            lo = lo + nt(ilogt)
         end do
-        deallocate(logt,run)
+        deallocate(logt,run,stat=ierr)
+        if (ierr /= 0) stop 'ltaem_main.f90 error deallocating logt,run'
      end if
 
      ! only do matching if there is at least one matching element
