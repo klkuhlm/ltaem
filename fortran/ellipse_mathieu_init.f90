@@ -36,7 +36,7 @@ contains
           allocate(e(j)%mat(np))
           kap = kappa(p,e(j)%element)
           do i = 1, np
-             e(j)%mat(i) = mathieu_init(kap(i))
+             e(j)%mat(i) = mathieu_init(kap(i), MM=e(j)%MS)
           end do
        end if
     end do
