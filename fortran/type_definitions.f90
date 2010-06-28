@@ -78,6 +78,7 @@ module type_definitions
 
      ! structure containing matrices of mathieu function parameters
      type(mathieu), allocatable :: mat(:)
+     integer :: ms
   end type element
     
   type :: geom
@@ -141,8 +142,6 @@ module type_definitions
      ! Elliptical Inclusion related parameters
      ! line is special case of ellipse
 
-     ! size of MF infinite matrix
-     integer :: ms
   end type ellipse
 
   type :: INVLT

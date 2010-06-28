@@ -27,7 +27,7 @@ contains
 
     ! initialize for each value of p
     do i = 1, np
-       bg%mat(i) = mathieu_init(kap(i))
+       bg%mat(i) = mathieu_init(kap(i),MM=bg%ms)
     end do
 
     ! allocate/initialize each element for each value of p

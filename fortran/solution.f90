@@ -53,7 +53,7 @@ contains
     ! accumulate result into matrices of structures
     do i=1,nc
        ! circle on self
-       write(*,'(A,I0)') 'before c on self: ',i
+       write(*,'(4(A,I0))') 'before c on self: ',i,' N:',c(i)%N,' M:',c(i)%M,' ibnd:',c(i)%ibnd
        res(i,i) = circle_match(c(i),p)
        call print_match_result(res(i,i))
        row(i,1) = size(res(i,i)%LHS,1)
@@ -63,7 +63,8 @@ contains
        ! circle on other circle
        do j=1,nc
           if(i/=j) then
-             write(*,'(A,2(1X,I0))') 'before c on c:',i,j
+             write(*,'(A,2(1X,I0),4(A,I0))') 'before c on c:',i,j,' N:',c(i)%N,' M:',c(j)%M, &
+                  &' <-ibnd:',c(i)%ibnd,' ->ibnd:',c(j)%ibnd
              res(i,j) = circle_match(c(i),c(j)%matching,dom,p)
              call print_match_result(res(i,j))
              write(*,'(A,2(1X,I0))') 'after c on c:',i,j
@@ -72,7 +73,8 @@ contains
 
        ! circle on other ellipse
        do j=1,ne
-          write(*,'(A,2(1X,I0))') 'before c on e:',i,j+nc
+          write(*,'(A,2(1X,I0),4(A,I0))') 'before c on e:',i,j+nc,' N:',c(i)%N,' M:',e(j)%M, &
+               &' <-ibnd:',c(i)%ibnd,' ->ibnd:',e(j)%ibnd
           res(i,j+nc) = circle_match(c(i),e(j)%matching,dom,p)
           call print_match_result(res(i,j+nc))
           write(*,'(A,2(1X,I0))') 'after c on e:',i,j+nc
@@ -81,7 +83,7 @@ contains
 
     do i = 1, ne
        ! ellipse on self
-       write(*,'(A,I0)') 'before e on self: ',nc+i
+       write(*,'(A,I0)') 'before e on self: ',nc+i,' MS:',e(i)%ms,' N:',e(i)%N,' M:',e(i)%M,' ibnd:',e(i)%ibnd
        res(nc+i,nc+i) = ellipse_match(e(i),p,idx)
        call print_match_result(res(nc+i,nc+i))
        row(i+nc,1) = size(res(nc+i,nc+i)%LHS,1)

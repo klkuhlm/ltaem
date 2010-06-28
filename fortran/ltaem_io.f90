@@ -49,16 +49,16 @@ contains
     read(15,*) sol%particle, sol%contour, sol%output, &
          & sol%outFname, sol%coeffFName, sol%elemHfName, sol%geomfName
     read(15,*) bg%por, bg%k, bg%ss, bg%leakFlag, &
-         & bg%aquitardK, bg%aquitardSs, bg%aquitardb
+         & bg%aquitardK, bg%aquitardSs, bg%aquitardb, bg%ms
     read(15,*) bg%Sy, bg%kz, bg%unconfinedFlag, bg%b
 
     write(16,'(2(1L,1X),I0,5(1X,A))') sol%particle, sol%contour, sol%output, &
          & trim(sol%outFname), trim(sol%coeffFName), trim(sol%elemHfName), &
          & trim(sol%geomFname),'  ||    particle?, contour?, output,'// &
          & 'out/coeff/hierarchy/geometry file names'
-    write(16,'(3(ES11.5,1X),1L,3(1X,ES11.5),A)') bg%por, bg%k, bg%ss, &
-         & bg%leakFlag, bg%aquitardK, bg%aquitardSs, bg%aquitardb, & 
-         & '  ||    por, k, Ss, leaky flag, K2, Ss2, b2'
+    write(16,'(3(ES11.5,1X),1L,3(1X,ES11.5),1X,I0,A)') bg%por, bg%k, bg%ss, &
+         & bg%leakFlag, bg%aquitardK, bg%aquitardSs, bg%aquitardb, bg%ms, & 
+         & '  ||    por, k, Ss, leaky flag, K2, Ss2, b2, ellipse MS'
     write(16,'(2(ES11.5,1X),1L,1X,ES11.5,A)') bg%Sy, bg%kz, bg%unconfinedFlag, &
          & bg%b, '  || Sy, Kz, unconfined?, BGb'
     
