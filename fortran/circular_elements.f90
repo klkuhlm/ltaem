@@ -30,6 +30,7 @@ contains
     complex(DP) :: kap
     real(DP) :: cmat(1:c%M,0:c%N-1), smat(1:c%M,1:c%N-1)
     real(DP), dimension(0:c%N-1) :: vi
+    character(40) :: fmt
 
 #ifdef DEBUG
     print *, 'circle_match_self: c:',c%id,' p:',p
@@ -51,6 +52,15 @@ contains
 
     cmat = cos(outerprod(c%Pcm(1:M), vi(0:N-1)))
     smat = sin(outerprod(c%Pcm(1:M), vi(1:N-1)))
+
+!!$    fmt = '(A,I3,   (ES13.5E2)))      '
+!!$    write(fmt(7:9),'(I3.3)') N
+!!$    do j = 1,M
+!!$       write(*,fmt) 'cmat',j,cmat(j,:)
+!!$    end do
+!!$    do j = 1,M
+!!$       write(*,fmt) 'smat',j,smat(j,:)
+!!$    end do
 
     ! setup LHS
     ! matching or specified total head
@@ -89,22 +99,27 @@ contains
     ! setup RHS
     select case(c%ibnd)
     case(-1)
+       print *, 'case -1'
        ! put specified head on RHS
        r%RHS(1:M) = time(p,c%time,.false.)*c%bdryQ
     case(0)
+       print *, 'case 0'
        ! put constant area source term effects on RHS
        r%RHS(1:M) = -time(p,c%time,.true.)*c%areaQ*c%Ss/kappa(p,c%element)**2
        r%RHS(M+1:2*M) = 0.0 ! area source has no flux effects
     case(1)
+       print *, 'case 1'
        ! put specified flux effects on RHS
        r%RHS(1:M) = time(p,c%time,.false.)*c%bdryQ/(2.0*PI*c%r)
     case(2)
        if (c%StorIn) then
+          print *, 'case 2.stor'
           ! effects of wellbore storage and skin on finite-radius well
           ! effects of other elements on this one show up in off-diagonals
           r%LHS(1:M,1) = storwell(c,p)*r%LHS(1:M,1)
           r%RHS(1:M) = time(p,c%time,.false.)*c%bdryQ/(PI*c%r*c%parent%T)
-       else
+       else          
+          print *, 'case 2.nostor'
           ! specified flux (finite-radius well no storage)
           r%RHS(1:M) = well(c,p)*r%LHS(1:M,1)
           r%LHS(1:M,1) = 0.0

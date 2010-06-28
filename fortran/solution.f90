@@ -33,9 +33,9 @@ contains
     integer, intent(in) :: idx
 
     complex(DP), allocatable :: A(:,:), b(:)
-    type(match_result), allocatable :: res(:,:) ! results
+    type(match_result), allocatable :: res(:,:) ! results(target_id,source_id)
     integer, allocatable :: row(:,:), col(:,:) ! row/column trackers
-    integer :: nc, ne, ntot, i, j, bigM, bigN
+    integer :: nc, ne, ntot, i, j, bigM, bigN, rr,cc
 
     ! things only needed for LAPACK routine
     integer, parameter :: iwork = 10250   ! <- optimal??? probably not
@@ -53,58 +53,59 @@ contains
     ! accumulate result into matrices of structures
     do i=1,nc
        ! circle on self
-       write(*,'(4(A,I0))') 'before c on self: ',i,' N:',c(i)%N,' M:',c(i)%M,' ibnd:',c(i)%ibnd
+       print '(4(A,I0))', 'before c on self: ',i,' N:',c(i)%N,' M:',c(i)%M,' ibnd:',c(i)%ibnd
        res(i,i) = circle_match(c(i),p)
        call print_match_result(res(i,i))
        row(i,1) = size(res(i,i)%LHS,1)
        col(i,1) = size(res(i,i)%LHS,2)
-       write(*,'(2(A,I0))') 'row ',row(i,1),' col ',col(i,1)
+       print '(2(A,I0))', 'row ',row(i,1),' col ',col(i,1)
 
        ! circle on other circle
        do j=1,nc
           if(i/=j) then
-             write(*,'(A,2(1X,I0),4(A,I0))') 'before c on c:',i,j,' N:',c(i)%N,' M:',c(j)%M, &
+             print '(A,2(1X,I0),4(A,I0))', 'before c on c:',i,j,' N:',c(i)%N,' M:',c(j)%M, &
                   &' <-ibnd:',c(i)%ibnd,' ->ibnd:',c(j)%ibnd
-             res(i,j) = circle_match(c(i),c(j)%matching,dom,p)
-             call print_match_result(res(i,j))
-             write(*,'(A,2(1X,I0))') 'after c on c:',i,j
+             res(j,i) = circle_match(c(i),c(j)%matching,dom,p)
+             call print_match_result(res(j,i))
+             print '(A,2(1X,I0))', 'after c on c:',i,j
           end if
        end do
 
        ! circle on other ellipse
        do j=1,ne
-          write(*,'(A,2(1X,I0),4(A,I0))') 'before c on e:',i,j+nc,' N:',c(i)%N,' M:',e(j)%M, &
+          print '(A,2(1X,I0),4(A,I0))', 'before c on e:',i,j+nc,' N:',c(i)%N,' M:',e(j)%M, &
                &' <-ibnd:',c(i)%ibnd,' ->ibnd:',e(j)%ibnd
-          res(i,j+nc) = circle_match(c(i),e(j)%matching,dom,p)
-          call print_match_result(res(i,j+nc))
-          write(*,'(A,2(1X,I0))') 'after c on e:',i,j+nc
+          res(j+nc,i) = circle_match(c(i),e(j)%matching,dom,p)
+          call print_match_result(res(j+nc,i))
+         print '(A,2(1X,I0))', 'after c on e:',i,j+nc
        end do
     end do
 
     do i = 1, ne
        ! ellipse on self
-       write(*,'(A,I0)') 'before e on self: ',nc+i,' MS:',e(i)%ms,' N:',e(i)%N,' M:',e(i)%M,' ibnd:',e(i)%ibnd
+       print '(A,I0)', 'before e on self: ',nc+i,' MS:',e(i)%ms,&
+            &' N:',e(i)%N,' M:',e(i)%M,' ibnd:',e(i)%ibnd
        res(nc+i,nc+i) = ellipse_match(e(i),p,idx)
        call print_match_result(res(nc+i,nc+i))
        row(i+nc,1) = size(res(nc+i,nc+i)%LHS,1)
        col(i+nc,1) = size(res(nc+i,nc+i)%LHS,2)
-       write(*,'(2(A,I0))') 'row ',row(i+nc,1),' col ',col(i+nc,1)
+       print '(2(A,I0))', 'row ',row(i+nc,1),' col ',col(i+nc,1)
 
        ! ellipse on other circle
        do j = 1, nc
-          write(*,'(A,2(1X,I0))') 'before e on c:',nc+i,j
-          res(nc+i,j) = ellipse_match(e(i),c(j)%matching,dom,p,idx)
-          call print_match_result(res(nc+i,j))
-          write(*,'(A,2(1X,I0))') 'after e on c:',nc+i,j
+          print '(A,2(1X,I0))', 'before e on c:',nc+i,j
+          res(j,nc+i) = ellipse_match(e(i),c(j)%matching,dom,p,idx)
+          call print_match_result(res(j,nc+i))
+          print '(A,2(1X,I0))', 'after e on c:',nc+i,j
        end do
 
        ! ellipse on other ellipse
        do j = 1, ne
           if (i /= j) then
-             write(*,'(A,2(1X,I0))') 'before e on e:',nc+i,nc+j
-             res(nc+i,j+nc) = ellipse_match(e(i),e(j)%matching,dom,p,idx)
-             call print_match_result(res(nc+i,nc+j))
-             write(*,'(A,2(1X,I0))') 'after e on e:',nc+i,nc+j
+             print '(A,2(1X,I0))', 'before e on e:',nc+i,nc+j
+             res(nc+j,nc+i) = ellipse_match(e(i),e(j)%matching,dom,p,idx)
+             call print_match_result(res(nc+j,nc+i))
+             print '(A,2(1X,I0))', 'after e on e:',nc+i,nc+j
           end if
        end do
     end do
@@ -112,7 +113,7 @@ contains
     bigM = sum(row(:,1))
     bigN = sum(col(:,1))
      allocate(A(bigM,bigN), b(bigM))
-     print *, 'N,M',bigN,bigM,shape(A),'::',shape(b)
+     print *, 'N,M',bigN,bigM,'::',shape(A),'::',shape(b)
 
     forall (i=1:ntot)
        row(i,0) = 1 + sum(row(1:i-1,1))  ! lower bound
@@ -126,15 +127,17 @@ contains
        print '(A,I0,A,3(1X,I3))', 'col(',i,',0:2)',col(i,0:2)
     end do
 
+    print '(A,I0,1X,I0)','shape(res): ',shape(res)
+
     ! convert structures into single matrix for solution via least squares
-    do i=1,ntot
-       do j=1,ntot
-          print '(A,2(1X,I0))', 'row i,j',i,j
-          print '(2(A,2(1X,I0)))','row:',row(j,0),row(j,2),' col:',col(i,0),col(i,2)
-          print '(A,2(1X,I0))', 'LHS:',shape(res(i,j)%LHS)
-          A(row(j,0):row(j,2),col(i,0):col(i,2)) = res(i,j)%LHS
-          print '(A,2(1X,I0))', 'RHS',shape(res(i,j)%RHS)
-          b(row(j,0):row(j,2)) = res(i,j)%RHS
+    do rr=1,ntot
+       do cc=1,ntot
+          print '(2(A,I0))', 'row ',rr,' col ',cc
+          print '(2(A,2(1X,I0)))','row lo:hi',row(rr,0),row(rr,2),'  col lo:hi',col(cc,0),col(cc,2)
+          print '(A,2(1X,I0))', 'LHS shape:',shape(res(rr,cc)%LHS)
+          A(row(rr,0):row(rr,2),col(cc,0):col(cc,2)) = res(rr,cc)%LHS
+          print '(A,2(1X,I0))', 'RHS shape:',shape(res(rr,cc)%RHS)
+          b(row(rr,0):row(rr,2)) = res(rr,cc)%RHS
        end do
     end do
     deallocate(res,stat=ierr)
@@ -151,6 +154,7 @@ contains
     do i=1,nc
        ! circles
        if (.not. allocated(c(i)%coeff)) then
+          print *, 'allocate c',i
           allocate(c(i)%coeff(sol%totalnP,col(i,1)))
        end if
        c(i)%coeff(idx,:) = b(col(i,0):col(i,2))
@@ -158,6 +162,7 @@ contains
     do i=1,ne
        ! ellipses
        if (.not. allocated(e(i)%coeff)) then
+          print *, 'allocate e',i
           allocate(e(i)%coeff(sol%totalnp,col(nc+i,1)))
        end if
        e(i)%coeff(idx,:) = b(col(nc+i,0):col(nc+i,2))
