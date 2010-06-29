@@ -30,12 +30,12 @@ contains
   function besk_matz(z,num) result(besk)
     complex(DP), dimension(:,:), intent(in) :: z
     integer, intent(in) :: num
-    complex(DP), dimension(size(z,1),size(z,2),0:num-1) :: besk
+    complex(DP), dimension(size(z,dim=1),size(z,dim=2),0:num-1) :: besk
     integer :: nz, ierr, i,j
     integer, parameter :: kode = 1
 
-    do i = 1, size(z,1)
-       do j = 1, size(z,2)
+    do i = 1, size(z,dim=1)
+       do j = 1, size(z,dim=2)
           call cbesk(z(i,j), 0.0_DP, kode, num, besk(i,j,0:num-1), nz, ierr)
           ! either 0 or 3 are acceptable return codes
           if ((ierr >= 1 .and. ierr <= 2) .or. ierr >= 4) then
@@ -50,7 +50,7 @@ contains
   function besk_vectz(z,num) result(besk)
     complex(DP), dimension(:), intent(in) :: z
     integer, intent(in) :: num
-    complex(DP), dimension(size(z,1),0:num-1) :: besk
+    complex(DP), dimension(size(z,dim=1),0:num-1) :: besk
     besk = sum(besk_matz(spread(z,dim=2,ncopies=1),num),dim=2)
   end function besk_vectz
 
@@ -66,12 +66,12 @@ contains
   function besi_matz(z,num) result(besi)
     complex(DP), dimension(:,:), intent(in) :: z
     integer, intent(in) :: num
-    complex(DP), dimension(size(z,1),size(z,2),0:num-1) :: besi
+    complex(DP), dimension(size(z,dim=1),size(z,dim=2),0:num-1) :: besi
     integer :: nz, ierr, i,j
     integer, parameter :: kode = 1
 
-    do i = 1, size(z,1)
-       do j = 1, size(z,2)
+    do i = 1, size(z,dim=1)
+       do j = 1, size(z,dim=2)
           call cbesi(z(i,j), 0.0_DP, kode, num, besi(i,j,0:num-1), nz, ierr)
           ! either 0 or 3 are acceptable return codes
           if ((ierr >= 1 .and. ierr <= 2) .or. ierr >= 4) then
@@ -86,7 +86,7 @@ contains
   function besi_vectz(z,num) result(besi)
     complex(DP), dimension(:), intent(in) :: z
     integer, intent(in) :: num
-    complex(DP), dimension(size(z,1),0:num-1) :: besi
+    complex(DP), dimension(size(z,dim=1),0:num-1) :: besi
     besi = sum(besi_matz(spread(z,dim=2,ncopies=1),num),dim=2)
   end function besi_vectz
 
@@ -105,8 +105,8 @@ contains
   subroutine besId_zmat(z,n,I,ID)
     complex(DP), dimension(:,:), intent(in) :: z
     integer, intent(in) :: n
-    complex(DP), intent(out), dimension(size(z,1),size(z,2),0:n-1) :: I, ID
-    complex(DP), dimension(size(z,1),size(z,2),0:max(2,n)-1) :: Itmp
+    complex(DP), intent(out), dimension(size(z,dim=1),size(z,dim=2),0:n-1) :: I, ID
+    complex(DP), dimension(size(z,dim=1),size(z,dim=2),0:max(2,n)-1) :: Itmp
     
     Itmp(:,:,0:max(n,2)-1) = bI(z,max(2,n))
     ID(:,:,0) = I(:,:,1)   ! low end
@@ -124,9 +124,9 @@ contains
   subroutine besId_zvect(z,n,I,ID)
     complex(DP), dimension(:), intent(in) :: z
     integer, intent(in) :: n
-    complex(DP), intent(out), dimension(size(z,1),0:n-1) :: I, ID
-    complex(DP), dimension(size(z,1),1,0:n-1) :: tI, tId
-    call besId_zmat(spread(z,2,1),n,tI,tId)
+    complex(DP), intent(out), dimension(size(z,dim=1),0:n-1) :: I, ID
+    complex(DP), dimension(size(z,dim=1),1,0:n-1) :: tI, tId
+    call besId_zmat(spread(z,dim=2,ncopies=1),n,tI,tId)
     I = tI(:,1,:)
     ID = tId(:,1,:)
   end subroutine besId_zvect
@@ -136,7 +136,7 @@ contains
     integer, intent(in) :: n
     complex(DP), intent(out), dimension(0:n-1) :: I, ID
     complex(DP), dimension(1,1,0:n-1) :: tI, tId
-    call besId_zmat(spread([z],2,1),n,tI,tId)
+    call besId_zmat(spread([z],dim=2,ncopies=1),n,tI,tId)
     I = tI(1,1,:)
     ID = tId(1,1,:)
   end subroutine besId_zscal
@@ -144,8 +144,8 @@ contains
   subroutine besKd_zmat(z,n,K,KD)
     complex(DP), dimension(:,:), intent(in) :: z
     integer, intent(in) :: n
-    complex(DP), intent(out), dimension(size(z,1),size(z,2),0:n-1) :: K, KD
-    complex(DP), dimension(size(z,1),size(z,2),0:max(n,2)-1) :: Ktmp
+    complex(DP), intent(out), dimension(size(z,dim=1),size(z,dim=2),0:n-1) :: K, KD
+    complex(DP), dimension(size(z,dim=1),size(z,dim=2),0:max(n,2)-1) :: Ktmp
     Ktmp(:,:,0:max(n,2)-1) = bK(z,max(n,2))
     KD(:,:,0) = -Ktmp(:,:,1)  ! low end
     if (n >= 2) then
@@ -162,9 +162,9 @@ contains
   subroutine besKd_zvect(z,n,K,KD)
     complex(DP), dimension(:), intent(in) :: z
     integer, intent(in) :: n
-    complex(DP), intent(out), dimension(size(z,1),0:n-1) :: K, KD
-    complex(DP), dimension(size(z,1),1,0:n-1) :: tK, tKd
-    call besKd_zmat(spread(z,2,1),n,tK,tKd)
+    complex(DP), intent(out), dimension(size(z,dim=1),0:n-1) :: K, KD
+    complex(DP), dimension(size(z,dim=1),1,0:n-1) :: tK, tKd
+    call besKd_zmat(spread(z,dim=2,ncopies=1),n,tK,tKd)
     K = tK(:,1,:)
     KD = tKd(:,1,:)
   end subroutine besKd_zvect
@@ -174,7 +174,7 @@ contains
     integer, intent(in) :: n
     complex(DP), intent(out), dimension(0:n-1) :: K, KD
     complex(DP), dimension(1,1,0:n-1) :: tK, tKd
-    call besKd_zmat(spread([z],2,1),n,tK,tKd)
+    call besKd_zmat(spread([z],dim=2,ncopies=1),n,tK,tKd)
     K = tK(1,1,:)
     KD = tKd(1,1,:)
   end subroutine besKd_zscal

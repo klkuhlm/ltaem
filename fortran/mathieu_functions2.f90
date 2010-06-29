@@ -101,10 +101,8 @@ contains
     M = mat%M
 
     allocate(v(0:M),vi(0:M),stat=ierr)
-    if (ierr /= 0) then
-       write(*,'(A,(I0,1X))') 'error allocating v,vi',M
-       stop 9001
-    end if
+    if (ierr /= 0) stop 'error allocating v,vi'
+
     v = real([(j,j=0,M)],DP)
     where(mod([(j,j=0,M)],2)==0)
        vi = 1.0_DP
@@ -130,16 +128,9 @@ contains
     
     ! A/B 3rd dimension: 0(even) or 1(odd) cases of the second dimension
     
-    allocate(mat%mcn(4*M), mat%A(1:M,0:M-1,0:1), mat%B(1:M,0:M-1,0:1), stat=ierr)
-    if (ierr /= 0) then
-       write(*,'(A,(I0,1X))') 'error allocating mcn,A,B',M
-       stop 9002
-    end if
-    allocate(coeff(M,M), rwork(2*M), w(M), stat=ierr)
-    if (ierr /= 0) then
-       write(*,'(A,(I0,1X))') 'error allocating coeff,rwork,w ',M
-       stop 9003
-    end if
+    allocate(mat%mcn(4*M), mat%A(1:M,0:M-1,0:1), mat%B(1:M,0:M-1,0:1), &
+         & coeff(M,M), rwork(2*M), w(M), stat=ierr)
+    if (ierr /= 0) stop 'error allocating mcn,A,B,coeff,rwork,w'
 
     di = 1 ! dummy integer for lapack
     dc(1) = 0.0 ! dummy complex for lapack

@@ -30,7 +30,6 @@ contains
     complex(DP) :: kap
     real(DP) :: cmat(1:c%M,0:c%N-1), smat(1:c%M,1:c%N-1)
     real(DP), dimension(0:c%N-1) :: vi
-    character(40) :: fmt
 
 #ifdef DEBUG
     print *, 'circle_match_self: c:',c%id,' p:',p
@@ -40,27 +39,19 @@ contains
     vi = real([(j,j=0,N-1)],DP)
 
     if (c%ibnd == 0) then
-       allocate(r%LHS(2*M,4*N-2), r%RHS(2*M))
+       allocate(r%LHS(2*M,4*N-2), r%RHS(2*M), stat=ierr)
        lo = M+1; hi = 2*M
     elseif (c%calcin) then
-       allocate(r%LHS(M,4*N-2), r%RHS(M))
+       allocate(r%LHS(M,4*N-2), r%RHS(M), stat=ierr)
        lo = 1; hi = M
     else
-       allocate(r%LHS(M,2*N-1), r%RHS(M))
+       allocate(r%LHS(M,2*N-1), r%RHS(M), stat=ierr)
        lo = 1;  hi = M
     end if
+    if (ierr /= 0) stop 'circular_elements.f90:circle_match_self() error allocating r%LHS, r%RHS'
 
     cmat = cos(outerprod(c%Pcm(1:M), vi(0:N-1)))
     smat = sin(outerprod(c%Pcm(1:M), vi(1:N-1)))
-
-!!$    fmt = '(A,I3,   (ES13.5E2)))      '
-!!$    write(fmt(7:9),'(I3.3)') N
-!!$    do j = 1,M
-!!$       write(*,fmt) 'cmat',j,cmat(j,:)
-!!$    end do
-!!$    do j = 1,M
-!!$       write(*,fmt) 'smat',j,smat(j,:)
-!!$    end do
 
     ! setup LHS
     ! matching or specified total head
@@ -76,7 +67,8 @@ contains
     
     ! matching or specified total flux
     if (c%ibnd == 0 .or. c%ibnd == +1 .or. c%ibnd == 2) then
-       allocate(Bn(0:N-1),dBn(0:N-1))
+       allocate(Bn(0:N-1),dBn(0:N-1),stat=ierr)
+       if (ierr /= 0) stop 'circular_elements.f90 error allocating Bn,dBn'
        kap = kappa(p,c%parent) 
        call dBK(kap*c%r,N,Bn,dBn)
        dBn = kap*dBn
@@ -155,19 +147,25 @@ contains
     targ = el%id; src = c%id
     vi = real([(j,j=0,N-1)],DP)
 
+!!$    print '(A)', 'debug 01'
+
     if (dom%inclBg(src,targ) .or. dom%InclIn(src,targ)) then
        M = el%M
        if (el%ibnd == 0) then
-          allocate(r%LHS(2*M,2*N-1), r%RHS(2*M))
+          allocate(r%LHS(2*M,2*N-1), r%RHS(2*M), stat=ierr)
           lo = M+1; hi = 2*M
        else
-          allocate(r%LHS(M,2*N-1), r%RHS(M))
+          allocate(r%LHS(M,2*N-1), r%RHS(M), stat=ierr)
           lo = 1;  hi = M
        end if
+       if (ierr /= 0) stop 'circular_elements.f90:circle_match_other() error allocating r%LHS, r%RHS'
 
-       allocate(Bn(M,0:N-1), Bn0(0:N-1), cmat(1:M,0:N-1), smat(1:M,0:N-1))
+       allocate(Bn(M,0:N-1), Bn0(0:N-1), cmat(1:M,0:N-1), smat(1:M,0:N-1), stat=ierr)
+       if (ierr /= 0) stop 'circular_elements.f90 error allocating Bn,Bn0,cmat,smat'
        cmat = cos(outerprod(c%G(targ)%Pgm(1:M), vi(0:N-1)))
        smat = sin(outerprod(c%G(targ)%Pgm(1:M), vi(0:N-1)))
+
+!!$       print '(A)', 'debug 02'
 
        ! setup LHS 
        ! for matching or specified total head target elements
@@ -190,6 +188,8 @@ contains
              K = c%K
           end if
           
+!!$          print '(A)', 'debug 03'
+
           ! head effects on other element
           r%LHS(1:M,1:N) =       Bn(:,0:N-1)/spread(Bn0(0:N-1),1,M)*cmat/K ! a_n || c_n
           r%LHS(1:M,N+1:2*N-1) = Bn(:,1:N-1)/spread(Bn0(1:N-1),1,M)*smat(:,1:N-1)/K ! b_n || d_n
@@ -205,22 +205,40 @@ contains
                 ! specified flux (finite-radius well no storage)
                 r%RHS(1:M) = well(c,p)*r%LHS(1:M,1)
                 r%LHS(1:M,1) = 0.0
+!!$                print '(A)', 'debug 04'
              end if
           end if
        end if
+
+!!$       print '(A)', 'debug 05'
+
        ! for matching, specified total flux, or specified elemental flux target element
        if (el%ibnd == 0 .or. el%ibnd == +1 .or. el%ibnd == +2) then
           allocate(dBn(M,0:N-1), dPot_dR(M,2*N-1), dPot_dP(M,2*N-1), &
-               & dPot_dX(M,2*N-1),dPot_dY(M,2*N-1))
+               & dPot_dX(M,2*N-1), dPot_dY(M,2*N-1), stat=ierr)
+          if (ierr /= 0) stop 'circular_elements.f90 error allocating dBn,dPot_dR,dPot_dP,dPot_dX,dPot_dY'
+
+!!$          print '(A)', 'debug 05a'
 
           ! flux effects of source circle on target element
           if (dom%inclBg(src,targ)) then
+!!$             print *, 'debug 05a04 -> Bn0 ',allocated(Bn0),'??'
+!!$             print *, 'hello ??'
+!!$             print '(A)', 'debug 05a01'
              ! use exterior Bessel functions (Kn)
              kap = kappa(p,c%parent) 
+!!$             print *, 'debug 05a02 -> dBn ',allocated(dBn),' Bn ',allocated(Bn),'??'
              call dBK(kap*c%G(targ)%Rgm(1:M),N+1,Bn,dBn)
+!!$             print '(A)', 'debug 05a03'
              dBn = kap*dBn
+!!$             print *, ' c%r:',c%r
+!!$             print *,' N:',N
+!!$             print *, 'kap:',kap
+!!$             print *, 'bK shape:',shape(bK(kap*c%r,N))
              Bn0(0:N-1) = bK(kap*c%r,N)
+!!$             print '(A)', 'debug 05a05'
              K = c%parent%K
+!!$             print '(A)', 'debug 05b'
           else
              ! use interior Bessel functions (In)
              kap = kappa(p,c%element)
@@ -228,7 +246,10 @@ contains
              dBn = kap*dBn
              Bn0(0:N-1) = bI(kap*c%r,N)
              K = c%K
+!!$             print '(A)', 'debug 05c'
           end if
+
+!!$          print '(A)', 'debug 06'
 
           ! derivative wrt radius of source element
           dPot_dR(1:M,1:N) =       dBn(1:M,0:N-1)/spread(Bn0(0:N-1),1,M)*cmat
@@ -249,11 +270,15 @@ contains
              dPot_dP(1:M,N+1:2*N-1) = Bn(:,1:N-1)*spread(vi(1:N-1)/Bn0(1:N-1),1,M)*cmat(:,1:N-1)
           end if
 
+!!$          print '(A)', 'debug 07'
+
           ! project these from cylindrical onto Cartesian coordinates
           dPot_dX = dPot_dR*spread(cos(c%G(targ)%Pgm),2,2*N-1) - &
                   & dPot_dP*spread(sin(c%G(targ)%Pgm)/c%G(targ)%Rgm,2,2*N-1)
           dPot_dY = dPot_dR*spread(sin(c%G(targ)%Pgm),2,2*N-1) + &
                   & dPot_dP*spread(cos(c%G(targ)%Pgm)/c%G(targ)%Rgm,2,2*N-1)
+
+!!$          print '(A)', 'debug 08'
 
           ! project from Cartesian to "radial" coordinate of target element
           if (el%id <= dom%num(1)) then
@@ -277,21 +302,27 @@ contains
                    ! need to have head/flux computed along their boundary
                 end if
              else
+                   
+!!$                print '(A)', 'debug 09'
                 ! other element is a circle without wellbore storage
                 r%LHS(lo:hi,:) = dPot_dX*spread(cos(el%Pcm),2,2*N-1) + &
                                & dPot_dY*spread(sin(el%Pcm),2,2*N-1)
+!!$                print '(A)', 'debug 10'
              end if
           else
              ! other element is an ellipse
              r%LHS(lo:hi,:) = dPot_dX*spread(el%f*sinh(el%r)*cos(el%Pcm(1:M)),2,2*N-1) + &
                             & dPot_dY*spread(el%f*cosh(el%r)*sin(el%Pcm(1:M)),2,2*N-1)
           end if
-          deallocate(dBn, dPot_dR, dPot_dP, dPot_dX, dPot_dY,stat=ierr)
+!!$          print '(A)', 'debug 11'
+          deallocate(dBn, dPot_dR, dPot_dP, dPot_dX, dPot_dY, stat=ierr)
           if (ierr /= 0) stop 'circular_elements.f90 error deallocating memory, dBn, dPot_dR, dPot_dP, dPot_dX, dPot_dY'
        end if
-       deallocate(Bn,Bn0,cmat,smat,stat=ierr)
+!!$       print '(A)', 'debug 12'
+       deallocate(Bn,Bn0,cmat,smat, stat=ierr)
        if (ierr /= 0) stop 'circular_elements.f90 error deallocating memory, Bn,Bn0,cmat,smat'
     end if
+!!$    print '(A)', 'debug 13'
   end function circle_match_other
 
   function well(c,p) result(a0)

@@ -234,7 +234,7 @@ contains
     integer :: row,col,i,j
     character(40),dimension(2) :: fmt
 
-    write(*,'(2(A,1L))') 'Allocated?  r%LHS:',allocated(r%LHS),' r%RHS:',allocated(r%RHS)
+    write(*,'(A,/,2(A,1L))') '** matching result **','Allocated?  r%LHS:',allocated(r%LHS),' r%RHS:',allocated(r%RHS)
     if (allocated(r%LHS) .and. allocated(r%RHS)) then
        row = size(r%LHS,dim=1)
        col = size(r%LHS,dim=2)
@@ -248,7 +248,7 @@ contains
           write(*,fmt(1)) 'LHS:',i,('(',real(r%LHS(i,j)),',',aimag(r%LHS(i,j)),') ',j=1,col)
        end do
        do i=1,row
-          write(*,'(A,I3,(A,ES13.5E3,A,ES13.5E3,A))') 'RHS:',i,'(',real(r%RHS(i)),', ',aimag(r%RHS(i)),')'
+          write(*,'(A,I3,(A,ES13.5E3,A,ES13.5E3,A))') 'RHS:',i,'(',real(r%RHS(i)),',',aimag(r%RHS(i)),')'
        end do
     end if
     
