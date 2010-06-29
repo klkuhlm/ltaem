@@ -274,18 +274,18 @@ contains
                 ! other element is a specified elemental flux circle
                 if (el%StorIn) then
                    ! other element is a well with wellbore storage (Type III BC)
-                   r%LHS(1:M,1:N) = RMn(0:N-1,:,0)/spread(RMn0(0:N-1,0),1,M)*semat/K
+                   r%LHS(1:M,1:N) = RMn(1:M,0:N-1,0)/spread(RMn0(0:N-1,0),1,M)*cemat/K
                    if (.not. e%ibnd == 2) then
-                      r%LHS(1:M,N+1:2*N-1) = RMn(1:N-1,:,1)/spread(RMn0(1:N-1,1),1,M)*cemat/K
+                      r%LHS(1:M,N+1:2*N-1) = RMn(1:M,1:N-1,1)/spread(RMn0(1:N-1,1),1,M)*semat/K
                    end if
                    
                    ! head effects of source ellipse
-                   r%LHS(1:M,1:nmax) = -(el%r*p/el%parent%T)*r%LHS(1:M,1:nmax)
+                   r%LHS(1:M,:) = -(el%r*p/el%parent%T)*r%LHS(1:M,:)
                    
                    ! radial flux effects of element
-                   r%LHS(1:M,1:nmax) = r%LHS + (2.0 + el%r**2*el%dskin*p/el%parent%T)* &
-                        & (dPot_dX*spread(cos(el%Pcm),2,nmax) + &
-                        &  dPot_dY*spread(sin(el%Pcm),2,nmax))
+                   r%LHS(1:M,:) = r%LHS + (2.0 + el%r**2*el%dskin*p/el%parent%T)* &
+                        & (dPot_dX*spread(cos(el%Pcm),2,size(r%LHS,dim=2)) + &
+                        &  dPot_dY*spread(sin(el%Pcm),2,size(r%LHS,dim=2)))
                 else
                    continue
                    ! wells without wellbore storage are specified and don't

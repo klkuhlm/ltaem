@@ -6,8 +6,7 @@ module mathieu_functions
      integer :: M,  buffer
      real(DP) :: CUTOFF
      complex(DP) :: q
-     complex(DP), allocatable :: mcn(:)  ! 4*M
-     complex(DP), allocatable :: A(:,:,:), B(:,:,:)  ! 1:M, 0:M-1, 0:1
+     complex(DP), allocatable :: mcn(:),A(:,:,:), B(:,:,:)  ! 4*M; 1:M, 0:M-1, 0:1
   end type mathieu
 
   private  !! only interfaces and mathieu_init are publicly callable
@@ -127,9 +126,8 @@ contains
     ! i.e., the n in the order 2n+1 of the Mathieu function which it is associated with
     
     ! A/B 3rd dimension: 0(even) or 1(odd) cases of the second dimension
-    
-    allocate(mat%mcn(4*M), mat%A(1:M,0:M-1,0:1), mat%B(1:M,0:M-1,0:1), &
-         & coeff(M,M), rwork(2*M), w(M), stat=ierr)
+
+    allocate(coeff(M,M), rwork(2*M), w(M), mat%mcn(4*M), mat%A(1:M,0:M-1,0:1), mat%B(1:M,0:M-1,0:1), stat=ierr)    
     if (ierr /= 0) stop 'error allocating mcn,A,B,coeff,rwork,w'
 
     di = 1 ! dummy integer for lapack

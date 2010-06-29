@@ -126,9 +126,11 @@ contains
     integer, intent(in) :: n
     complex(DP), intent(out), dimension(size(z,dim=1),0:n-1) :: I, ID
     complex(DP), dimension(size(z,dim=1),1,0:n-1) :: tI, tId
-    call besId_zmat(spread(z,dim=2,ncopies=1),n,tI,tId)
-    I(:,0:n-1) = tI(:,1,0:n-1)
-    ID(:,0:n-1) = tId(:,1,0:n-1)
+    integer :: nz
+    nz = size(z,dim=1)
+    call besId_zmat(spread(z,dim=2,ncopies=1),n,tI(:,1,0:n-1),tId(:,1,0:n-1))
+     I(1:nz,0:n-1) =  tI(1:nz,1,0:n-1)
+    ID(1:nz,0:n-1) = tId(1:nz,1,0:n-1)
   end subroutine besId_zvect
 
   subroutine besId_zscal(z,n,I,ID)
@@ -136,8 +138,8 @@ contains
     integer, intent(in) :: n
     complex(DP), intent(out), dimension(0:n-1) :: I, ID
     complex(DP), dimension(1,1,0:n-1) :: tI, tId
-    call besId_zmat(spread([z],dim=2,ncopies=1),n,tI,tId)
-    I(0:n-1) = tI(1,1,0:n-1)
+    call besId_zmat(spread([z],dim=2,ncopies=1),n,tI(1,1,0:n-1),tId(1,1,0:n-1))
+     I(0:n-1) =  tI(1,1,0:n-1)
     ID(0:n-1) = tId(1,1,0:n-1)
   end subroutine besId_zscal
 
@@ -146,6 +148,8 @@ contains
     integer, intent(in) :: n
     complex(DP), intent(out), dimension(size(z,dim=1),size(z,dim=2),0:n-1) :: K, KD
     complex(DP), dimension(size(z,dim=1),size(z,dim=2),0:max(n,2)-1) :: Ktmp
+    print *, 'besKd_zmat n',n,':',shape(K),':',shape(KD),':',shape(Ktmp)
+    print *, 'besKd_zmat z',z
     Ktmp(:,:,0:max(n,2)-1) = bK(z,max(n,2))
     KD(:,:,0) = -Ktmp(:,:,1)  ! low end
     if (n >= 2) then
@@ -157,6 +161,8 @@ contains
     else
        K(:,:,0) = Ktmp(:,:,0)
     end if
+    print *, 'besKd_zmat K',K
+    print *, 'besKd_zmat Kd',Kd
   end subroutine besKd_zmat
 
   subroutine besKd_zvect(z,n,K,KD)
@@ -164,9 +170,13 @@ contains
     integer, intent(in) :: n
     complex(DP), intent(out), dimension(size(z,dim=1),0:n-1) :: K, KD
     complex(DP), dimension(size(z,dim=1),1,0:n-1) :: tK, tKd
-    call besKd_zmat(spread(z,dim=2,ncopies=1),n,tK,tKd)
-    K(:,0:n-1) = tK(:,1,0:n-1)
-    KD(:,0:n-1) = tKd(:,1,0:n-1)
+    integer :: nz
+    nz = size(z,dim=1)
+    print *, 'besKd_zvect: n',n,':',shape(tK),':',shape(tKd),':',shape(K),':',shape(KD)
+    print *, 'besKd_zvect: z',z
+    call besKd_zmat(spread(z,dim=2,ncopies=1),n,tK(1:nz,1,0:n-1),tKd(1:nz,1,0:n-1))
+     K(1:nz,0:n-1) =  tK(1:nz,1,0:n-1)
+    KD(1:nz,0:n-1) = tKd(1:nz,1,0:n-1)
   end subroutine besKd_zvect
 
   subroutine besKd_zscal(z,n,K,KD)
@@ -174,8 +184,8 @@ contains
     integer, intent(in) :: n
     complex(DP), intent(out), dimension(0:n-1) :: K, KD
     complex(DP), dimension(1,1,0:n-1) :: tK, tKd
-    call besKd_zmat(spread([z],dim=2,ncopies=1),n,tK,tKd)
-    K(0:n-1) = tK(1,1,0:n-1)
+    call besKd_zmat(spread([z],dim=2,ncopies=1),n,tK(1,1,0:n-1),tKd(1,1,0:n-1))
+     K(0:n-1) =  tK(1,1,0:n-1)
     KD(0:n-1) = tKd(1,1,0:n-1)
   end subroutine besKd_zscal
 
