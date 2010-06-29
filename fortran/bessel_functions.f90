@@ -127,8 +127,8 @@ contains
     complex(DP), intent(out), dimension(size(z,dim=1),0:n-1) :: I, ID
     complex(DP), dimension(size(z,dim=1),1,0:n-1) :: tI, tId
     call besId_zmat(spread(z,dim=2,ncopies=1),n,tI,tId)
-    I = tI(:,1,:)
-    ID = tId(:,1,:)
+    I(:,0:n-1) = tI(:,1,0:n-1)
+    ID(:,0:n-1) = tId(:,1,0:n-1)
   end subroutine besId_zvect
 
   subroutine besId_zscal(z,n,I,ID)
@@ -137,8 +137,8 @@ contains
     complex(DP), intent(out), dimension(0:n-1) :: I, ID
     complex(DP), dimension(1,1,0:n-1) :: tI, tId
     call besId_zmat(spread([z],dim=2,ncopies=1),n,tI,tId)
-    I = tI(1,1,:)
-    ID = tId(1,1,:)
+    I(0:n-1) = tI(1,1,0:n-1)
+    ID(0:n-1) = tId(1,1,0:n-1)
   end subroutine besId_zscal
 
   subroutine besKd_zmat(z,n,K,KD)
@@ -165,8 +165,8 @@ contains
     complex(DP), intent(out), dimension(size(z,dim=1),0:n-1) :: K, KD
     complex(DP), dimension(size(z,dim=1),1,0:n-1) :: tK, tKd
     call besKd_zmat(spread(z,dim=2,ncopies=1),n,tK,tKd)
-    K = tK(:,1,:)
-    KD = tKd(:,1,:)
+    K(:,0:n-1) = tK(:,1,0:n-1)
+    KD(:,0:n-1) = tKd(:,1,0:n-1)
   end subroutine besKd_zvect
 
   subroutine besKd_zscal(z,n,K,KD)
@@ -175,8 +175,8 @@ contains
     complex(DP), intent(out), dimension(0:n-1) :: K, KD
     complex(DP), dimension(1,1,0:n-1) :: tK, tKd
     call besKd_zmat(spread([z],dim=2,ncopies=1),n,tK,tKd)
-    K = tK(1,1,:)
-    KD = tKd(1,1,:)
+    K(0:n-1) = tK(1,1,0:n-1)
+    KD(0:n-1) = tKd(1,1,0:n-1)
   end subroutine besKd_zscal
 
 end module bessel_functions
