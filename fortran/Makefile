@@ -11,8 +11,8 @@ KKLOW=utility.o bessel_functions.o mathieu_functions2.o
 #BLASLIB=/home/kris/src/GotoBLAS2/libgoto2.a -lpthread
 
 ###Work linux laptop##############################
-LAPACKLIB=/home/kris/src/lapack-3.2.1/lapack_LINUX.a
-BLASLIB=/home/kris/src/lapack-3.2.1/blas.a
+LAPACKLIB=-L/usr/lib/atlas-sse -llapack
+BLASLIB=-lblas
 
 ### for intel compiler
 ##################################

@@ -26,7 +26,7 @@ module bessel_functions
 
 contains
 
-  ! K Bessel function for 2D matrix argument / vector of N
+  ! K Bessel function for vector argument / vector of N
   function besk_vectz(z,num) result(besk)
     complex(DP), dimension(:), intent(in) :: z
     integer, intent(in) :: num
@@ -38,7 +38,7 @@ contains
        call cbesk(z(i), 0.0_DP, kode, num, besk(i,0:num-1), numzero, ierr)
        ! either 0 or 3 are acceptable return codes
        if ((ierr >= 1 .and. ierr <= 2) .or. ierr >= 4) then
-          write(*,'(A,3(1X,I0))') 'besk_matz error',numzero,ierr,i
+          write(*,'(A,3(1X,I0))') 'besk_vectz error',numzero,ierr,i
           stop 222
        end if
     end do
@@ -52,7 +52,7 @@ contains
     besk = sum(besk_vectz([z],num),dim=1)
   end function besk_zscal
 
-  ! I Bessel function for 2D matrix argument / vector of N
+  ! I Bessel function for vector argument / vector of N
   function besi_vectz(z,num) result(besi)
     complex(DP), dimension(:), intent(in) :: z
     integer, intent(in) :: num
@@ -64,7 +64,7 @@ contains
        call cbesi(z(i), 0.0_DP, kode, num, besi(i,0:num-1), numzero, ierr)
        ! either 0 or 3 are acceptable return codes
        if ((ierr >= 1 .and. ierr <= 2) .or. ierr >= 4) then
-          write(*,'(A,3(1X,I0))') 'besi_matz error',numzero,ierr,i
+          write(*,'(A,3(1X,I0))') 'besi_vectz error',numzero,ierr,i
           stop 223
        end if
     end do
@@ -91,8 +91,8 @@ contains
     Itmp(:,0:max(n,2)-1) = bI(z,max(2,n))
     ID(:,0) = I(:,1)   ! low end
     if (n >= 2) then
-       I = Itmp
-       ID(:,n-1) = I(:,n-2) - (n-1)/z*I(:,n-1) ! high end
+       I(:,0:n-1) = Itmp(:,0:max(n,2)-1)
+       ID(:,n-1) = I(:,n-2) - (n-1)/z(:)*I(:,n-1) ! high end
        if (n >= 3) then
           ID(:,1:n-2) = 0.5_DP*(I(:,0:n-3) + I(:,2:n-1)) ! middle
        end if
@@ -116,12 +116,10 @@ contains
     integer, intent(in) :: n
     complex(DP), intent(out), dimension(size(z,dim=1),0:n-1) :: K, KD
     complex(DP), dimension(size(z,dim=1),0:max(n,2)-1) :: Ktmp
-!!$    print *, 'besKd_zmat n',n,':',shape(K),':',shape(KD),':',shape(Ktmp)
-!!$    print *, 'besKd_zmat z',z
     Ktmp(:,0:max(n,2)-1) = bK(z,max(n,2))
     KD(:,0) = -Ktmp(:,1)  ! low end
     if (n >= 2) then
-       K = Ktmp
+       K(:,0:n-1) = Ktmp(:,0:max(n,2)-1)
        KD(:,n-1) = -(K(:,n-2) + (n-1)/z*K(:,n-1)) ! high end
        if (n >= 3) then
           KD(:,1:n-2) = -0.5_DP*(K(:,0:n-3) + K(:,2:n-1)) ! middle
@@ -129,8 +127,6 @@ contains
     else
        K(:,0) = Ktmp(:,0)
     end if
-!!$    print *, 'besKd_zmat K',K
-!!$    print *, 'besKd_zmat Kd',Kd
   end subroutine besKd_zvect
 
   subroutine besKd_zscal(z,n,K,KD)
