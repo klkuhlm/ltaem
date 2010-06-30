@@ -1188,6 +1188,7 @@ contains
     integer, intent(in) :: n
     complex(DP), intent(out), dimension(0:n-1,size(arg)) :: I
     integer :: numzero, ierr, j
+    character(33) :: fmt
 
     ! scaling for I BF:: cy = I_fnu(z)*exp(-abs(x))
     ! where z = x + iy
@@ -1207,7 +1208,9 @@ contains
              stop "CBESI: overflow, z or order too large &
                   &for unscaled output"
           case(3)
-             write(*,*) "CBESI: loss of precision, z=",arg(1:min(ubound(arg,1),5)),numzero
+             fmt = '(A, (ES11.3E3,1X,ES11.3E3,3X),I0)'
+             write(fmt(4:4),'(I1)') min(ubound(arg,1),5)   
+             write(*,fmt) "CBESI: loss of precision, z=",arg(1:min(ubound(arg,1),5)),numzero
           case(4)
              write(*,*) "CBESI: overflow, z or order too &
                   &large, z=",arg(1:min(ubound(arg,1),5))," n=",n
@@ -1245,6 +1248,7 @@ contains
     integer, intent(in) :: n
     complex(DP), intent(out), dimension(0:n-1,size(arg)) :: K
     integer :: numzero, ierr, j
+    character(33) :: fmt
 
     ! scaling for K BF :: cy = K_fnu(z)*exp(z)
 
@@ -1262,7 +1266,9 @@ contains
              stop "CBESK: overflow, z too small or order too &
                   &large for unscaled output"
           case(3)
-             write(*,*) "CBESK: loss of precision, z=",arg(1:min(ubound(arg,1),5)),numzero
+             fmt = '(A, (ES11.3E3,1X,ES11.3E3,3X),I0)'
+             write(fmt(4:4),'(I1)') min(ubound(arg,1),5)
+             write(*,fmt) "CBESK: loss of precision, z=",arg(1:min(ubound(arg,1),5)),numzero
           case(4)
              write(*,*) "CBESK: overflow, z too small or order &
                   &too large, z=",arg(1:min(ubound(arg,1),5))," n=",n

@@ -3,16 +3,16 @@ EXTERNAL=cbessel.o
 KKLOW=utility.o bessel_functions.o mathieu_functions2.o
 
 ##Work MacPro##############################
-#LAPACKLIB=/Users/klkuhlm/src/lapack-3.2.1/lapack_MAC.a
-#BLASLIB=/Users/klkuhlm/src/GotoBLAS2/libgoto2.a -lpthread
+LAPACKLIB=/Users/klkuhlm/src/lapack-3.2.1/lapack_MAC.a
+BLASLIB=/opt/local/lib/libf77blas.dylib
 
 ###Home linux computer##############################
 #LAPACKLIB=/home/kris/src/lapack-3.2.1/lapack_LINUX.a
 #BLASLIB=/home/kris/src/GotoBLAS2/libgoto2.a -lpthread
 
 ###Work linux laptop##############################
-LAPACKLIB=-L/usr/lib/atlas-sse -llapack
-BLASLIB=-lblas
+#LAPACKLIB=-L/usr/lib/atlas-sse -llapack
+#BLASLIB=-lblas
 
 ### for intel compiler
 ##################################
@@ -40,7 +40,7 @@ OBJS=$(EXTERNAL) constants.o $(KKLOW) type_definitions.o $(KKHIGH)
 ###################################
 
 #### gfortran 4.6 (trunk) #################
-F90=gfortran-dev
+F90=gfortran-4.6
 DFLAGS=-Wall -Wextra -gdwarf-3 -O0 
 DFLAGS+=-fcheck=bounds,do,mem,pointer -finit-real=snan -finit-integer=-999 -fbacktrace 
 DFLAGS+=-cpp #-DDEBUG
