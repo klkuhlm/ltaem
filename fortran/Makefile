@@ -11,8 +11,8 @@ KKLOW=utility.o bessel_functions.o mathieu_functions2.o
 #BLASLIB=/home/kris/src/GotoBLAS2/libgoto2.a -lpthread
 
 ###Work linux laptop##############################
-LAPACKLIB=-llapack
-BLASLIB=-L/usr/lib/atlas-sse -lblas
+LAPACKLIB=/home/kris/src/lapack-3.2.1/lapack_LINUX.a
+BLASLIB=/home/kris/src/lapack-3.2.1/blas.a
 
 ### for intel compiler
 ##################################
@@ -42,7 +42,7 @@ OBJS=$(EXTERNAL) constants.o $(KKLOW) type_definitions.o $(KKHIGH)
 #### gfortran 4.6 (trunk) #################
 F90=gfortran-dev
 DFLAGS=-Wall -Wextra -gdwarf-3 -O0 
-DFLAGS+=-fcheck=bounds,do,mem,pointer #-finit-real=snan -finit-integer=-999 -fbacktrace 
+DFLAGS+=-fcheck=bounds,do,mem,pointer -finit-real=snan -finit-integer=-999 -fbacktrace 
 DFLAGS+=-cpp #-DDEBUG
 PFLAGS=-O0 -gdwarf-3
 LINKFLAG=
