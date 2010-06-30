@@ -128,7 +128,7 @@ contains
     complex(DP), intent(in) :: p
     type(match_result) :: r
 
-    integer :: j, src, targ, N, M, lo, hi, ierr
+    integer :: j, src, targ, N, M, loM, hiM, loN, hiN, ierr, nrows, ncols
     real(DP) :: K
     real(DP), allocatable :: cmat(:,:), smat(:,:)
     real(DP), dimension(0:c%N-1) :: vi
@@ -144,21 +144,33 @@ contains
     targ = el%id; src = c%id
     vi = real([(j,j=0,N-1)],DP)
 
-!!$    print '(A)', 'debug 01'
-
     if (dom%inclBg(src,targ) .or. dom%InclIn(src,targ)) then
        M = el%M
+       ! target element determines number of rows
        if (el%ibnd == 0) then
-          allocate(r%LHS(2*M,4*N-2), r%RHS(2*M), stat=ierr)
-          lo = M+1; hi = 2*M
+          nrows = 2*M
+          loM = M+1
+          hiM = 2*M
        else
-          allocate(r%LHS(M,2*N-1), r%RHS(M), stat=ierr)
-          lo = 1;  hi = M
+          nrows = M
+          loM = 1
+          hiM = M
        end if
-       if (ierr /= 0) stop 'circular_elements.f90:circle_match_other() error allocating r%LHS, r%RHS'
+       ! source element determines number of columns
+       if (c%ibnd == 0) then
+          ncols = 4*N-2
+       else
+          ncols = 2*N-1
+       end if
 
-       allocate(Bn(M,0:N-1), Bn0(0:N-1), cmat(1:M,0:N-1), smat(1:M,0:N-1), stat=ierr)
-       if (ierr /= 0) stop 'circular_elements.f90 error allocating Bn,Bn0,cmat,smat'
+       allocate(r%LHS(nrows,ncols), r%RHS(nrows), Bn(M,0:N-1), &
+            & Bn0(0:N-1), cmat(1:M,0:N-1), smat(1:M,0:N-1), stat=ierr)
+       if (ierr /= 0) then
+          print *, 'circular_elements.f90:circle_match_other() error allocating'//&
+               & 'r%LHS, r%RHS, Bn,Bn0,cmat,smat'
+          stop
+       end if
+       
        cmat = cos(outerprod(c%G(targ)%Pgm(1:M), vi(0:N-1)))
        smat = sin(outerprod(c%G(targ)%Pgm(1:M), vi(0:N-1)))
 
@@ -172,7 +184,16 @@ contains
              kap = kappa(p,c%parent)
              Bn(1:M,0:N-1) = bK(kap*c%G(targ)%Rgm(1:M),N)
              Bn0(0:N-1) =    bK(kap*c%r,N)
-             K = c%parent%K
+
+             ! head effects on outside of other element
+             r%LHS(1:M,1:N) =       Bn(:,0:N-1)/spread(Bn0(0:N-1),1,M)*cmat/c%parent%K ! a_n 
+             r%LHS(1:M,N+1:2*N-1) = Bn(:,1:N-1)/spread(Bn0(1:N-1),1,M)*smat(:,1:N-1)/c%parent%K ! b_n 
+
+             if (c%ibnd == 0) then
+                ! zero out other effects
+                r%LHS(1:M,2*N:4*N-2) = 0.0_DP
+             end if
+
           else
              ! can target element "see" the inside of the source element?
              ! i.e., is the source element the parent?
@@ -180,12 +201,24 @@ contains
              kap = kappa(p,c%element)
              Bn(1:M,0:N-1) = bI(kap*c%G(targ)%Rgm(1:M),N)
              Bn0(0:N-1) =    bI(kap*c%r,N)
-             K = c%K
-          end if
 
-          ! head effects on other element
-          r%LHS(1:M,1:N) =       Bn(:,0:N-1)/spread(Bn0(0:N-1),1,M)*cmat/K ! a_n || c_n
-          r%LHS(1:M,N+1:2*N-1) = Bn(:,1:N-1)/spread(Bn0(1:N-1),1,M)*smat(:,1:N-1)/K ! b_n || d_n
+             if (c%ibnd == 0) then
+                r%LHS(1:M,1:4*N-2) = 0.0_DP
+             end if
+
+             if (el%ibnd == 0) then
+                ! is target the inside of matching element?
+                loN = 2*N; hiN = 4*N-2
+             else
+                ! is target inside of specified head/flux element?
+                loN = 1; hiN = 2*N-1
+             end if
+             
+             ! head effects on other element
+             r%LHS(1:M,loN:loN+N-1) = Bn(:,0:N-1)/spread(Bn0(0:N-1),1,M)*cmat/c%K ! c_n
+             r%LHS(1:M,loN+N:hiN)   = Bn(:,1:N-1)/spread(Bn0(1:N-1),1,M)*smat(:,1:N-1)/c%K !  d_n
+
+          end if
 
           if (c%ibnd == 2 .and. dom%inclBg(src,targ)) then
              if (c%StorIn) then
