@@ -31,21 +31,22 @@ contains
     real(DP) :: cmat(1:c%M,0:c%N-1), smat(1:c%M,1:c%N-1)
     real(DP), dimension(0:c%N-1) :: vi
 
-#ifdef DEBUG
-    print *, 'circle_match_self: c:',c%id,' p:',p
-#endif    
-
-    N = c%N; M = c%M
+    N = c%N
+    M = c%M
     vi = real([(j,j=0,N-1)],DP)
 
     if (c%ibnd == 0) then
        allocate(r%LHS(2*M,4*N-2), r%RHS(2*M), stat=ierr)
-       lo = M+1; hi = 2*M
+       lo = M+1
+       hi = 2*M
     else
        allocate(r%LHS(M,2*N-1), r%RHS(M), stat=ierr)
-       lo = 1;  hi = M
+       lo = 1
+       hi = M
     end if
-    if (ierr /= 0) stop 'circular_elements.f90:circle_match_self() error allocating r%LHS, r%RHS'
+    if (ierr /= 0) then
+       stop 'circular_elements.f90:circle_match_self() error allocating r%LHS, r%RHS'
+    end if
 
     cmat = cos(outerprod(c%Pcm(1:M), vi(0:N-1)))
     smat = sin(outerprod(c%Pcm(1:M), vi(1:N-1)))
@@ -88,27 +89,22 @@ contains
     ! setup RHS
     select case(c%ibnd)
     case(-1)
-       print *, 'case -1'
        ! put specified head on RHS
        r%RHS(1:M) = time(p,c%time,.false.)*c%bdryQ
     case(0)
-       print *, 'case 0'
        ! put constant area source term effects on RHS
        r%RHS(1:M) = -time(p,c%time,.true.)*c%areaQ*c%Ss/kappa(p,c%element)**2
        r%RHS(M+1:2*M) = 0.0_DP ! area source has no flux effects
     case(1)
-       print *, 'case 1'
        ! put specified flux effects on RHS
        r%RHS(1:M) = time(p,c%time,.false.)*c%bdryQ/(2.0*PI*c%r)
     case(2)
        if (c%StorIn) then
-          print *, 'case 2.stor'
           ! effects of wellbore storage and skin on finite-radius well
           ! effects of other elements on this one show up in off-diagonals
           r%LHS(1:M,1) = storwell(c,p)*r%LHS(1:M,1)
           r%RHS(1:M) = time(p,c%time,.false.)*c%bdryQ/(PI*c%r*c%parent%T)
        else          
-          print *, 'case 2.nostor'
           ! specified flux (finite-radius well no storage)
           r%RHS(1:M) = well(c,p)*r%LHS(1:M,1)
           r%LHS(1:M,1) = 0.0_DP
@@ -136,12 +132,9 @@ contains
     complex(DP), allocatable :: dPot_dR(:,:), dPot_dP(:,:), dPot_dX(:,:), dPot_dY(:,:)
     complex(DP) :: kap
 
-#ifdef DEBUG
-    print *, 'circle_match_other: c:',c%id,' el:',el%id,' dom:',dom%num,' p:',p
-#endif
-
     N = c%N ! number of coefficients in the source circular element
-    targ = el%id; src = c%id
+    targ = el%id
+    src = c%id
     vi = real([(j,j=0,N-1)],DP)
 
     if (dom%inclBg(src,targ) .or. dom%InclIn(src,targ)) then

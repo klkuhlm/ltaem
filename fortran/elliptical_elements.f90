@@ -32,22 +32,22 @@ contains
     complex(DP), dimension(1:e%M,1:e%N-1,0:1) :: semat
     integer, dimension(0:e%N-1) :: vi
 
-#ifdef DEBUG
-    print *, 'ellipse_match_self: e:',e%id,' p:',p,' idx:',idx
-#endif 
-
-    N = e%N; M = e%M
+    N = e%N
+    M = e%M
     vi = [(j,j=0,N-1)]
 
     if (e%ibnd == 0) then
        allocate(r%LHS(2*M,4*N-2), r%RHS(2*M))
-       lo = M+1; hi = 2*M
+       lo = M+1
+       hi = 2*M
     elseif (e%calcin) then
        allocate(r%LHS(M,4*N-2), r%RHS(M))
-       lo = 1; hi = M
+       lo = 1
+       hi = M
     else
        allocate(r%LHS(M,2*N-1), r%RHS(M))
-       lo = 1;  hi = M
+       lo = 1
+       hi = M
     end if
 
     ! outside ang. mod. Mathieu fcns
@@ -140,12 +140,9 @@ contains
     real(DP), allocatable :: hsq(:,:)
     real(DP) :: K
 
-#ifdef DEBUG
-    print *, 'ellipse_match_other: e:',e%id,' el:',el%id,' dom:',dom%num,' p:',p,' idx:',idx
-#endif    
-
     N = e%N ! number of coefficients in the source elliptical element
-    targ = el%id; src = e%id
+    targ = el%id
+    src = e%id
     vi = [(j,j=0,N-1)]
 
     if (dom%inclBg(src,targ) .or. dom%InclIn(src,targ)) then
@@ -153,10 +150,12 @@ contains
        M = el%M
        if (el%ibnd == 0) then
           allocate(r%LHS(2*M,2*N-1), r%RHS(2*M))
-          lo = M+1; hi = 2*M
+          lo = M+1
+          hi = 2*M
        else
           allocate(r%LHS(M,2*N-1), r%RHS(M))
-          lo = 1;  hi = M
+          lo = 1
+          hi = M
        end if
        
        allocate(RMn(1:M,0:N-1,0:1), RMn0(0:N-1,0:1), cemat(1:M,0:N-1), semat(1:M,1:N-1))
