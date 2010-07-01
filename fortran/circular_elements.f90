@@ -42,10 +42,11 @@ contains
        hi = 2*M
     elseif (c%ibnd == 2 .and. c%storIn) then
        ! simple well has no unknowns
+       ! only appears on RHS of other elements
        nrows = 0
        ncols = 0
     else
-       nrow = M
+       nrows = M
        ncols = 2*N-1
        lo = 1
        hi = M
@@ -53,7 +54,7 @@ contains
 
     allocate(r%LHS(nrows,ncols), r%RHS(nrows), stat=ierr)
     if (ierr /= 0) then
-       stop 'circular_elements.f90:circle_match_self() error allocating r%LHS, r%RHS'
+       stop 'circular_elements.f90:circle_match_self() error allocating: r%LHS, r%RHS'
     end if
 
     cmat = cos(outerprod(c%Pcm(1:M), vi(0:N-1)))
@@ -74,7 +75,7 @@ contains
     ! matching or specified total flux
     if (c%ibnd == 0 .or. c%ibnd == +1 .or. (c%ibnd == 2 .and. c%storIn)) then
        allocate(Bn(0:N-1),dBn(0:N-1),stat=ierr)
-       if (ierr /= 0) stop 'circular_elements.f90 error allocating Bn,dBn'
+       if (ierr /= 0) stop 'circular_elements.f90 error allocating: Bn,dBn'
        kap = kappa(p,c%parent) 
        call dBK(kap*c%r,N,Bn,dBn)
        dBn = kap*dBn
@@ -91,7 +92,7 @@ contains
           r%LHS(lo:hi,3*N:4*N-2) = spread(dBn(1:N-1)/Bn(1:N-1), 1,M)*smat ! d_n flux
        end if
        deallocate(Bn,dBn,stat=ierr)
-       if (ierr /= 0) stop 'circular_elements.f90 error deallocating memory, Bn,dBn'
+       if (ierr /= 0) stop 'circular_elements.f90 error deallocating: Bn,dBn'
     end if
     
     ! setup RHS
@@ -163,7 +164,7 @@ contains
     
     allocate(r%LHS(nrows,ncols), r%RHS(nrows), stat=ierr)
     if (ierr /= 0) then
-       stop 'circular_elements.f90:circle_match_other() error allocating'//&
+       stop 'circular_elements.f90:circle_match_other() error allocating:'//&
             & 'r%LHS, r%RHS'
     end if
 
@@ -171,8 +172,8 @@ contains
 
        allocate( Bn(M,0:N-1),Bn0(0:N-1), cmat(1:M,0:N-1), smat(1:M,0:N-1), stat=ierr)
        if (ierr /= 0) then
-          stop 'circular_elements.f90:circle_match_other() error allocating'//&
-               & 'Bn,Bn0,cmat,smat'
+          stop 'circular_elements.f90:circle_match_other() error allocating:'//&
+               & 'Bn, Bn0, cmat, smat'
        end if
 
        cmat = cos(outerprod(c%G(targ)%Pgm(1:M), vi(0:N-1)))
@@ -195,8 +196,8 @@ contains
              r%LHS(1:M,1:N) =       Bn(:,0:N-1)/spread(Bn0(0:N-1),1,M)*cmat/c%parent%K ! a_n 
              r%LHS(1:M,N+1:2*N-1) = Bn(:,1:N-1)/spread(Bn0(1:N-1),1,M)*smat(:,1:N-1)/c%parent%K ! b_n
 
-             if (c%ibnd == 0) then
-                ! zero out effects on inside of other element
+             if (el%ibnd == 0) then
+                ! is target outside of matching element?  (zero out inside portion)
                 r%LHS(1:M,2*N:4*N-2) = 0.0
              end if
 
@@ -208,16 +209,13 @@ contains
              Bn(1:M,0:N-1) = bI(kap*c%G(targ)%Rgm(1:M),N)
              Bn0(0:N-1) =    bI(kap*c%r,N)
 
-             if (c%ibnd == 0) then
-                r%LHS(1:M,1:4*N-2) = 0.0
-             end if
-
              if (el%ibnd == 0) then
                 ! is target the inside of matching element?
+                r%LHS(1:M,1:2*N-1) = 0.0 ! zero out other part
                 loN = 2*N
                 hiN = 4*N-2
              else
-                ! is target inside of specified head/flux element?
+                ! is target inside of specified head/flux element? (no other part)
                 loN = 1
                 hiN = 2*N-1
              end if
@@ -248,8 +246,8 @@ contains
        if (el%ibnd == 0 .or. el%ibnd == +1 .or. (el%ibnd == +2 .and. el%storIn)) then
           allocate(dBn(M,0:N-1), dPot_dR(M,2*N-1), dPot_dP(M,2*N-1), &
                & dPot_dX(M,2*N-1), dPot_dY(M,2*N-1), stat=ierr)
-          if (ierr /= 0) stop 'circular_elements.f90 error allocating'//&
-               &' dBn,dPot_dR,dPot_dP,dPot_dX,dPot_dY'
+          if (ierr /= 0) stop 'circular_elements.f90 error allocating:'//&
+               &' dBn, dPot_dR, dPot_dP, dPot_dX, dPot_dY'
 
           ! flux effects of source circle on target element
           if (dom%inclBg(src,targ)) then
@@ -301,14 +299,14 @@ contains
                 if (el%StorIn) then
                    ! other element is a well with wellbore storage (Type III BC)
                    ! need head effects too
-                   r%LHS(1:M,1:N) =       Bn(:,0:N-1)/spread(Bn0(0:N-1),1,M)*cmat/K
-                   r%LHS(1:M,N+1:2*N-1) = Bn(:,1:N-1)/spread(Bn0(1:N-1),1,M)*smat(:,1:N-1)/K
+                   r%LHS(1:M,loN:loN+N-1) = Bn(:,0:N-1)/spread(Bn0(0:N-1),1,M)*cmat/K
+                   r%LHS(1:M,loN+N:hiN) =   Bn(:,1:N-1)/spread(Bn0(1:N-1),1,M)*smat(:,1:N-1)/K
                    
                    ! head effects of element
-                   r%LHS(1:M,:) = -(el%r*p/el%parent%T)*r%LHS(1:M,:)
+                   r%LHS(1:M,loN:hiN) = -(el%r*p/el%parent%T)*r%LHS(1:M,loN:hiN)
                    
                    ! radial flux effects of element
-                   r%LHS(1:M,:) = r%LHS + (2.0 + el%r**2*el%dskin*p/el%parent%T)* &
+                   r%LHS(1:M,loN:hiN) = r%LHS + (2.0 + el%r**2*el%dskin*p/el%parent%T)* &
                         & (dPot_dX*spread(cos(el%Pcm),2,2*N-1) + &
                         &  dPot_dY*spread(sin(el%Pcm),2,2*N-1))
                 end if
@@ -322,12 +320,17 @@ contains
              r%LHS(loM:hiM,loN:hiN) = dPot_dX*spread(el%f*sinh(el%r)*cos(el%Pcm(1:M)),2,2*N-1) + &
                                     & dPot_dY*spread(el%f*cosh(el%r)*sin(el%Pcm(1:M)),2,2*N-1)
           end if
+
+          ! zero out effects due to other part
+          r%LHS(loM:hiM,:loN) = 0.0
+          r%LHS(loM:hiM,hiN:) = 0.0
+
           deallocate(dBn, dPot_dR, dPot_dP, dPot_dX, dPot_dY, stat=ierr)
-          if (ierr /= 0) stop 'circular_elements.f90 error deallocating memory,'//&
+          if (ierr /= 0) stop 'circular_elements.f90 error deallocating:'//&
                & ' dBn, dPot_dR, dPot_dP, dPot_dX, dPot_dY'
        end if
        deallocate(Bn,Bn0,cmat,smat, stat=ierr)
-       if (ierr /= 0) stop 'circular_elements.f90 error deallocating memory, Bn,Bn0,cmat,smat'
+       if (ierr /= 0) stop 'circular_elements.f90 error deallocating: Bn,Bn0,cmat,smat'
     else
        ! these two elements cannot "see" one another - matrix/vector all zeros
        r%LHS = 0.0
@@ -344,10 +347,6 @@ contains
     complex(DP) :: a0
     complex(DP), dimension(0:1) ::Kn
     
-#ifdef DEBUG
-    print *, 'well: c:',c%id,' p:',p
-#endif
-
     Kn(0:1) = bK(kappa(p,c%parent)*c%r,2)
     a0 = Kn(0)*time(p,c%time,.false.)*c%bdryQ/(2.0*PI*c%r*Kn(1))
     
@@ -363,10 +362,6 @@ contains
     complex(DP), intent(in) :: p
     complex(DP) :: a0, kap
     complex(DP), dimension(0:1) :: Kn
-
-#ifdef DEBUG
-    print *, 'storwell: c:',c%id,' p:',p
-#endif
 
     kap = kappa(p,c%parent)
     Kn(0:1) = bK(kap*c%r,2)
