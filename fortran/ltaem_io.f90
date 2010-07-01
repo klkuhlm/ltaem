@@ -95,15 +95,52 @@ contains
     if (nc > 0) then
        allocate(c(nc))
        read(15,*) c(:)%n
+       if (any(c%n < 1)) then
+          print *, 'c%N must not be < 1',c%N
+          stop
+       end if
+
        read(15,*) c(:)%m
+       if (any(c%M < 1)) then
+          print *, 'c%M must not be < 1',c%M
+          stop
+       end if
+
        read(15,*) c(:)%ibnd
-       read(15,*) c(:)%CalcIn
+       if (any(c%ibnd < -1 .or. c%ibnd > 2)) then
+          print *, 'c%ibnd must be in {-1,0,1,2}',c%ibnd
+          stop
+       end if
+          
+       read(15,*) c(:)%CalcIn ! just T/F
+
        read(15,*) c(:)%r
-       read(15,*) c(:)%x
+       if (any(c%r < epsilon(0.0))) then
+          print *, 'c%r must be > 0.0',c%r
+          stop
+       end if
+
+       read(15,*) c(:)%x ! any real number is ok
        read(15,*) c(:)%y
+
        read(15,*) c(:)%k
+       if (any(c%k < epsilon(0.0))) then
+          print *, 'c%K must be > 0.0',c%k
+          stop
+       end if      
+
        read(15,*) c(:)%Ss
+       if (any(c%ss < epsilon(0.0))) then
+          print *, 'c%Ss must be > 0.0',c%Ss
+          stop
+       end if      
+
        read(15,*) c(:)%por
+       if (any(c%por < epsilon(0.0))) then
+          print *, 'c%por must be > 0.0',c%por
+          stop
+       end if      
+
        read(15,*) c(:)%areaQ ! area source strength (flux)
        read(15,*) c(:)%bdryQ ! streng of specified value on bdry (head or flux) 
        do j=1,size(c,dim=1)
@@ -143,19 +180,53 @@ contains
                   &'  ||    Bdry ti, tf | strength for circle ',j
           end if
        end do
-       read(15,*) c(:)%leakFlag
+       read(15,*) c(:)%leakFlag  ! handled elsewhere
        read(15,*) c(:)%aquitardK
+       if (any(c%aquitardK < epsilon(0.0))) then
+          print *, 'c%aquitardK must be > 0.0',c%aquitardk
+          stop
+       end if      
+
        read(15,*) c(:)%aquitardSs
+       if (any(c%aquitardSS < epsilon(0.0))) then
+          print *, 'c%aquitardSs must be > 0.0',c%aquitardSs
+          stop
+       end if      
+
        read(15,*) c(:)%aquitardb  !aquitard thickness
-       read(15,*) c(:)%unconfinedFlag
+       if (any(c%aquitardB < epsilon(0.0))) then
+          print *, 'c%aquitardB must be > 0.0',c%aquitardB
+          stop
+       end if      
+
+       read(15,*) c(:)%unconfinedFlag ! handled elsewhere
        read(15,*) c(:)%Sy
+       if (any(c%sy < epsilon(0.0))) then
+          print *, 'c%Sy must be > 0.0',c%sy
+          stop
+       end if      
+
        read(15,*) c(:)%Kz
+       if (any(c%kz < epsilon(0.0))) then
+          print *, 'c%Kz must be > 0.0',c%kz
+          stop
+       end if      
+
        read(15,*) c(:)%b  ! aquifer thickness
+       if (any(c%b < epsilon(0.0))) then
+          print *, 'c%B must be > 0.0',c%b
+          stop
+       end if      
+
        read(15,*) c(:)%dskin ! dimensionless skin
+       if (any(c%dskin < epsilon(0.0))) then
+          print *, 'c%Dskin must be > 0.0',c%dskin
+          stop
+       end if            
    
        where (c(:)%ibnd == -1 .or. c(:)%ibnd == 0 .or. c(:)%ibnd == +1)
           c(:)%match = .true.
-       elsewhere
+       elsewhere !( currently just 2)
           c(:)%match = .false.       
        end where
        
@@ -187,6 +258,16 @@ contains
        write(16,fmt(3)) c(:)%Kz, '  ||     circle aquifer vertical K'
        write(16,fmt(3)) c(:)%b,'  ||    circle aquifer thickness'
        write(16,fmt(3)) c(:)%dskin,'  ||    circle boundary dimensionless skin factor'
+
+
+       ! minor checking / correcting
+       do j = 1,size(c,dim=1)
+          if (c(j)%ibnd == 2 .and. c(j)%N /= 1) then
+             write(*,'(A,I0,A)') '** wells (ibnd==2) must have N=1, fixing circle #',j,' to N=1'
+             c(j)%N = 1
+          end if
+       end do
+       
     else
        allocate(c(0))
     end if
@@ -197,14 +278,45 @@ contains
     if (ne > 0) then
        allocate(e(ne))
        read(15,*) e(:)%n
+       if (any(e%n < 1)) then
+          print *, 'e%N must not be < 1',e%N
+          stop
+       end if
+
        read(15,*) e(:)%m
+       if (any(e%m < 1)) then
+          print *, 'e%M must not be < 1',e%M
+          stop
+       end if
+
        read(15,*) e(:)%ms
+       if (any(e%ms < e%n)) then  ! checked more carefully in Mathieu function library
+          print *, 'e%ms must not be < e%n + buffer: e%N',e%N,'e%MS',e%ms
+          stop
+       end if
+
        read(15,*) e(:)%ibnd
-       read(15,*) e(:)%CalcIn
+       if (any(e%ibnd < -1 .or. e%ibnd > 2)) then
+          print *, 'e%ibnd must be in {-1,0,1,2}',e%ibnd
+          stop
+       end if
+
+       read(15,*) e(:)%CalcIn 
        read(15,*) e(:)%r   ! eta
+       if (any(e%r < epsilon(0.0))) then
+          print *, 'e%r must be > 0.0',e%r
+          stop
+       end if
+
        read(15,*) e(:)%x
        read(15,*) e(:)%y
+
        read(15,*) e(:)%f
+       if (any(e%f < epsilon(0.0))) then
+          print *, 'e%f must be > 0.0',e%f
+          stop
+       end if
+
        read(15,*) e(:)%theta      
        read(15,*) e(:)%k
        read(15,*) e(:)%Ss
@@ -245,15 +357,52 @@ contains
                   &'  ||    Bdry ti, tf | strength for ellipse ',j
           end if
        end do
-       read(15,*) e(:)%leakFlag
+
+       read(15,*) e(:)%leakFlag  ! handled elsewhere
+
        read(15,*) e(:)%aquitardK
+       if (any(e%aquitardK < epsilon(0.0))) then
+          print *, 'e%aquitardK must be > 0.0',e%aquitardK
+          stop
+       end if
+
        read(15,*) e(:)%aquitardSs
-       read(15,*) e(:)%aquitardb  !aquitard thickness
+       if (any(e%aquitardSs < epsilon(0.0))) then
+          print *, 'e%aquitardSs must be > 0.0',e%aquitardSs
+          stop
+       end if
+
+       read(15,*) e(:)%aquitardb  
+       if (any(e%aquitardb < epsilon(0.0))) then
+          print *, 'e%aquitardb must be > 0.0',e%aquitardb
+          stop
+       end if
+
        read(15,*) e(:)%unconfinedFlag
+
        read(15,*) e(:)%Sy
+       if (any(e%Sy < epsilon(0.0))) then
+          print *, 'e%Sy must be > 0.0',e%Sy
+          stop
+       end if
+
        read(15,*) e(:)%Kz
-       read(15,*) e(:)%b  ! aquifer thickness
-       read(15,*) e(:)%dskin ! dimensionless skin
+       if (any(e%Kz < epsilon(0.0))) then
+          print *, 'e%Kz must be > 0.0',e%Kz
+          stop
+       end if
+
+       read(15,*) e(:)%b
+       if (any(e%b < epsilon(0.0))) then
+          print *, 'e%b must be > 0.0',e%b
+          stop
+       end if
+
+       read(15,*) e(:)%dskin
+       if (any(e%dskin < epsilon(0.0))) then
+          print *, 'e%dskin must be > 0.0',e%dskin
+          stop
+       end if
 
        where (e(:)%ibnd == -1 .or. e(:)%ibnd == 0 .or. e(:)%ibnd == +1)
           e(:)%match = .true.

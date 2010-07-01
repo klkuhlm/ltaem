@@ -25,7 +25,7 @@ contains
     complex(DP), intent(in) :: p
     type(match_result) :: r
 
-    integer :: j, N, M, lo, hi, ierr
+    integer :: j, N, M, lo, hi, ierr, nrows, ncols
     complex(DP), allocatable :: Bn(:), dBn(:) ! mod. bessel function (K or I)
     complex(DP) :: kap
     real(DP) :: cmat(1:c%M,0:c%N-1), smat(1:c%M,1:c%N-1)
@@ -36,17 +36,22 @@ contains
     vi = real([(j,j=0,N-1)],DP)
 
     if (c%ibnd == 0) then
-       allocate(r%LHS(2*M,4*N-2), r%RHS(2*M), stat=ierr)
+       nrows = 2*M
+       ncols = 4*N-2
        lo = M+1
        hi = 2*M
     elseif (c%ibnd == 2 .and. c%storIn) then
        ! simple well has no unknowns
-       allocate(r%LHS(0,0), r%RHS(0), stat=ierr)
+       nrows = 0
+       ncols = 0
     else
-       allocate(r%LHS(M,2*N-1), r%RHS(M), stat=ierr)
+       nrow = M
+       ncols = 2*N-1
        lo = 1
        hi = M
     end if
+
+    allocate(r%LHS(nrows,ncols), r%RHS(nrows), stat=ierr)
     if (ierr /= 0) then
        stop 'circular_elements.f90:circle_match_self() error allocating r%LHS, r%RHS'
     end if

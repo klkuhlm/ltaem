@@ -26,7 +26,7 @@ contains
     integer, intent(in) :: idx ! indicates which value of p (global state)
     type(match_result) :: r
 
-    integer :: j, N, M, lo, hi, ierr
+    integer :: j, N, M, lo, hi, ierr, nrows, ncols
     complex(DP), allocatable :: RMn(:,:), dRMn(:,:) ! mod. radial Mathieu function (K{e,o} or I{e,o})
     complex(DP), dimension(1:e%M,0:e%N-1,0:1) :: cemat
     complex(DP), dimension(1:e%M,1:e%N-1,0:1) :: semat
@@ -37,17 +37,24 @@ contains
     vi = [(j,j=0,N-1)]
 
     if (e%ibnd == 0) then
-       allocate(r%LHS(2*M,4*N-2), r%RHS(2*M))
+       nrows = 2*M
+       ncols = 4*N-2
        lo = M+1
        hi = 2*M
-    elseif (e%calcin) then
-       allocate(r%LHS(M,4*N-2), r%RHS(M))
-       lo = 1
-       hi = M
+    elseif (e%ibnd == 2) then
+       ! specified flux line source has no unknowns
+       nrows = 0
+       ncols = 0
     else
-       allocate(r%LHS(M,2*N-1), r%RHS(M))
+       nrows = M
+       ncols = 2*N-1
        lo = 1
        hi = M
+    end if
+
+    allocate(r%LHS(nrows,ncols), r%RHS(nrows), stat=ierr)
+    if (ierr /= 0) then
+       stop 'elliptical_elements.f90:ellipse_match_self() error allocating r%LHS, r%RHS'
     end if
 
     ! outside ang. mod. Mathieu fcns
@@ -132,7 +139,7 @@ contains
     integer, intent(in) :: idx
     type(match_result) :: r 
 
-    integer :: j, src, targ, N, M, lo, hi, nmax, ierr
+    integer :: j, src, targ, N, M, loN, hiN, loM, hiM, nmax, ierr, nrows, ncols
     complex(DP), allocatable :: cemat(:,:), semat(:,:), dcemat(:,:), dsemat(:,:) 
     integer, dimension(0:e%N-1) :: vi
     complex(DP), allocatable :: RMn(:,:,:), dRMn(:,:,:), RMn0(:,:)
@@ -145,18 +152,34 @@ contains
     src = e%id
     vi = [(j,j=0,N-1)]
 
-    if (dom%inclBg(src,targ) .or. dom%InclIn(src,targ)) then
+    M = el%M
+    if (el%ibnd == 0) then
+       nrows = 2*M
+       lo = M+1
+       hi = 2*M
+    else
+       nrows = M
+       lo = 1
+       hi = M
+    end if
 
-       M = el%M
-       if (el%ibnd == 0) then
-          allocate(r%LHS(2*M,2*N-1), r%RHS(2*M))
-          lo = M+1
-          hi = 2*M
-       else
-          allocate(r%LHS(M,2*N-1), r%RHS(M))
-          lo = 1
-          hi = M
-       end if
+    if (e%ibnd == 0) then
+       ncols = 4*N-2
+    elseif (e%ibnd == 2)
+       ncols = 0
+    else
+       ncols = 2*N-1
+    end if
+
+    allocate(r%LHS(nrows,ncols), r%RHS(nrows), stat=ierr)
+    if (ierr /= 0) then
+       stop 'elliptical_elements.f90:ellipse_match_other() error allocating'//&
+            & 'r%LHS, r%RHS'
+    end if
+
+
+
+    if (dom%inclBg(src,targ) .or. dom%InclIn(src,targ)) then
        
        allocate(RMn(1:M,0:N-1,0:1), RMn0(0:N-1,0:1), cemat(1:M,0:N-1), semat(1:M,1:N-1))
 
