@@ -138,7 +138,7 @@ contains
     integer, intent(in) :: idx
     type(match_result) :: r 
 
-    integer :: j, src, targ, N, M, loN, hiN, loM, hiM, nmax, ierr, nrows, ncols
+    integer :: j, src, targ, N, M, loN, hiN, loM, hiM, ierr, nrows, ncols
     complex(DP), allocatable :: cemat(:,:), semat(:,:), dcemat(:,:), dsemat(:,:) 
     integer, dimension(0:e%N-1) :: vi
     complex(DP), allocatable :: RMn(:,:,:), dRMn(:,:,:), RMn0(:,:)
@@ -201,10 +201,13 @@ contains
              r%LHS(1:M,1:N) = RMn(1:M,0:N-1,0)/spread(RMn0(0:N-1,0),1,M)*cemat/e%parent%K ! a_n
              r%LHS(1:M,N+1:2*N-1) = RMn(1:M,1:N-1,1)/spread(RMn0(1:N-1,1),1,M)*semat/e%parent%K ! b_n
 
-             if (el%ibnd == 0) then
-                ! is target outside of matching element (zero out inside portion)
+             if (e%ibnd == 0) then
+                ! is source outside of matching element (zero out inside portion)
                 r%LHS(1:M,2*N:4*N-2) = 0.0
              end if
+
+             loN = 1
+             hiN = 2*N-1
              
           else
              ! can target element "see" the inside of the source element?
@@ -217,10 +220,9 @@ contains
              RMn0(0:N-1,0) = Ie(e%mat(idx), vi(0:N-1), e%r)
              RMn0(1:N-1,1) = Io(e%mat(idx), vi(1:N-1), e%r)
              K = e%K
-             nmax = 2*N-1
 
-             if (el%ibnd == 0) then
-                ! is target the inside of matching element?
+             if (e%ibnd == 0) then
+                ! is source the inside of matching element?
                 r%LHS(1:M,1:2*N-1) = 0.0 ! zero out other part
                 loN = 2*N
                 hiN = 4*N-2
@@ -260,6 +262,9 @@ contains
              dRMn(1:M,0:N-1,0) = transpose(dKe(e%parent%mat(idx), vi(0:N-1), e%G(targ)%Rgm(1:M)))
              dsemat(1:M,1:N-1) = transpose(dse(e%parent%mat(idx), vi(1:N-1), e%G(targ)%Pgm(1:M)))
              dRMn(1:M,1:N-1,1) = transpose(dKo(e%parent%mat(idx), vi(1:N-1), e%G(targ)%Rgm(1:M)))
+             
+             loN = 1
+             hiN = 2*N-1
           else
              ! use interior angular and radial modified Mathieu functions
              if (.not. el%ibnd == 0) then
@@ -275,8 +280,18 @@ contains
              dRMn(1:M,0:N-1,0) = transpose(dIe(e%mat(idx), vi(0:N-1), e%G(targ)%Rgm(1:M)))
              dRMn(1:M,1:N-1,1) = transpose(dIo(e%mat(idx), vi(1:N-1), e%G(targ)%Rgm(1:M)))
              K = e%K
-          end if
 
+             if (e%ibnd == 0) then
+                ! inside matching element (last half)
+                loN = 2*N
+                hiN = 4*N-2
+             else
+                ! inside specified flux element (only part)
+                loN = 1
+                hiN = 2*N-1
+             end if
+          end if
+          
           ! derivative wrt radius of source element
           dPot_dR(1:M,1:N) =       dRMn(1:M,0:N-1,0)/spread(RMn0(0:N-1,0),1,M)*cemat
           dPot_dR(1:M,N+1:2*N-1) = dRMn(1:M,1:N-1,1)/spread(RMn0(1:N-1,1),1,M)*semat
@@ -319,8 +334,8 @@ contains
                 end if
              else
                 ! other element is a standard circle 
-                r%LHS(loM:hiM,1:nmax) = dPot_dX*spread(cos(el%Pcm),2,nmax) + &
-                                      & dPot_dY*spread(sin(el%Pcm),2,nmax)
+                r%LHS(loM:hiM,loN:hiN) = dPot_dX*spread(cos(el%Pcm),2,2*N-1) + &
+                                       & dPot_dY*spread(sin(el%Pcm),2,2*N-1)
              end if
           else
              ! other element is a different ellipse

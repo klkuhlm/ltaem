@@ -83,7 +83,7 @@ contains
 
     do i = 1, ne
        ! ellipse on self
-       print '(A,I0)', 'before e on self: ',nc+i,' MS:',e(i)%ms,&
+       print '(5(A,I0))', 'before e on self: ',nc+i,' MS:',e(i)%ms,&
             &' N:',e(i)%N,' M:',e(i)%M,' ibnd:',e(i)%ibnd
        res(nc+i,nc+i) = ellipse_match(e(i),p,idx)
 !!$       call print_match_result(res(nc+i,nc+i))

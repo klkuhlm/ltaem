@@ -25,7 +25,7 @@ contains
     complex(DP), intent(in) :: p
     type(match_result) :: r
 
-    integer :: j, N, M, lo, hi, ierr, nrows, ncols
+    integer :: j, N, M, loM, hiM, ierr, nrows, ncols
     complex(DP), allocatable :: Bn(:), dBn(:) ! mod. bessel function (K or I)
     complex(DP) :: kap
     real(DP) :: cmat(1:c%M,0:c%N-1), smat(1:c%M,1:c%N-1)
@@ -38,8 +38,9 @@ contains
     if (c%ibnd == 0) then
        nrows = 2*M
        ncols = 4*N-2
-       lo = M+1
-       hi = 2*M
+       ! loM:hiM is index range for flux matching portion, beyond head-matching part
+       loM = M+1
+       hiM = 2*M
     elseif (c%ibnd == 2 .and. c%storIn) then
        ! simple well has no unknowns
        ! only appears on RHS of other elements
@@ -48,8 +49,9 @@ contains
     else
        nrows = M
        ncols = 2*N-1
-       lo = 1
-       hi = M
+       ! here only flux matching, no head matching, so loM:him = 1:M
+       loM = 1
+       hiM = M
     end if
 
     allocate(r%LHS(nrows,ncols), r%RHS(nrows), stat=ierr)
@@ -80,16 +82,16 @@ contains
        call dBK(kap*c%r,N,Bn,dBn)
        dBn = kap*dBn
 
-       r%LHS(lo:hi,1:N) =       spread(dBn(0:N-1)/Bn(0:N-1), 1,M)*cmat ! a_n flux
-       r%LHS(lo:hi,N+1:2*N-1) = spread(dBn(1:N-1)/Bn(1:N-1), 1,M)*smat ! b_n flux
+       r%LHS(loM:hiM,1:N) =       spread(dBn(0:N-1)/Bn(0:N-1), 1,M)*cmat ! a_n flux
+       r%LHS(loM:hiM,N+1:2*N-1) = spread(dBn(1:N-1)/Bn(1:N-1), 1,M)*smat ! b_n flux
        
        if (c%ibnd == 0 .or. (c%ibnd == 1 .and. c%calcin)) then
           kap = kappa(p,c%element)
           call dBI(kap*c%r,N,Bn,dBn)
           dBn = kap*dBn
           
-          r%LHS(lo:hi,2*N:3*N-1) = spread(dBn(0:N-1)/Bn(0:N-1), 1,M)*cmat ! c_n flux
-          r%LHS(lo:hi,3*N:4*N-2) = spread(dBn(1:N-1)/Bn(1:N-1), 1,M)*smat ! d_n flux
+          r%LHS(loM:hiM,2*N:3*N-1) = spread(dBn(0:N-1)/Bn(0:N-1), 1,M)*cmat ! c_n flux
+          r%LHS(loM:hiM,3*N:4*N-2) = spread(dBn(1:N-1)/Bn(1:N-1), 1,M)*smat ! d_n flux
        end if
        deallocate(Bn,dBn,stat=ierr)
        if (ierr /= 0) stop 'circular_elements.f90 error deallocating: Bn,dBn'
@@ -196,10 +198,14 @@ contains
              r%LHS(1:M,1:N) =       Bn(:,0:N-1)/spread(Bn0(0:N-1),1,M)*cmat/c%parent%K ! a_n 
              r%LHS(1:M,N+1:2*N-1) = Bn(:,1:N-1)/spread(Bn0(1:N-1),1,M)*smat(:,1:N-1)/c%parent%K ! b_n
 
-             if (el%ibnd == 0) then
-                ! is target outside of matching element?  (zero out inside portion)
+             if (c%ibnd == 0) then
+                ! is source the outside of a matching element?  set inside terms to zero
                 r%LHS(1:M,2*N:4*N-2) = 0.0
              end if
+
+             ! outside is always in 1:2*N-1 slot
+             loN = 1
+             hiN = 2*N-1
 
           else
              ! can target element "see" the inside of the source element?
@@ -209,13 +215,13 @@ contains
              Bn(1:M,0:N-1) = bI(kap*c%G(targ)%Rgm(1:M),N)
              Bn0(0:N-1) =    bI(kap*c%r,N)
 
-             if (el%ibnd == 0) then
-                ! is target the inside of matching element?
+             if (c%ibnd == 0) then
                 r%LHS(1:M,1:2*N-1) = 0.0 ! zero out other part
+                ! is source the inside of matching element?
                 loN = 2*N
                 hiN = 4*N-2
              else
-                ! is target inside of specified head/flux element? (no other part)
+                ! is source inside of specified head/flux element? (no other part)
                 loN = 1
                 hiN = 2*N-1
              end if
@@ -257,6 +263,11 @@ contains
              dBn = kap*dBn
              Bn0(0:N-1) = bK(kap*c%r,N)
              K = c%parent%K
+
+             ! outside part is always 1:2*N-1
+             loN = 1
+             hiN = 2*N-1
+
           else
              ! use interior Bessel functions (In)
              kap = kappa(p,c%element)
@@ -264,7 +275,19 @@ contains
              dBn = kap*dBn
              Bn0(0:N-1) = bI(kap*c%r,N)
              K = c%K
+
+             if (c%ibnd == 0) then
+                ! inside of matching element
+                loN = 2*N
+                hiN = 4*N-2
+             else
+                ! inside of specified flux element
+                loN = 1
+                hiN = 2*N-1
+             end if
+             
           end if
+
 
           ! derivative wrt radius of source element
           dPot_dR(1:M,1:N) =       dBn(1:M,0:N-1)/spread(Bn0(0:N-1),1,M)*cmat
