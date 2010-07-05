@@ -3,16 +3,16 @@ EXTERNAL=cbessel.o
 KKLOW=utility.o bessel_functions.o mathieu_functions2.o
 
 ##Work MacPro##############################
-#LAPACKLIB=/Users/klkuhlm/src/lapack-3.2.1/lapack_MAC.a
-#BLASLIB=/opt/local/lib/libf77blas.dylib
+LAPACKLIB=/Users/klkuhlm/src/lapack-3.2.1/lapack_MAC.a
+BLASLIB=/opt/local/lib/libf77blas.dylib
 
 ###Home linux computer##############################
 #LAPACKLIB=/home/kris/src/lapack-3.2.1/lapack_LINUX.a
 #BLASLIB=/home/kris/src/GotoBLAS2/libgoto2.a -lpthread
 
 ###Work linux laptop##############################
-LAPACKLIB=/home/kris/src/lapack-3.2.1/lapack_LINUX.a
-BLASLIB=/home/kris/src/lapack-3.2.1/blas_LINUX.a
+#LAPACKLIB=/home/kris/src/lapack-3.2.1/lapack_LINUX.a
+#BLASLIB=/home/kris/src/lapack-3.2.1/blas_LINUX.a
 ##LAPACKLIB=-L/usr/lib/atlas-sse -llapack
 ##BLASLIB=-lblas
 
@@ -43,7 +43,7 @@ OBJS=$(EXTERNAL) constants.o $(KKLOW) type_definitions.o $(KKHIGH)
 ###################################
 
 #### gfortran 4.6 (trunk) #################
-F90=gfortran-dev
+F90=gfortran-4.6
 DFLAGS=-Wall -Wextra -gdwarf-3 -O0 
 DFLAGS+=-frange-check -fcheck=all -finit-real=snan -finit-integer=-99999 -fbacktrace
 DFLAGS+=-fwhole-file -fpack-derived -frepack-arrays
