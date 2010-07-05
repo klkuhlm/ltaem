@@ -30,7 +30,8 @@ OBJS=$(EXTERNAL) constants.o $(KKLOW) type_definitions.o $(KKHIGH)
 
 ############ ifort 11.1 ##########
 ##F90=ifort
-##DFLAGS=-O0 -g -traceback -cpp -DDEBUG -warn all -check bounds -check pointers -check uninit -check format -check output_conversion
+###DFLAGS=-O0 -g -traceback -cpp -DDEBUG -warn all -check bounds -check pointers -check uninit -check format -check output_conversion
+##DFLAGS=-O0 -g -traceback -cpp -DDEBUG -warn all -check all
 ##PFLAGS=-O0 -cpp
 ##LINKFLAG=-O0
 #####################################
@@ -43,11 +44,12 @@ OBJS=$(EXTERNAL) constants.o $(KKLOW) type_definitions.o $(KKHIGH)
 
 #### gfortran 4.6 (trunk) #################
 F90=gfortran-dev
-DFLAGS=-Wall -Wextra -gdwarf-3 -O0 -fwhole-file -fpack-derived -frange-check -fwhole-file
-DFLAGS+=-fcheck=bounds,mem,pointer -finit-real=snan -finit-integer=-99999 -fbacktrace -fdump-core
+DFLAGS=-Wall -Wextra -gdwarf-3 -O0 
+DFLAGS+=-frange-check -fcheck=all -finit-real=snan -finit-integer=-99999 -fbacktrace
+DFLAGS+=-fwhole-file -fpack-derived -frepack-arrays
 DFLAGS+=-cpp #-DDEBUG
-PFLAGS=-O0 -gdwarf-3 -fwhole-file -frange-check
-LINKFLAG=-O0 -gdwarf-3 
+PFLAGS=-O2 -g
+LINKFLAG=-O0 -gdwarf-3
 ###################################
 
 # switch between performance or debugging flags

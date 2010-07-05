@@ -31,17 +31,19 @@ contains
     complex(DP), dimension(:), intent(in) :: z
     integer, intent(in) :: num
     complex(DP), dimension(size(z,dim=1),0:num-1) :: K
+    complex(DP), dimension(0:num-1) :: tmp
     integer :: numzero, ierr, j
     integer, parameter :: kode = 1
-    real(DP), parameter :: lower = 0.0_DP
 
+    print *, 'nz',size(z,dim=1),'num',num,'K',shape(K)
     do j = 1, size(z,dim=1)
-       call cbesk(z(j), lower, kode, num, K(j,0:num-1), numzero, ierr)
+       call cbesk(z(j), 0.0_DP, kode, num, tmp(0:num-1), numzero, ierr)
        ! either 0 or 3 are acceptable return codes
        if (.not.(ierr == 0 .or. ierr == 3)) then
           write(*,'(A,3(1X,I0))') 'besk_vectz error',numzero,ierr,j
           stop 222
        end if
+       K(j,0:num-1) = tmp(0:num-1)
     end do
   end function besk_vectz
 
@@ -59,17 +61,19 @@ contains
     complex(DP), dimension(:), intent(in) :: z
     integer, intent(in) :: num
     complex(DP), dimension(size(z,dim=1),0:num-1) :: I
+    complex(DP), dimension(0:num-1) :: tmp
     integer :: numzero, ierr, j
     integer, parameter :: kode = 1
-    real(DP), parameter :: lower = 0.0_DP
 
+    print *, 'nz',size(z,dim=1),'num',num,'I',shape(I)
     do j = 1, size(z,dim=1)
-       call cbesi(z(j), lower, kode, num, I(j,0:num-1), numzero, ierr)
+       call cbesi(z(j), 0.0_DP, kode, num, tmp(0:num-1), numzero, ierr)
        ! either 0 or 3 are acceptable return codes
        if (.not.(ierr == 0 .or. ierr == 3)) then
           write(*,'(A,3(1X,I0))') 'besi_vectz error',numzero,ierr,j
           stop 223
        end if
+       I(j,0:num-1) = tmp(0:num-1)
     end do
   end function besi_vectz
 
@@ -94,6 +98,7 @@ contains
     nz = size(z,dim=1)
     mn = max(n,2)
 
+    print *, 'nz',nz,'num',n,'I,ID',shape(I),'Itmp',shape(Itmp)
     Itmp(1:nz,0:mn-1) = besi_vectz(z,mn)
     ID(1:nz,0) = I(1:nz,1)   ! low end
     if (n >= 2) then
@@ -126,16 +131,22 @@ contains
     nz = size(z,dim=1)
     mn = max(n,2)
 
+!    print *, 'nz',nz,'num',n,'K,KD',shape(K),'Ktmp',shape(Ktmp)
     Ktmp(1:nz,0:mn-1) = besk_vectz(z,mn)
+!    print *, 'nz',nz,'KD',shape(KD(1:nz,0)),'Ktmp',shape(Ktmp(1:nz,1))
     KD(1:nz,0) = -Ktmp(1:nz,1)  ! low end (always used)
     if (n >= 2) then
+!       print *, 'n>=2 fcn: nz',nz,'K',shape(K(1:nz,0:n-1)),'Ktmp',shape(Ktmp(1:nz,0:n-1))
        K(1:nz,0:n-1) = Ktmp(1:nz,0:n-1)
+!       print *, 'n>=2 high-end deriv:',n-1,' fcn',n-2
        KD(1:nz,n-1) = -(K(1:nz,n-2) + (n-1)/z(1:nz)*K(1:nz,n-1)) ! high end
        if (n >= 3) then
+!          print *, 'n>=3: nz',nz,'n-3',n-3,'n-2',n-2
           KD(1:nz,1:n-2) = -0.5_DP*(K(1:nz,0:n-3) + K(1:nz,2:n-1)) ! middle
        end if
     else
-       ! only one order requested (n=0)
+!       print *, 'else 0'
+       ! only one order requested (n=1)
        K(1:nz,0) = Ktmp(1:nz,0)
     end if
   end subroutine besKd_zvect
