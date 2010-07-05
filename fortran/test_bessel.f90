@@ -9,7 +9,7 @@ complex(DP), dimension(nz) :: z
 integer :: j
 
 z = [(cmplx(real(2*j,DP),real(j,DP),DP),j=1,nz)]
-ck(1:nz,1:nk) = bK(z,nz)
+ck(1:nz,1:nk) = bK(z,nk)
 print *, 'z',z
 do j=1,nz
    print *, 'Re ck',j,real(ck(j,:))
@@ -21,9 +21,9 @@ end do
 
 print *, ' '
 z = [(cmplx(real(2*j,DP),real(j,DP),DP),j=1,nz)]
-print *, 'z',z
-call dbK(z,nz,ck(1:nz,1:nk),cdk(1:nz,1:nk))
-print *, 'z',z
+!print *, 'z',z
+call dbK(z,nk,ck(1:nz,1:nk),cdk(1:nz,1:nk))
+!print *, 'z',z
 do j=1,nz
    print *, 'Re ck',j,real(ck(j,:))
 end do

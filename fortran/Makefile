@@ -11,8 +11,10 @@ KKLOW=utility.o bessel_functions.o mathieu_functions2.o
 #BLASLIB=/home/kris/src/GotoBLAS2/libgoto2.a -lpthread
 
 ###Work linux laptop##############################
-LAPACKLIB=-L/usr/lib/atlas-sse -llapack
-BLASLIB=-lblas
+LAPACKLIB=/home/kris/src/lapack-3.2.1/lapack_LINUX.a
+BLASLIB=/home/kris/src/lapack-3.2.1/blas_LINUX.a
+##LAPACKLIB=-L/usr/lib/atlas-sse -llapack
+##BLASLIB=-lblas
 
 ### for intel compiler
 ##################################
@@ -41,11 +43,11 @@ OBJS=$(EXTERNAL) constants.o $(KKLOW) type_definitions.o $(KKHIGH)
 
 #### gfortran 4.6 (trunk) #################
 F90=gfortran-dev
-DFLAGS=-Wall -Wextra -gdwarf-3 -O0 -fwhole-file 
-##DFLAGS+=-fcheck=bounds,mem,pointer -finit-real=nan -finit-integer=-999 -fbacktrace 
+DFLAGS=-Wall -Wextra -gdwarf-3 -O0 -fwhole-file -fpack-derived -frange-check -fwhole-file
+DFLAGS+=-fcheck=bounds,mem,pointer -finit-real=snan -finit-integer=-99999 -fbacktrace -fdump-core
 DFLAGS+=-cpp #-DDEBUG
-PFLAGS=-O0 -gdwarf-3 -fwhole-file
-LINKFLAG=-O0 -gdwarf-3
+PFLAGS=-O0 -gdwarf-3 -fwhole-file -frange-check
+LINKFLAG=-O0 -gdwarf-3 
 ###################################
 
 # switch between performance or debugging flags

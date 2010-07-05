@@ -83,24 +83,24 @@ contains
     
     ! matching or specified total flux
     if (c%ibnd == 0 .or. c%ibnd == +1 .or. (c%ibnd == 2 .and. c%storIn)) then
-       allocate(Bn(0:N-1),dBn(0:N-1),stat=ierr)
+       allocate(Bn(0:N-1),dBn(0:N-1), stat=ierr)
        if (ierr /= 0) stop 'circular_elements.f90 error allocating: Bn,dBn'
        kap = kappa(p,c%parent) 
-       call dBK(kap*c%r,N,Bn,dBn)
-       dBn = kap*dBn
+       call dBK(kap*c%r,N,Bn(0:N-1),dBn(0:N-1))
+       dBn(0:N-1) = kap*dBn(0:N-1)
 
        r%LHS(loM:hiM,1:N) =       spread(dBn(0:N-1)/Bn(0:N-1), 1,M)*cmat ! a_n flux
        r%LHS(loM:hiM,N+1:2*N-1) = spread(dBn(1:N-1)/Bn(1:N-1), 1,M)*smat ! b_n flux
        
        if (c%ibnd == 0 .or. (c%ibnd == 1 .and. c%calcin)) then
           kap = kappa(p,c%element)
-          call dBI(kap*c%r,N,Bn,dBn)
-          dBn = kap*dBn
+          call dBI(kap*c%r,N,Bn(0:N-1),dBn(0:N-1))
+          dBn(0:N-1) = kap*dBn(0:N-1)
           
           r%LHS(loM:hiM,2*N:3*N-1) = spread(dBn(0:N-1)/Bn(0:N-1), 1,M)*cmat ! c_n flux
           r%LHS(loM:hiM,3*N:4*N-2) = spread(dBn(1:N-1)/Bn(1:N-1), 1,M)*smat ! d_n flux
        end if
-       deallocate(Bn,dBn,stat=ierr)
+       deallocate(Bn,dBn, stat=ierr)
        if (ierr /= 0) stop 'circular_elements.f90 error deallocating: Bn,dBn'
     end if
     
@@ -176,20 +176,19 @@ contains
        stop 'circular_elements.f90:circle_match_other() error allocating:'//&
             & 'r%LHS, r%RHS'
     end if
+    r%LHS = 0.0
+    r%RHS = 0.0
 
     if (dom%inclBg(src,targ) .or. dom%InclIn(src,targ)) then
 
-       allocate( Bn(M,0:N-1),Bn0(0:N-1), cmat(1:M,0:N-1), smat(1:M,0:N-1), stat=ierr)
-       if (ierr /= 0) then
-          stop 'circular_elements.f90:circle_match_other() error allocating:'//&
+       allocate(Bn(1:M,0:N-1),Bn0(0:N-1),cmat(1:M,0:N-1),smat(1:M,0:N-1), stat=ierr)
+       if (ierr /= 0) stop 'circular_elements.f90:circle_match_other() error allocating:'//&
                & 'Bn, Bn0, cmat, smat'
-       end if
 
        cmat = cos(outerprod(c%G(targ)%Pgm(1:M), vi(0:N-1)))
        smat = sin(outerprod(c%G(targ)%Pgm(1:M), vi(0:N-1)))
 
        ! setup LHS 
-
        ! $$$$$$$$$$ head effects of source (c) on target (el) $$$$$$$$$$
        ! for matching or specified total head target elements
        if (el%ibnd == 0 .or. el%ibnd == -1) then
@@ -205,11 +204,6 @@ contains
              r%LHS(1:M,1:N) =       Bn(:,0:N-1)/spread(Bn0(0:N-1),1,M)*cmat(:,0:N-1)/c%parent%K ! a_n 
              r%LHS(1:M,N+1:2*N-1) = Bn(:,1:N-1)/spread(Bn0(1:N-1),1,M)*smat(:,1:N-1)/c%parent%K ! b_n
 
-             if (c%ibnd == 0) then
-                ! is source the outside of a matching element?  set inside terms to zero
-                r%LHS(1:M,2*N:4*N-2) = 0.0
-             end if
-
              ! outside is always in 1:2*N-1 slot
              loN = 1
              hiN = 2*N-1
@@ -223,7 +217,6 @@ contains
              Bn0(0:N-1) =    bI(kap*c%r,N)
 
              if (c%ibnd == 0) then
-                r%LHS(1:M,1:2*N-1) = 0.0 ! zero out other part
                 ! is source the inside of matching element?
                 loN = 2*N
                 hiN = 4*N-2
@@ -270,8 +263,8 @@ contains
           if (dom%inclBg(src,targ)) then
              ! use exterior Bessel functions (Kn)
              kap = kappa(p,c%parent) 
-             call dBK(kap*c%G(targ)%Rgm(1:M),N+1,Bn,dBn)
-             dBn = kap*dBn
+             call dBK(kap*c%G(targ)%Rgm(1:M),N+1,Bn(1:M,0:N-1),dBn(1:M,0:N-1))
+             dBn(1:M,0:N-1) = kap*dBn(1:M,0:N-1)
              Bn0(0:N-1) = bK(kap*c%r,N)
              K = c%parent%K
 
@@ -282,8 +275,8 @@ contains
           else
              ! use interior Bessel functions (In)
              kap = kappa(p,c%element)
-             call dBI(kap*c%G(targ)%Rgm(1:M),N+1,Bn,dBn)
-             dBn = kap*dBn
+             call dBI(kap*c%G(targ)%Rgm(1:M),N+1,Bn(1:M,0:N-1),dBn(1:M,0:N-1))
+             dBn(1:M,0:N-1) = kap*dBn(1:M,0:N-1)
              Bn0(0:N-1) = bI(kap*c%r,N)
              K = c%K
 
@@ -298,7 +291,6 @@ contains
              end if
           end if
 
-
           ! derivative wrt radius of source element
           dPot_dR(1:M,1:N) =       dBn(1:M,0:N-1)/spread(Bn0(0:N-1),1,M)*cmat
           dPot_dR(1:M,N+1:2*N-1) = dBn(1:M,1:N-1)/spread(Bn0(1:N-1),1,M)*smat(:,1:N-1)
@@ -312,7 +304,7 @@ contains
                 dPot_dR(1:M,1) = well(c,p)*dPot_dR(1:M,1)
              end if
 
-             dPot_dP(:,:) = 0.0 ! wells have angular symmetry
+             dPot_dP(1:M,1:2*N-1) = 0.0 ! wells have angular symmetry
           else
              ! derivative wrt angle of source element for more general circular elements
              dPot_dP(1:M,1:N) =      -Bn(:,0:N-1)*spread(vi(0:N-1)/Bn0(0:N-1),1,M)*smat(:,0:N-1)
@@ -320,10 +312,10 @@ contains
           end if
 
           ! project these from cylindrical onto Cartesian coordinates
-          dPot_dX = dPot_dR*spread(cos(c%G(targ)%Pgm),2,2*N-1) - &
-                  & dPot_dP*spread(sin(c%G(targ)%Pgm)/c%G(targ)%Rgm,2,2*N-1)
-          dPot_dY = dPot_dR*spread(sin(c%G(targ)%Pgm),2,2*N-1) + &
-                  & dPot_dP*spread(cos(c%G(targ)%Pgm)/c%G(targ)%Rgm,2,2*N-1)
+          dPot_dX(1:M,1:2*N-1) = dPot_dR*spread(cos(c%G(targ)%Pgm),2,2*N-1) - &
+                               & dPot_dP*spread(sin(c%G(targ)%Pgm)/c%G(targ)%Rgm,2,2*N-1)
+          dPot_dY(1:M,1:2*N-1) = dPot_dR*spread(sin(c%G(targ)%Pgm),2,2*N-1) + &
+                               & dPot_dP*spread(cos(c%G(targ)%Pgm)/c%G(targ)%Rgm,2,2*N-1)
 
           ! project from Cartesian to "radial" coordinate of target element
           if (el%id <= dom%num(1)) then
@@ -354,20 +346,12 @@ contains
                                     & dPot_dY*spread(el%f*cosh(el%r)*sin(el%Pcm(1:M)),2,2*N-1)
           end if
 
-          ! zero out effects due to other part
-          r%LHS(loM:hiM,:loN) = 0.0
-          r%LHS(loM:hiM,hiN:) = 0.0
-
           deallocate(dBn, dPot_dR, dPot_dP, dPot_dX, dPot_dY, stat=ierr)
           if (ierr /= 0) stop 'circular_elements.f90 error deallocating:'//&
                & ' dBn, dPot_dR, dPot_dP, dPot_dX, dPot_dY'
        end if
        deallocate(Bn,Bn0,cmat,smat, stat=ierr)
        if (ierr /= 0) stop 'circular_elements.f90 error deallocating: Bn,Bn0,cmat,smat'
-    else
-       ! these two elements cannot "see" one another - matrix/vector all zeros
-       r%LHS = 0.0
-       r%RHS = 0.0
     end if
   end function circle_match_other
 
@@ -414,8 +398,8 @@ contains
     logical, intent(in) :: inside
     complex(DP), dimension(size(p,1)) :: H
 
-    real(DP), dimension(c%N) :: vr
-    complex(DP), dimension(size(p,1),c%N) :: aa,bb,BRgp,BR0
+    real(DP), dimension(0:c%N-1) :: vr
+    complex(DP), dimension(size(p,1),0:c%N-1) :: aa,bb,BRgp,BR0
     integer :: n0, np, i, N
     complex(DP), dimension(size(p,1)) :: kap
 
@@ -425,7 +409,7 @@ contains
 
     N = c%N
     np = size(p,1)
-    vr = real([(i,i=0,N-1)],DP)
+    vr(0:N-1) = real([(i,i=0,N-1)],DP)
 
     if (inside) then
        if (c%match) then
@@ -433,21 +417,21 @@ contains
        else
           n0 = 1   ! inside of specified boundary circle
        end if
-       kap = kappa(p(:),c%element)
-       BRgp(1:np,0:N-1) = bK(Rgp*kap,N)
-       BR0(1:np,0:N-1) =  bK(c%r*kap,N)
+       kap(1:np) = kappa(p(1:np),c%element)
+       BRgp(1:np,0:N-1) = bK(Rgp*kap(1:np),N)
+       BR0(1:np,0:N-1) =  bK(c%r*kap(1:np),N)
     else
        n0 = 1
-       kap = kappa(p(:),c%parent)
-       BRgp(1:np,0:N-1) = bI(Rgp*kap,N)
-       BR0(1:np,0:N-1) =  bI(c%r*kap,N)
+       kap(1:np) = kappa(p(1:np),c%parent)
+       BRgp(1:np,0:N-1) = bI(Rgp*kap(1:np),N)
+       BR0(1:np,0:N-1) =  bI(c%r*kap(1:np),N)
     end if
-    aa(1:np,1:N) = c%coeff(lo:hi,n0:n0+N-1)
-    bb(1:np,1) = 0.0 ! insert zero to make odd/even same shape
-    bb(1:np,2:N) = c%coeff(lo:hi,n0+N:n0+2*N-2)
-    H(1:np) = sum(BRgp(:,:)/BR0(:,:)* &
-         & ( aa(:,1:N)*spread(cos(vr(0:N-1)*Pgp),1,np) + &
-         &   bb(:,1:N)*spread(sin(vr(0:N-1)*Pgp),1,np) ),dim=2)
+    aa(1:np,0:N-1) = c%coeff(lo:hi,n0:n0+N-1)
+    bb(1:np,0) = 0.0 ! insert zero to make odd/even same shape
+    bb(1:np,1:N-1) = c%coeff(lo:hi,n0+N:n0+2*N-2)
+    H(1:np) = sum(BRgp(1:np,0:N-1)/BR0(1:np,0:N-1)* &
+         & ( aa(1:np,0:N-1)*spread(cos(vr(0:N-1)*Pgp),1,np) + &
+         &   bb(1:np,0:N-1)*spread(sin(vr(0:N-1)*Pgp),1,np) ),dim=2)
   end function circle_calc
 
   function circle_deriv(p,c,lo,hi,Rgp,Pgp,inside) result(dH)
@@ -462,8 +446,8 @@ contains
     logical, intent(in) :: inside
     complex(DP), dimension(size(p,1),2) :: dH ! dPot_dR, dPot_dTheta
 
-    real(DP), dimension(c%N) :: vr
-    complex(DP), dimension(size(p,1),c%N) :: aa,bb,BRgp,BR0,dBRgp
+    real(DP), dimension(0:c%N-1) :: vr
+    complex(DP), dimension(size(p,1),0:c%N-1) :: aa,bb,BRgp,BR0,dBRgp
     integer :: n0, np, i, N
     complex(DP), dimension(size(p,1)) :: kap
 
@@ -473,7 +457,7 @@ contains
 
     N = c%N
     np = size(p,1)
-    vr = real([(i,i=0,N-1)],DP)
+    vr(0:N-1) = real([(i,i=0,N-1)],DP)
 
     if (inside) then
        if (c%match) then
@@ -482,27 +466,27 @@ contains
           n0 = 1   ! inside of specified boundary circle
        end if
        kap(1:np) = kappa(p(:),c%element)
-       call dBK(Rgp*kap(:),N,BRgp,dBRgp)
-       dBRgp = spread(kap(1:np),2,N)*dBRgp(:,:)
-       BR0(1:np,0:N-1) = bK(c%r*kap(:),N)
+       call dBK(Rgp*kap(1:np),N,BRgp(1:np,0:N-1),dBRgp(1:np,0:N-1))
+       dBRgp(1:np,0:N-1) = spread(kap(1:np),dim=2,ncopies=N)*dBRgp(1:np,0:N-1)
+       BR0(1:np,0:N-1) = bK(c%r*kap(1:np),N)
     else
        n0 = 1
        kap(1:np) = kappa(p(:),c%parent)
-       call dBI(Rgp*kap(:),N,BRgp,dBRgp)
-       dBRgp = spread(kap(1:np),2,N)*dBRgp(:,:)
-       BR0(1:np,0:N-1) =  bI(c%r*kap(:),N)
+       call dBI(Rgp*kap(:),N,BRgp(1:np,0:N-1),dBRgp(1:np,0:N-1))
+       dBRgp(1:np,0:N-1) = spread(kap(1:np),dim=2,ncopies=N)*dBRgp(1:np,0:N-1)
+       BR0(1:np,0:N-1) =  bI(c%r*kap(1:np),N)
     end if
-    aa(1:np,1:N) = c%coeff(lo:hi,n0:n0+N-1)
-    bb(1:np,1) = 0.0 ! insert zero to make odd/even same shape
-    bb(1:np,2:N) = c%coeff(lo:hi,n0+N:n0+2*N-2)
+    aa(1:np,0:N-1) = c%coeff(lo:hi,n0:n0+N-1)
+    bb(1:np,0) = 0.0 ! insert zero to make odd/even same shape
+    bb(1:np,1:N-1) = c%coeff(lo:hi,n0+N:n0+2*N-2)
     ! dPot_dR
-    dH(1:np,1) = sum(dBRgp(:,:)/BR0(:,:)* &  
-         & ( aa(:,1:N)*spread(cos(vr(0:N-1)*Pgp),1,np) + &
-         &   bb(:,1:N)*spread(sin(vr(0:N-1)*Pgp),1,np) ),dim=2)
+    dH(1:np,1) = sum(dBRgp(1:np,0:N-1)/BR0(1:np,0:N-1)* &  
+         & ( aa(1:np,0:N-1)*spread(cos(vr(0:N-1)*Pgp),1,np) + &
+         &   bb(1:np,0:N-1)*spread(sin(vr(0:N-1)*Pgp),1,np) ),dim=2)
     ! dPot_dTheta
-    dH(1:np,2) = sum(BRgp(:,:)/BR0(:,:)*spread(vr(0:N-1),1,np)* &  
-         & ( bb(:,1:N)*spread(cos(vr(0:N-1)*Pgp),1,np) - &
-         &   aa(:,1:N)*spread(sin(vr(0:N-1)*Pgp),1,np) ),dim=2)    
+    dH(1:np,2) = sum(BRgp(1:np,0:N-1)/BR0(1:np,0:N-1)*spread(vr(0:N-1),1,np)* &  
+         & ( bb(1:np,0:N-1)*spread(cos(vr(0:N-1)*Pgp),1,np) - &
+         &   aa(1:np,0:N-1)*spread(sin(vr(0:N-1)*Pgp),1,np) ),dim=2)    
   end function circle_deriv
 end module circular_elements
 
