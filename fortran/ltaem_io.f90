@@ -112,7 +112,8 @@ contains
           stop
        end if
           
-       read(15,*) c(:)%CalcIn ! just T/F
+       read(15,*) c(:)%CalcIn ! calculate inside this element?
+       read(15,*) c(:)%StorIn ! account for free-water storage effects inside element?
 
        read(15,*) c(:)%r
        if (any(c%r < epsilon(0.0))) then
@@ -230,6 +231,13 @@ contains
           c(:)%match = .false.       
        end where
        
+       if(any(c%match .and. c%storin)) then
+          print *, 'WARNING: wellbore (free-water) storage only handled yet for ibnd==2'
+          where(c%match .and. c%storin)
+             c%storin = .false.
+          end where
+       end if
+
        write(chint,'(I4.4)') dom%num(1)
        fmt(1) = '('//chint//'(I0,1X),A)     ' ! integer
        fmt(2) = '('//chint//'(L1,1X),A)     ' ! logical 
@@ -241,6 +249,7 @@ contains
        write(16,fmt(1)) c(:)%ibnd, '  ||    circle ibnd array'
        write(16,fmt(2)) c(:)%match, '  ||    circle matching array'
        write(16,fmt(2)) c(:)%calcin, '  ||    calculate inside this circle?'
+       write(16,fmt(2)) c(:)%storin, '  ||    calculate free-water storage effects of circle?'
        write(16,fmt(3)) c(:)%r, '  ||    circle radius'
        write(16,fmt(3)) c(:)%x, '  ||    circle center x'
        write(16,fmt(3)) c(:)%y, '  ||    circle center y'
@@ -301,7 +310,9 @@ contains
           stop
        end if
 
-       read(15,*) e(:)%CalcIn 
+       read(15,*) e(:)%CalcIn
+       read(15,*) e(:)%StorIn
+       
        read(15,*) e(:)%r   ! eta
        if (any(e%r < epsilon(0.0))) then
           print *, 'e%r must be > 0.0',e%r
@@ -410,6 +421,11 @@ contains
           e(:)%match = .false.       
        end where
 
+       if(any(e%storin)) then
+          print *, 'WARNING: wellbore (free-water) storage not handled for ellipses yet'
+          e%storin = .false.
+       end if
+
        write(chint,'(I4.4)') dom%num(2)
        fmt(1) = '('//chint//'(I0,1X),A)     ' ! integer
        fmt(2) = '('//chint//'(L1,1X),A)     ' ! logical 
@@ -422,6 +438,8 @@ contains
        write(16,fmt(1)) e(:)%ibnd, '  ||    ellipse ibnd array'
        write(16,fmt(2)) e(:)%match, '  ||    ellipse matching array'
        write(16,fmt(2)) e(:)%calcin, '  ||    calculate inside this ellipse?'
+       ! free-water storage for ellipses not handled yet
+       write(16,fmt(2)) e(:)%storin, '  ||    calculate free-water storage for this ellipse?' 
        write(16,fmt(3)) e(:)%r, '  ||    ellipse radius (eta)'
        write(16,fmt(3)) e(:)%x, '  ||    ellipse center x'
        write(16,fmt(3)) e(:)%y, '  ||    ellipse center y'

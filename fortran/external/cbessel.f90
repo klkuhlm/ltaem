@@ -1,4 +1,3 @@
-! $Id: cbessel.f90,v 1.4 2006/06/05 23:24:54 kris Exp $
 Module Complex_Bessel
 
   !      REMARK ON ALGORITHM 644, COLLECTED ALGORITHMS FROM ACM.

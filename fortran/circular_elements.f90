@@ -41,11 +41,18 @@ contains
        ! loM:hiM is index range for flux matching portion, beyond head-matching part
        loM = M+1
        hiM = 2*M
-    elseif (c%ibnd == 2 .and. c%storIn) then
+    elseif (c%ibnd == 2) then
        ! simple well has no unknowns
        ! only appears on RHS of other elements
-       nrows = 0
-       ncols = 0
+       loM = 1
+       hiM = M       
+       if (c%storIn) then
+          nrows = M
+          ncols = 1
+       else
+          nrows = 0
+          ncols = 0
+       end if
     else
        nrows = M
        ncols = 2*N-1
@@ -159,7 +166,7 @@ contains
     if (c%ibnd == 0) then
        ncols = 4*N-2
     elseif (c%ibnd == 2 .and. c%storIn) then
-       ncols = 0
+       ncols = 1  ! reset to zero at end of routine
     else
        ncols = 2*N-1
     end if
@@ -195,7 +202,7 @@ contains
              Bn0(0:N-1) =    bK(kap*c%r,N)
 
              ! head effects on outside of other element
-             r%LHS(1:M,1:N) =       Bn(:,0:N-1)/spread(Bn0(0:N-1),1,M)*cmat/c%parent%K ! a_n 
+             r%LHS(1:M,1:N) =       Bn(:,0:N-1)/spread(Bn0(0:N-1),1,M)*cmat(:,0:N-1)/c%parent%K ! a_n 
              r%LHS(1:M,N+1:2*N-1) = Bn(:,1:N-1)/spread(Bn0(1:N-1),1,M)*smat(:,1:N-1)/c%parent%K ! b_n
 
              if (c%ibnd == 0) then
@@ -227,8 +234,8 @@ contains
              end if
              
              ! head effects on other element
-             r%LHS(1:M,loN:loN+N-1) = Bn(:,0:N-1)/spread(Bn0(0:N-1),1,M)*cmat/c%K ! c_n
-             r%LHS(1:M,loN+N:hiN)   = Bn(:,1:N-1)/spread(Bn0(1:N-1),1,M)*smat(:,1:N-1)/c%K !  d_n
+             r%LHS(1:M,loN:loN+N-1) = Bn(:,0:N-1)/spread(Bn0(0:N-1),1,M)*cmat(:,0:N-1)/c%K ! c_n
+             r%LHS(1:M,loN+N:hiN)   = Bn(:,1:N-1)/spread(Bn0(1:N-1),1,M)*smat(:,1:N-1)/c%K ! d_n
 
           end if
 
@@ -243,6 +250,10 @@ contains
                 ! specified flux (finite-radius well no storage)
                 r%RHS(1:M) = well(c,p)*r%LHS(1:M,1)
                 ! no LHS for specified simple well
+                deallocate(r%LHS,stat=ierr)
+                if (ierr /= 0) stop 'circular_elements:circle_match_self() error deallocating r%LHS'
+                allocate(r%LHS(M,0),stat=ierr)
+                if (ierr /= 0) stop 'circular_elements:circle_match_self() error re-allocating r%LHS'
              end if
           end if
        end if
@@ -285,7 +296,6 @@ contains
                 loN = 1
                 hiN = 2*N-1
              end if
-             
           end if
 
 
@@ -327,7 +337,7 @@ contains
                    
                    ! head effects of element
                    r%LHS(1:M,loN:hiN) = -(el%r*p/el%parent%T)*r%LHS(1:M,loN:hiN)
-                   
+
                    ! radial flux effects of element
                    r%LHS(1:M,loN:hiN) = r%LHS + (2.0 + el%r**2*el%dskin*p/el%parent%T)* &
                         & (dPot_dX*spread(cos(el%Pcm),2,2*N-1) + &

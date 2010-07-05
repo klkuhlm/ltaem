@@ -11,6 +11,7 @@ False  True  1  well_single_circle_contour.xyz  dump.out  well_single_circle.ele
 1  12 :: M
 2  0  :: ibnd
 F  T  :: calcin?
+F  F  :: storin?
 5.0D-2  2.25D-1  :: r
 1.0D-2  3.0D-1  :: x0
 1.0D-2  4.0D-1  :: y0
@@ -38,6 +39,7 @@ False  False :: unconfined?
 16  :: ms
 0  :: ibnd
 true :: calcin?
+false :: storin?
 3.5D-1  :: r
 7.0D-1  :: x0
 8.0D-1  :: y0

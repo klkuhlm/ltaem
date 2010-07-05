@@ -3,16 +3,16 @@ EXTERNAL=cbessel.o
 KKLOW=utility.o bessel_functions.o mathieu_functions2.o
 
 ##Work MacPro##############################
-LAPACKLIB=/Users/klkuhlm/src/lapack-3.2.1/lapack_MAC.a
-BLASLIB=/opt/local/lib/libf77blas.dylib
+#LAPACKLIB=/Users/klkuhlm/src/lapack-3.2.1/lapack_MAC.a
+#BLASLIB=/opt/local/lib/libf77blas.dylib
 
 ###Home linux computer##############################
 #LAPACKLIB=/home/kris/src/lapack-3.2.1/lapack_LINUX.a
 #BLASLIB=/home/kris/src/GotoBLAS2/libgoto2.a -lpthread
 
 ###Work linux laptop##############################
-#LAPACKLIB=-L/usr/lib/atlas-sse -llapack
-#BLASLIB=-lblas
+LAPACKLIB=-L/usr/lib/atlas-sse -llapack
+BLASLIB=-lblas
 
 ### for intel compiler
 ##################################
@@ -40,12 +40,12 @@ OBJS=$(EXTERNAL) constants.o $(KKLOW) type_definitions.o $(KKHIGH)
 ###################################
 
 #### gfortran 4.6 (trunk) #################
-F90=gfortran-4.6
-DFLAGS=-Wall -Wextra -g -O0 -fwhole-file 
-DFLAGS+=-fcheck=all -finit-real=snan -finit-integer=-999 -fbacktrace 
+F90=gfortran-dev
+DFLAGS=-Wall -Wextra -gdwarf-3 -O0 -fwhole-file 
+##DFLAGS+=-fcheck=bounds,mem,pointer -finit-real=nan -finit-integer=-999 -fbacktrace 
 DFLAGS+=-cpp #-DDEBUG
-PFLAGS=-O0 -g -fwhole-file
-LINKFLAG=
+PFLAGS=-O0 -gdwarf-3 -fwhole-file
+LINKFLAG=-O0 -gdwarf-3
 ###################################
 
 # switch between performance or debugging flags
@@ -58,7 +58,7 @@ main: $(OBJS) $(MAIN)
 
 # this external library tends to produce spurious errors about implicit type conversions
 cbessel.o : ./external/cbessel.f90
-	$(F90) -c $(PFLAGS) -o $@ $<
+	$(F90) -c $(DFLAGS) -o $@ $<
 
 # need to use pre-processor on this file
 mathieu_functions2.o : ./mathieu_functions2.f90
