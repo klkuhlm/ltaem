@@ -14,7 +14,6 @@ contains
   subroutine readInput(sol,dom,bg,c,e,p)
     use type_definitions, only : solution, particle, domain, element, circle, ellipse
     use constants, only : DP, lenFN
-    implicit none
 
     type(solution), intent(inout) :: sol
     type(particle), intent(out), allocatable :: p(:)
@@ -48,7 +47,7 @@ contains
     ! solution-specific and background aquifer parameters
     read(15,*) sol%particle, sol%contour, sol%output, &
          & sol%outFname, sol%coeffFName, sol%elemHfName, sol%geomfName
-    ! types:: logical, logical, integer (checked elsewhere), 4*string
+    ! types:: logical, logical, integer, 4*string
     read(15,*) bg%por, bg%k, bg%ss, bg%leakFlag, &
          & bg%aquitardK, bg%aquitardSs, bg%aquitardb, bg%ms
     ! reals checked here, bg%ms checked in ellipse section, leakflag checked elsewhere
@@ -60,6 +59,31 @@ contains
     if (any([bg%aquitardK,bg%aquitardSs,bg%aquitardb] < epsilon(0.0))) then
        print *, 'bg%aquitardK, bg%aquitardSs, bg%aquitardb &
             &must all be > 0.0 :',bg%aquitardK,bg%aquitardSs,bg%aquitardb 
+       stop
+    end if
+
+    ! some simple debugging of problem-type / output-type combinations
+    if (sol%output < 1 .or. (sol%output > 5 .and. sol%output /= 10 &
+         & .and. sol%output /= 11)) then
+       print *, 'sol%output must be in {1,2,3,4,5,10,11} ',sol%output
+       stop
+    end if
+    if ((sol%output < 4 .or. sol%output > 5) .and. sol%particle) then
+       print *, 'if sol%particle==.True., sol%output should &
+            &be in {4,5}',sol%output,sol%particle
+       stop
+    elseif (.not. sol%particle .and. (sol%output == 4 .or. sol%output == 5)) then
+       print *, 'sol%output should only be in {4,5} if &
+            &sol%particle==.True.',sol%output,sol%particle
+       stop
+    end if
+    if ((sol%output == 3 .or. sol%output == 11) .and. sol%contour) then
+       print *, 'sol%output should not be in {3,11} when contour &
+            &output is selected',sol%output,sol%contour
+       stop
+    elseif ((sol%output /= 3 .and. sol%output /= 11) .and. .not. sol%contour) then
+       print *, 'sol%output should be in {3,11} when hydrograph &
+            &(non-contour) output is selected',sol%output,sol%contour
        stop
     end if
 
@@ -572,7 +596,6 @@ contains
   subroutine writeResults(s,p)
     use constants, only : DP
     use type_definitions, only : solution, particle
-    implicit none
 
     type(solution), intent(in) :: s
     type(particle), dimension(:), intent(in) :: p
@@ -816,7 +839,6 @@ contains
   subroutine writeGeometry(c,e,s)
     use constants, only : DP
     use type_definitions, only : circle, ellipse, solution
-    implicit none
     
     type(circle), dimension(:), intent(in) :: c
     type(ellipse), dimension(:), intent(in) :: e
