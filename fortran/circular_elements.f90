@@ -2,11 +2,8 @@
 ! effects of a circular element.
 
 module circular_elements
-  use constants, only : DP, PI
-  use kappa_mod
-  use time_mod
-
   implicit none
+
   private
   public :: circle_match, circle_calc, circle_deriv
 
@@ -16,6 +13,9 @@ module circular_elements
     
 contains
   function circle_match_self(c,p) result(r)
+    use constants, only : DP, PI
+    use kappa_mod, only : kappa
+    use time_mod, only : time
     use utility, only : outerprod
     use type_definitions, only : circle, match_result
     use bessel_functions, only : bK, bI, dbK, dbI
@@ -127,6 +127,9 @@ contains
   end function circle_match_self
 
   function circle_match_other(c,el,dom,p) result(r)
+    use constants, only : DP, PI
+    use kappa_mod, only : kappa
+    use time_mod, only : time
     use utility, only : outerprod
     use type_definitions, only : circle, domain, matching, match_result
     use bessel_functions, only : bK, bI, dbk, dbi
@@ -387,6 +390,9 @@ contains
 
   function well(c,p) result(a0)
     ! this function returns the a_0 coefficient for a simple "well"
+    use constants, only : DP, PI
+    use kappa_mod, only : kappa
+    use time_mod, only : time
     use type_definitions, only : circle
     use bessel_functions, only : bK
     type(circle), intent(in) :: c
@@ -402,6 +408,8 @@ contains
   function storwell(c,p) result(a0)
     ! this function returns the a_0 coefficient for a
     ! well with wellbore storage and skin
+    use constants, only : DP, PI
+    use kappa_mod, only : kappa
     use type_definitions, only : circle
     use bessel_functions, only : bK
     
@@ -410,16 +418,17 @@ contains
     complex(DP) :: a0, kap
     complex(DP), dimension(0:1) :: Kn
 
-    kap = kappa(p,c%parent)
+    kap = kappa(p,c%parent)    
     Kn(0:1) = bK(kap*c%r,2)
     a0 = -Kn(0)*((2.0 + c%r**2*c%dskin*p/c%parent%T)/(2.0*PI*c%r) + &
                & (Kn(0)*c%r*p)/(2.0*PI*c%r*kap*Kn(1)*c%parent%T))    
   end function storwell
 
   function circle_calc(p,c,lo,hi,Rgp,Pgp,inside) result(H)
+    use constants, only : DP
+    use kappa_mod, only : kappa
     use type_definitions, only : circle
     use bessel_functions, only : bK, bI
-    use kappa_mod
 
     complex(DP), dimension(:), intent(in) :: p
     type(circle), intent(in) :: c
@@ -465,9 +474,10 @@ contains
   end function circle_calc
 
   function circle_deriv(p,c,lo,hi,Rgp,Pgp,inside) result(dH)
+    use constants, only : DP
+    use kappa_mod, only : kappa
     use type_definitions, only : circle
     use bessel_functions, only : bK, bI, dbk, dbi
-    use kappa_mod
 
     complex(DP), dimension(:), intent(in) :: p
     type(circle), intent(in) :: c

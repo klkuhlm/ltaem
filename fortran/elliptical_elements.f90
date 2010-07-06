@@ -2,11 +2,8 @@
 ! effects of a elliptical element.
 
 module elliptical_elements
-  use constants, only : DP, PI
-  use kappa_mod
-  use time_mod
-
   implicit none
+
   private
   public :: ellipse_match, ellipse_calc, ellipse_deriv
 
@@ -16,7 +13,9 @@ module elliptical_elements
 
 contains
   function ellipse_match_self(e,p,idx) result(r)
-    use utility, only : outerprod
+    use constants, only : DP, PI
+    use kappa_mod, only : kappa
+    use time_mod, only : time
     use type_definitions, only : ellipse, match_result
     use mathieu_functions, only : ce, se, Ke, Ko, dKe, dKo, Ie, Io, dIe, dIo
     implicit none
@@ -128,13 +127,17 @@ contains
           r%RHS(M+1:2*M) = 0.0_DP ! area source has no flux effects
        case(1)
           ! put specified flux effects on RHS
+
+          ! &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+          ! this area should be computed differently than 2*pi????
+          ! &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
           r%RHS(1:M) = time(p,e%time,.false.)*e%bdryQ/(2.0*PI*e%r)
        end select
     end if
   end function ellipse_match_self
 
   function ellipse_match_other(e,el,dom,p,idx) result(r)
-    use utility, only : outerprod
+    use constants, only : DP
     use type_definitions, only : ellipse, domain, matching, match_result
     use mathieu_functions, only : ce, se, dce, dse, Ke, Ko, dKe, dKo, Ie, Io, dIe, dIo
     implicit none
@@ -377,6 +380,8 @@ contains
   
   function line(e,p,idx) result(a2n)
     ! this function returns the coefficients for a specified-flux line source
+    use constants, only : DP, PI
+    use time_mod, only : time
     use type_definitions, only : ellipse
     use mathieu_functions, only : Ke,dKe
     type(ellipse), intent(in) :: e
@@ -408,6 +413,7 @@ contains
   end function line
 
   function ellipse_calc(p,e,lo,hi,Rgp,Pgp,inside) result(H)
+    use constants, only : DP
     use type_definitions, only : ellipse
     use mathieu_functions, only : Ke,Ko, Ie,Io, ce,se
 
@@ -466,6 +472,7 @@ contains
   end function ellipse_calc
 
   function ellipse_deriv(p,e,lo,hi,Rgp,Pgp,inside) result(dH)
+    use constants, only : DP
     use type_definitions, only : ellipse
     use mathieu_functions, only : Ke,Ko, Ie,Io, ce,se, dKe,dKo, dIe,dIo, dce,dse
 
