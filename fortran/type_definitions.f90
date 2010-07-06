@@ -8,7 +8,7 @@ module type_definitions
   type, public :: domain
      ! number of each type of element
      ! 1=circles (wells as special case), 2=ellipses (lines as special case)
-     integer, dimension(2) :: num
+     integer, dimension(2) :: num = [0,0]
 
      ! index of parent element
      integer, allocatable :: InclUp(:)
@@ -38,7 +38,7 @@ module type_definitions
      ! (is multiplied by constant strength too -- you probably want to set that to unity)
 
      ! type of time behavior for AREA/Boundary Head/Flux (see above)
-     integer :: AreaTime, BdryTime
+     integer :: AreaTime = 0, BdryTime = 0
 
      ! parameters related to different time behaviors (on, off, etc)
      real(DP), allocatable :: AtPar(:), BtPar(:)
@@ -47,38 +47,39 @@ module type_definitions
   type, extends(time) :: element
 
      ! global id for the current element
-     integer :: id
+     integer :: id = -999
 
      ! porosity, constant area source term
      ! main aquifer hydraulic conductivity and Ss for element
-     real(DP) :: por, k, Ss, b, alpha, T
+     real(DP) :: por = -999., k = -999., Ss = -999., b = -999., alpha = -999., T = -999.
 
      ! leaky-related (adjoining aquitard/aquifer parameters)
      ! 0= no leakage
      ! 1= case I, no-drawdown condition at top of aquifer
      ! 2= case II, no-flow condition at top of aquifer
      ! 3= aquitard thickness -> infinity (no bc)
-     integer :: leakFlag  
-     real(DP) :: aquitardK, aquitardSs, aquitardb
+     integer :: leakFlag  = -1
+     real(DP) :: aquitardK = -999., aquitardSs = -999., aquitardb = -999.
 
      ! unconfined-related (flag, specific yield, and vertical K)
-     logical ::  unconfinedFlag
-     real(DP) :: Sy, Kz
+     logical ::  unconfinedFlag = .false.
+     real(DP) :: Sy = -999., Kz = -999.
 
      ! specified value across area of element (including background)
-     real(DP) :: areaQ    
+     real(DP) :: areaQ = -999.   
 
      ! whether to calculate solution (Helmholtz eqn) inside element
      ! and whether to compute storage (using mass conservation ODE) inside element
      ! StorIn is only checked if CalcIn is false for an element.
-     logical :: CalcIn, StorIn
+     logical :: CalcIn = .false., StorIn = .false.
 
      ! the parent element
      type(element), pointer :: parent => null()
 
      ! structure containing matrices of mathieu function parameters
      type(mathieu), allocatable :: mat(:)
-     integer :: ms
+     integer :: ms = -999 ! not used in circle
+
   end type element
     
   type :: geom
@@ -95,29 +96,29 @@ module type_definitions
   type, extends(element) :: matching
      ! number of FS terms, number of matching points on circles/ellipses
      ! for lines/wells can be one (e.g., borehole storage) or zero (known Q)
-     integer :: n, m
+     integer :: n = -999, m = -999
   
      ! type of element: -1=specified head TOTAL, 0=match, +1=specified flux TOTAL
      !                  -2=specified head ELEMENT, +2=specified flux ELEMENT
      ! -2 doesn't really make sense from a physical perspective : not implemented
-     integer :: ibnd
+     integer :: ibnd = -999
      
      ! whether inclusion is a matching(T) or specified(F) inclusion
-     logical :: match
+     logical :: match = .false.
 
      ! specified value along boundary area of element
-     real(DP) :: bdryQ
+     real(DP) :: bdryQ = -999.
 
      ! dimensionless skin at boundary of element 
-     real(DP) :: dskin
+     real(DP) :: dskin = -999.
 
      ! location of center of element
-     real(DP) :: x, y 
+     real(DP) :: x = -999., y =-999.
 
      ! "radius" of element (eta for ellipses)
      ! semi-focal distance (zero for circles)
      ! angle of rotation (zero for circles)
-     real(DP) :: r, f, theta
+     real(DP) :: r = -999., f = -999., theta = -999.
 
      ! vector of matching location angles
      ! theta for circles, psi for ellipses
@@ -148,32 +149,34 @@ module type_definitions
      ! Inverse Laplace Transform parameters
 
      ! abcissa of convergence, LT tolerance
-     real(DP) :: alpha, tol
+     real(DP) :: alpha = -999., tol = -999.
 
      ! number of Fourier series terms
-     integer :: M
+     integer :: M = -999
   end type INVLT
 
   ! things relating to the numerical solution, independent from flow elements
   type, extends(INVLT) :: solution
 
      ! integrate particle lines vs. calculate at set locations/times
-     logical :: particle
-     integer :: nPart
+     logical :: particle = .false.
+     integer :: nPart = -999
 
-     integer :: totalnP ! total number of laplace parameters
+     ! total number of laplace parameters
+     integer :: totalnP = -999
 
      ! number of particle timesteps to skip when plotting streaklines
      ! (only one value for all particles)
-     integer :: streakSkip
+     integer :: streakSkip = -999
 
      ! calculate contours (thru space) vs. calculate hydrographs (thru time)
-     logical :: contour
+     logical :: contour = .false.
      ! re-calculate coefficient matrix, or load saved file (BGcoefffname)
-     logical :: calc
+     logical :: calc = .false.
      
      ! input/output filenames
-     character(lenFN) :: outfname, infname, coefffname, elemHfName, geomFname
+     character(lenFN) :: outfname='unset', infname='unset', &
+          & coefffname='unset', elemHfName='unset', geomFname='unset'
      
      ! output index (1= Gnuplot map (x,y,z triplets; times separated by blank lines);
      !               2= Matlab map (matrix output separate files);
@@ -183,10 +186,10 @@ module type_definitions
      !               10= Matlab for SCEM-UA inverse (column of times, locs sep. by blank lines);
      !               11= Gnuplot hydrograph no velocity (same as 3 no vel);)
      ! aquitardLeak and unconfined
-     integer :: output, aquitardLeak, unconfined
+     integer :: output = -999, aquitardLeak = -999, unconfined= -999
      
      ! x-spacing vector, y-spacing vector, time vector
-     integer :: nx, ny, nt
+     integer :: nx = -999, ny = -999, nt = -999
      real(DP), allocatable :: x(:), y(:), t(:)
 
      ! containers for time-domain final results (x,y,t,[i:j])
@@ -201,23 +204,23 @@ module type_definitions
   type :: particle
   
      ! starting x&y location, inital & final times
-     real(DP) :: x, y, ti, tf
+     real(DP) :: x = -999., y = -999., ti = -999., tf = -999.
   
      ! which integration scheme to use (for each particle??)
      ! 1 = Runge-Kutta-Merson (4th order adaptive)
      ! 2 = Runge-Kutta        (4th order)
      ! 3 = Richardson Extrapolation (2nd order)
      ! 4 = Fwd Euler          (1st order)
-     integer :: int
+     integer :: int = -999
      
      ! error tolerance and minimum stepsize for rkm
-     real(DP) :: tol, min, maxStep
+     real(DP) :: tol = -999., min = -999., maxStep = -999.
      
      ! step size for other integration schemes (initial stepsize for rkm)
-     real(DP) :: dt
+     real(DP) :: dt = -999.
      
      ! particle starts inside a constant head or constant flux inclusion?
-     logical :: InclIn
+     logical :: InclIn = .false.
      
      ! results from particle tracking (for each particle)
      ! first dimension is always 5 (t,x,y,velx,vely)
@@ -225,7 +228,7 @@ module type_definitions
      real(DP), allocatable :: result(:,:)
 
      ! number of time steps actuall used (some algorithms are adaptive)
-     integer :: numt
+     integer :: numt = -999
   end type particle
 
 contains
