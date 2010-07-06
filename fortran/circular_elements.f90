@@ -261,7 +261,7 @@ contains
           if (dom%inclBg(src,targ)) then
              ! use exterior Bessel functions (Kn)
              kap = kappa(p,c%parent) 
-             call dBK(kap*c%G(targ)%Rgm(1:M),N+1,Bn(1:M,0:N-1),dBn(1:M,0:N-1))
+             call dBK(kap*c%G(targ)%Rgm(1:M),N,Bn(1:M,0:N-1),dBn(1:M,0:N-1))
              dBn(1:M,0:N-1) = kap*dBn(1:M,0:N-1)
              Bn0(0:N-1) = bK(kap*c%r,N)
              K = c%parent%K
@@ -273,7 +273,7 @@ contains
           else
              ! use interior Bessel functions (In)
              kap = kappa(p,c%element)
-             call dBI(kap*c%G(targ)%Rgm(1:M),N+1,Bn(1:M,0:N-1),dBn(1:M,0:N-1))
+             call dBI(kap*c%G(targ)%Rgm(1:M),N,Bn(1:M,0:N-1),dBn(1:M,0:N-1))
              dBn(1:M,0:N-1) = kap*dBn(1:M,0:N-1)
              Bn0(0:N-1) = bI(kap*c%r,N)
              K = c%K
@@ -350,16 +350,12 @@ contains
           if (ierr /= 0) then
              stop 'circular_elements.f90 error deallocating:&
                & dBn, dPot_dR, dPot_dP, dPot_dX, dPot_dY'
-          else
-             print *, 'deallocate 1 ok'
           end if
           
        end if
        deallocate(Bn,Bn0,cmat,smat, stat=ierr)
        if (ierr /= 0) then
           stop 'circular_elements.f90 error deallocating: Bn,Bn0,cmat,smat'
-       else
-          print *, 'deallocate 2 ok'
        end if
        
     end if
@@ -373,15 +369,11 @@ contains
        deallocate(r%LHS,stat=ierr)
        if (ierr /= 0) then
           stop 'circular_elements:circle_match_self() error deallocating r%LHS'
-       else
-          print *, 'deallocate 3 ok'
        end if
        
        allocate(r%LHS(hiM,0),stat=ierr)
        if (ierr /= 0) then
           stop 'circular_elements:circle_match_self() error re-allocating r%LHS'
-       else
-          print *, 're-allocate 3 ok'
        end if
        
     end if
