@@ -3,9 +3,9 @@ module mathieu_functions
   implicit none
 
   type, public :: mathieu
-     integer :: M,  buffer
-     real(DP) :: CUTOFF
-     complex(DP) :: q
+     integer :: M = -999,  buffer = -999
+     real(DP) :: CUTOFF = -999.
+     complex(DP) :: q = (-999.,-999.)
      complex(DP), allocatable :: mcn(:),A(:,:,:), B(:,:,:)  ! 4*M; 1:M, 0:M-1, 0:1
   end type mathieu
 
