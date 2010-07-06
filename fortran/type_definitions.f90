@@ -3,9 +3,11 @@ module type_definitions
   use mathieu_functions, only : mathieu
   implicit none
 
-  public
+  private 
+  public :: domain, time, element, match_result, matching, circle, ellipse, &
+       & INVLT, solution, particle, print_match_result
   
-  type, public :: domain
+  type :: domain
      ! number of each type of element
      ! 1=circles (wells as special case), 2=ellipses (lines as special case)
      integer, dimension(2) :: num = [0,0]
@@ -18,7 +20,7 @@ module type_definitions
      logical, allocatable :: InclIn(:,:), InclBg(:,:)
   end type domain
   
-  type, public :: time
+  type :: time
      ! all elements inherit the time behavior from this type
 
      ! time behavior / parameters 
