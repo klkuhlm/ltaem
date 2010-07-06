@@ -1,4 +1,4 @@
-! this module contains the basic functions defining the head or flux 
+ this module contains the basic functions defining the head or flux 
 ! effects of a elliptical element.
 
 module elliptical_elements
@@ -57,8 +57,8 @@ contains
     end if
 
     allocate(r%LHS(nrows,ncols), r%RHS(nrows), stat=ierr)
-    if (ierr /= 0) stop 'elliptical_elements.f90:ellipse_match_self()'//&
-         & ' error allocating: r%LHS, r%RHS'
+    if (ierr /= 0) stop 'elliptical_elements.f90:ellipse_match_self()&
+         & error allocating: r%LHS, r%RHS'
 
     if (e%ibnd /= 2) then
 
@@ -180,8 +180,8 @@ contains
 
     allocate(r%LHS(nrows,ncols), r%RHS(nrows), stat=ierr)
     if (ierr /= 0) then
-       stop 'elliptical_elements.f90:ellipse_match_other() error allocating'//&
-            & 'r%LHS, r%RHS'
+       stop 'elliptical_elements.f90:ellipse_match_other() error allocating&
+            &r%LHS, r%RHS'
     end if
     r%LHS = 0.0
     r%RHS = 0.0
@@ -189,8 +189,8 @@ contains
     if (dom%inclBg(src,targ) .or. dom%InclIn(src,targ)) then
        
        allocate(RMn(1:M,0:N-1,0:1), RMn0(0:N-1,0:1), cemat(1:M,0:N-1), semat(1:M,1:N-1), stat=ierr)
-       if (ierr /= 0) stop 'elliptical_elements.f90:ellipse_match_other() error allocating:'//&
-               & 'RMn, RMn0, cemat, semat'
+       if (ierr /= 0) stop 'elliptical_elements.f90:ellipse_match_other() error allocating:&
+               &RMn, RMn0, cemat, semat'
 
        ! setup LHS 
        ! for matching or specified total head target elements
@@ -247,8 +247,8 @@ contains
        if (el%ibnd == 0 .or. el%ibnd == +1 .or. el%ibnd == +2) then
           allocate(dRMn(M,0:N-1,0:1), dcemat(1:M,0:N-1), dsemat(1:M,1:N-1), &
                & dPot_dR(M,2*N-1), dPot_dP(M,2*N-1), dPot_dX(M,2*N-1),dPot_dY(M,2*N-1), stat=ierr)
-          if (ierr /= 0) stop 'elliptical_elements.f90 error allocating:'//&
-               &' dRMn, dcemat, dsemat, dPot_dR, dPot_dP, dPot_dX, dPot_dY'
+          if (ierr /= 0) stop 'elliptical_elements.f90 error allocating:&
+               & dRMn, dcemat, dsemat, dPot_dR, dPot_dP, dPot_dX, dPot_dY'
 
           ! flux effects of source ellpise on target element
           if (dom%inclBg(src,targ)) then
@@ -355,12 +355,12 @@ contains
 
           end if
           deallocate(dRMn,dcemat,dsemat,dPot_dR,dPot_dP,dPot_dX,dPot_dY,stat=ierr)
-          if (ierr /= 0) stop 'elliptical_elements.f90, error deallocating:'//&
-               &' dRMn, dcemat, dsemat, dPot_dR, dPot_dP, dPot_dX, dPot_dY'
+          if (ierr /= 0) stop 'elliptical_elements.f90, error deallocating:&
+               & dRMn, dcemat, dsemat, dPot_dR, dPot_dP, dPot_dX, dPot_dY'
        end if
        deallocate(RMn,RMn0,cemat,semat,stat=ierr)
-       if (ierr /= 0) stop 'elliptical_elements.f90:elliptical_match_other(), '//&
-            &'error deallocating: RMn, RMn0, cemat, semat'
+       if (ierr /= 0) stop 'elliptical_elements.f90:elliptical_match_other(), &
+            &error deallocating: RMn, RMn0, cemat, semat'
 
        if (e%ibnd == 2) then
           ! sum line source effects and move to RHS, re-setting LHS to 0 unknowns

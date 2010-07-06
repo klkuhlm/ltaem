@@ -4,7 +4,7 @@ KKLOW=utility.o bessel_functions.o mathieu_functions2.o
 
 ##Work MacPro##############################
 LAPACKLIB=/Users/klkuhlm/src/lapack-3.2.1/lapack_MAC.a
-BLASLIB=/opt/local/lib/libf77blas.dylib
+BLASLIB=/Users/klkuhlm/src/lapack-3.2.1/blas_MAC.a
 
 ###Home linux computer##############################
 #LAPACKLIB=/home/kris/src/lapack-3.2.1/lapack_LINUX.a

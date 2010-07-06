@@ -172,8 +172,8 @@ contains
     end if
     
     allocate(r%LHS(nrows,ncols), r%RHS(nrows), stat=ierr)
-    if (ierr /= 0) stop 'circular_elements.f90:circle_match_other() error allocating:'//&
-            & 'r%LHS, r%RHS'
+    if (ierr /= 0) stop 'circular_elements.f90:circle_match_other() error allocating:&
+            &r%LHS, r%RHS'
     r%LHS = 0.0
     r%RHS = 0.0
 
@@ -182,8 +182,8 @@ contains
     if (dom%inclBg(src,targ) .or. dom%InclIn(src,targ)) then
 
        allocate(Bn(1:M,0:N-1),Bn0(0:N-1),cmat(1:M,0:N-1),smat(1:M,0:N-1), stat=ierr)
-       if (ierr /= 0) stop 'circular_elements.f90:circle_match_other() error allocating:'//&
-               & 'Bn, Bn0, cmat, smat'
+       if (ierr /= 0) stop 'circular_elements.f90:circle_match_other() error allocating:&
+               &Bn, Bn0, cmat, smat'
 
        cmat(1:M,0:N-1) = cos(outerprod(c%G(targ)%Pgm(1:M), vi(0:N-1)))
        smat(1:M,0:N-1) = sin(outerprod(c%G(targ)%Pgm(1:M), vi(0:N-1)))
@@ -256,8 +256,8 @@ contains
        if (el%ibnd == 0 .or. el%ibnd == +1 .or. (el%ibnd == +2 .and. el%storIn)) then
           allocate(dBn(M,0:N-1), dPot_dR(M,2*N-1), dPot_dP(M,2*N-1), &
                & dPot_dX(M,2*N-1), dPot_dY(M,2*N-1), stat=ierr)
-          if (ierr /= 0) stop 'circular_elements.f90 error allocating:'//&
-               &' dBn, dPot_dR, dPot_dP, dPot_dX, dPot_dY'
+          if (ierr /= 0) stop 'circular_elements.f90 error allocating:&
+               & dBn, dPot_dR, dPot_dP, dPot_dX, dPot_dY'
 
           ! flux effects of source circle on target element
           if (dom%inclBg(src,targ)) then
@@ -351,8 +351,8 @@ contains
 
           deallocate(dBn, dPot_dR, dPot_dP, dPot_dX, dPot_dY, stat=ierr)
           if (ierr /= 0) then
-             stop 'circular_elements.f90 error deallocating:'//&
-               & ' dBn, dPot_dR, dPot_dP, dPot_dX, dPot_dY'
+             stop 'circular_elements.f90 error deallocating:&
+               & dBn, dPot_dR, dPot_dP, dPot_dX, dPot_dY'
           else
              print *, 'deallocate 1 ok'
           end if
