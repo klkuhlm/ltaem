@@ -1,4 +1,4 @@
- this module contains the basic functions defining the head or flux 
+! this module contains the basic functions defining the head or flux 
 ! effects of a elliptical element.
 
 module elliptical_elements
