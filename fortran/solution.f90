@@ -5,12 +5,15 @@
 module solution_mod
   implicit none
 
+  private
+  public :: matrix_solution
+
 contains
   subroutine matrix_solution(c,e,dom,sol,p,idx)
     use constants, only : DP
     use type_definitions, only : circle, solution, ellipse, domain, match_result, print_match_result
-    use circular_elements
-    use elliptical_elements
+    use circular_elements, only : circle_match
+    use elliptical_elements, only : ellipse_match
 
     !! solve over-determined system via least-squares
     interface
