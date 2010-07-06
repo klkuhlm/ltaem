@@ -175,7 +175,6 @@ contains
   end subroutine DistanceAngleCalcs
 
   !##################################################
-  !##################################################
   subroutine ElementHierarchy(dom,sol)
     use constants, only : DP
     use type_definitions, only : domain, solution

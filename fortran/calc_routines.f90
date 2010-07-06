@@ -3,7 +3,6 @@
 ! for each element have already been computed.
 
 module calc_routines
-  use constants, only : DP
   implicit none
 
   private
@@ -14,11 +13,11 @@ contains
   !##################################################
   function headCalc(Z,p,lo,hi,dom,c,e,bg) result(H)
     use type_definitions, only : element, domain, circle, ellipse
-    use constants, only : DP, PI
+    use constants, only : DP
     use circular_elements, only : circle_calc
     use elliptical_elements, only : ellipse_calc
-    use kappa_mod
-    use time_mod
+    use kappa_mod, only : kappa
+    use time_mod, only : time
 
     complex(DP), intent(in) :: Z  ! location for calculation (complex coordinates)
     complex(DP), dimension(:), intent(in) :: p  ! vector of Laplace parameters
@@ -100,13 +99,13 @@ contains
 
   !##################################################
   function velCalc(Z,p,lo,hi,dom,c,e,bg) result(v)
-
+   
     use type_definitions, only : element, domain, circle, ellipse
-    use constants, only : DP, PI
+    use constants, only : DP
     use circular_elements, only : circle_deriv
     use elliptical_elements, only : ellipse_deriv
-    use kappa_mod
-    use time_mod
+    use kappa_mod, only : kappa
+    use time_mod, only : time
 
     complex(DP), intent(in) :: Z
     complex(DP), dimension(:), intent(in) :: p
@@ -306,7 +305,8 @@ contains
     end do
   end subroutine  calcLocation
 
-  subroutine check_np(p,lo,hi) 
+  subroutine check_np(p,lo,hi)
+    use constants, only : DP
     complex(DP), dimension(:), intent(in) :: p
     integer, intent(in) :: lo,hi
     if (hi-lo+1 /= size(p,1)) then

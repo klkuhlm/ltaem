@@ -1,6 +1,9 @@
 module ellipse_mathieu_init
   implicit none
 
+  private
+  public :: ellipse_init
+
 contains
   subroutine ellipse_init(e,bg,p)
     use constants, only : DP
@@ -14,10 +17,6 @@ contains
 
     integer :: np, i, j
     complex(DP), dimension(size(p,1)) :: kap
-
-#ifdef DEBUG
-    print *, 'ellipse_init: e:',e%id,' bg:',bg%id,' p:',p
-#endif
 
     np = size(p,1)
 

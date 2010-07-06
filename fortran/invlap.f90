@@ -24,6 +24,7 @@ contains
   function deHoog_invLap_vect(t,tee,fp,lap) result(ft)
     use constants, only : DP, PI
     use type_definitions, only : INVLT
+
     real(DP), intent(in) :: tee               ! scaling factor
     real(DP), intent(in), dimension(:) :: t   ! vector of times
     type(INVLT), intent(in) :: lap            ! structure of inputs
