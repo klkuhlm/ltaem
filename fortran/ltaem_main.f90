@@ -40,8 +40,12 @@ program ltaem_main
      sol%infname = 'input.in'
   end if
 
+  print *, '1 allocated? c,e,p',allocated(c),allocated(e),allocated(part)
+
   ! read in data, initialize variables, allocate major structs
   call readInput(sol,dom,bg,c,e,part)
+
+  print *, '2 allocated? c,e,p',allocated(c),allocated(e),allocated(part)
   nc = size(c,1)
   ne = size(e,1)
 

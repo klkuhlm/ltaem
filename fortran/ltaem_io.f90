@@ -48,9 +48,26 @@ contains
     ! solution-specific and background aquifer parameters
     read(15,*) sol%particle, sol%contour, sol%output, &
          & sol%outFname, sol%coeffFName, sol%elemHfName, sol%geomfName
+    ! types:: logical, logical, integer (checked elsewhere), 4*string
     read(15,*) bg%por, bg%k, bg%ss, bg%leakFlag, &
          & bg%aquitardK, bg%aquitardSs, bg%aquitardb, bg%ms
+    ! reals checked here, bg%ms checked in ellipse section, leakflag checked elsewhere
+    if (any([bg%por,bg%k,bg%ss] < epsilon(0.0))) then
+       print *, 'bg%por, bg%k, bg%ss &
+            &must all be > 0.0 :',bg%por,bg%k,bg%ss
+       stop
+    end if
+    if (any([bg%aquitardK,bg%aquitardSs,bg%aquitardb] < epsilon(0.0))) then
+       print *, 'bg%aquitardK, bg%aquitardSs, bg%aquitardb &
+            &must all be > 0.0 :',bg%aquitardK,bg%aquitardSs,bg%aquitardb 
+       stop
+    end if
+
     read(15,*) bg%Sy, bg%kz, bg%unconfinedFlag, bg%b
+    if (any([bg%Sy, bg%kz,bg%b] < epsilon(0.0))) then
+       print *, 'bg%Sy, bg%kz, bg%b must all be > 0.0 :',bg%Sy,bg%kz,bg%b
+       stop
+    end if
 
     write(16,'(2(1L,1X),I0,5(1X,A))') sol%particle, sol%contour, sol%output, &
          & trim(sol%outFname), trim(sol%coeffFName), trim(sol%elemHfName), &
@@ -307,9 +324,11 @@ contains
           stop
        end if
 
-       read(15,*) e(:)%ms
-       if (any(e%ms < e%n)) then  ! checked more carefully in Mathieu function library
+       read(15,*) e(:)%ms ! bg%ms read above
+       ! checked more carefully in Mathieu function library
+       if (any(e%ms < e%n) .or. any(bg%ms < e%n)) then  
           print *, 'e%ms must not be < e%n + buffer: e%N',e%N,'e%MS',e%ms
+          print *, 'bg%ms must not be < e%n + buffer: bg%MS',bg%ms
           stop
        end if
 

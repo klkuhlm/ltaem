@@ -35,7 +35,6 @@ contains
     integer :: numzero, ierr, j
     integer, parameter :: kode = 1
 
-    print *, 'nz',size(z,dim=1),'num',num,'K',shape(K)
     do j = 1, size(z,dim=1)
        call cbesk(z(j), 0.0_DP, kode, num, tmp(0:num-1), numzero, ierr)
        ! either 0 or 3 are acceptable return codes
@@ -65,7 +64,6 @@ contains
     integer :: numzero, ierr, j
     integer, parameter :: kode = 1
 
-    print *, 'nz',size(z,dim=1),'num',num,'I',shape(I)
     do j = 1, size(z,dim=1)
        call cbesi(z(j), 0.0_DP, kode, num, tmp(0:num-1), numzero, ierr)
        ! either 0 or 3 are acceptable return codes
@@ -98,7 +96,6 @@ contains
     nz = size(z,dim=1)
     mn = max(n,2)
 
-    print *, 'nz',nz,'num',n,'I,ID',shape(I),'Itmp',shape(Itmp)
     Itmp(1:nz,0:mn-1) = besi_vectz(z,mn)
     ID(1:nz,0) = I(1:nz,1)   ! low end
     if (n >= 2) then
@@ -131,21 +128,15 @@ contains
     nz = size(z,dim=1)
     mn = max(n,2)
 
-!    print *, 'nz',nz,'num',n,'K,KD',shape(K),'Ktmp',shape(Ktmp)
     Ktmp(1:nz,0:mn-1) = besk_vectz(z,mn)
-!    print *, 'nz',nz,'KD',shape(KD(1:nz,0)),'Ktmp',shape(Ktmp(1:nz,1))
     KD(1:nz,0) = -Ktmp(1:nz,1)  ! low end (always used)
     if (n >= 2) then
-!       print *, 'n>=2 fcn: nz',nz,'K',shape(K(1:nz,0:n-1)),'Ktmp',shape(Ktmp(1:nz,0:n-1))
        K(1:nz,0:n-1) = Ktmp(1:nz,0:n-1)
-!       print *, 'n>=2 high-end deriv:',n-1,' fcn',n-2
        KD(1:nz,n-1) = -(K(1:nz,n-2) + (n-1)/z(1:nz)*K(1:nz,n-1)) ! high end
        if (n >= 3) then
-!          print *, 'n>=3: nz',nz,'n-3',n-3,'n-2',n-2
           KD(1:nz,1:n-2) = -0.5_DP*(K(1:nz,0:n-3) + K(1:nz,2:n-1)) ! middle
        end if
     else
-!       print *, 'else 0'
        ! only one order requested (n=1)
        K(1:nz,0) = Ktmp(1:nz,0)
     end if

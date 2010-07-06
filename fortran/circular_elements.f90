@@ -177,8 +177,6 @@ contains
     r%LHS = 0.0
     r%RHS = 0.0
 
-    print *, 'debug 000'
-
     if (dom%inclBg(src,targ) .or. dom%InclIn(src,targ)) then
 
        allocate(Bn(1:M,0:N-1),Bn0(0:N-1),cmat(1:M,0:N-1),smat(1:M,0:N-1), stat=ierr)
@@ -188,7 +186,6 @@ contains
        cmat(1:M,0:N-1) = cos(outerprod(c%G(targ)%Pgm(1:M), vi(0:N-1)))
        smat(1:M,0:N-1) = sin(outerprod(c%G(targ)%Pgm(1:M), vi(0:N-1)))
 
-       print *, 'debug 001'
        ! setup LHS 
        ! $$$$$$$$$$ head effects of source (c) on target (el) $$$$$$$$$$
        ! for matching or specified total head target elements
@@ -212,7 +209,6 @@ contains
              hiN = 2*N-1
 
           else
-             print *, 'debug 003'
              ! can target element "see" the inside of the source element?
              ! i.e., is the source element the parent?
              ! use interior Bessel functions (In)
@@ -250,7 +246,6 @@ contains
              end if
           end if
        end if
-       print *, 'debug 008'
        ! $$$$$$$$$$ flux effects of source (c) on target (el) $$$$$$$$$$
        ! for matching, specified total flux, or well with wellbore storage target element
        if (el%ibnd == 0 .or. el%ibnd == +1 .or. (el%ibnd == +2 .and. el%storIn)) then
@@ -338,7 +333,6 @@ contains
                         &  dPot_dY*spread(sin(el%Pcm),2,2*N-1))
                 end if
              else
-                print *, 'lom:him',lom,him,'lon:hin',lon,hin,'LHS',shape(r%LHS),'c%ibnd',c%ibnd,'el%ibnd',el%ibnd
                 ! other element is a 'normal' circular element without wellbore storage
                 r%LHS(loM:hiM,loN:hiN) = dPot_dX*spread(cos(el%Pcm),2,2*N-1) + &
                                        & dPot_dY*spread(sin(el%Pcm),2,2*N-1)
