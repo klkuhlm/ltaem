@@ -58,7 +58,7 @@ contains
        ! circle on self
        print '(4(A,I0))', 'before c on self: ',i,' N:',c(i)%N,' M:',c(i)%M,' ibnd:',c(i)%ibnd
        res(i,i) = circle_match(c(i),p)
-!!$       call print_match_result(res(i,i))
+       call print_match_result(res(i,i))
        row(i,1) = size(res(i,i)%LHS,1)
        col(i,1) = size(res(i,i)%LHS,2)
        print '(2(A,I0))', 'row ',row(i,1),' col ',col(i,1)
@@ -69,7 +69,7 @@ contains
              print '(A,2(1X,I0),4(A,I0))', 'before c on c:',i,j,' N:',c(i)%N,' M:',c(j)%M, &
                   &' <-ibnd:',c(i)%ibnd,' ->ibnd:',c(j)%ibnd
              res(j,i) = circle_match(c(i),c(j)%matching,dom,p)
-!!$             call print_match_result(res(j,i))
+             call print_match_result(res(j,i))
              print '(A,2(1X,I0))', 'after c on c:',i,j
           end if
        end do
@@ -79,7 +79,7 @@ contains
           print '(A,2(1X,I0),4(A,I0))', 'before c on e:',i,j+nc,' N:',c(i)%N,' M:',e(j)%M, &
                &' <-ibnd:',c(i)%ibnd,' ->ibnd:',e(j)%ibnd
           res(j+nc,i) = circle_match(c(i),e(j)%matching,dom,p)
-!!$          call print_match_result(res(j+nc,i))
+          call print_match_result(res(j+nc,i))
          print '(A,2(1X,I0))', 'after c on e:',i,j+nc
        end do
     end do
@@ -89,7 +89,7 @@ contains
        print '(5(A,I0))', 'before e on self: ',nc+i,' MS:',e(i)%ms,&
             &' N:',e(i)%N,' M:',e(i)%M,' ibnd:',e(i)%ibnd
        res(nc+i,nc+i) = ellipse_match(e(i),p,idx)
-!!$       call print_match_result(res(nc+i,nc+i))
+       call print_match_result(res(nc+i,nc+i))
        row(i+nc,1) = size(res(nc+i,nc+i)%LHS,1)
        col(i+nc,1) = size(res(nc+i,nc+i)%LHS,2)
        print '(2(A,I0))', 'row ',row(i+nc,1),' col ',col(i+nc,1)
@@ -98,7 +98,7 @@ contains
        do j = 1, nc
           print '(A,2(1X,I0))', 'before e on c:',nc+i,j
           res(j,nc+i) = ellipse_match(e(i),c(j)%matching,dom,p,idx)
-!!$          call print_match_result(res(j,nc+i))
+          call print_match_result(res(j,nc+i))
           print '(A,2(1X,I0))', 'after e on c:',nc+i,j
        end do
 
@@ -107,7 +107,7 @@ contains
           if (i /= j) then
              print '(A,2(1X,I0))', 'before e on e:',nc+i,nc+j
              res(nc+j,nc+i) = ellipse_match(e(i),e(j)%matching,dom,p,idx)
-!!$             call print_match_result(res(nc+j,nc+i))
+             call print_match_result(res(nc+j,nc+i))
              print '(A,2(1X,I0))', 'after e on e:',nc+i,nc+j
           end if
        end do
