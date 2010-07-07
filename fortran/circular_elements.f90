@@ -160,6 +160,8 @@ contains
        nrows = 2*M
        loM = M+1
        hiM = 2*M
+    elseif (el%ibnd == 2 .and. .not. el%storIn) then
+       nrows = 0
     else
        nrows = M
        loM = 1
@@ -168,7 +170,7 @@ contains
     ! source element determines number of columns
     if (c%ibnd == 0) then
        ncols = 4*N-2
-    elseif (c%ibnd == 2 .and. c%storIn) then
+    elseif (c%ibnd == 2 .and. .not. c%storIn) then
        ncols = 1  ! reset to zero at end of routine
     else
        ncols = 2*N-1
@@ -180,186 +182,188 @@ contains
     r%LHS = 0.0
     r%RHS = 0.0
 
-    if (dom%inclBg(src,targ) .or. dom%InclIn(src,targ)) then
+    if (nrows > 0) then
+       if (dom%inclBg(src,targ) .or. dom%InclIn(src,targ)) then
 
-       allocate(Bn(1:M,0:N-1),Bn0(0:N-1),cmat(1:M,0:N-1),smat(1:M,0:N-1), stat=ierr)
-       if (ierr /= 0) stop 'circular_elements.f90:circle_match_other() error allocating:&
+          allocate(Bn(1:M,0:N-1),Bn0(0:N-1),cmat(1:M,0:N-1),smat(1:M,0:N-1), stat=ierr)
+          if (ierr /= 0) stop 'circular_elements.f90:circle_match_other() error allocating:&
                &Bn, Bn0, cmat, smat'
 
-       cmat(1:M,0:N-1) = cos(outerprod(c%G(targ)%Pgm(1:M), vi(0:N-1)))
-       smat(1:M,0:N-1) = sin(outerprod(c%G(targ)%Pgm(1:M), vi(0:N-1)))
+          cmat(1:M,0:N-1) = cos(outerprod(c%G(targ)%Pgm(1:M), vi(0:N-1)))
+          smat(1:M,0:N-1) = sin(outerprod(c%G(targ)%Pgm(1:M), vi(0:N-1)))
 
-       ! setup LHS 
-       ! $$$$$$$$$$ head effects of source (c) on target (el) $$$$$$$$$$
-       ! for matching or specified total head target elements
-       if (el%ibnd == 0 .or. el%ibnd == -1) then
+          ! setup LHS 
+          ! $$$$$$$$$$ head effects of source (c) on target (el) $$$$$$$$$$
+          ! for matching or specified total head target elements
+          if (el%ibnd == 0 .or. el%ibnd == -1) then
 
-          if (dom%inclBg(src,targ)) then
-             ! can the target element "see" the outside of the source element?
-             ! use exterior Bessel functions (Kn)
-             kap = kappa(p,c%parent)
-             Bn(1:M,0:N-1) = bK(kap*c%G(targ)%Rgm(1:M),N)
-             Bn0(0:N-1) =    bK(kap*c%r,N)
+             if (dom%inclBg(src,targ)) then
+                ! can the target element "see" the outside of the source element?
+                ! use exterior Bessel functions (Kn)
+                kap = kappa(p,c%parent)
+                Bn(1:M,0:N-1) = bK(kap*c%G(targ)%Rgm(1:M),N)
+                Bn0(0:N-1) =    bK(kap*c%r,N)
 
-             ! head effects on outside of other element
-             r%LHS(1:M,1:N) =       Bn(:,0:N-1)/spread(Bn0(0:N-1),1,M)*cmat(:,0:N-1)/c%parent%K ! a_n
-             if (N > 1) then
-                r%LHS(1:M,N+1:2*N-1) = Bn(:,1:N-1)/spread(Bn0(1:N-1),1,M)*smat(:,1:N-1)/c%parent%K ! b_n
-             end if
+                ! head effects on outside of other element
+                r%LHS(1:M,1:N) =       Bn(:,0:N-1)/spread(Bn0(0:N-1),1,M)*cmat(:,0:N-1)/c%parent%K ! a_n
+                if (N > 1) then
+                   r%LHS(1:M,N+1:2*N-1) = Bn(:,1:N-1)/spread(Bn0(1:N-1),1,M)*smat(:,1:N-1)/c%parent%K ! b_n
+                end if
 
-             ! outside is always in 1:2*N-1 slot
-             loN = 1
-             hiN = 2*N-1
-
-          else
-             ! can target element "see" the inside of the source element?
-             ! i.e., is the source element the parent?
-             ! use interior Bessel functions (In)
-             kap = kappa(p,c%element)
-             Bn(1:M,0:N-1) = bI(kap*c%G(targ)%Rgm(1:M),N)
-             Bn0(0:N-1) =    bI(kap*c%r,N)
-
-             if (c%ibnd == 0) then
-                ! is source the inside of matching element?
-                loN = 2*N
-                hiN = 4*N-2
-             else
-                ! is source inside of specified head/flux element? (no other part)
+                ! outside is always in 1:2*N-1 slot
                 loN = 1
                 hiN = 2*N-1
+
+             else
+                ! can target element "see" the inside of the source element?
+                ! i.e., is the source element the parent?
+                ! use interior Bessel functions (In)
+                kap = kappa(p,c%element)
+                Bn(1:M,0:N-1) = bI(kap*c%G(targ)%Rgm(1:M),N)
+                Bn0(0:N-1) =    bI(kap*c%r,N)
+
+                if (c%ibnd == 0) then
+                   ! is source the inside of matching element?
+                   loN = 2*N
+                   hiN = 4*N-2
+                else
+                   ! is source inside of specified head/flux element? (no other part)
+                   loN = 1
+                   hiN = 2*N-1
+                end if
+
+                ! head effects on other element
+                r%LHS(1:M,loN:loN+N-1) = Bn(:,0:N-1)/spread(Bn0(0:N-1),1,M)*cmat(:,0:N-1)/c%K ! c_n
+                if (N > 1) then
+                   r%LHS(1:M,loN+N:hiN)   = Bn(:,1:N-1)/spread(Bn0(1:N-1),1,M)*smat(:,1:N-1)/c%K ! d_n
+                end if
              end if
-             
-             ! head effects on other element
-             r%LHS(1:M,loN:loN+N-1) = Bn(:,0:N-1)/spread(Bn0(0:N-1),1,M)*cmat(:,0:N-1)/c%K ! c_n
-             if (N > 1) then
-                r%LHS(1:M,loN+N:hiN)   = Bn(:,1:N-1)/spread(Bn0(1:N-1),1,M)*smat(:,1:N-1)/c%K ! d_n
+
+             if (c%ibnd == 2 .and. dom%inclBg(src,targ)) then
+                if (c%StorIn) then
+
+                   ! wellbore storage and skin from finite-radius well
+                   r%LHS(1:M,1) = storwell(c,p)*r%LHS(1:M,1)
+                   r%RHS(1:M) = 0.0
+                else
+                   ! specified flux (finite-radius well no storage)
+                   r%RHS(1:M) = well(c,p)*r%LHS(1:M,1)
+                   ! no LHS for specified simple well (deallocate away at end of routine)
+                end if
              end if
           end if
+          ! $$$$$$$$$$ flux effects of source (c) on target (el) $$$$$$$$$$
+          ! for matching, specified total flux, or well with wellbore storage target element
+          if (el%ibnd == 0 .or. el%ibnd == +1 .or. (el%ibnd == +2 .and. el%storIn)) then
+             allocate(dBn(M,0:N-1), dPot_dR(M,2*N-1), dPot_dP(M,2*N-1), &
+                  & dPot_dX(M,2*N-1), dPot_dY(M,2*N-1), stat=ierr)
+             if (ierr /= 0) stop 'circular_elements.f90 error allocating:&
+                  & dBn, dPot_dR, dPot_dP, dPot_dX, dPot_dY'
 
-          if (c%ibnd == 2 .and. dom%inclBg(src,targ)) then
-             if (c%StorIn) then
+             ! flux effects of source circle on target element
+             if (dom%inclBg(src,targ)) then
+                ! use exterior Bessel functions (Kn)
+                kap = kappa(p,c%parent) 
+                call dBK(kap*c%G(targ)%Rgm(1:M),N,Bn(1:M,0:N-1),dBn(1:M,0:N-1))
+                dBn(1:M,0:N-1) = kap*dBn(1:M,0:N-1)
+                Bn0(0:N-1) = bK(kap*c%r,N)
+                K = c%parent%K
 
-                ! wellbore storage and skin from finite-radius well
-                r%LHS(1:M,1) = storwell(c,p)*r%LHS(1:M,1)
-                r%RHS(1:M) = 0.0
-             else
-                ! specified flux (finite-radius well no storage)
-                r%RHS(1:M) = well(c,p)*r%LHS(1:M,1)
-                ! no LHS for specified simple well (deallocate away at end of routine)
-             end if
-          end if
-       end if
-       ! $$$$$$$$$$ flux effects of source (c) on target (el) $$$$$$$$$$
-       ! for matching, specified total flux, or well with wellbore storage target element
-       if (el%ibnd == 0 .or. el%ibnd == +1 .or. (el%ibnd == +2 .and. el%storIn)) then
-          allocate(dBn(M,0:N-1), dPot_dR(M,2*N-1), dPot_dP(M,2*N-1), &
-               & dPot_dX(M,2*N-1), dPot_dY(M,2*N-1), stat=ierr)
-          if (ierr /= 0) stop 'circular_elements.f90 error allocating:&
-               & dBn, dPot_dR, dPot_dP, dPot_dX, dPot_dY'
-
-          ! flux effects of source circle on target element
-          if (dom%inclBg(src,targ)) then
-             ! use exterior Bessel functions (Kn)
-             kap = kappa(p,c%parent) 
-             call dBK(kap*c%G(targ)%Rgm(1:M),N,Bn(1:M,0:N-1),dBn(1:M,0:N-1))
-             dBn(1:M,0:N-1) = kap*dBn(1:M,0:N-1)
-             Bn0(0:N-1) = bK(kap*c%r,N)
-             K = c%parent%K
-
-             ! outside part is always 1:2*N-1
-             loN = 1
-             hiN = 2*N-1
-
-          else
-             ! use interior Bessel functions (In)
-             kap = kappa(p,c%element)
-             call dBI(kap*c%G(targ)%Rgm(1:M),N,Bn(1:M,0:N-1),dBn(1:M,0:N-1))
-             dBn(1:M,0:N-1) = kap*dBn(1:M,0:N-1)
-             Bn0(0:N-1) = bI(kap*c%r,N)
-             K = c%K
-
-             if (c%ibnd == 0) then
-                ! inside of matching element
-                loN = 2*N
-                hiN = 4*N-2
-             else
-                ! inside of specified flux element
+                ! outside part is always 1:2*N-1
                 loN = 1
                 hiN = 2*N-1
-             end if
-          end if
-          ! derivative wrt radius of source element
-          dPot_dR(1:M,1:N) =       dBn(1:M,0:N-1)/spread(Bn0(0:N-1),1,M)*cmat(1:M,0:N-1)
-          if (N>1) then
-             dPot_dR(1:M,N+1:2*N-1) = dBn(1:M,1:N-1)/spread(Bn0(1:N-1),1,M)*smat(1:M,1:N-1)
-          end if
-          
-          if (el%ibnd == 2 .and. dom%inclBg(src,targ)) then
-             if (c%StorIn) then
-                ! wellbore storage and skin from finite-radius well
-                dPot_dR(1:M,1) = storwell(c,p)*dPot_dR(1:M,1)
-             else
-                ! specified flux (finite-radius well no storage)
-                dPot_dR(1:M,1) = well(c,p)*dPot_dR(1:M,1)
-             end if
 
-             dPot_dP(1:M,1:2*N-1) = 0.0 ! wells have angular symmetry
-          else
-             ! derivative wrt angle of source element for more general circular elements
-             dPot_dP(1:M,1:N) =      -Bn(:,0:N-1)*spread(vi(0:N-1)/Bn0(0:N-1),1,M)*smat(:,0:N-1)
+             else
+                ! use interior Bessel functions (In)
+                kap = kappa(p,c%element)
+                call dBI(kap*c%G(targ)%Rgm(1:M),N,Bn(1:M,0:N-1),dBn(1:M,0:N-1))
+                dBn(1:M,0:N-1) = kap*dBn(1:M,0:N-1)
+                Bn0(0:N-1) = bI(kap*c%r,N)
+                K = c%K
+
+                if (c%ibnd == 0) then
+                   ! inside of matching element
+                   loN = 2*N
+                   hiN = 4*N-2
+                else
+                   ! inside of specified flux element
+                   loN = 1
+                   hiN = 2*N-1
+                end if
+             end if
+             ! derivative wrt radius of source element
+             dPot_dR(1:M,1:N) =       dBn(1:M,0:N-1)/spread(Bn0(0:N-1),1,M)*cmat(1:M,0:N-1)
              if (N>1) then
-                dPot_dP(1:M,N+1:2*N-1) = Bn(:,1:N-1)*spread(vi(1:N-1)/Bn0(1:N-1),1,M)*cmat(:,1:N-1)
+                dPot_dR(1:M,N+1:2*N-1) = dBn(1:M,1:N-1)/spread(Bn0(1:N-1),1,M)*smat(1:M,1:N-1)
              end if
-             
-          end if
-          ! project these from cylindrical onto Cartesian coordinates
-          dPot_dX(1:M,1:2*N-1) = dPot_dR*spread(cos(c%G(targ)%Pgm),2,2*N-1) - &
-                               & dPot_dP*spread(sin(c%G(targ)%Pgm)/c%G(targ)%Rgm,2,2*N-1)
-          dPot_dY(1:M,1:2*N-1) = dPot_dR*spread(sin(c%G(targ)%Pgm),2,2*N-1) + &
-                               & dPot_dP*spread(cos(c%G(targ)%Pgm)/c%G(targ)%Rgm,2,2*N-1)
-          ! project from Cartesian to "radial" coordinate of target element
-          if (el%id <= dom%num(1)) then
-             ! other element is a circle
-             if (el%ibnd == 2) then
-                if (el%StorIn) then
-                   ! other element is a well with wellbore storage (Type III BC)
-                   ! need head effects too
-                   r%LHS(1:M,loN:loN+N-1) = Bn(:,0:N-1)/spread(Bn0(0:N-1),1,M)*cmat/K
-                   r%LHS(1:M,loN+N:hiN) =   Bn(:,1:N-1)/spread(Bn0(1:N-1),1,M)*smat(:,1:N-1)/K
-                   
-                   ! head effects of element
-                   r%LHS(1:M,loN:hiN) = -(el%r*p/el%parent%T)*r%LHS(1:M,loN:hiN)
 
-                   ! radial flux effects of element
-                   r%LHS(1:M,loN:hiN) = r%LHS + (2.0 + el%r**2*el%dskin*p/el%parent%T)* &
-                        & (dPot_dX*spread(cos(el%Pcm),2,2*N-1) + &
-                        &  dPot_dY*spread(sin(el%Pcm),2,2*N-1))
+             if (el%ibnd == 2 .and. dom%inclBg(src,targ)) then
+                if (c%StorIn) then
+                   ! wellbore storage and skin from finite-radius well
+                   dPot_dR(1:M,1) = storwell(c,p)*dPot_dR(1:M,1)
+                else
+                   ! specified flux (finite-radius well no storage)
+                   dPot_dR(1:M,1) = well(c,p)*dPot_dR(1:M,1)
+                end if
+
+                dPot_dP(1:M,1:2*N-1) = 0.0 ! wells have angular symmetry
+             else
+                ! derivative wrt angle of source element for more general circular elements
+                dPot_dP(1:M,1:N) =      -Bn(:,0:N-1)*spread(vi(0:N-1)/Bn0(0:N-1),1,M)*smat(:,0:N-1)
+                if (N>1) then
+                   dPot_dP(1:M,N+1:2*N-1) = Bn(:,1:N-1)*spread(vi(1:N-1)/Bn0(1:N-1),1,M)*cmat(:,1:N-1)
+                end if
+
+             end if
+             ! project these from cylindrical onto Cartesian coordinates
+             dPot_dX(1:M,1:2*N-1) = dPot_dR*spread(cos(c%G(targ)%Pgm),2,2*N-1) - &
+                  & dPot_dP*spread(sin(c%G(targ)%Pgm)/c%G(targ)%Rgm,2,2*N-1)
+             dPot_dY(1:M,1:2*N-1) = dPot_dR*spread(sin(c%G(targ)%Pgm),2,2*N-1) + &
+                  & dPot_dP*spread(cos(c%G(targ)%Pgm)/c%G(targ)%Rgm,2,2*N-1)
+             ! project from Cartesian to "radial" coordinate of target element
+             if (el%id <= dom%num(1)) then
+                ! other element is a circle
+                if (el%ibnd == 2) then
+                   if (el%StorIn) then
+                      ! other element is a well with wellbore storage (Type III BC)
+                      ! need head effects too
+                      r%LHS(1:M,loN:loN+N-1) = Bn(:,0:N-1)/spread(Bn0(0:N-1),1,M)*cmat/K
+                      r%LHS(1:M,loN+N:hiN) =   Bn(:,1:N-1)/spread(Bn0(1:N-1),1,M)*smat(:,1:N-1)/K
+
+                      ! head effects of element
+                      r%LHS(1:M,loN:hiN) = -(el%r*p/el%parent%T)*r%LHS(1:M,loN:hiN)
+
+                      ! radial flux effects of element
+                      r%LHS(1:M,loN:hiN) = r%LHS + (2.0 + el%r**2*el%dskin*p/el%parent%T)* &
+                           & (dPot_dX*spread(cos(el%Pcm),2,2*N-1) + &
+                           &  dPot_dY*spread(sin(el%Pcm),2,2*N-1))
+                   end if
+                else
+                   ! other element is a 'normal' circular element without wellbore storage
+                   r%LHS(loM:hiM,loN:hiN) = dPot_dX*spread(cos(el%Pcm),2,2*N-1) + &
+                        & dPot_dY*spread(sin(el%Pcm),2,2*N-1)
                 end if
              else
-                ! other element is a 'normal' circular element without wellbore storage
-                r%LHS(loM:hiM,loN:hiN) = dPot_dX*spread(cos(el%Pcm),2,2*N-1) + &
-                                       & dPot_dY*spread(sin(el%Pcm),2,2*N-1)
+                ! other element is an ellipse
+                r%LHS(loM:hiM,loN:hiN) = dPot_dX*spread(el%f*sinh(el%r)*cos(el%Pcm(1:M)),2,2*N-1) + &
+                     & dPot_dY*spread(el%f*cosh(el%r)*sin(el%Pcm(1:M)),2,2*N-1)
              end if
-          else
-             ! other element is an ellipse
-             r%LHS(loM:hiM,loN:hiN) = dPot_dX*spread(el%f*sinh(el%r)*cos(el%Pcm(1:M)),2,2*N-1) + &
-                                    & dPot_dY*spread(el%f*cosh(el%r)*sin(el%Pcm(1:M)),2,2*N-1)
+
+             deallocate(dBn, dPot_dR, dPot_dP, dPot_dX, dPot_dY, stat=ierr)
+             if (ierr /= 0) then
+                stop 'circular_elements.f90 error deallocating:&
+                     & dBn, dPot_dR, dPot_dP, dPot_dX, dPot_dY'
+             end if
+
+          end if
+          deallocate(Bn,Bn0,cmat,smat, stat=ierr)
+          if (ierr /= 0) then
+             stop 'circular_elements.f90 error deallocating: Bn,Bn0,cmat,smat'
           end if
 
-          deallocate(dBn, dPot_dR, dPot_dP, dPot_dX, dPot_dY, stat=ierr)
-          if (ierr /= 0) then
-             stop 'circular_elements.f90 error deallocating:&
-               & dBn, dPot_dR, dPot_dP, dPot_dX, dPot_dY'
-          end if
-          
        end if
-       deallocate(Bn,Bn0,cmat,smat, stat=ierr)
-       if (ierr /= 0) then
-          stop 'circular_elements.f90 error deallocating: Bn,Bn0,cmat,smat'
-       end if
-       
     end if
-    
+       
     if (c%ibnd == 2 .and. (.not. c%storin)) then
        if (el%ibnd == 0) then
           hiM = 2*M
