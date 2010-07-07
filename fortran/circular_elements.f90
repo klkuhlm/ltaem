@@ -440,6 +440,7 @@ contains
 
 #ifdef DEBUG
     print *, 'circle_calc: p:',p,' c:',c%id,' lo:',lo,' hi:',hi,' Rgp:',Rgp,' Pgp:',Pgp,' inside:',inside
+    print *, 'c%coeff:',shape(c%coeff)
 #endif
 
     N = c%N

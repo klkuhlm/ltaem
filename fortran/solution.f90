@@ -113,10 +113,11 @@ contains
        end do
     end do
 
-    bigM = sum(row(:,1))
+    bigM = sum(row(:,1)) ! total number rows/cols
     bigN = sum(col(:,1))
-     allocate(A(bigM,bigN), b(bigM))
-     print *, 'N,M',bigN,bigM,'::',shape(A),'::',shape(b)
+    allocate(A(bigM,bigN), b(bigM))
+    b = 0.0
+    print *, 'N,M',bigN,bigM,'::',shape(A),'::',shape(b)
 
     forall (i=1:ntot)
        row(i,0) = 1 + sum(row(1:i-1,1))  ! lower bound
@@ -124,11 +125,6 @@ contains
        col(i,0) = 1 + sum(col(1:i-1,1))
        col(i,2) = sum(col(1:i,1))
     end forall
-
-    do i=1,ntot
-       print '(A,I0,A,3(1X,I3))', 'row(',i,',0:2)',row(i,0:2)
-       print '(A,I0,A,3(1X,I3))', 'col(',i,',0:2)',col(i,0:2)
-    end do
 
     print '(A,I0,1X,I0)','shape(res): ',shape(res)
 
@@ -140,7 +136,7 @@ contains
           print '(A,2(1X,I0))', 'LHS shape:',shape(res(rr,cc)%LHS)
           A(row(rr,0):row(rr,2),col(cc,0):col(cc,2)) = res(rr,cc)%LHS
           print '(A,2(1X,I0))', 'RHS shape:',shape(res(rr,cc)%RHS)
-          b(row(rr,0):row(rr,2)) = res(rr,cc)%RHS
+          b(row(rr,0):row(rr,2)) = b(row(rr,0):row(rr,2)) + res(rr,cc)%RHS
        end do
     end do
     deallocate(res,stat=ierr)
