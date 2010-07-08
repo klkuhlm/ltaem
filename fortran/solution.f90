@@ -57,7 +57,7 @@ contains
     do i=1,nc
        ! circle on self
        print '(4(A,I0))', 'before c on self: ',i,' N:',c(i)%N,' M:',c(i)%M,' ibnd:',c(i)%ibnd
-       res(i,i) = circle_match(c(i),p,sol%totalNP)
+       res(i,i) = circle_match(c(i),p)
        call print_match_result(res(i,i))
        row(i,1) = size(res(i,i)%LHS,1)
        col(i,1) = size(res(i,i)%LHS,2)
