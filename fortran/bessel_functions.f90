@@ -97,7 +97,7 @@ contains
     mn = max(n,2)
 
     Itmp(1:nz,0:mn-1) = besi_vectz(z,mn)
-    ID(1:nz,0) = I(1:nz,1)   ! low end
+    ID(1:nz,0) = Itmp(1:nz,1)   ! low end
     if (n >= 2) then
        I(1:nz,0:n-1) = Itmp(1:nz,0:n-1)
        ID(1:nz,n-1) = I(1:nz,n-2) - (n-1)/z(1:nz)*I(1:nz,n-1) ! high end
