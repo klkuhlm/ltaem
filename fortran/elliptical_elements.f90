@@ -381,7 +381,7 @@ contains
     end if
     
   end function ellipse_match_other
-  
+
   function line(e,p,idx) result(a2n)
     ! this function returns the coefficients for a specified-flux line source
     use constants, only : DP, PI
@@ -415,7 +415,7 @@ contains
             & (-vs(0:N-1:2))*sum(arg(1:MS,1:nmax)*conjg(e%mat(idx)%A(1:MS,0:nmax-1,0)),dim=1)
 
   end function line
-
+  
   function ellipse_calc(p,e,lo,hi,Rgp,Pgp,inside) result(H)
     use constants, only : DP
     use type_definitions, only : ellipse
@@ -543,5 +543,6 @@ contains
     dH(1:np,2) = sum(RMRgp(1:np,0:N-1,0)/RMR0(1:np,0:N-1,0)*aa(1:np,0:N-1)*dAM(1:np,0:N-1,0), 2) + &
                & sum(RMRgp(1:np,1:N-1,1)/RMR0(1:np,1:N-1,1)*bb(1:np,1:N-1)*dAM(1:np,1:N-1,1), 2)
   end function ellipse_deriv
+
 end module elliptical_elements
 

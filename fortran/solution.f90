@@ -10,10 +10,10 @@ module solution_mod
 
 contains
   subroutine matrix_solution(c,e,dom,sol,p,idx)
+    use elliptical_elements, only : ellipse_match, line
     use constants, only : DP
     use type_definitions, only : circle, solution, ellipse, domain, match_result, print_match_result
     use circular_elements, only : circle_match, well
-    use elliptical_elements, only : ellipse_match
 
     !! solve over-determined system via least-squares
     interface
@@ -204,40 +204,5 @@ contains
     if (ierr /= 0) stop 'solution.f90: error deallocating A,B,row,col'
 
   end subroutine matrix_solution
-
-  function line(e,p,idx) result(a2n)
-    ! this function returns the coefficients for a specified-flux line source
-    use constants, only : DP, PI
-    use time_mod, only : time
-    use type_definitions, only : ellipse
-    use mathieu_functions, only : Ke,dKe
-    type(ellipse), intent(in) :: e
-    complex(DP), intent(in) :: p
-    integer, intent(in) :: idx
-    complex(DP), dimension(ceiling(e%N/2.0)) :: a2n ! only even coefficients of even order
-    real(DP), dimension(0:e%ms-1) :: vs
-    real(DP), dimension(1:e%ms,ceiling(e%N/2.0)) :: arg
-    integer, dimension(0:e%ms-1) :: vi
-    integer :: i, N, MS, nmax
-
-    N = e%N 
-    MS = e%ms
-    nmax = ceiling(e%N/2.0)
-    vi(0:MS-1) = [(i,i=0,MS-1)]  ! integer vector
-    where (mod(vi,2)==0) ! sign vector
-       vs = 1.0_DP
-    elsewhere
-       vs = -1.0_DP
-    end where
-    arg(1:MS,1:nmax) = spread(vs(0:MS-1)/real(1-(2*vi(0:MS-1))**2,DP),dim=2,ncopies=nmax)
-    
-    ! factor of 4 different from Kuhlman&Neuman paper
-    ! include Radial/dRadial MF here to balance with those in general solution
-    a2n(1:nmax) = time(p,e%time,.false.)*e%bdryQ/(2.0*PI)* &
-            & Ke(e%parent%mat(idx), vi(0:N-1:2), e%r) / dKe(e%parent%mat(idx), vi(0:N-1:2), e%r)* &
-            & (-vs(0:N-1:2))*sum(arg(1:MS,1:nmax)*conjg(e%mat(idx)%A(1:MS,0:nmax-1,0)),dim=1)
-
-  end function line
-
 
 end module solution_mod
