@@ -12,8 +12,8 @@ contains
   subroutine matrix_solution(c,e,dom,sol,p,idx)
     use constants, only : DP
     use type_definitions, only : circle, solution, ellipse, domain, match_result, print_match_result
-    use circular_elements, only : circle_match
-    use elliptical_elements, only : ellipse_match
+    use circular_elements, only : circle_match, well
+    use elliptical_elements, only : ellipse_match, line
 
     !! solve over-determined system via least-squares
     interface
@@ -57,7 +57,7 @@ contains
     do i=1,nc
        ! circle on self
        print '(4(A,I0))', 'before c on self: ',i,' N:',c(i)%N,' M:',c(i)%M,' ibnd:',c(i)%ibnd
-       res(i,i) = circle_match(c(i),p)
+       res(i,i) = circle_match(c(i),p,sol%totalNP)
        call print_match_result(res(i,i))
        row(i,1) = size(res(i,i)%LHS,1)
        col(i,1) = size(res(i,i)%LHS,2)
@@ -145,7 +145,7 @@ contains
     ! use LAPACK routine to solve least-squares via Q-R decomposition
     call ZGELS('N',bigM,bigN,1,A(:,:),bigM,b(:),bigM,WORK,IWORK,ierr)
     if (ierr /= 0) then
-       write(*,'(A,I0,A,ES10.3,A,ES10.3)') 'ZGELS error: ',ierr,' p:',real(p),'+i',aimag(p)
+       write(*,'(A,I0,2(A,ES10.3))') 'ZGELS error: ',ierr,' p:',real(p),'+i',aimag(p)
        stop 
     end if
        
@@ -153,18 +153,52 @@ contains
     do i=1,nc
        ! circles
        if (.not. allocated(c(i)%coeff)) then
-          print *, 'allocate c',i
-          allocate(c(i)%coeff(sol%totalnP,col(i,1)))
+          allocate(c(i)%coeff(sol%totalnP,col(i,1)), stat=ierr)
+          if (ierr /= 0) then
+             print '(A,I0,A)', 'solution.f90: error allocating c(',i,')%coeff'
+             stop
+          end if
        end if
-       c(i)%coeff(idx,:) = b(col(i,0):col(i,2))
+       if (.not. (c(i)%ibnd == 2 .and. (.not. c(i)%storin))) then
+          ! coefficients come from least-squares solution above
+          c(i)%coeff(idx,:) = b(col(i,0):col(i,2))
+       else
+          ! a specified-flux point source (known strength, and zero unknowns)
+          if (size(c(i)%coeff,dim=2) == 0) then
+             ! fix size of coefficient container
+             deallocate(c(i)%coeff, stat=ierr)
+             if (ierr /= 0) stop 'solution.f90: error deallocating c(i)%coeff'
+             allocate(c(i)%coeff(sol%totalnP,1), stat=ierr)
+             if (ierr /= 0) stop 'solution.f90: error re-allocating c(i)%coeff'
+          end if
+          ! get coefficients from well routine
+          c(i)%coeff(idx,1) = well(c(i),p)
+       end if
     end do
     do i=1,ne
        ! ellipses
        if (.not. allocated(e(i)%coeff)) then
-          print *, 'allocate e',i
-          allocate(e(i)%coeff(sol%totalnp,col(nc+i,1)))
+          allocate(e(i)%coeff(sol%totalnp,col(nc+i,1)), stat=ierr)
+          if (ierr /= 0) then
+              print '(A,I0,A)', 'solution.f90: error allocating e(',i,')%coeff'
+              stop
+           end if
        end if
-       e(i)%coeff(idx,:) = b(col(nc+i,0):col(nc+i,2))
+       if (.not. e(i)%ibnd == 2) then
+          ! coefficients from least-squares solution above
+          e(i)%coeff(idx,:) = b(col(nc+i,0):col(nc+i,2))
+       else
+          if (size(e(i)%coeff,dim=2) == 0) then
+             ! fix size of coefficient container
+             deallocate(e(i)%coeff, stat=ierr)
+             if (ierr /= 0) stop 'solution.f90: error deallocating e(i)%coeff'
+             allocate(e(i)%coeff(sol%totalnP,2*e(i)%N-1), stat=ierr)
+             if (ierr /= 0) stop 'solution.f90: error re-allocating e(i)%coeff'
+          end if
+          ! get coefficients from line routine
+          e(i)%coeff(idx,:) = 0.0 
+          e(i)%coeff(idx,1:e(i)%N:2) = line(e(i),p,idx) ! a_(2n)
+       end if
     end do
     deallocate(A,b,row,col,stat=ierr)
     if (ierr /= 0) stop 'solution.f90: error deallocating A,B,row,col'

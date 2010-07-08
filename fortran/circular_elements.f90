@@ -5,7 +5,7 @@ module circular_elements
   implicit none
 
   private
-  public :: circle_match, circle_calc, circle_deriv
+  public :: circle_match, circle_calc, circle_deriv, well
 
   interface circle_match
      module procedure circle_match_self, circle_match_other
@@ -122,6 +122,8 @@ contains
           ! effects of other elements on this one show up in off-diagonals
           r%LHS(1:,1) = storwell(c,p)*r%LHS(1:M,1)
           r%RHS(1:M) = time(p,c%time,.false.)*c%bdryQ/(PI*c%r*c%parent%T)
+       else
+          ! compute coefficients and save into solution vector
        end if
     end select
   end function circle_match_self
