@@ -61,7 +61,7 @@ False :: unconfined?
 2.0D-2  :: Kz
 1.0D0  :: b
 1.0D0 :: dimensionless skin
-True :: compute coefficients?
+False :: compute coefficients?
 
 
      

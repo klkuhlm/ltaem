@@ -123,6 +123,7 @@ program ltaem_main
            print *, 'error writing intermediate coefficient matrix to file',sol%coefffname
            stop 000
         end if
+        write(77,*) trim(sol%infname)//'.echo' ! file with all the input parameters
         write(77,*) iminlogt,imaxlogt,nc,ne
         write(77,*) nt
         write(77,*) s
@@ -150,6 +151,7 @@ program ltaem_main
            goto 111
         end if
 
+        read(77,*) !! not doing anything with input file, but maybe I should eventually
         read(77,*) iminlogt,imaxlogt,nc,ne ! scalars
         allocate(s(2*sol%m+1,iminlogt:imaxlogt-1), nt(iminlogt:imaxlogt-1), &
              & tee(iminlogt:imaxlogt-1))

@@ -604,7 +604,7 @@ contains
     ! adjust the formats of time, location, and results here
     character(6) :: tfmt = 'ES13.5', xfmt = 'ES12.4'
     character(9) :: hfmt = 'ES22.14e3'
-    integer :: i, j, k, nt, nx, ny
+    integer :: i, j, k, nt
 
     select case (s%output)
     case (1) 
@@ -613,18 +613,22 @@ contains
 
        open(UNIT=20, FILE=s%outFname, STATUS='REPLACE', ACTION='WRITE')
        write(20,*) '# ltaem contour map output'
-       write(20,'(A,I0)') ' # t: ', nt
-       write(20,'(A,I0)') ' # x: ', nx
-       write(20,'(A,I0)') ' # y: ', ny
-       write(20,'(A,I0)') ' #xy: ', nx*ny     
+       write(20,'(A,I0)') ' # t: ', s%nt
+       write(20,'(A,I0)') ' # x: ', s%nx
+       write(20,'(A,I0)') ' # y: ', s%ny
+       write(20,'(A,I0)') ' # xy:', s%nx*s%ny     
 
-       do i = 1, nt
+       do i = 1, s%nt
           write(20,'(A,'//tfmt//')') ' # t= ',s%t(i)
           write(20,'(A)')   &
-          & '#      X          Y              head&
-          &               velx                vely'
-          write(20,'(2('//xfmt//',1X),3('//hfmt//',1X))') &
-               & ((s%x(k), s%y(j), s%h(k,j,i), s%v(k,j,i,1:2), k=1,nx), j=1,ny)
+          & '#      X           Y               head&
+          &                 velx                  vely'
+          do j = 1, s%ny
+             do k = 1, s%nx
+                write(20,'(2('//xfmt//',1X),3('//hfmt//',1X))') &
+                     & s%x(k), s%y(j), s%h(k,j,i), s%v(k,j,i,1:2)
+             end do
+          end do
           write(20,'(/)')
        end do       
        write(20,'(A)') '# EOF'
@@ -632,7 +636,7 @@ contains
 
        write(*,'(/A)') '***********************************************************'
        write(*,'(2A)') ' gnuplot contour map style output written to ', trim(s%outfname)
-       write(*,'(A)') '***********************************************************'
+       write(*,'(A)')  '***********************************************************'
 
        !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     case (2)
@@ -644,44 +648,44 @@ contains
        ! x-matrix has same row repeated numy times
        open(UNIT=20, FILE=trim(s%outFname)//'_x.dat', STATUS='REPLACE', &
             & ACTION='WRITE')
-       write(chint(1),'(i4.4)') nx
-       do i = 1, ny
-          write (20,'('//chint(1)//'(1x,'//hfmt//'))') (s%x(j), j=1,nx)
+       write(chint(1),'(i4.4)') s%nx
+       do i = 1, s%ny
+          write (20,'('//chint(1)//'(1x,'//hfmt//'))') (s%x(j), j=1,s%nx)
        end do
        close(20)
 
        ! y-matrix has same column repeated numx times
        open(UNIT=20, FILE=trim(s%outFname)//'_y.dat', STATUS='REPLACE', &
             & ACTION='WRITE')
-       do i = 1, ny
-          write (20,'('//chint(1)//'(1x,'//hfmt//'))') (s%y(i), j=1,nx)
+       do i = 1, s%ny
+          write (20,'('//chint(1)//'(1x,'//hfmt//'))') (s%y(i), j=1,s%nx)
        end do
        close(20)
        
-       do k = 1, nt
+       do k = 1, s%nt
           write(chint(2),'(i4.4)') k
 
           ! head-matrix
           open(UNIT=20, FILE=trim(s%outFname)//'_head_'//chint(2)//'.dat', &
                & STATUS='REPLACE', ACTION='WRITE')
-          do i = 1, ny
-             write (20,'('//chint(1)//'(1x,'//hfmt//'))') (s%h(j,i,k), j=1,nx)
+          do i = 1, s%ny
+             write (20,'('//chint(1)//'(1x,'//hfmt//'))') (s%h(j,i,k), j=1,s%nx)
           end do
           close(20)
 
           ! velx-matrix
           open(UNIT=20, FILE=trim(s%outfname)//'_velx_'//chint(2)//'.dat', &
                & STATUS='REPLACE', ACTION='WRITE')
-          do i = 1, ny
-             write (20,'('//chint(1)//'(1x,'//hfmt//'))') (s%v(j,i,k,1), j=1,nx)
+          do i = 1, s%ny
+             write (20,'('//chint(1)//'(1x,'//hfmt//'))') (s%v(j,i,k,1), j=1,s%nx)
           end do
           close(20)
 
           ! vely-matrix
           open(UNIT=20, FILE=trim(s%outfname)//'_vely_'//chint(2)//'.dat', &
                & STATUS='REPLACE', ACTION='WRITE')
-          do i = 1, ny
-             write (20,'('//chint(1)//'(1x,'//hfmt//'))') (s%v(j,i,k,2), j=1,nx)
+          do i = 1, s%ny
+             write (20,'('//chint(1)//'(1x,'//hfmt//'))') (s%v(j,i,k,2), j=1,s%nx)
           end do
           close(20)
        end do
@@ -689,7 +693,7 @@ contains
        ! column of calculation times
        open(UNIT=20, FILE=trim(s%outfname)//'_t.dat', STATUS='REPLACE', &
             & ACTION='WRITE')
-       write (20,'('//tfmt//')') (s%t(j), j=1,nt)
+       write (20,'('//tfmt//')') (s%t(j), j=1,s%nt)
        close(20)
 
        write(*,'(/A)') '*********************************************************************'
@@ -705,11 +709,11 @@ contains
        ! locations separated by blank lines
        open(UNIT=20, FILE=s%outfname, STATUS='REPLACE', ACTION='WRITE')
        write (20,'(A)') '# ltaem hydrograph output'      
-       do i = 1, nx
+       do i = 1, s%nx
           write (20,'(2(A,'//xfmt//'))') ' # location: x=',s%x(i),' y=',s%y(i)
           write (20,'(A)')   '#     time              head&
                &                  velx                vely'
-          do k = 1, nt
+          do k = 1, s%nt
              write (20,'(1X,'//tfmt//',3(1X,'//hfmt//'))') &
                   & s%t(k),s%h(i,1,k),s%v(i,1,k,1:2)
           end do
@@ -730,12 +734,12 @@ contains
        ! locations separated by blank lines (grid no velocity)
        open(UNIT=20, FILE=s%outfname, STATUS='REPLACE', ACTION='WRITE')
        write (20,'(A)') '# ltaem hydrograph output'
-       do i = 1, ny
-          do j = 1, nx
+       do i = 1, s%ny
+          do j = 1, s%nx
              write (20,'(2(A,'//xfmt//'))') ' # location: x=',s%x(j),' y=',s%y(i)
              write (20,'(A)')   '#     time              head&
                   &                  velx                vely'
-             do k = 1, nt
+             do k = 1, s%nt
                 write (20,'(1X,'//tfmt//',3(1X,'//hfmt//'))') &
                      & s%t(k),s%h(j,i,k),s%v(j,i,k,1:2)
              end do
@@ -756,11 +760,11 @@ contains
        ! column of time values at a location through time
        ! locations separated by blank lines
 
-       do i = 1, nx
+       do i = 1, s%nx
           write(chint(1),'(I4.4)') i
           open(UNIT=20, FILE=trim(s%outfname)//'_'//chint(1), STATUS='REPLACE', &
                &ACTION='WRITE')
-          do k = 1, nt
+          do k = 1, s%nt
              write (20,'('//tfmt//',1X,'//hfmt//')') s%t(k),s%h(i,1,k)
           end do
           write(20,'(/)')
