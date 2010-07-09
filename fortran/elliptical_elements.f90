@@ -45,7 +45,7 @@ contains
        ! specified flux line source has no unknowns
        ! only appears on RHS of other elements
        nrows = 0
-       ncols = 0
+       ncols = 2*N-1
        loM = 1
        hiM = M
     else

@@ -59,7 +59,7 @@ contains
        print '(4(A,I0))', 'before c on self: ',i,' N:',c(i)%N,' M:',c(i)%M,' ibnd:',c(i)%ibnd
        res(i,i) = circle_match(c(i),p)
        call print_match_result(res(i,i))
-       row(i,1) = size(res(i,i)%LHS,1)
+       row(i,1) = size(res(i,i)%RHS,1)
        col(i,1) = size(res(i,i)%LHS,2)
        print '(2(A,I0))', 'row ',row(i,1),' col ',col(i,1)
 
@@ -90,7 +90,7 @@ contains
             &' N:',e(i)%N,' M:',e(i)%M,' ibnd:',e(i)%ibnd
        res(nc+i,nc+i) = ellipse_match(e(i),p,idx)
        call print_match_result(res(nc+i,nc+i))
-       row(i+nc,1) = size(res(nc+i,nc+i)%LHS,1)
+       row(i+nc,1) = size(res(nc+i,nc+i)%RHS,1)
        col(i+nc,1) = size(res(nc+i,nc+i)%LHS,2)
        print '(2(A,I0))', 'row ',row(i+nc,1),' col ',col(i+nc,1)
 

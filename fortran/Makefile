@@ -42,13 +42,13 @@ OBJS=$(EXTERNAL) constants.o $(KKLOW) type_definitions.o $(KKHIGH)
 
 #### gfortran 4.6 (trunk) #################
 F90=gfortran-4.4
-DFLAGS=-O0 -Wall -Wextra 
+DFLAGS=-O0 -fbounds-check -Wall -Wextra -fbacktrace
 #DFLAGS+=-frange-check -fcheck=all -finit-real=snan -finit-integer=-99999 -fbacktrace
 #DFLAGS+=-fwhole-file -fpack-derived -frepack-arrays
 DFLAGS+=-cpp #-DDEBUG 
 #DFLAGS+=-fdump-rtl-expand
 PFLAGS=-O2 -g
-#LINKFLAG=-O0 -gdwarf-3
+LINKFLAG=-O0 -g
 ###################################
 
 # switch between performance or debugging flags

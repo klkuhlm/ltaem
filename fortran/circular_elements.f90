@@ -51,7 +51,7 @@ contains
           ncols = 1
        else
           nrows = 0
-          ncols = 0
+          ncols = 1
        end if
     else
        nrows = M
@@ -123,7 +123,7 @@ contains
           r%LHS(1:,1) = storwell(c,p)*r%LHS(1:M,1)
           r%RHS(1:M) = time(p,c%time,.false.)*c%bdryQ/(PI*c%r*c%parent%T)
        else
-          ! compute coefficients and save into solution vector
+          
        end if
     end select
   end function circle_match_self
@@ -173,6 +173,7 @@ contains
     if (c%ibnd == 0) then
        ncols = 4*N-2
     elseif (c%ibnd == 2 .and. .not. c%storIn) then
+       ! compute effects due to well for RHS
        ncols = 1  ! reset to zero at end of routine
     else
        ncols = 2*N-1
@@ -207,7 +208,7 @@ contains
                 Bn0(0:N-1) =    bK(kap*c%r,N)
 
                 ! head effects on outside of other element
-                r%LHS(1:M,1:N) =       Bn(:,0:N-1)/spread(Bn0(0:N-1),1,M)*cmat(:,0:N-1)/c%parent%K ! a_n
+                r%LHS(1:M,1:N) = Bn(:,0:N-1)/spread(Bn0(0:N-1),1,M)*cmat(:,0:N-1)/c%parent%K ! a_n
                 if (N > 1) then
                    r%LHS(1:M,N+1:2*N-1) = Bn(:,1:N-1)/spread(Bn0(1:N-1),1,M)*smat(:,1:N-1)/c%parent%K ! b_n
                 end if
@@ -249,11 +250,12 @@ contains
                    r%RHS(1:M) = 0.0
                 else
                    ! specified flux (finite-radius well no storage)
+                   ! save head effects of well onto RHS
                    r%RHS(1:M) = well(c,p)*r%LHS(1:M,1)
-                   ! no LHS for specified simple well (deallocate away at end of routine)
                 end if
              end if
           end if
+
           ! $$$$$$$$$$ flux effects of source (c) on target (el) $$$$$$$$$$
           ! for matching, specified total flux, or well with wellbore storage target element
           if (el%ibnd == 0 .or. el%ibnd == +1 .or. (el%ibnd == +2 .and. el%storIn)) then
@@ -315,13 +317,14 @@ contains
                 if (N>1) then
                    dPot_dP(1:M,N+1:2*N-1) = Bn(:,1:N-1)*spread(vi(1:N-1)/Bn0(1:N-1),1,M)*cmat(:,1:N-1)
                 end if
-
              end if
+
              ! project these from cylindrical onto Cartesian coordinates
              dPot_dX(1:M,1:2*N-1) = dPot_dR*spread(cos(c%G(targ)%Pgm),2,2*N-1) - &
-                  & dPot_dP*spread(sin(c%G(targ)%Pgm)/c%G(targ)%Rgm,2,2*N-1)
+                                  & dPot_dP*spread(sin(c%G(targ)%Pgm)/c%G(targ)%Rgm,2,2*N-1)
              dPot_dY(1:M,1:2*N-1) = dPot_dR*spread(sin(c%G(targ)%Pgm),2,2*N-1) + &
-                  & dPot_dP*spread(cos(c%G(targ)%Pgm)/c%G(targ)%Rgm,2,2*N-1)
+                                  & dPot_dP*spread(cos(c%G(targ)%Pgm)/c%G(targ)%Rgm,2,2*N-1)
+
              ! project from Cartesian to "radial" coordinate of target element
              if (el%id <= dom%num(1)) then
                 ! other element is a circle
@@ -343,12 +346,12 @@ contains
                 else
                    ! other element is a 'normal' circular element without wellbore storage
                    r%LHS(loM:hiM,loN:hiN) = dPot_dX*spread(cos(el%Pcm),2,2*N-1) + &
-                        & dPot_dY*spread(sin(el%Pcm),2,2*N-1)
+                                          & dPot_dY*spread(sin(el%Pcm),2,2*N-1)
                 end if
              else
                 ! other element is an ellipse
                 r%LHS(loM:hiM,loN:hiN) = dPot_dX*spread(el%f*sinh(el%r)*cos(el%Pcm(1:M)),2,2*N-1) + &
-                     & dPot_dY*spread(el%f*cosh(el%r)*sin(el%Pcm(1:M)),2,2*N-1)
+                                       & dPot_dY*spread(el%f*cosh(el%r)*sin(el%Pcm(1:M)),2,2*N-1)
              end if
 
              deallocate(dBn, dPot_dR, dPot_dP, dPot_dX, dPot_dY, stat=ierr)
@@ -367,11 +370,16 @@ contains
     end if
        
     if (c%ibnd == 2 .and. (.not. c%storin)) then
+
+       ! save flux effects of well onto RHS
+       r%RHS(loM:hiM) = well(c,p)*r%LHS(loM:hiM,loN)
+
        if (el%ibnd == 0) then
           hiM = 2*M
        else
           hiM = M
        end if
+
        deallocate(r%LHS,stat=ierr)
        if (ierr /= 0) then
           stop 'circular_elements:circle_match_self() error deallocating r%LHS'
