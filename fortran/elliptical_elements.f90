@@ -191,12 +191,19 @@ contains
     r%LHS = 0.0
     r%RHS = 0.0
 
+    print *, 'debug ellipse',nrows,ncols,loM,hiM
+
     if (nrows > 0) then
        if (dom%inclBg(src,targ) .or. dom%InclIn(src,targ)) then
 
           allocate(RMn(1:M,0:N-1,0:1), RMn0(0:N-1,0:1), cemat(1:M,0:N-1), semat(1:M,1:N-1), stat=ierr)
-          if (ierr /= 0) stop 'elliptical_elements.f90:ellipse_match_other() error allocating:&
+          if (ierr /= 0) then
+             stop 'elliptical_elements.f90:ellipse_match_other() error allocating:&
                &RMn, RMn0, cemat, semat'
+          else
+             print *, 'allocated RMn(1:M,0:N-1,0:1), RMn0(0:N-1,0:1), cemat(1:M,0:N-1), semat(1:M,1:N-1) OK'
+          end if
+          
 
           ! setup LHS 
           ! for matching or specified total head target elements
@@ -206,10 +213,19 @@ contains
                 ! can the target element "see" the outside of the source element?
                 ! use exterior angular and radial modified Mathieu functions
                 cemat(1:M,0:N-1) = transpose(ce(e%parent%mat(idx), vi(0:N-1), e%G(targ)%Pgm(1:M)))
+                semat(1:M,1:N-1) = transpose(se(e%parent%mat(idx), vi(1:N-1), e%G(targ)%Pgm(1:M)))
                 RMn(1:M,0:N-1,0) = transpose(Ke(e%parent%mat(idx), vi(0:N-1), e%G(targ)%Rgm(1:M)))
+                RMn(1:M,1:N-1,1) = transpose(Ko(e%parent%mat(idx), vi(1:N-1), e%G(targ)%Rgm(1:M)))
+                RMn(1:M,0,1) = 0.0
                 RMn0(0:N-1,0) = Ke(e%parent%mat(idx), vi(0:N-1), e%r)
+                RMn0(1:N-1,1) = Ko(e%parent%mat(idx), vi(1:N-1), e%r)
+                RMn0(0,1) = 0.0
                 ! odd functions not needed for line source, but computed anyway
                 K = e%parent%K
+
+                if (any(cemat /= cemat) .or. any(semat /= semat) .or. any(RMn /= RMn) .or. any(RMn0 /= RMn0)) then
+                   print *, 'NaN in cemat, semat, RMn, or RMn0'
+                end if
 
                 ! head effects due to ellipse on outside other element
                 r%LHS(1:M,1:N) =       RMn(1:M,0:N-1,0)/spread(RMn0(0:N-1,0),1,M)*cemat(1:M,0:N-1)/e%parent%K ! a_n
@@ -232,6 +248,11 @@ contains
                 RMn0(0,1) = 0.0
                 K = e%K
 
+                if (any(cemat /= cemat) .or. any(RMn /= RMn) .or. any(RMn0 /= RMn0)) then
+                   print *, 'NaN in cemat, RMn, or RMn0'
+                end if
+
+
                 if (e%ibnd == 0) then
                    ! is source the inside of matching element?
                    loN = 2*N
@@ -253,8 +274,14 @@ contains
           if (el%ibnd == 0 .or. el%ibnd == +1 .or. el%ibnd == +2) then
              allocate(dRMn(M,0:N-1,0:1), dcemat(1:M,0:N-1), dsemat(1:M,1:N-1), &
                   & dPot_dR(M,2*N-1), dPot_dP(M,2*N-1), dPot_dX(M,2*N-1),dPot_dY(M,2*N-1), stat=ierr)
-             if (ierr /= 0) stop 'elliptical_elements.f90 error allocating:&
-                  & dRMn, dcemat, dsemat, dPot_dR, dPot_dP, dPot_dX, dPot_dY'
+             if (ierr /= 0) then
+                stop 'elliptical_elements.f90 error allocating:&
+                     & dRMn, dcemat, dsemat, dPot_dR, dPot_dP, dPot_dX, dPot_dY'
+             else
+                print *, 'allocated dRMn(M,0:N-1,0:1), dcemat(1:M,0:N-1), dsemat(1:M,1:N-1), &
+                  & dPot_dR(M,2*N-1), dPot_dP(M,2*N-1), dPot_dX(M,2*N-1),dPot_dY(M,2*N-1) OK'
+             end if
+             
 
              ! flux effects of source ellpise on target element
              if (dom%inclBg(src,targ)) then
@@ -319,7 +346,12 @@ contains
 
              ! project these from elliptical onto Cartesian coordinates
              allocate(hsq(size(e%G(targ)%Rgm),2*N-1), stat=ierr)
-             if (ierr /= 0) stop 'elliptical_elements.f90 error allocating: hsq'
+             if (ierr /= 0) then
+                stop 'elliptical_elements.f90 error allocating: hsq'
+             else
+                print *, 'allocated hsq OK'
+             end if
+             
 
              ! squared metric factor -- less a common f
              hsq = spread(e%f/2.0*(cosh(2.0*e%G(targ)%Rgm) - cos(2.0*e%G(targ)%Pgm)),2,2*N-1) 
@@ -329,7 +361,12 @@ contains
                   & dPot_dP*spread(sinh(e%G(targ)%Rgm)*cos(e%G(targ)%Pgm),2,2*N-1))/hsq
 
              deallocate(hsq,stat=ierr)
-             if (ierr /= 0) stop 'elliptical_elements.f90 error deallocating: hsq'
+             if (ierr /= 0) then
+                stop 'elliptical_elements.f90 error deallocating: hsq'
+             else
+                print *, 'deallocated hsq ok'
+             end if
+             
 
              ! project from Cartesian to "radial" coordinate of target element
              if (el%id <= dom%num(1)) then
@@ -361,21 +398,40 @@ contains
 
              end if
              deallocate(dRMn,dcemat,dsemat,dPot_dR,dPot_dP,dPot_dX,dPot_dY,stat=ierr)
-             if (ierr /= 0) stop 'elliptical_elements.f90, error deallocating:&
-                  & dRMn, dcemat, dsemat, dPot_dR, dPot_dP, dPot_dX, dPot_dY'
+             if (ierr /= 0) then
+                stop 'elliptical_elements.f90, error deallocating:&
+                     & dRMn, dcemat, dsemat, dPot_dR, dPot_dP, dPot_dX, dPot_dY'
+             else
+                print *, 'deallocated dRMn, dcemat, dsemat, dPot_dR, dPot_dP, dPot_dX, dPot_dY OK'
+             end if
+             
           end if
           deallocate(RMn,RMn0,cemat,semat,stat=ierr)
-          if (ierr /= 0) stop 'elliptical_elements.f90:elliptical_match_other(), &
-               &error deallocating: RMn, RMn0, cemat, semat'
-
+          if (ierr /= 0) then
+             stop 'elliptical_elements.f90:elliptical_match_other(), &
+                  &error deallocating: RMn, RMn0, cemat, semat'
+          else
+             print *, 'deallocated RMn, RMn0, cemat, semat OK'
+          end if
+          
           if (e%ibnd == 2) then
              ! sum line source effects and move to RHS, re-setting LHS to 0 unknowns
              ! only uses even-order even coefficients (~1/4 of 2N-1)
              r%RHS(1:hiM) = sum(spread(line(e,p,idx),1,hiM)*r%LHS(1:hiM,1:N:2))
              deallocate(r%LHS,stat=ierr)
-             if (ierr /= 0) stop 'elliptical_elements.f90 error deallocating: r%LHS'
+             if (ierr /= 0) then
+                stop 'elliptical_elements.f90 error deallocating: r%LHS'
+             else
+                print *, 'deallcoated r%LHS OK'
+             end if
+             
              allocate(r%LHS(1:hiM,0),stat=ierr)
-             if (ierr /= 0) stop 'elliptical_elements.f90 error re-allocating: r%LHS'
+             if (ierr /= 0) then
+                stop 'elliptical_elements.f90 error re-allocating: r%LHS'
+             else
+                print *, 're-allocated r%LHS OK'
+             end if
+             
           end if
        end if
     end if
