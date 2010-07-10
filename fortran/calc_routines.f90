@@ -40,7 +40,8 @@ contains
     ! determine which inclusion this point is in, and related geometry
     call CalcLocation(Z,e,c,dom,Rgp,Pgp,inside) 
     H(1:np) = cmplx(0.0,0.0,DP)
-    
+    write(303,*) real(Z),aimag(Z),inside
+
     !##################################################
     !! calculation point is outside all elements (in background)
     if (inside == 0) then
@@ -303,6 +304,8 @@ contains
           Rgp(nc+j) = e(j)%r
        end if
     end do
+
+
   end subroutine  calcLocation
 
   subroutine check_np(p,lo,hi)

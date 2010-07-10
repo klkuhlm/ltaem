@@ -198,6 +198,8 @@ program ltaem_main
      allocate(sol%h(sol%nx,sol%ny,sol%nt),   sol%hp(tnP), &
           &   sol%v(sol%nx,sol%ny,sol%nt,2), sol%vp(tnP,2))
 
+     open(unit=303,file='calcloc.debug',status='replace',action='write')
+
      do j = 1,sol%nx
         write (*,'(A,ES14.6E1)') 'x: ',sol%x(j)
         do i = 1,sol%ny
@@ -225,6 +227,8 @@ program ltaem_main
         end do
      end do
      
+     close(303)
+
   else ! hydrograph output (x,y locations are in pairs; e.g. inner product)
 
      write(*,'(A)') 'compute solution for plotting hydrograph'
