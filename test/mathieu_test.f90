@@ -1,5 +1,3 @@
-! $Id: mathieu_test.f90,v 1.7 2010/02/26 15:54:33 klkuhlm Exp klkuhlm $
-
 program mathieu_test
 
   use constants, only : DP, PI

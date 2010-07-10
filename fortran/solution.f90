@@ -13,7 +13,7 @@ contains
     use constants, only : DP
     use type_definitions, only : circle, solution, ellipse, domain, match_result, print_match_result
     use circular_elements, only : circle_match, well
-    use elliptical_elements, only : ellipse_match
+    use elliptical_elements, only : ellipse_match ! line() is repeated below to accommodate gfortran bug
 
     !! solve over-determined system via least-squares
     interface
@@ -205,6 +205,7 @@ contains
 
   end subroutine matrix_solution
 
+  ! this function should be in elliptical_elements module, but gfortran bug forces it to be here.
   function line(e,p,idx) result(a2n)
     ! this function returns the coefficients for a specified-flux line source
     use constants, only : DP, PI
