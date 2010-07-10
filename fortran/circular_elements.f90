@@ -66,18 +66,18 @@ contains
        stop 'circular_elements.f90:circle_match_self() error allocating: r%LHS, r%RHS'
     end if
 
-    cmat = cos(outerprod(c%Pcm(1:M), vi(0:N-1)))
-    smat = sin(outerprod(c%Pcm(1:M), vi(1:N-1)))
+    cmat(1:M,0:N-1) = cos(outerprod(c%Pcm(1:M), vi(0:N-1)))
+    smat(1:M,1:N-1) = sin(outerprod(c%Pcm(1:M), vi(1:N-1)))
 
     ! setup LHS
     ! matching or specified total head
     if (c%ibnd == 0 .or. c%ibnd == -1) then
-       r%LHS(1:M,1:N) =       cmat/c%parent%K ! a_n head
-       r%LHS(1:M,N+1:2*N-1) = smat/c%parent%K ! b_n head
+       r%LHS(1:M,1:N) =       cmat(1:M,0:N-1)/c%parent%K ! a_n head
+       r%LHS(1:M,N+1:2*N-1) = smat(1:M,1:N-1)/c%parent%K ! b_n head
 
        if (c%ibnd == 0 .or. (c%ibnd == -1 .and. c%calcin)) then
-          r%LHS(1:M,2*N:3*N-1) = -cmat/c%K ! c_n head
-          r%LHS(1:M,3*N:4*N-2) = -smat/c%K ! d_n head
+          r%LHS(1:M,2*N:3*N-1) = -cmat(1:M,0:N-1)/c%K ! c_n head
+          r%LHS(1:M,3*N:4*N-2) = -smat(1:M,1:N-1)/c%K ! d_n head
        end if
     end if
     
@@ -89,16 +89,16 @@ contains
        call dBK(kap*c%r,N,Bn(0:N-1),dBn(0:N-1))
        dBn(0:N-1) = kap*dBn(0:N-1)
 
-       r%LHS(loM:hiM,1:N) =       spread(dBn(0:N-1)/Bn(0:N-1), 1,M)*cmat ! a_n flux
-       r%LHS(loM:hiM,N+1:2*N-1) = spread(dBn(1:N-1)/Bn(1:N-1), 1,M)*smat ! b_n flux
+       r%LHS(loM:hiM,1:N) =       spread(dBn(0:N-1)/Bn(0:N-1),1,M)*cmat(:,0:N-1) ! a_n flux
+       r%LHS(loM:hiM,N+1:2*N-1) = spread(dBn(1:N-1)/Bn(1:N-1),1,M)*smat(:,1:N-1) ! b_n flux
        
        if (c%ibnd == 0 .or. (c%ibnd == 1 .and. c%calcin)) then
           kap = kappa(p,c%element)
           call dBI(kap*c%r,N,Bn(0:N-1),dBn(0:N-1))
           dBn(0:N-1) = kap*dBn(0:N-1)
           
-          r%LHS(loM:hiM,2*N:3*N-1) = -spread(dBn(0:N-1)/Bn(0:N-1), 1,M)*cmat ! c_n flux
-          r%LHS(loM:hiM,3*N:4*N-2) = -spread(dBn(1:N-1)/Bn(1:N-1), 1,M)*smat ! d_n flux
+          r%LHS(loM:hiM,2*N:3*N-1) = -spread(dBn(0:N-1)/Bn(0:N-1),1,M)*cmat(:,0:N-1) ! c_n flux
+          r%LHS(loM:hiM,3*N:4*N-2) = -spread(dBn(1:N-1)/Bn(1:N-1),1,M)*smat(:,1:N-1) ! d_n flux
        end if
        deallocate(Bn,dBn, stat=ierr)
        if (ierr /= 0) stop 'circular_elements.f90 error deallocating: Bn,dBn'
@@ -120,7 +120,7 @@ contains
        if (c%StorIn) then
           ! effects of wellbore storage and skin on finite-radius well
           ! effects of other elements on this one show up in off-diagonals
-          r%LHS(1:,1) = storwell(c,p)*r%LHS(1:M,1)
+          r%LHS(1:M,1) = storwell(c,p)*r%LHS(1:M,1)
           r%RHS(1:M) = time(p,c%time,.false.)*c%bdryQ/(PI*c%r*c%parent%T)
        else
           
@@ -209,9 +209,7 @@ contains
 
                 ! head effects on outside of other element
                 r%LHS(1:M,1:N) = Bn(:,0:N-1)/spread(Bn0(0:N-1),1,M)*cmat(:,0:N-1)/c%parent%K ! a_n
-                if (N > 1) then
-                   r%LHS(1:M,N+1:2*N-1) = Bn(:,1:N-1)/spread(Bn0(1:N-1),1,M)*smat(:,1:N-1)/c%parent%K ! b_n
-                end if
+                r%LHS(1:M,N+1:2*N-1) = Bn(:,1:N-1)/spread(Bn0(1:N-1),1,M)*smat(:,1:N-1)/c%parent%K ! b_n
 
                 ! outside is always in 1:2*N-1 slot
                 loN = 1
@@ -237,9 +235,7 @@ contains
 
                 ! head effects on other element
                 r%LHS(1:M,loN:loN+N-1) = Bn(:,0:N-1)/spread(Bn0(0:N-1),1,M)*cmat(:,0:N-1)/c%K ! c_n
-                if (N > 1) then
-                   r%LHS(1:M,loN+N:hiN)   = Bn(:,1:N-1)/spread(Bn0(1:N-1),1,M)*smat(:,1:N-1)/c%K ! d_n
-                end if
+                r%LHS(1:M,loN+N:hiN)   = Bn(:,1:N-1)/spread(Bn0(1:N-1),1,M)*smat(:,1:N-1)/c%K ! d_n
              end if
 
              if (c%ibnd == 2 .and. dom%inclBg(src,targ)) then
@@ -297,9 +293,7 @@ contains
              end if
              ! derivative wrt radius of source element
              dPot_dR(1:M,1:N) =       dBn(1:M,0:N-1)/spread(Bn0(0:N-1),1,M)*cmat(1:M,0:N-1)
-             if (N>1) then
-                dPot_dR(1:M,N+1:2*N-1) = dBn(1:M,1:N-1)/spread(Bn0(1:N-1),1,M)*smat(1:M,1:N-1)
-             end if
+             dPot_dR(1:M,N+1:2*N-1) = dBn(1:M,1:N-1)/spread(Bn0(1:N-1),1,M)*smat(1:M,1:N-1)
 
              if (el%ibnd == 2 .and. dom%inclBg(src,targ)) then
                 if (c%StorIn) then
@@ -314,9 +308,7 @@ contains
              else
                 ! derivative wrt angle of source element for more general circular elements
                 dPot_dP(1:M,1:N) =      -Bn(:,0:N-1)*spread(vi(0:N-1)/Bn0(0:N-1),1,M)*smat(:,0:N-1)
-                if (N>1) then
-                   dPot_dP(1:M,N+1:2*N-1) = Bn(:,1:N-1)*spread(vi(1:N-1)/Bn0(1:N-1),1,M)*cmat(:,1:N-1)
-                end if
+                dPot_dP(1:M,N+1:2*N-1) = Bn(:,1:N-1)*spread(vi(1:N-1)/Bn0(1:N-1),1,M)*cmat(:,1:N-1)
              end if
 
              ! project these from cylindrical onto Cartesian coordinates
