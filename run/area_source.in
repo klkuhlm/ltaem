@@ -1,5 +1,0 @@
-1.0D+2                   !! t
-2.0D-3 1.0D-3             !! Q, rw
-2.0D-4 1.0D-7           !! K1, Ss1
-1.0D-0 1.0D-0            !! gamx, gamy
-T                        !! instaneous / continuous area source

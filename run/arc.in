@@ -1,6 +1,0 @@
-F                   !! passive element?
-2.0D+1  1.0D0                 !! well Q, arc Q
-1.0D+1  1.0D-3          !! K_bg, Ss_bg
-4.0D-1  -3.14159265359  0.0D0  !! arc radius, arc begin angle, arc end angle
-0.0D+0 0.0D+0            !! arc center x, arc center y
-4.0D-1                  !! t
