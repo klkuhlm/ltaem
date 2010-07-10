@@ -246,7 +246,7 @@ contains
     do j = nc+1, ntot
        ! components of vector from center of ellipse to observation point
        Zgp(j) = Z - cmplx(e(j-nc)%x,e(j-nc)%y,DP)
-       tmp = cacosh(Zgp(j))*exp(-EYE*e(j-nc)%theta)/e(j-nc)%f
+       tmp = cacosh(Zgp(j)*exp(-EYE*e(j-nc)%theta)/e(j-nc)%f)
        Rgp(j) = real(tmp)
        Pgp(j) = aimag(tmp)
        if (Rgp(j) <= e(j-nc)%r) then    ! inside or on boundary

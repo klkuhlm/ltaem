@@ -107,9 +107,9 @@ contains
              dRMn(1:N-1,1) = dIo(e%mat(idx), vi(1:N-1), e%r)
              dRMn(0,1) = 0.0
 
-             r%LHS(loM:hiM,2*N:3*N-1) = spread(dRMn(0:N-1,0)/RMn(0:N-1,0), 1,M)* &
+             r%LHS(loM:hiM,2*N:3*N-1) = -spread(dRMn(0:N-1,0)/RMn(0:N-1,0), 1,M)* &
                                               & cemat(1:M,0:N-1,0) ! c_n flux
-             r%LHS(loM:hiM,3*N:4*N-2) = spread(dRMn(1:N-1,1)/RMn(1:N-1,1), 1,M)* &
+             r%LHS(loM:hiM,3*N:4*N-2) = -spread(dRMn(1:N-1,1)/RMn(1:N-1,1), 1,M)* &
                                               & semat(1:M,1:N-1,1) ! d_n flux
           end if
           deallocate(RMn,dRMn,stat=ierr)
@@ -496,7 +496,7 @@ contains
     integer :: n0, np, i, j, N
 
 #ifdef DEBUG
-    print *, 'ellipse_calc: p:',p,' e:',e%id,' lo:',lo,' hi:',hi,' Rgp:',Rgp,' Pgp:',Pgp,' inside:',inside
+    print *, 'ellipse_calc: e:',e%id,' lo:',lo,' hi:',hi,' Rgp:',Rgp,' Pgp:',Pgp,' inside:',inside
 #endif
 
     N = e%N
@@ -555,7 +555,7 @@ contains
     integer :: n0, np, i, j, N
 
 #ifdef DEBUG
-    print *, 'ellipse_deriv: p:',p,' e:',e%id,' lo:',lo,' hi:',hi,' Rgp:',Rgp,' Pgp:',Pgp,' inside:',inside
+    print *, 'ellipse_deriv: e:',e%id,' lo:',lo,' hi:',hi,' Rgp:',Rgp,' Pgp:',Pgp,' inside:',inside
 #endif
 
     N = e%N

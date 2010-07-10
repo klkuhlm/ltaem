@@ -97,8 +97,8 @@ contains
           call dBI(kap*c%r,N,Bn(0:N-1),dBn(0:N-1))
           dBn(0:N-1) = kap*dBn(0:N-1)
           
-          r%LHS(loM:hiM,2*N:3*N-1) = spread(dBn(0:N-1)/Bn(0:N-1), 1,M)*cmat ! c_n flux
-          r%LHS(loM:hiM,3*N:4*N-2) = spread(dBn(1:N-1)/Bn(1:N-1), 1,M)*smat ! d_n flux
+          r%LHS(loM:hiM,2*N:3*N-1) = -spread(dBn(0:N-1)/Bn(0:N-1), 1,M)*cmat ! c_n flux
+          r%LHS(loM:hiM,3*N:4*N-2) = -spread(dBn(1:N-1)/Bn(1:N-1), 1,M)*smat ! d_n flux
        end if
        deallocate(Bn,dBn, stat=ierr)
        if (ierr /= 0) stop 'circular_elements.f90 error deallocating: Bn,dBn'
@@ -449,7 +449,7 @@ contains
     complex(DP), dimension(size(p,1)) :: kap
 
 #ifdef DEBUG
-    print *, 'circle_calc: p:',p,' c:',c%id,' lo:',lo,' hi:',hi,' Rgp:',Rgp,' Pgp:',Pgp,' inside:',inside
+    print *, 'circle_calc: C:',c%id,' lo:',lo,' hi:',hi,' Rgp:',Rgp,' Pgp:',Pgp,' inside:',inside
     print *, 'c%coeff:',shape(c%coeff)
 #endif
 
@@ -499,7 +499,7 @@ contains
     complex(DP), dimension(size(p,1)) :: kap
 
 #ifdef DEBUG
-    print *, 'circle_deriv: p:',p,' c:',c%id,' lo:',lo,' hi:',hi,' Rgp:',Rgp,' Pgp:',Pgp,' inside:',inside
+    print *, 'circle_deriv: c:',c%id,' lo:',lo,' hi:',hi,' Rgp:',Rgp,' Pgp:',Pgp,' inside:',inside
 #endif
 
     N = c%N
