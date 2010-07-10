@@ -61,15 +61,19 @@ contains
     complex(DP), intent(in) :: z
     complex(DP) :: f
     real(DP) :: x,y
-    x = real(z); y = aimag(z)
-    f = cmplx(cosh(x)*cos(y),sinh(x)*sin(y),DP)
+    x = real(z)
+    y = aimag(z)
+    f = cmplx(cosh(x)*cos(y), sinh(x)*sin(y),DP)
   end function ccosh
 
   pure elemental function cacosh(z) result(f)
     use constants, only : DP
     complex(DP), intent(in) :: z
     complex(DP) :: f
-
+    
+    ! compared ~10^-15 against acosh() in Matlab
+    ! branch cut is left of +1, along x axis
+    ! -pi <= aimag(f) <= +pi
     if(real(z) >= 0.0) then
        f = log(z + sqrt(z**2 - 1.0))
     else

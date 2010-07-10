@@ -255,13 +255,13 @@ contains
                & aimag(r%LHS(i,j)),') ',j=1,col)
        end do
        do i=1,row
-          write(*,'(A,I3,2(A,ES10.2E3),A))') 'RHS:',i,'(',&
+          write(*,'(A,I3,2(A,ES10.2E3),A)') 'RHS:',i,'(',&
                & real(r%RHS(i)),',',aimag(r%RHS(i)),')'
        end do
 
     elseif(row > 0) then
        do i=1,row
-          write(*,'(A,I3,2(A,ES10.2E3),A))') 'RHS:',i,'(',&
+          write(*,'(A,I3,2(A,ES10.2E3),A)') 'RHS:',i,'(',&
                & real(r%RHS(i)),',',aimag(r%RHS(i)),')'
        end do
     else

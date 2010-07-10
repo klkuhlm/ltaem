@@ -187,6 +187,8 @@ contains
     if (ierr /= 0) then
        stop 'elliptical_elements.f90:ellipse_match_other() error allocating&
             &r%LHS, r%RHS'
+    else
+       print *, 'r%LHS, r%RHS allocated OK'
     end if
     r%LHS = 0.0
     r%RHS = 0.0
@@ -223,9 +225,13 @@ contains
                 ! odd functions not needed for line source, but computed anyway
                 K = e%parent%K
 
-                if (any(cemat /= cemat) .or. any(semat /= semat) .or. any(RMn /= RMn) .or. any(RMn0 /= RMn0)) then
-                   print *, 'NaN in cemat, semat, RMn, or RMn0'
-                end if
+                print *, 'e%G(targ)%Pgm',e%G(targ)%Pgm(1:M)
+                print *, 'e%G(targ)%Rgm',e%G(targ)%Rgm(1:M)
+
+                print *, 'cemat max',maxval(abs(cemat)),' min',minval(abs(cemat))
+                print *, 'semat max',maxval(abs(semat)),' min',minval(abs(semat))
+                print *, 'RMn   max',maxval(abs(RMn(:,1:,:))),' min',minval(abs(RMn(:,1:,:)))
+                print *, 'RMn0  max',maxval(abs(RMn0(1:,:))),' min',minval(abs(RMn0(1:,:)))
 
                 ! head effects due to ellipse on outside other element
                 r%LHS(1:M,1:N) =       RMn(1:M,0:N-1,0)/spread(RMn0(0:N-1,0),1,M)*cemat(1:M,0:N-1)/e%parent%K ! a_n

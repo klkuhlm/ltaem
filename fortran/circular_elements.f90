@@ -51,7 +51,7 @@ contains
           ncols = 1
        else
           nrows = 0
-          ncols = 1
+          ncols = 0
        end if
     else
        nrows = M

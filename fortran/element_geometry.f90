@@ -23,30 +23,39 @@ contains
     type(solution), intent(in) :: sol
     type(matching), pointer :: other => null()
 
-    integer :: i, j, ne, nc, ntot, par, M, ierr
+    integer :: i, j, k, ne, nc, ntot, par, M, ierr
     complex(DP), allocatable :: z(:)
 
     nc = dom%num(1)
     ne = dom%num(2)
     ntot = sum(dom%num)
 
-    allocate(dom%InclIn(0:ntot,ntot), dom%InclUp(ntot), dom%InclBg(ntot,ntot))
+    allocate(dom%InclIn(0:ntot,ntot), dom%InclUp(ntot), dom%InclBg(ntot,ntot),stat=ierr)
+    if (ierr /= 0) stop 'error allocating hierarchy matrices, dom%InclIn, dom%inclUp, dom%InclBg'
 
     ! vector of eqi-spaced locations on perimeter of circle and ellipse
     ! each element can have a different number of matching locations
     do i=1,nc
-       allocate(c(i)%Pcm(c(i)%M))
-       forall (j = 1:c(i)%M)
+       allocate(c(i)%Pcm(c(i)%M),stat=ierr)
+       if (ierr /= 0) stop 'error allocating angular matching location vector, c(i)%Pcm(1:M)'
+       print *, 'step:',2.0*PI/c(i)%M,c(i)%M
+       do j = 1,c(i)%M
           c(i)%Pcm(j) = -PI + 2.0*PI/c(i)%M*real(j-1,DP)
-       end forall
+       end do
+       
        c(i)%id = i ! global ID
+       print *, 'c(i)%Pcm:',c(i)%Pcm
     end do
     do i=1,ne
-       allocate(e(i)%Pcm(e(i)%M))
-       forall (j = 1:e(i)%M)
+       allocate(e(i)%Pcm(e(i)%M),stat=ierr)
+       if (ierr /= 0) stop 'error allocating angular matching location vector, e(i)%Pcm(1:M)'
+       print *, 'step',2.0*PI/e(i)%M,e(i)%M
+       do j = 1,e(i)%M
           e(i)%Pcm(j) = -PI + 2.0*PI/e(i)%M*real(j-1,DP)
-       end forall
+       end do
+       
        e(i)%id = i+nc ! global ID
+       print *, 'e(i)%Pcm:',e(i)%Pcm
     end do
 
     call ElementHierarchy(dom,sol)
@@ -54,41 +63,52 @@ contains
     ! setup pointers to parent elements
     bg%parent => null()  ! background has no parent
     do i=1,nc
+       print *, 'geom circle parent ptrs: i=',i
        par = dom%InclUp(i) 
        if (par==0) then
           ! circle has background as parent
           c(i)%parent => bg
+          print *, 'parent is bg',par
        elseif (par <= nc) then
           ! circle has another circle as parent
           c(i)%parent => c(par)%element
+          print *, 'parent is circle',par
        elseif (par <= ntot) then
           ! circle has ellipse as parent
           c(i)%parent => e(par)%element
+          print *, 'parent is ellipse',par
        else
           write(*,'(A,(1X,I0))') 'error in parent element index',par,i
           stop 200
        end if
     end do
     do i=1,ne
+       print *, 'geom ellipse parent ptrs: i=',i
        par = dom%InclUp(nc+i) 
        if (par == 0) then
           ! ellipse has background as parent
           e(i)%parent => bg
+          print *, 'parent is bg',par
        elseif (par <= nc) then
           ! ellipse has circle as parent
           e(i)%parent => c(par)%element
+          print *, 'parent is circle',par
        elseif (par <= ntot) then 
           ! ellipse has another ellipse as parent
           e(i)%parent => e(par)%element
+          print *, 'parent is ellipse',par
        else
           write(*,'(A,(1X,I0))') 'error in parent element index',par,i
           stop 201
        end if
     end do
 
+    open(unit=101,file='geom_self.debug',action='write',status='replace')
+
     ! circular element self-geometry
     do i = 1,nc
        M = c(i)%M
+       print *, 'geom circle self-geom: i=',i,' M=',M
        allocate(c(i)%Zcm(M), c(i)%Zom(M), c(i)%G(ntot))
 
        ! x,y components from center of element to points on circumference
@@ -98,18 +118,31 @@ contains
           ! when only one matching point move to center of element
           c(i)%Zcm(1) = cmplx(0.0,0.0,DP)
        end if
+       print *, 'c(i)%Zcm:',c(i)%Zcm
+       print *, 'abs(Zcm):',abs(c(i)%Zcm)
+       print *, 'arg(Zcm):',atan2(aimag(c(i)%Zcm),real(c(i)%Zcm))
 
        ! x,y from Cartesian origin to point on circumference of element
        c(i)%Zom(1:M) = c(i)%Zcm(:) + cmplx(c(i)%x,c(i)%y,DP)
+       print *, 'c(i)%Zom:',c(i)%Zom
+
+       write(101,*) '# elem',i
+       do j=1,M
+          write(101,*) 0.0,0.0,real(c(i)%Zom(j)),aimag(c(i)%Zom(j))
+       end do
+       write(101,'(/)')
+
     end do
 
     ! elliptical element self-geometry
     do i = 1,ne
        M = e(i)%M
+       print *, 'geom ellipse self-geom: i=',i,' M=',M
        allocate(e(i)%Zcm(M), e(i)%Zom(M), e(i)%G(ntot), z(M))
 
        ! local elliptical coordinates (r is eta)
        z(1:M) = e(i)%f*ccosh(cmplx(e(i)%r,e(i)%Pcm(1:M),DP))
+       ! z is local Cartesian coordinate, with +x parallel to semi-focal axis
 
        ! x,y components from center of element to points on circumference
        ! account for rotation of local elliptical coordinates
@@ -121,11 +154,23 @@ contains
        end if
        deallocate(z,stat=ierr)
        if (ierr /= 0) stop 'element_geometry.f90 error deallocating memory, z1'
+       print *, 'e(i)%Zcm:',e(i)%Zcm
 
        ! x,y from Cartesian origin to point on circumference of element
        e(i)%Zom(1:M) = e(i)%Zcm(:) + cmplx(e(i)%x,e(i)%y,DP)
+       print *, 'e(i)%Zom:',e(i)%Zom
+
+       write(101,*) '# elem',i+nc
+       do j=1,M
+          write(101,*) 0.0,0.0,real(e(i)%Zom(j)),aimag(e(i)%Zom(j))
+       end do
+       write(101,'(/)')
+
     end do
     
+    close(101)
+    open(unit=202,file='geom_other.debug',action='write',status='replace')
+
     ! compute radial distances and angles to points on the circumferece of other elements
     ! from this element (cross-geometry), in terms of the current circle's or ellipse's
     ! coordinate system.
@@ -139,12 +184,19 @@ contains
                 other => e(j-nc)%matching ! other element an ellipse
              end if
              M = other%M    
-             allocate(c(i)%G(j)%Zgm(M), c(i)%G(j)%Rgm(M), c(i)%G(j)%Pgm(M))
+             allocate(c(i)%G(j)%Zgm(M), c(i)%G(j)%Rgm(M), c(i)%G(j)%Pgm(M),stat=ierr)
+             if (ierr /= 0) stop 'error allocating geometry arrays c(i)%G(j)%{Zgm,Rgm,Pgm}'
              c(i)%G(j)%Zgm(1:M) = other%Zom(1:M) - cmplx(c(i)%x,c(i)%y,DP)
              c(i)%G(j)%Rgm(1:M) = abs(c(i)%G(j)%Zgm(1:M)) ! r
              c(i)%G(j)%Pgm(1:M) = atan2(aimag(c(i)%G(j)%Zgm(1:M)), &
                                        & real(c(i)%G(j)%Zgm(1:M))) ! theta
              other => null()
+
+             write(202,*) '# src:',i,' tgt:',j
+             do k=1,M
+                write(202,*) c(i)%x,c(i)%y,real(c(i)%G(j)%Zgm(k)),aimag(c(i)%G(j)%Zgm(k))
+             end do
+             write(202,'(/)')
           end if
        end do
     end do
@@ -158,18 +210,44 @@ contains
                 other => e(j-nc)%matching ! other element an ellipse
              end if
              M = other%M    
-             allocate(e(i)%G(j)%Zgm(M),e(i)%G(j)%Rgm(M),e(i)%G(j)%Pgm(M),z(M))
+             allocate(e(i)%G(j)%Zgm(M),e(i)%G(j)%Rgm(M),e(i)%G(j)%Pgm(M),z(M),stat=ierr)
+             if (ierr /= 0) stop 'error allocating geometry arrays e(i)%G(j)%{Zgm,Rgm,Pgm}'
              e(i)%G(j)%Zgm(1:M) = other%Zom(1:M) - cmplx(e(i)%x,e(i)%y,DP)
-             z(1:M) = cacosh(e(i)%G(j)%Zgm(1:M))*exp(-EYE*e(i)%theta)/e(i)%f
+             z(1:M) = cacosh( e(i)%G(j)%Zgm(1:M)*exp(-EYE*e(i)%theta)/e(i)%f )
              e(i)%G(j)%Rgm(1:M) = real(z)  ! eta
              e(i)%G(j)%Pgm(1:M) = aimag(z) ! psi
+
+             print *, 'other id',other%id
+
              deallocate(z,stat=ierr)
-             if (ierr /= 0) stop 'element_geometry.f90 error deallocating memory, z2'
+             if (ierr /= 0) stop 'element_geometry.f90 error deallocating memory, z'
              other => null()
+
+             write(202,*) '# src:',i+nc,' tgt:',j
+             do k=1,M
+                write(202,*) e(i)%x,e(i)%y,real(e(i)%G(j)%Zgm(k)),aimag(e(i)%G(j)%Zgm(k))
+             end do
+             write(202,'(/)')
+
+!!$             write(202,*) '# src:',i+nc,' tgt:',j, '*in local elliptcial coords*'
+!!$             do k=1,M
+!!$                write(202,*) e(i)%x,e(i)%y,e(i)%f,e(i)%theta,e(i)%G(j)%Rgm(k),e(i)%G(j)%Pgm(k)
+!!$             end do
+!!$             write(202,'(/)')
+
+             write(202,*) '# src:',i+nc,' tgt:',j, '*converted from elliptcial coords*'
+             do k=1,M
+                write(202,*) e(i)%x,e(i)%y, &
+                      & real(exp(EYE*e(i)%theta)*e(i)%f*ccosh(cmplx(e(i)%G(j)%Rgm(k),e(i)%G(j)%Pgm(k),DP))),&
+                     & aimag(exp(EYE*e(i)%theta)*e(i)%f*ccosh(cmplx(e(i)%G(j)%Rgm(k),e(i)%G(j)%Pgm(k),DP)))
+             end do
+             write(202,'(/)')
+
           end if
        end do
     end do
 
+    close(202)
     ! create listing of points on circumference of circles for plotting
     call writeGeometry(c,e,sol)    
   end subroutine DistanceAngleCalcs

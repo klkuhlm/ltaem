@@ -13,8 +13,8 @@ False  True  1  well_single_circle_contour.xyz  dump.out  well_single_circle.ele
 F  T  :: calcin?
 F  F  :: storin?
 5.0D-2  2.25D-1  :: r
-1.0D-2  3.0D-1  :: x0
-1.0D-2  4.0D-1  :: y0
+1.01D0  3.0D-1  :: x0
+3.01D-1  4.0D-1  :: y0
 1.0D0  3.0D-1  :: K
 1.0D0  1.0D-5  :: Ss
 1.0D0  1.5D-1  :: porosity
@@ -34,8 +34,8 @@ False  False :: unconfined?
 1.0D0  1.0D0  :: b
 1.0D0  1.0D0 :: dimensionless skin
 1  :: number of elliptical elements
-7 :: N
-21 :: M
+5 :: N
+15 :: M
 16  :: ms
 0  :: ibnd
 true :: calcin?
@@ -50,8 +50,8 @@ false :: storin?
 1.5D-1  :: porosity
 0.0D-1  :: area source strength
 0.0D-1  :: boundary source strength
--01  0.0D0  1.0D0  2.5D-1 :: area time flag, tpar1, tpar2
--01  0.0D0  1.0D0  1.0D+1 :: boundary time flag, tpar1, tpar2
+001  0.0D0  0.0D0 :: area time flag, tpar1, tpar2
+001  0.0D0  0.0D0 :: boundary time flag, tpar1, tpar2
 0  :: leaky type flag
 1.0D0 :: K2
 1.0D-4 :: Ss2
