@@ -23,8 +23,11 @@ contains
     type(solution), intent(in) :: sol
     type(matching), pointer :: other => null()
 
-    integer :: i, j, k, ne, nc, ntot, par, M, ierr
+    integer :: i, j, ne, nc, ntot, par, M, ierr
     complex(DP), allocatable :: z(:)
+#ifdef DEBUG
+    integer :: k
+#endif
 
     nc = dom%num(1)
     ne = dom%num(2)
@@ -268,12 +271,12 @@ contains
     ntot = sum(dom%num)
 
     ! later I will write code to do this automatically
-    open(UNIT=75, FILE=sol%elemHfName, STATUS='old', ACTION='read', IOSTAT=ierr)
+    open(unit=75, file=sol%elemhfname, status='old', action='read', iostat=ierr)
     if (ierr /= 0) then
        write(*,'(A)') 'ElementHierarchy: ERROR opening file '//sol%elemHFName// &
             & ' for reading element hierarchy'
     end if
-    open(UNIT=57, FILE=trim(sol%elemHfName)//'.echo', STATUS='replace', ACTION='write', IOSTAT=ierr)
+    open(unit=57, file=trim(sol%elemhfname)//'.echo', status='replace', action='write', iostat=ierr)
     if (ierr /= 0) then
        write(*,'(A)') 'ElementHierarcy: ERROR opening file '//trim(sol%elemHfName)// &
             &'.echo for writing element hierarchy'

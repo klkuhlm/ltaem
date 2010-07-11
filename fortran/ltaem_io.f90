@@ -17,10 +17,10 @@ contains
 
     type(solution), intent(inout) :: sol
     type(particle), intent(out), allocatable :: p(:)
-    type(domain), intent(out) :: dom
-    type(element), intent(out) :: bg
-    type(circle), intent(out), allocatable :: c(:)
-    type(ellipse), intent(out), allocatable :: e(:)
+    type(domain),   intent(out) :: dom
+    type(element),  intent(out) :: bg
+    type(circle),   intent(out), allocatable :: c(:)
+    type(ellipse),  intent(out), allocatable :: e(:)
 
     character(4) :: chint
     character(20), dimension(3) :: fmt
@@ -28,14 +28,14 @@ contains
     character(lenFN+5) :: echofname
     integer :: ierr,j,ntot,nC,nE  ! #elements, #circles, #ellipses
 
-    open(UNIT=15, FILE=sol%infname, STATUS='OLD', ACTION='READ', IOSTAT=ierr)
+    open(unit=15, file=sol%infname, status='old', action='read', iostat=ierr)
     if (ierr /= 0) then
        write(*,'(2A)') 'READINPUT: error opening input file ',sol%infname
        stop 100
     endif
 
     echofname = trim(sol%infname)//'.echo'
-    open(UNIT=16, FILE=echofname, STATUS='REPLACE', ACTION='WRITE', IOSTAT=ierr)
+    open(unit=16, file=echofname, status='replace', action='write', iostat=ierr)
     if (ierr /= 0) then
        write(*,'(2A)') 'READINPUT: error opening echo file ',echofname
        stop 101
@@ -106,7 +106,7 @@ contains
     ! desired solution points/times
     read(15,*) sol%nx, sol%ny, sol%nt
     allocate(sol%x(sol%nx), sol%y(sol%ny), sol%t(sol%nt), stat=ierr)
-    if (ierr /= 0) stop 'error allocating sol%x, sol%y, sol%t'
+    if (ierr /= 0) stop 'ltaem_io.f90 error allocating: sol%x,sol%y,sol%t'
     read(15,*) sol%x(:)
     read(15,*) sol%y(:)
     do j=1,sol%nt  !! modified to accommidate pest (make time a column)
@@ -137,7 +137,7 @@ contains
     nc = dom%num(1)
     if (nc > 0) then
        allocate(c(nc), stat=ierr)
-       if (ierr /= 0) stop 'error allocating c()'
+       if (ierr /= 0) stop 'ltaem_io.f90 error allocating c()'
        read(15,*) c(:)%n
        if (any(c%n < 1)) then
           print *, 'c%N must not be < 1',c%N
@@ -193,14 +193,14 @@ contains
           if (c(j)%AreaTime > -1) then
              ! functional time behavior
              allocate(c(j)%ATPar(2),stat=ierr)
-             if (ierr /= 0) stop 'error allocating c%(j)%ATPAR(2)'
+             if (ierr /= 0) stop 'ltaem_io.f90 error allocating c%(j)%ATPAR(2)'
              read(15,*) c(j)%ATPar(:)
              write(16,'(I0,2(1X,ES12.5),A,I0)') c(j)%AreaTime,c(j)%ATPar(:),&
                   &'  ||  Area time behavior, par1, par2 for circle ',j
           else
              ! piecewise-constant time behavior 
              allocate(c(j)%ATPar(-2*c(j)%AreaTime+1),stat=ierr)
-             if (ierr /= 0) stop 'error allocating c%(j)%ATPAR(:)'
+             if (ierr /= 0) stop 'ltaem_io.f90 error allocating c%(j)%ATPAR(:)'
              read(15,*) c(j)%ATPar(:)
              lfmt = '(I0,1X,    (ES12.5,1X),A,    (ES12.5,1X),A,I0)'
              write(lfmt(8:11),'(I4.4)')  size(c(j)%ATPar(:-c(j)%AreaTime+1),1)
@@ -214,13 +214,13 @@ contains
           read(15,'(I3)', advance='no') c(j)%BdryTime
           if (c(j)%BdryTime > -1) then
              allocate(c(j)%BTPar(2),stat=ierr)
-             if (ierr /= 0) stop 'error allocating c%(j)%BTPAR(2)'
+             if (ierr /= 0) stop 'ltaem_io.f90 error allocating c%(j)%BTPAR(2)'
              read(15,*) c(j)%BTPar(:)
              write(16,'(I0,2(1X,ES12.5),A,I0)') c(j)%BdryTime,c(j)%BTPar(:),&
                   &'  ||  Bdry time behavior, par1, par2 for circle ',j
           else
              allocate(c(j)%BTPar(-2*c(j)%BdryTime+1),stat=ierr)
-             if (ierr /= 0) stop 'error allocating c%(j)%BTPAR(:)'
+             if (ierr /= 0) stop 'ltaem_io.f90 error allocating c%(j)%BTPAR(:)'
              read(15,*) c(j)%BTPar(:)
              write(lfmt(8:11),'(I4.4)')  size(c(j)%BTPar(:-c(j)%BdryTime+1),1)
              write(lfmt(26:29),'(I4.4)') size(c(j)%BTPar(-c(j)%BdryTime+2:),1)
@@ -335,7 +335,7 @@ contains
     ne = dom%num(2)
     if (ne > 0) then
        allocate(e(ne),stat=ierr)
-       if (ierr /= 0) stop 'error allocating e()'
+       if (ierr /= 0) stop 'ltaem_io.f90 error allocating e()'
        read(15,*) e(:)%n
        if (any(e%n < 1)) then
           print *, 'e%N must not be < 1',e%N
@@ -390,13 +390,13 @@ contains
           read(15,'(I3)', advance='no') e(j)%AreaTime 
           if (e(j)%AreaTime > -1) then
              allocate(e(j)%ATPar(2),stat=ierr)
-             if (ierr /= 0) stop 'error allocating e%(j)%ATPAR(2)'
+             if (ierr /= 0) stop 'ltaem_io.f90 error allocating e%(j)%ATPAR(2)'
              read(15,*) e(j)%ATPar(:)
              write(16,'(I0,2(1X,ES12.5),A,I0)') e(j)%AreaTime,e(j)%ATPar(:),&
                   &'  ||  Area time behavior, par1, par2 for ellipse ',j
           else
              allocate(e(j)%ATPar(-2*e(j)%AreaTime+1),stat=ierr)
-             if (ierr /= 0) stop 'error allocating e%(j)%ATPAR(:)'
+             if (ierr /= 0) stop 'ltaem_io.f90 error allocating e%(j)%ATPAR(:)'
              read(15,*) e(j)%ATPar(:)
              write(lfmt(8:11),'(I3.3)')  size(e(j)%ATPar(:-e(j)%AreaTime+1),1)
              write(lfmt(26:29),'(I3.3)') size(e(j)%ATPar(-e(j)%AreaTime+2:),1)
@@ -409,13 +409,13 @@ contains
           read(15,'(I3)', advance='no') e(j)%BdryTime
           if (e(j)%BdryTime > -1) then
              allocate(e(j)%BTPar(2),stat=ierr)
-             if (ierr /= 0) stop 'error allocating e%(j)%BTPAR(2)'
+             if (ierr /= 0) stop 'ltaem_io.f90 error allocating e%(j)%BTPAR(2)'
              read(15,*) e(j)%BTPar(:)
              write(16,'(I0,2(1X,ES12.5),A,I0)') e(j)%BdryTime,e(j)%BTPar(:),&
                   &'  ||  Bdry time behavior, par1, par2 for ellipse ',j
           else
              allocate(e(j)%BTPar(-2*e(j)%BdryTime+1),stat=ierr)
-             if (ierr /= 0) stop 'error allocating e%(j)%BTPAR(:)'
+             if (ierr /= 0) stop 'ltaem_io.f90 error allocating e%(j)%BTPAR(:)'
              read(15,*) e(j)%BTPar(:)
              write(lfmt(8:11),'(I3.3)')  size(e(j)%BTPar(:-e(j)%BdryTime+1),1)
              write(lfmt(26:29),'(I3.3)') size(e(j)%BTPar(-e(j)%BdryTime+2:),1)
@@ -517,14 +517,13 @@ contains
        write(16,fmt(3)) e(:)%dskin,'  ||    ellipse boundary dimensionless skin factor'
     else
        allocate(e(0),stat=ierr)
-       if (ierr /= 0) stop 'error allocating e(0)'
+       if (ierr /= 0) stop 'ltaem_io.f90 error allocating e(0)'
     end if
     
     ntot = sum(dom%num) ! total number of circular and elliptical elements
     if (ntot < 1) then
-       write(*,'(A)') 'need at least one circular (including well) or&
+       stop 'ltaem_io.f90 Need at least one circular (including well) or&
             & elliptical (including line) element.'
-       stop 102
     end if
 
     ! compute secondary parameters
@@ -559,7 +558,7 @@ contains
     if (sol%particle) then
        read(15,*) sol%nPart,  sol%streakSkip
        allocate(p(sol%nPart),stat=ierr)
-       if (ierr /= 0) stop 'error allocating p()'
+       if (ierr /= 0) stop 'ltaem_io.f90 error allocating p()'
        read(15,*) p(:)%tol 
        read(15,*) p(:)%dt 
        read(15,*) p(:)%maxStep
@@ -586,7 +585,7 @@ contains
        write(16,fmt(2)) p(:)%InclIn, '  ||    particle begins inside CH/CF incl?'
     else
        allocate(p(0),stat=ierr)
-       if (ierr /= 0) stop 'error allocating p(0)'
+       if (ierr /= 0) stop 'ltaem_io.f90 error allocating: p(0)'
     endif
     close(15)
     close(16)
@@ -611,7 +610,7 @@ contains
        ! ** gnuplot contour map friendly output **
        ! print results as x,y,z triplets with the given times separated by double blank lines
 
-       open(UNIT=20, FILE=s%outFname, STATUS='REPLACE', ACTION='WRITE')
+       open(unit=20, file=s%outfname, status='replace', action='write')
        write(20,*) '# ltaem contour map output'
        write(20,'(A,I0)') ' # t: ', s%nt
        write(20,'(A,I0)') ' # x: ', s%nx
@@ -646,8 +645,8 @@ contains
        ! (x and y matricies - similar to results from matlab function meshgrid)
        
        ! x-matrix has same row repeated numy times
-       open(UNIT=20, FILE=trim(s%outFname)//'_x.dat', STATUS='REPLACE', &
-            & ACTION='WRITE')
+       open(unit=20, file=trim(s%outfname)//'_x.dat', status='replace', &
+            & action='write')
        write(chint(1),'(i4.4)') s%nx
        do i = 1, s%ny
           write (20,'('//chint(1)//'(1x,'//hfmt//'))') (s%x(j), j=1,s%nx)
@@ -655,8 +654,8 @@ contains
        close(20)
 
        ! y-matrix has same column repeated numx times
-       open(UNIT=20, FILE=trim(s%outFname)//'_y.dat', STATUS='REPLACE', &
-            & ACTION='WRITE')
+       open(unit=20, file=trim(s%outfname)//'_y.dat', status='replace', &
+            & action='write')
        do i = 1, s%ny
           write (20,'('//chint(1)//'(1x,'//hfmt//'))') (s%y(i), j=1,s%nx)
        end do
@@ -666,24 +665,24 @@ contains
           write(chint(2),'(i4.4)') k
 
           ! head-matrix
-          open(UNIT=20, FILE=trim(s%outFname)//'_head_'//chint(2)//'.dat', &
-               & STATUS='REPLACE', ACTION='WRITE')
+          open(unit=20, file=trim(s%outfname)//'_head_'//chint(2)//'.dat', &
+               & status='replace', action='write')
           do i = 1, s%ny
              write (20,'('//chint(1)//'(1x,'//hfmt//'))') (s%h(j,i,k), j=1,s%nx)
           end do
           close(20)
 
           ! velx-matrix
-          open(UNIT=20, FILE=trim(s%outfname)//'_velx_'//chint(2)//'.dat', &
-               & STATUS='REPLACE', ACTION='WRITE')
+          open(unit=20, file=trim(s%outfname)//'_velx_'//chint(2)//'.dat', &
+               & status='replace', action='write')
           do i = 1, s%ny
              write (20,'('//chint(1)//'(1x,'//hfmt//'))') (s%v(j,i,k,1), j=1,s%nx)
           end do
           close(20)
 
           ! vely-matrix
-          open(UNIT=20, FILE=trim(s%outfname)//'_vely_'//chint(2)//'.dat', &
-               & STATUS='REPLACE', ACTION='WRITE')
+          open(unit=20, file=trim(s%outfname)//'_vely_'//chint(2)//'.dat', &
+               & status='replace', action='write')
           do i = 1, s%ny
              write (20,'('//chint(1)//'(1x,'//hfmt//'))') (s%v(j,i,k,2), j=1,s%nx)
           end do
@@ -691,8 +690,8 @@ contains
        end do
 
        ! column of calculation times
-       open(UNIT=20, FILE=trim(s%outfname)//'_t.dat', STATUS='REPLACE', &
-            & ACTION='WRITE')
+       open(unit=20, file=trim(s%outfname)//'_t.dat', status='replace', &
+            & action='write')
        write (20,'('//tfmt//')') (s%t(j), j=1,s%nt)
        close(20)
 
@@ -707,7 +706,7 @@ contains
        ! ** gnuplot hydrograph-friendly output **
        ! column of time values at a location through time
        ! locations separated by blank lines
-       open(UNIT=20, FILE=s%outfname, STATUS='REPLACE', ACTION='WRITE')
+       open(unit=20, file=s%outfname, status='replace', action='write')
        write (20,'(A)') '# ltaem hydrograph output'      
        do i = 1, s%nx
           write (20,'(2(A,'//xfmt//'))') ' # location: x=',s%x(i),' y=',s%y(i)
@@ -732,7 +731,7 @@ contains
        ! ** gnuplot hydrograph-friendly output **
        ! column of time values at a location through time
        ! locations separated by blank lines (grid no velocity)
-       open(UNIT=20, FILE=s%outfname, STATUS='REPLACE', ACTION='WRITE')
+       open(unit=20, file=s%outfname, status='replace', action='write')
        write (20,'(A)') '# ltaem hydrograph output'
        do i = 1, s%ny
           do j = 1, s%nx
@@ -762,8 +761,8 @@ contains
 
        do i = 1, s%nx
           write(chint(1),'(I4.4)') i
-          open(UNIT=20, FILE=trim(s%outfname)//'_'//chint(1), STATUS='REPLACE', &
-               &ACTION='WRITE')
+          open(unit=20, file=trim(s%outfname)//'_'//chint(1), status='replace', &
+               &action='write')
           do k = 1, s%nt
              write (20,'('//tfmt//',1X,'//hfmt//')') s%t(k),s%h(i,1,k)
           end do
@@ -781,7 +780,7 @@ contains
        ! ** pathline gnuplot-style output **
        ! columns of time values for starting locations
        ! particles separated by blank lines
-       open(UNIT=20, FILE=s%outFname, STATUS='REPLACE', ACTION='WRITE')
+       open(unit=20, file=s%outfname, status='replace', action='write')
        write (20,'(A)') '# ltaem particle tracking output'
        do i = 1, size(p,dim=1)
           write (20,'(A,I0)') '# particle: ',i
@@ -807,7 +806,7 @@ contains
        ! this requires constant time steps (can't use adaptive integration)
        ! each block is a requested time, each row a particle
 
-       open(UNIT=90, FILE=s%outfname, STATUS='REPLACE', ACTION='WRITE')
+       open(unit=90, file=s%outfname, status='replace', action='write')
        write (90,'(A)') '# ltaem particle tracking streakfile output'
 
        ! max number of times for all particles
@@ -853,9 +852,9 @@ contains
     ntot = nc + ne
 
     ! write matching points to file
-    open(UNIT=40, FILE=s%geomFname, STATUS='REPLACE', ACTION='WRITE', IOSTAT=ierr)
+    open(unit=40, file=s%geomfname, status='replace', action='write', iostat=ierr)
     if (ierr /= 0) then
-       write(*,'(2A)') 'error opening output file for writing &
+       write(*,'(2A)') 'ltaem_io.f90 error opening output file for writing &
             &element matching locations ',s%geomFname
        stop
     end if
