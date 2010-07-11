@@ -41,7 +41,10 @@ contains
     call CalcLocation(Z,e,c,dom,Rgp,Pgp,inside) 
     H(1:np) = 0.0
 
+#ifdef DEBUG
+    ! unit opened in ltaem_main.f90
     write(303,*) real(Z),aimag(Z),inside
+#endif
 
     !##################################################
     !! calculation point is outside all elements (in background)

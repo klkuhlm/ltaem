@@ -16,21 +16,24 @@ program ltaem_main
   use ellipse_mathieu_init, only : ellipse_init
   implicit none
 
-  ! structs that organize variables
+  ! types or "structs" that organize variables
   type(domain)  :: dom
   type(element) :: bg
   type(circle),  allocatable :: c(:)
   type(ellipse), allocatable :: e(:)
   type(solution) :: sol
   type(particle), allocatable :: part(:)
-  
-  integer :: i, j, tnp, idx, nc, ne, crow, ccol
-  real(DP), allocatable :: logt(:), tee(:)
-  integer, allocatable :: nt(:), run(:)
-  complex(DP), allocatable :: s(:,:)
-  integer :: ilogt, iminlogt, imaxlogt, lot, hit, lop, hip, ierr, lo
-  character(6) :: elType
-  complex(DP) :: calcZ
+  integer :: i, j, ierr
+  integer :: tnp, idx   ! total-number-p, index-for-p
+  integer :: nc, ne     ! #-circles, #-ellipses
+  integer :: crow, ccol ! coeff-#-row, coeff-#-col
+  integer :: ilogt, iminlogt, imaxlogt     ! indexes related to log10 time
+  integer :: lot, hit, lop, hip, lo        ! local hi and lo indices for each log cycle
+  integer, allocatable :: nt(:), run(:)    ! #-times-each-log-cycle, 0,1,2,3...
+  real(DP), allocatable :: logt(:), tee(:) ! log10-time(numt), T-in-deHoog(num-log-cycles)
+  complex(DP), allocatable :: s(:,:)       ! laplace-parameter(2*M-1,num-log-cycles)
+  complex(DP) :: calcZ      ! calc-point-complex-coordinates
+  character(6) :: elType    ! element-type {CIRCLE,ELLIPS}
 
   intrinsic :: get_command_argument
 
@@ -50,7 +53,8 @@ program ltaem_main
      sol%t(:) = sol%t(:) - epsilon(sol%t(:))
   end where
   
-  allocate(run(1:2*sol%m+1))
+  allocate(run(1:2*sol%m+1), stat=ierr)
+  if (ierr /= 0) stop 'ltaem_main.f90 error allocating: run'
   forall(i=0:2*sol%m) run(i+1)=i
 
   ! independent of most choices
@@ -62,20 +66,23 @@ program ltaem_main
   if (sol%calc) then
      if (sol%particle) then   ! particle tracking
         
-        stop 'no particle tracking yet'
+        stop 'no particle tracking implementation yet'
         ! not worrying about particle tracking right now
+        ! need to update the code used before
         
      !^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
      else   ! contour maps / hydrographs
-        allocate(logt(1:sol%nt))
-
+        allocate(logt(1:sol%nt), stat=ierr)
+        if (ierr /= 0) stop 'ltaem_main.f90 error allocating: logt'
+        
         lo = 1
         logt(:) = log10(sol%t(:))
         iminlogt =   floor(minval(logt(:)))
         imaxlogt = ceiling(maxval(logt(:)))
 
         allocate(s(2*sol%m+1,iminlogt:imaxlogt-1), nt(iminlogt:imaxlogt-1), &
-             & tee(iminlogt:imaxlogt-1))
+             & tee(iminlogt:imaxlogt-1), stat=ierr)
+        if (ierr /= 0) stop 'ltaem_main.f90 error allocating: s,nt,tee'
 
         do ilogt = iminlogt, imaxlogt-1
            ! number of times falling in this logcycle
@@ -85,8 +92,8 @@ program ltaem_main
            s(:,ilogt) = pvalues(tee(ilogt),sol%INVLT)
            lo = lo + nt(ilogt)
         end do
-        deallocate(logt,run,stat=ierr)
-        if (ierr /= 0) stop 'ltaem_main.f90 error deallocating logt,run'
+        deallocate(logt,run, stat=ierr)
+        if (ierr /= 0) stop 'ltaem_main.f90 error deallocating: logt,run'
      end if
 
      ! only do matching if there is at least one matching element
@@ -118,23 +125,23 @@ program ltaem_main
 
         !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         ! save coefficient matrices to file
-        open(UNIT=77, FILE=sol%coeffFName, STATUS='REPLACE', ACTION='WRITE', IOSTAT=ierr)
+        open(unit=77, file=sol%coefffname, status='replace', action='write', iostat=ierr)
         if (ierr /= 0) then
            print *, 'error writing intermediate coefficient matrix to file',sol%coefffname
            stop 000
         end if
         write(77,*) trim(sol%infname)//'.echo' ! file with all the input parameters
         write(77,*) iminlogt,imaxlogt,nc,ne
-        write(77,*) nt
-        write(77,*) s
-        write(77,*) tee
+        write(77,*) nt(:)
+        write(77,*) s(:,:)
+        write(77,*) tee(:)
         do i = 1,nc
            write(77,*) 'CIRCLE',i,shape(c(i)%coeff)
-           write(77,*) c(i)%coeff
+           write(77,*) c(i)%coeff(:,:)
         end do
         do i = 1,ne
            write(77,*) 'ELLIPS',i,shape(e(i)%coeff)
-           write(77,*) e(i)%coeff
+           write(77,*) e(i)%coeff(:,:)
         end do
         close(77)
         write(*,'(A)') '  <matching finished>  '
@@ -143,7 +150,7 @@ program ltaem_main
   else ! do not re-calculate coefficients (this only makes sense if num matching elements > 0)
 
      if(count(e(:)%match) + count(c(:)%match) > 0) then
-        open(UNIT=77, FILE=sol%coeffFName, STATUS='OLD', ACTION='READ', IOSTAT=ierr)
+        open(unit=77, file=sol%coefffname, status='old', action='read', iostat=ierr)
         if (ierr /= 0) then
            ! go back and recalc if no restart file
            write(*,'(A)') 'error opening restart file, recalculating...'
@@ -154,29 +161,32 @@ program ltaem_main
         read(77,*) !! not doing anything with input file, but maybe I should eventually
         read(77,*) iminlogt,imaxlogt,nc,ne ! scalars
         allocate(s(2*sol%m+1,iminlogt:imaxlogt-1), nt(iminlogt:imaxlogt-1), &
-             & tee(iminlogt:imaxlogt-1))
-        read(77,*) nt
-        read(77,*) s
+             & tee(iminlogt:imaxlogt-1),stat=ierr)
+        if (ierr /= 0) stop 'ltaem_main.f90 error allocating: s,nt,tee'
+        read(77,*) nt(:)
+        read(77,*) s(:,:)
         sol%totalnP = product(shape(s))
         tnp = sol%totalnP
-        read(77,*) tee
+        read(77,*) tee(:)
         do i = 1,nc
            read(77,*) elType,j,crow,ccol
            if (elType == 'CIRCLE' .and. i == j) then
-              allocate(c(i)%coeff(crow,ccol))
+              allocate(c(i)%coeff(crow,ccol), stat=ierr)
+              if (ierr /= 0) stop 'ltaem_main.f90 error allocating c(i)%coeff'
            else
-              stop 'error reading in matching results'
+              stop 'error reading in CIRCLE matching results'
            end if
-           read(77,*) c(i)%coeff
+           read(77,*) c(i)%coeff(:,:)
         end do
         do i = 1,ne
            read(77,*) elType,j,crow,ccol
            if (elType == 'ELLIPS' .and. i == j) then
-              allocate(e(i)%coeff(crow,ccol))
+              allocate(e(i)%coeff(crow,ccol), stat=ierr)
+              if (ierr /= 0) stop 'ltaem_main.f90 error allocating e(i)%coeff'
            else
-              stop 'error reading in matching results'
+              stop 'error reading in ELLIPS matching results'
            end if
-           read(77,*) e(i)%coeff
+           read(77,*) e(i)%coeff(:,:)
         end do
 
         ! re-initialize Mathieu function matrices
@@ -186,7 +196,7 @@ program ltaem_main
         end if
 
         ! read needed data calculated in previous run from file
-        write(*,'(A)') 'matching results read from file'
+        write(*,'(A)') 'matching results successfully read from file'
      end if
 
   end if ! re-calculate coefficients
@@ -196,9 +206,12 @@ program ltaem_main
 
      write(*,'(A)') 'compute solution for plotting contours'
      allocate(sol%h(sol%nx,sol%ny,sol%nt),   sol%hp(tnP), &
-          &   sol%v(sol%nx,sol%ny,sol%nt,2), sol%vp(tnP,2))
+          &   sol%v(sol%nx,sol%ny,sol%nt,2), sol%vp(tnP,2), stat=ierr)
+     if (ierr /= 0) stop 'ltaem_main.f90 error allocating contour: sol%h,sol%hp,sol%v,sol%vp'
 
+#ifdef DEBUG
      open(unit=303,file='calcloc.debug',status='replace',action='write')
+#endif
 
      do j = 1,sol%nx
         write (*,'(A,ES14.6E1)') 'x: ',sol%x(j)
@@ -227,14 +240,17 @@ program ltaem_main
         end do
      end do
      
+#ifdef DEBUG
      close(303)
+#endif
 
   else ! hydrograph output (x,y locations are in pairs; e.g. inner product)
 
      write(*,'(A)') 'compute solution for plotting hydrograph'
 
      allocate(sol%h(sol%nx,1,sol%nt), sol%hp(tnp), &
-          &   sol%v(sol%nx,1,sol%nt,2), sol%vp(tnp,2))
+          &   sol%v(sol%nx,1,sol%nt,2), sol%vp(tnp,2), stat=ierr)
+     if (ierr /= 0) stop 'ltaem_main.f90 error allocating hydrograph: sol%h,sol%hp,sol%v,sol%vp'
      
      do i = 1,sol%nx
         write(*,'(A,2(1X,ES14.7E1))') 'location:',sol%x(i),sol%y(i)
@@ -272,6 +288,12 @@ program ltaem_main
 
   ! call subroutine to write output to file
   call writeResults(sol,part)
+
+  deallocate(sol%h,sol%hp,sol%v,sol%vp, stat=ierr)
+  if (ierr /= 0) print *, 'WARNING: problem deallocating: sol%{h,p,v,vp} at end of program'
+
+  deallocate(c,e,part,s,tee,nt, stat=ierr)
+  if (ierr /= 0) print *, 'WARNING: problem deallocating: c,e,part,s,tee,logt,nt at end of program'
 
 end program ltaem_main
 
