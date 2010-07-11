@@ -211,6 +211,7 @@ program ltaem_main
 
 #ifdef DEBUG
      open(unit=303,file='calcloc.debug',status='replace',action='write')
+     open(unit=404,file='calcloc.vdebug',status='replace',action='write')
 #endif
 
      do j = 1,sol%nx
@@ -242,6 +243,7 @@ program ltaem_main
      
 #ifdef DEBUG
      close(303)
+     close(404)
 #endif
 
   else ! hydrograph output (x,y locations are in pairs; e.g. inner product)

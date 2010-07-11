@@ -187,8 +187,6 @@ contains
     if (ierr /= 0) then
        stop 'elliptical_elements.f90:ellipse_match_other() error allocating&
             &r%LHS, r%RHS'
-    else
-       print *, 'r%LHS, r%RHS allocated OK'
     end if
     r%LHS = 0.0
     r%RHS = 0.0
@@ -202,8 +200,6 @@ contains
           if (ierr /= 0) then
              stop 'elliptical_elements.f90:ellipse_match_other() error allocating:&
                &RMn, RMn0, cemat, semat'
-          else
-             print *, 'allocated RMn(1:M,0:N-1,0:1), RMn0(0:N-1,0:1), cemat(1:M,0:N-1), semat(1:M,1:N-1) OK'
           end if
           
 
@@ -225,8 +221,8 @@ contains
                 ! odd functions not needed for line source, but computed anyway
                 K = e%parent%K
 
-                print *, 'e%G(targ)%Pgm',e%G(targ)%Pgm(1:M)
-                print *, 'e%G(targ)%Rgm',e%G(targ)%Rgm(1:M)
+                print *, 'e%G(targ)%Pgm max',maxval(e%G(targ)%Pgm(1:M)),' min',minval(e%G(targ)%Pgm(1:M))
+                print *, 'e%G(targ)%Rgm max',maxval(e%G(targ)%Rgm(1:M)),' min',minval(e%G(targ)%Rgm(1:M))
 
                 print *, 'cemat max',maxval(abs(cemat)),' min',minval(abs(cemat))
                 print *, 'semat max',maxval(abs(semat)),' min',minval(abs(semat))
@@ -254,9 +250,6 @@ contains
                 RMn0(0,1) = 0.0
                 K = e%K
 
-                if (any(cemat /= cemat) .or. any(RMn /= RMn) .or. any(RMn0 /= RMn0)) then
-                   print *, 'NaN in cemat, RMn, or RMn0'
-                end if
 
 
                 if (e%ibnd == 0) then
@@ -283,9 +276,6 @@ contains
              if (ierr /= 0) then
                 stop 'elliptical_elements.f90 error allocating:&
                      & dRMn, dcemat, dsemat, dPot_dR, dPot_dP, dPot_dX, dPot_dY'
-             else
-                print *, 'allocated dRMn(M,0:N-1,0:1), dcemat(1:M,0:N-1), dsemat(1:M,1:N-1), &
-                  & dPot_dR(M,2*N-1), dPot_dP(M,2*N-1), dPot_dX(M,2*N-1),dPot_dY(M,2*N-1) OK'
              end if
              
 
@@ -354,8 +344,6 @@ contains
              allocate(hsq(size(e%G(targ)%Rgm),2*N-1), stat=ierr)
              if (ierr /= 0) then
                 stop 'elliptical_elements.f90 error allocating: hsq'
-             else
-                print *, 'allocated hsq OK'
              end if
              
 
@@ -369,8 +357,6 @@ contains
              deallocate(hsq,stat=ierr)
              if (ierr /= 0) then
                 stop 'elliptical_elements.f90 error deallocating: hsq'
-             else
-                print *, 'deallocated hsq ok'
              end if
              
 
@@ -407,8 +393,6 @@ contains
              if (ierr /= 0) then
                 stop 'elliptical_elements.f90, error deallocating:&
                      & dRMn, dcemat, dsemat, dPot_dR, dPot_dP, dPot_dX, dPot_dY'
-             else
-                print *, 'deallocated dRMn, dcemat, dsemat, dPot_dR, dPot_dP, dPot_dX, dPot_dY OK'
              end if
              
           end if
@@ -416,8 +400,6 @@ contains
           if (ierr /= 0) then
              stop 'elliptical_elements.f90:elliptical_match_other(), &
                   &error deallocating: RMn, RMn0, cemat, semat'
-          else
-             print *, 'deallocated RMn, RMn0, cemat, semat OK'
           end if
           
           if (e%ibnd == 2) then
@@ -427,15 +409,11 @@ contains
              deallocate(r%LHS,stat=ierr)
              if (ierr /= 0) then
                 stop 'elliptical_elements.f90 error deallocating: r%LHS'
-             else
-                print *, 'deallcoated r%LHS OK'
              end if
              
              allocate(r%LHS(1:hiM,0),stat=ierr)
              if (ierr /= 0) then
                 stop 'elliptical_elements.f90 error re-allocating: r%LHS'
-             else
-                print *, 're-allocated r%LHS OK'
              end if
              
           end if

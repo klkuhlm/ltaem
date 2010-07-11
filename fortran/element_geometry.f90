@@ -221,8 +221,8 @@ contains
 
              e(i)%G(j)%Zgm(1:M) = other%Zom(1:M) - cmplx(e(i)%x,e(i)%y,DP)
              z(1:M) = cacosh( e(i)%G(j)%Zgm(1:M)*exp(-EYE*e(i)%theta)/e(i)%f )
-             e(i)%G(j)%Rgm(1:M) = real(z)  ! eta
-             e(i)%G(j)%Pgm(1:M) = aimag(z) ! psi
+             e(i)%G(j)%Rgm(1:M) =  real(z(1:M)) ! eta
+             e(i)%G(j)%Pgm(1:M) = aimag(z(1:M)) ! psi
 
              deallocate(z,stat=ierr)
              if (ierr /= 0) stop 'element_geometry.f90 error deallocating memory, z'

@@ -18,6 +18,10 @@ contains
     use elliptical_elements, only : ellipse_calc
     use kappa_mod, only : kappa
     use time_mod, only : time
+#ifdef DEBUG
+    use utility, only : ccosh
+    use constants, only : EYE
+#endif
 
     complex(DP), intent(in) :: Z  ! location for calculation (complex coordinates)
     complex(DP), dimension(:), intent(in) :: p  ! vector of Laplace parameters
@@ -32,18 +36,33 @@ contains
     type(element), pointer :: elin => null()
     integer :: nc, ne, np, j
     integer :: inside, other
+#ifdef DEBUG
+    complex(DP) :: Ztmp
+#endif
 
     call check_np(p,lo,hi)
-    nc = dom%num(1); ne = dom%num(2)
+    nc = dom%num(1)
+    ne = dom%num(2)
     np = size(p,1)
 
     ! determine which inclusion this point is in, and related geometry
-    call CalcLocation(Z,e,c,dom,Rgp,Pgp,inside) 
+    call CalcLocation(Z,c,e,dom,Rgp,Pgp,inside) 
     H(1:np) = 0.0
 
 #ifdef DEBUG
-    ! unit opened in ltaem_main.f90
+    ! units opened in ltaem_main.f90
+    ! which element is each calculation point located in?
     write(303,*) real(Z),aimag(Z),inside
+    ! write cartesian vectors pointing from center of each element to
+    ! calc point for visual checking in gnuplot
+    do j = 1,nc
+       write(404,*) c(j)%x,c(j)%y,Rgp(j)*cos(Pgp(j)),Rgp(j)*sin(Pgp(j))
+    end do
+    do j = 1,ne
+       Ztmp = e(j)%f*ccosh(cmplx(Rgp(j+nc),Pgp(j+nc),DP))*exp(EYE*e(j)%theta)
+       write(404,*) e(j)%x,e(j)%y,real(Ztmp),aimag(Ztmp)
+    end do
+    write(404,'(/)')
 #endif
 
     !##################################################
@@ -65,6 +84,7 @@ contains
        H(1:np) = H(:)/bg%k ! convert to head
 
     !##################################################
+    !! calculation point is inside an element (not background)
     else
        if (inside <= nc) then
           ! calculation point is inside (or on bdry of) a circular element
@@ -141,7 +161,7 @@ contains
     np = size(p,1)
 
     ! determine which inclusion this point is in, and related geometry
-    call CalcLocation(Z,e,c,dom,Rgp,Pgp,inside) 
+    call CalcLocation(Z,c,e,dom,Rgp,Pgp,inside) 
     v(1:np,1:2) = 0.0
 
     !##################################################
@@ -236,51 +256,52 @@ contains
   end function velCalc
 
   !##################################################
-  subroutine calcLocation(Z,e,c,dom,Rgp,Pgp,inside)
+  subroutine calcLocation(Z,c,e,dom,Rgp,Pgp,inside)
     use constants, only : DP, EYE
     use type_definitions, only : circle, ellipse, domain
     use utility, only : ccosh, cacosh
 
     complex(DP), intent(in) :: Z
-    type(circle), dimension(:), intent(in) :: c
+    type(circle),  dimension(:), intent(in) :: c
     type(ellipse), dimension(:), intent(in) :: e
     type(domain), intent(in) :: dom
     real(DP), dimension(sum(dom%num)), intent(out) :: Rgp, Pgp
     integer, intent(out) :: inside
 
     complex(DP), dimension(sum(dom%num)) :: Zgp
+    complex(DP), dimension(dom%num(2)) :: Ztmp
     integer, dimension(sum(dom%num)) :: inout
 
-    complex(DP) :: tmp
     integer :: nc, ne, ntot, j, first, second, third, k
 
-    nc = dom%num(1); ne = dom%num(2)
-    ntot = nc + ne
+    nc = dom%num(1)
+    ne = dom%num(2)
+    ntot = nc+ne
 
     ! determine if observation point is inside an inclusion
     inout(1:ntot) = 0
-    k = 0;
+    k = 0
 
+    ! components of vector from center of circle to observation point
+    Zgp(1:nc) = Z - cmplx(c(:)%x,c(:)%y,DP)
+    Rgp(1:nc) = abs(Zgp(1:nc))
+    Pgp(1:nc) = atan2(aimag(Zgp(1:nc)), real(Zgp(1:nc)))
     do j = 1, nc
-       ! components of vector from center of circle to observation point
-       Zgp(j) = Z - cmplx(c(j)%x,c(j)%y,DP)
-       Rgp(j) = abs(Zgp(j))
-       Pgp(j) = atan2(aimag(Zgp(j)), real(Zgp(j)))
        if (Rgp(j) <= c(j)%r) then    ! inside or on boundary
-          k = k + 1;
-          inout(k) = j;
+          k = k+1
+          inout(k) = j
        end if
     end do
 
-    do j = nc+1, ntot
-       ! components of vector from center of ellipse to observation point
-       Zgp(j) = Z - cmplx(e(j-nc)%x,e(j-nc)%y,DP)
-       tmp = cacosh(Zgp(j)*exp(-EYE*e(j-nc)%theta)/e(j-nc)%f)
-       Rgp(j) = real(tmp)
-       Pgp(j) = aimag(tmp)
-       if (Rgp(j) <= e(j-nc)%r) then    ! inside or on boundary
-          k = k + 1;
-          inout(k) = j;
+    ! components of vector from center of ellipse to observation point
+    Zgp(nc+1:ntot) = Z - cmplx(e(:)%x,e(:)%y,DP) 
+    Ztmp(1:ne) = cacosh( Zgp(nc+1:ntot)*exp(-EYE*e(:)%theta)/e(:)%f )
+    Rgp(nc+1:ntot) =  real(Ztmp(1:ne))
+    Pgp(nc+1:ntot) = aimag(Ztmp(1:ne))
+    do j = 1, ne
+       if (Rgp(j+nc) <= e(j)%r) then    ! inside or on boundary
+          k = k+1
+          inout(k) = j+nc
        end if
     end do
 
@@ -292,9 +313,9 @@ contains
           inside = inout(1)
        case (2) ! inside two elements
           if (dom%InclUp(inout(1)) == 0) then
-             inside = inout(2);
+             inside = inout(2)
           else
-             inside = inout(1);
+             inside = inout(1)
           end if
        case (3) ! inside three elements
           do first = 1,3
@@ -316,23 +337,19 @@ contains
           stop 
        end select
     else
+       ! no matching elements
        inside = 0
-       Zgp = cmplx(0.0,0.0,DP)
-       Rgp = 0.0_DP; Pgp = 0.0_DP
+       Rgp = -999.
+       Pgp = -999.
     end if
 
     ! move observation points inside ibnd==2 elements
-    do j = 1,nc 
-       if (Rgp(j) < c(j)%r) then
-          Rgp(j) = c(j)%r
-       end if
-    end do
-    do j = 1,ne 
-       if (Rgp(nc+j) < e(j)%r) then
-          Rgp(nc+j) = e(j)%r
-       end if
-    end do
-
+    where (Rgp(1:nc) < c%r .and. c%ibnd == 2)
+       Rgp(1:nc) = c%r
+    end where
+    where (Rgp(nc+1:ntot) < e%r .and. e%ibnd == 2)
+       Rgp(nc+1:ntot) = e%r
+    end where
 
   end subroutine  calcLocation
 
