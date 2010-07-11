@@ -221,14 +221,6 @@ contains
                 ! odd functions not needed for line source, but computed anyway
                 K = e%parent%K
 
-                print *, 'e%G(targ)%Pgm max',maxval(e%G(targ)%Pgm(1:M)),' min',minval(e%G(targ)%Pgm(1:M))
-                print *, 'e%G(targ)%Rgm max',maxval(e%G(targ)%Rgm(1:M)),' min',minval(e%G(targ)%Rgm(1:M))
-
-                print *, 'cemat max',maxval(abs(cemat)),' min',minval(abs(cemat))
-                print *, 'semat max',maxval(abs(semat)),' min',minval(abs(semat))
-                print *, 'RMn   max',maxval(abs(RMn(:,1:,:))),' min',minval(abs(RMn(:,1:,:)))
-                print *, 'RMn0  max',maxval(abs(RMn0(1:,:))),' min',minval(abs(RMn0(1:,:)))
-
                 ! head effects due to ellipse on outside other element
                 r%LHS(1:M,1:N) =       RMn(1:M,0:N-1,0)/spread(RMn0(0:N-1,0),1,M)*cemat(1:M,0:N-1)/e%parent%K ! a_n
                 r%LHS(1:M,N+1:2*N-1) = RMn(1:M,1:N-1,1)/spread(RMn0(1:N-1,1),1,M)*semat(1:M,1:N-1)/e%parent%K ! b_n
@@ -250,8 +242,6 @@ contains
                 RMn0(0,1) = 0.0
                 K = e%K
 
-
-
                 if (e%ibnd == 0) then
                    ! is source the inside of matching element?
                    loN = 2*N
@@ -267,6 +257,12 @@ contains
                 r%LHS(1:M,loN+N:hiN)   = RMn(1:M,1:N-1,1)/spread(RMn0(1:N-1,1),1,M)*semat(1:M,0:N-1)/K ! d_n
 
              end if
+             
+             print '(2(A,ES10.2E3))', '|cemat|  max',maxval(abs(cemat)),' min',minval(abs(cemat))
+             print '(2(A,ES10.2E3))', '|semat|  max',maxval(abs(semat)),' min',minval(abs(semat))
+             print '(2(A,ES10.2E3))', '|RMn|    max',maxval(abs(RMn(:,1:,:))),' min',minval(abs(RMn(:,1:,:)))
+             print '(2(A,ES10.2E3))', '|RMn0|   max',maxval(abs(RMn0(1:,:))),' min',minval(abs(RMn0(1:,:)))
+
           end if
 
           ! for matching, specified total flux, or specified elemental flux target element
@@ -330,7 +326,12 @@ contains
                    loN = 1
                    hiN = 2*N-1
                 end if
+
              end if
+
+             print '(2(A,ES10.2E3))', '|Dcemat| max',maxval(abs(dcemat)),' min',minval(abs(dcemat))
+             print '(2(A,ES10.2E3))', '|Dsemat| max',maxval(abs(dsemat)),' min',minval(abs(dsemat))
+             print '(2(A,ES10.2E3))', '|DRMn|   max',maxval(abs(dRMn(:,1:,:))),' min',minval(abs(dRMn(:,1:,:)))
 
              ! derivative wrt radius of source element
              dPot_dR(1:M,1:N) =       dRMn(1:M,0:N-1,0)/spread(RMn0(0:N-1,0),1,M)*cemat(1:M,0:N-1)

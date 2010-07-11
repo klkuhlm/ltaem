@@ -20,7 +20,7 @@ contains
     use time_mod, only : time
 #ifdef DEBUG
     use utility, only : ccosh
-    use constants, only : EYE
+    use constants, only : EYE, PI
 #endif
 
     complex(DP), intent(in) :: Z  ! location for calculation (complex coordinates)
@@ -34,8 +34,8 @@ contains
 
     real(DP), dimension(sum(dom%num)) :: Rgp, Pgp
     type(element), pointer :: elin => null()
-    integer :: nc, ne, np, j
-    integer :: inside, other
+    integer :: nc, ne, ntot, np, j
+    integer :: in, oth
 #ifdef DEBUG
     complex(DP) :: Ztmp
 #endif
@@ -43,16 +43,25 @@ contains
     call check_np(p,lo,hi)
     nc = dom%num(1)
     ne = dom%num(2)
-    np = size(p,1)
+    ntot = nc+ne
+    np = size(p,dim=1)
 
     ! determine which inclusion this point is in, and related geometry
-    call CalcLocation(Z,c,e,dom,Rgp,Pgp,inside) 
+    call CalcLocation(Z,c,e,dom,Rgp,Pgp,in) 
+   
+#ifdef DEBUG
+    if (any(Rgp < epsilon(0.0) .or. Pgp < -PI .or. Pgp > PI)) then
+       print *, 'headCalc error in results returned from calcLocation Rgp:',Rgp,' Pgp:',Pgp
+       stop
+    end if
+#endif
+
     H(1:np) = 0.0
 
 #ifdef DEBUG
     ! units opened in ltaem_main.f90
     ! which element is each calculation point located in?
-    write(303,*) real(Z),aimag(Z),inside
+    write(303,*) real(Z),aimag(Z),in
     ! write cartesian vectors pointing from center of each element to
     ! calc point for visual checking in gnuplot
     do j = 1,nc
@@ -65,65 +74,69 @@ contains
     write(404,'(/)')
 #endif
 
+    ! TODO
+    ! there should be a way to combine the two branches of this 
+    ! if statement into a more general single branch.
+
     !##################################################
     !! calculation point is outside all elements (in background)
-    if (inside == 0) then
+    if (in == 0) then
        do j = 1,nc
           if (dom%InclUp(j) == 0) then  ! circle is also in background
-             H(1:np) = H(:) + &
-                  & circle_calc(p(:),c(j),lo,hi,Rgp(j),Pgp(j),.false.)
+             H(1:np) = H(1:np) + &
+                  & circle_calc(p,c(j),lo,hi,Rgp(j),Pgp(j),.false.)
           end if
        end do
        
-       do j = 1,ne
-          if (dom%InclUp(nc+j) == 0) then  ! ellipse is also in background
-             H(1:np) = H(:) + &
-                  & ellipse_calc(p(:),e(j),lo,hi,Rgp(nc+j),Pgp(nc+j),.false.)
+       do j = nc+1,ntot
+          if (dom%InclUp(j) == 0) then  ! ellipse is also in background
+             H(1:np) = H(1:np) + &
+                  & ellipse_calc(p,e(j-nc),lo,hi,Rgp(j),Pgp(j),.false.)
           end if
        end do
-       H(1:np) = H(:)/bg%k ! convert to head
+       H(1:np) = H(1:np)/bg%k ! convert to head
 
     !##################################################
     !! calculation point is inside an element (not background)
     else
-       if (inside <= nc) then
+       if (in <= nc) then
           ! calculation point is inside (or on bdry of) a circular element
-          if (c(inside)%calcin) then
-             H(1:np) = H(:) + &
-                  & circle_calc(p(:),c(inside),lo,hi,Rgp(inside),Pgp(inside),.true.)
+          if (c(in)%calcin) then
+             H(1:np) = H(1:np) + &
+                  & circle_calc(p,c(in),lo,hi,Rgp(in),Pgp(in),.true.)
           end if
        else 
           ! calculation point is inside (or on bdry of) an elliptical element
-          if (e(inside-nc)%calcin) then
-             H(1:np) = H(:) + &
-                  & ellipse_calc(p(:),e(inside-nc),lo,hi,Rgp(inside),Pgp(inside),.true.)
+          if (e(in-nc)%calcin) then
+             H(1:np) = H(1:np) + &
+                  & ellipse_calc(p,e(in-nc),lo,hi,Rgp(in),Pgp(in),.true.)
           end if
        end if
 
        ! effects of any other elements which may be inside same circle/ellipse too
-       do other = 1,nc
-          ! other element is a circle
-          if (dom%InclIn(inside,other)) then
-             H(1:np) = H(:) + &
-                  & circle_calc(p(:),c(other),lo,hi,Rgp(other),Pgp(other),.false.)
+       do oth = 1,nc
+          ! oth element is a circle
+          if (dom%InclIn(in,oth)) then
+             H(1:np) = H(1:np) + &
+                  & circle_calc(p,c(oth),lo,hi,Rgp(oth),Pgp(oth),.false.)
           end if
        end do
-       do other = 1,ne
+       do oth = nc+1,ntot
           ! other element is an ellipse
-          if (dom%InclIn(inside,other+nc)) then
-             H(1:np) = H(:) + &
-                  & ellipse_calc(p(:),e(other),lo,hi,Rgp(nc+other),Pgp(nc+other),.false.)
+          if (dom%InclIn(in,oth)) then
+             H(1:np) = H(1:np) + &
+                  & ellipse_calc(p,e(oth-nc),lo,hi,Rgp(oth),Pgp(oth),.false.)
           end if
        end do
        
-       if (inside <= nc) then
-          elin => c(inside)%element     ! circle 
+       if (in <= nc) then
+          elin => c(in)%element     ! circle 
        else
-          elin => e(inside-nc)%element  ! ellipse
+          elin => e(in-nc)%element  ! ellipse
        end if
        
        ! apply potential source term on inside of element
-       H(1:np) = H(:)*elin%areaQ*elin%Ss*time(p(:),elin%time,.true.)/kappa(p(:),elin)**2
+       H(1:np) = H(:)*elin%areaQ*elin%Ss*time(p,elin%time,.true.)/kappa(p,elin)**2
        H(1:np) = H(:)*elin%K ! convert to head
 
        elin => null()
@@ -140,6 +153,9 @@ contains
     use elliptical_elements, only : ellipse_deriv
     use kappa_mod, only : kappa
     use time_mod, only : time
+#ifdef DEBUG
+    use constants, only : PI
+#endif
 
     complex(DP), intent(in) :: Z
     complex(DP), dimension(:), intent(in) :: p
@@ -153,23 +169,37 @@ contains
     real(DP) :: hsq
     real(DP), dimension(sum(dom%num)) :: Rgp, Pgp
     type(element), pointer :: elin => null()
-    integer :: inside, other 
-    integer :: np, nc, ne, j
+    integer :: in, oth 
+    integer :: np, nc, ne, ntot, j
 
     call check_np(p,lo,hi)
-    nc = dom%num(1); ne = dom%num(2)
-    np = size(p,1)
+    nc = dom%num(1)
+    ne = dom%num(2)
+    ntot = nc+ne
+    np = size(p,dim=1)
 
     ! determine which inclusion this point is in, and related geometry
-    call CalcLocation(Z,c,e,dom,Rgp,Pgp,inside) 
+    call CalcLocation(Z,c,e,dom,Rgp,Pgp,in) 
+
+#ifdef DEBUG
+    if (any(Rgp < epsilon(0.0) .or. Pgp < -PI .or. Pgp > PI)) then
+       print *, 'velCalc error in results returned from calcLocation Rgp:',Rgp,' Pgp:',Pgp
+       stop
+    end if
+#endif
+
     v(1:np,1:2) = 0.0
+
+    ! TODO
+    ! there should be a way to combine the two branches of this 
+    ! if statement into a more general single branch.
 
     !##################################################
     !! calculation point is outside all inclusions
-    if (inside == 0) then
+    if (in == 0) then
        do j = 1,nc
           if (dom%InclUp(j) == 0) then  ! circle is also in background
-             dH(1:np,1:2) = circle_deriv(p(:),c(j),lo,hi,Rgp(j),Pgp(j),.false.)
+             dH(1:np,1:2) = circle_deriv(p,c(j),lo,hi,Rgp(j),Pgp(j),.false.)
              ! project onto X and Y
              v(1:np,1) = v(:,1) + &
                   & cos(Pgp(j))*dH(:,1) - sin(Pgp(j))*dH(:,2)/Rgp(j) ! x
@@ -178,77 +208,72 @@ contains
           end if
        end do
        
-       do j = 1,ne
-          if (dom%InclUp(nc+j) == 0) then  ! ellipse is also in background
-             dH(1:np,1:2) = ellipse_deriv(p(:),e(j),lo,hi,Rgp(nc+j),Pgp(nc+j),.false.)
+       do j = nc+1,ntot
+          if (dom%InclUp(j) == 0) then  ! ellipse is also in background
+             dH(1:np,1:2) = ellipse_deriv(p,e(j-nc),lo,hi,Rgp(j),Pgp(j),.false.)
              ! project onto X and Y
-             hsq = e(j)%f/2.0_DP*(cosh(2.0_DP*Rgp(nc+j)) - cos(2.0_DP*Pgp(nc+j)))
-             v(1:np,1) = v(:,1) + &
-                  & (sinh(Rgp(nc+j))*cos(Pgp(nc+j))*dH(:,1) - &
-                  &  cosh(Rgp(nc+j))*sin(Pgp(nc+j))*dH(:,2))/hsq
-             v(1:np,2) = v(:,2) + &
-                  & (cosh(Rgp(nc+j))*sin(Pgp(nc+j))*dH(:,1) + &
-                  &  sinh(Rgp(nc+j))*cos(Pgp(nc+j))*dH(:,2))/hsq
+             hsq = e(j-nc)%f/2.0_DP*(cosh(2.0_DP*Rgp(j)) - cos(2.0_DP*Pgp(j)))
+             v(1:np,1) = v(:,1) + (sinh(Rgp(j))*cos(Pgp(j))*dH(:,1) - &
+                                &  cosh(Rgp(j))*sin(Pgp(j))*dH(:,2))/hsq
+             v(1:np,2) = v(:,2) + (cosh(Rgp(j))*sin(Pgp(j))*dH(:,1) + &
+                                &  sinh(Rgp(j))*cos(Pgp(j))*dH(:,2))/hsq
           end if
        end do
-       v(1:np,1:2) = v(:,:)/bg%por
+       v(1:np,1:2) = v(1:np,1:2)/bg%por
        
     !##################################################
     else
-       if (inside <= nc) then
+       if (in <= nc) then
           !! calculation point is inside (or on bdry of) a circular element
-          if (c(inside)%calcin) then
-             dH(1:np,1:2) = circle_deriv(p(:),c(inside),lo,hi,Rgp(inside),Pgp(inside),.true.)
+          if (c(in)%calcin) then
+             dH(1:np,1:2) = circle_deriv(p,c(in),lo,hi,Rgp(in),Pgp(in),.true.)
              v(1:np,1) = v(:,1) + &
-                  & cos(Pgp(inside))*dH(:,1) - sin(Pgp(inside))*dH(:,2)/Rgp(inside)
+                  & cos(Pgp(in))*dH(:,1) - sin(Pgp(in))*dH(:,2)/Rgp(in)
              v(1:np,2) = v(:,2) + &
-                  & sin(Pgp(inside))*dH(:,1) + cos(Pgp(inside))*dH(:,2)/Rgp(inside)
+                  & sin(Pgp(in))*dH(:,1) + cos(Pgp(in))*dH(:,2)/Rgp(in)
           end if
        else 
           ! calculation point is inside or on the boundary of an elliptical element
-          if (e(inside-nc)%calcin) then
-             dH(1:np,1:2) = ellipse_deriv(p(:),e(inside-nc),lo,hi,Rgp(inside),Pgp(inside),.true.)
-             hsq = e(inside-nc)%f/2.0_DP*(cosh(2.0_DP*Rgp(inside)) - cos(2.0_DP*Pgp(inside)))
-             v(1:np,1) = v(:,1) + &
-                  & (sinh(Rgp(inside))*cos(Pgp(inside))*dH(:,1) - &
-                  &  cosh(Rgp(inside))*sin(Pgp(inside))*dH(:,2))/hsq
-             v(1:np,2) = v(:,2) + &
-                  & (cosh(Rgp(inside))*sin(Pgp(inside))*dH(:,1) + &
-                  &  sinh(Rgp(inside))*cos(Pgp(inside))*dH(:,2))/hsq
+          if (e(in-nc)%calcin) then
+             dH(1:np,1:2) = ellipse_deriv(p,e(in-nc),lo,hi,Rgp(in),Pgp(in),.true.)
+             hsq = e(in-nc)%f/2.0_DP*(cosh(2.0_DP*Rgp(in)) - cos(2.0_DP*Pgp(in)))
+             v(1:np,1) = v(:,1) + (sinh(Rgp(in))*cos(Pgp(in))*dH(:,1) - &
+                                &  cosh(Rgp(in))*sin(Pgp(in))*dH(:,2))/hsq
+             v(1:np,2) = v(:,2) + (cosh(Rgp(in))*sin(Pgp(in))*dH(:,1) + &
+                                &  sinh(Rgp(in))*cos(Pgp(in))*dH(:,2))/hsq
           end if
        end if
        ! effects of any other elements which may be inside same circle/ellipse too
-       do other = 1,nc
+       do oth = 1,nc
           ! other element is a circle
-          if (dom%InclIn(inside,other)) then
-             dH(1:np,1:2) = circle_deriv(p(:),c(other),lo,hi,Rgp(other),Pgp(other),.false.)
+          if (dom%InclIn(in,oth)) then
+             dH(1:np,1:2) = circle_deriv(p,c(oth),lo,hi,Rgp(oth),Pgp(oth),.false.)
              v(1:np,1) = v(:,1) + &
-                  & cos(Pgp(other))*dH(:,1) - sin(Pgp(other))*dH(:,2)/Rgp(other)
+                  & cos(Pgp(oth))*dH(:,1) - sin(Pgp(oth))*dH(:,2)/Rgp(oth)
              v(1:np,2) = v(:,2) + &
-                  & sin(Pgp(other))*dH(:,1) + cos(Pgp(other))*dH(:,2)/Rgp(other)
+                  & sin(Pgp(oth))*dH(:,1) + cos(Pgp(oth))*dH(:,2)/Rgp(oth)
           end if
        end do
-       do other = 1,ne
+       do oth = nc+1,ntot
           ! other element is an ellipse
-          if (dom%InclIn(inside,other+nc)) then
-             dH(1:np,1:2) = ellipse_deriv(p(:),e(other),lo,hi,Rgp(nc+other),Pgp(nc+other),.false.)
-             hsq = e(other)%f/2.0_DP*(cosh(2.0_DP*Rgp(nc+other)) - cos(2.0_DP*Pgp(nc+other)))
-             v(1:np,1) = v(:,1) + (&
-                  & sinh(Rgp(nc+other))*cos(Pgp(nc+other))*dH(:,1) - &
-                  & cosh(Rgp(nc+other))*sin(Pgp(nc+other))*dH(:,2))/hsq
-             v(1:np,2) = v(:,2) + &
-                  & (cosh(Rgp(nc+other))*sin(Pgp(nc+other))*dH(:,1) + &
-                  &  sinh(Rgp(nc+other))*cos(Pgp(nc+other))*dH(:,2))/hsq
+          if (dom%InclIn(in,oth)) then
+             dH(1:np,1:2) = ellipse_deriv(p,e(oth-nc),lo,hi,Rgp(oth),Pgp(oth),.false.)
+             hsq = e(oth-nc)%f/2.0_DP*(cosh(2.0_DP*Rgp(oth)) - cos(2.0_DP*Pgp(oth)))
+             v(1:np,1) = v(:,1) + (sinh(Rgp(oth))*cos(Pgp(oth))*dH(:,1) - &
+                                 & cosh(Rgp(oth))*sin(Pgp(oth))*dH(:,2))/hsq
+             v(1:np,2) = v(:,2) + (cosh(Rgp(oth))*sin(Pgp(oth))*dH(:,1) + &
+                                &  sinh(Rgp(oth))*cos(Pgp(oth))*dH(:,2))/hsq
           end if
        end do
        
-       if (inside <= nc) then
-          elin => c(inside)%element     ! circle 
+       if (in <= nc) then
+          elin => c(in)%element     ! circle 
        else
-          elin => e(inside-nc)%element  ! ellipse
+          elin => e(in-nc)%element  ! ellipse
        end if
 
-       v(1:np,1:2) = v(:,:)/elin%por
+       ! area source has no flux effects, since it is a constant WRT space
+       v(1:np,1:2) = v(1:np,1:2)/elin%por
 
        elin => null()
 
