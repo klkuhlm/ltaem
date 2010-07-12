@@ -45,54 +45,61 @@ contains
     endif   
     
     ! solution-specific and background aquifer parameters
-    read(15,*) sol%particle, sol%contour, sol%output, &
+    read(15,*,iostat=ierr) sol%particle, sol%contour, sol%output, &
          & sol%outFname, sol%coeffFName, sol%elemHfName, sol%geomfName
+    if (ierr /= 0) stop 'error on line 1 of input file'
     ! types:: logical, logical, integer, 4*string
-    read(15,*) bg%por, bg%k, bg%ss, bg%leakFlag, &
-         & bg%aquitardK, bg%aquitardSs, bg%aquitardb, bg%ms
-    ! reals checked here, bg%ms checked in ellipse section, leakflag checked elsewhere
-    if (any([bg%por,bg%k,bg%ss] < epsilon(0.0))) then
-       print *, 'bg%por, bg%k, bg%ss &
-            &must all be > 0.0 :',bg%por,bg%k,bg%ss
-       stop
-    end if
-    if (any([bg%aquitardK,bg%aquitardSs,bg%aquitardb] < epsilon(0.0))) then
-       print *, 'bg%aquitardK, bg%aquitardSs, bg%aquitardb &
-            &must all be > 0.0 :',bg%aquitardK,bg%aquitardSs,bg%aquitardb 
-       stop
-    end if
-
     ! some simple debugging of problem-type / output-type combinations
     if (sol%output < 1 .or. (sol%output > 5 .and. sol%output /= 10 &
          & .and. sol%output /= 11)) then
-       print *, 'sol%output must be in {1,2,3,4,5,10,11} ',sol%output
+       print *, 'input file (line 1) sol%output must be in {1,2,3,4,5,10,11} ',sol%output
        stop
     end if
     if ((sol%output < 4 .or. sol%output > 5) .and. sol%particle) then
-       print *, 'if sol%particle==.True., sol%output should &
+       print *, 'input file (line 1) if sol%particle==.True., sol%output should &
             &be in {4,5}',sol%output,sol%particle
        stop
     elseif (.not. sol%particle .and. (sol%output == 4 .or. sol%output == 5)) then
-       print *, 'sol%output should only be in {4,5} if &
+       print *, 'input file (line 1) sol%output should only be in {4,5} if &
             &sol%particle==.True.',sol%output,sol%particle
        stop
     end if
     if ((sol%output == 3 .or. sol%output == 11) .and. sol%contour) then
-       print *, 'sol%output should not be in {3,11} when contour &
+       print *, 'input file (line 1) sol%output should not be in {3,11} when contour &
             &output is selected',sol%output,sol%contour
        stop
     elseif ((sol%output /= 3 .and. sol%output /= 11) .and. .not. sol%contour) then
-       print *, 'sol%output should be in {3,11} when hydrograph &
+       print *, 'input file (line 1) sol%output should be in {3,11} when hydrograph &
             &(non-contour) output is selected',sol%output,sol%contour
        stop
     end if
 
-    read(15,*) bg%Sy, bg%kz, bg%unconfinedFlag, bg%b
-    if (any([bg%Sy, bg%kz,bg%b] < epsilon(0.0))) then
-       print *, 'bg%Sy, bg%kz, bg%b must all be > 0.0 :',bg%Sy,bg%kz,bg%b
+
+    read(15,*,iostat=ierr) bg%por, bg%k, bg%ss, bg%leakFlag, &
+         & bg%aquitardK, bg%aquitardSs, bg%aquitardb, bg%ms
+    if (ierr /= 0) stop 'error on line 2 of input file'
+    ! reals checked here, bg%ms checked in ellipse section, leakflag checked elsewhere
+    if (any([bg%por,bg%k,bg%ss] < epsilon(0.0))) then
+       print *, 'input file (line 2) bg%por, bg%k, bg%ss &
+            &must all be > 0.0 :',bg%por,bg%k,bg%ss
+       stop
+    end if
+    if (any([bg%aquitardK,bg%aquitardSs,bg%aquitardb] < epsilon(0.0))) then
+       print *, 'input file (line 2) bg%aquitardK, bg%aquitardSs, bg%aquitardb &
+            &must all be > 0.0 :',bg%aquitardK,bg%aquitardSs,bg%aquitardb 
        stop
     end if
 
+
+    read(15,*,iostat=ierr) bg%Sy, bg%kz, bg%unconfinedFlag, bg%b
+    if (ierr /= 0) stop 'error on line 3 of input file'
+    if (any([bg%Sy, bg%kz,bg%b] < epsilon(0.0))) then
+       print *, 'input file (line 3) bg%Sy, bg%kz, bg%b must all be > 0.0 :', &
+            & bg%Sy,bg%kz,bg%b
+       stop
+    end if
+
+    ! echo input from first 3 lines to file
     write(16,'(2(1L,1X),I0,5(1X,A))') sol%particle, sol%contour, sol%output, &
          & trim(sol%outFname), trim(sol%coeffFName), trim(sol%elemHfName), &
          & trim(sol%geomFname),'  ||    particle?, contour?, output,// &
@@ -103,15 +110,24 @@ contains
     write(16,'(2(ES11.5,1X),1L,1X,ES11.5,A)') bg%Sy, bg%kz, bg%unconfinedFlag, &
          & bg%b, '  || Sy, Kz, unconfined?, BGb'
     
+
     ! desired solution points/times
-    read(15,*) sol%nx, sol%ny, sol%nt
+    read(15,*,iostat=ierr) sol%nx, sol%ny, sol%nt
+    if (ierr /= 0) stop 'error on line 4 of input file'
+    if (any([sol%nx,sol%ny,sol%nt] < 1)) then
+       print *, 'input file (line 4) sol%nx, sol%ny, sol%nt must be > 0:',&
+             & sol%nx, sol%ny, sol%nt
+       stop
+    end if
     allocate(sol%x(sol%nx), sol%y(sol%ny), sol%t(sol%nt), stat=ierr)
     if (ierr /= 0) stop 'ltaem_io.f90 error allocating: sol%x,sol%y,sol%t'
-    read(15,*) sol%x(:)
-    read(15,*) sol%y(:)
+    read(15,*,iostat=ierr) sol%x(:)
+    if (ierr /= 0) stop 'error on line 5 (sol%x(:)) of input file'
+    read(15,*,iostat=ierr) sol%y(:)
+    if (ierr /= 0) stop 'error on line 6 (sol%y(:)) of input file'
     do j=1,sol%nt  !! modified to accommidate pest (make time a column)
        read(15,*,iostat=ierr) sol%t(j)
-       if(ierr /= 0) write(*,'(A,I0)') 'ERROR reading time from input',j
+       if (ierr /= 0)  stop 'error reading time from input (> line 6)'
     end do
     if (.not. sol%particle) then
        fmt(1) = '(    (ES12.5,1X),A) '
@@ -863,9 +879,7 @@ contains
        write(40,'(A)') '# points along circumference of circular and elliptical elements'
        do i = 1,nc
           write(40,'(A,I0)') '# circular element ',i
-          do j = 1,c(i)%M
-             write(40,fmt)  c(i)%Zom(j)
-          end do
+          write(40,fmt)  (c(i)%Zom(j), j=1,c(i)%M)
           if (c(i)%M > 1) then
              ! joins circle back up with beginning for plotting
              write(40,fmt)  c(i)%Zom(1)
@@ -875,9 +889,7 @@ contains
 
        do i = 1,ne
           write(40,'(A,I0)') '# elliptical element ',i
-          do j = 1,e(i)%M
-             write(40,fmt)  e(i)%Zom(j)
-          end do
+          write(40,fmt)  (e(i)%Zom(j), j=1,e(i)%M)
           if (e(i)%M > 1) then
              ! joins ellipse back up with beginning for plotting
              write(40,fmt)  e(i)%Zom(1)

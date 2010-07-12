@@ -57,7 +57,8 @@ program ltaem_main
   if (ierr /= 0) stop 'ltaem_main.f90 error allocating: run'
   forall(i=0:2*sol%m) run(i+1)=i
 
-  ! independent of most choices
+  ! compute element geometry from input
+  ! read in element heirarchy data from file
   call DistanceAngleCalcs(c,e,bg,dom,sol)
 
 111 continue ! come back here if error opening restart file
@@ -67,7 +68,7 @@ program ltaem_main
      if (sol%particle) then   ! particle tracking
         
         stop 'no particle tracking implementation yet'
-        ! not worrying about particle tracking right now
+        ! TODO not worrying about particle tracking right now
         ! need to update the code used before
         
      !^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
