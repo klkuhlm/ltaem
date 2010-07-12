@@ -154,13 +154,15 @@ contains
     deallocate(res,stat=ierr)
     if (ierr /= 0) stop 'solution.f90: error deallocating res'
 
-    ! use LAPACK routine to solve least-squares via Q-R decomposition
-    call ZGELS('N',bigM,bigN,1,A(:,:),bigM,b(:),bigM,WORK,IWORK,ierr)
-    if (ierr /= 0) then
-       write(*,'(A,I0,2(A,ES10.3))') 'ZGELS error: ',ierr,' p:',real(p),'+i',aimag(p)
-       stop 
+    if (any(c%match) .or. any(e%match)) then
+       ! use LAPACK routine to solve least-squares via Q-R decomposition
+       call ZGELS('N',bigM,bigN,1,A(:,:),bigM,b(:),bigM,WORK,IWORK,ierr)
+       if (ierr /= 0) then
+          write(*,'(A,I0,2(A,ES10.3))') 'ZGELS error: ',ierr,' p:',real(p),'+i',aimag(p)
+          stop 
+       end if
     end if
-       
+    
     ! put result into local coeff variables
     do i=1,nc
        ! circles
