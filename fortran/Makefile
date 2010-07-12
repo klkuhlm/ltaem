@@ -36,7 +36,7 @@ DFLAGS=-O0 -Wall -Wextra -fbacktrace
 DFLAGS+=-fbounds-check
 #DFLAGS+=-frange-check -fcheck=all -finit-real=snan -finit-integer=-99999 -fbacktrace
 #DFLAGS+=-fwhole-file -fpack-derived -frepack-arrays
-DFLAGS+=-cpp -DDEBUG 
+DFLAGS+=-cpp #-DDEBUG 
 #DFLAGS+=-fdump-rtl-expand
 PFLAGS=-O0 -g
 LINKFLAG=-O0 -g
@@ -53,10 +53,6 @@ main: $(OBJS) $(MAIN)
 # this external library tends to produce spurious errors about implicit type conversions
 cbessel.o : ./external/cbessel.f90
 	$(F90) -c $(DFLAGS) -o $@ $<
-
-# need to use pre-processor on this file
-mathieu_functions2.o : ./mathieu_functions2.f90
-	$(F90) -c -cpp  $(FLAGS) -o $@ $<
 
 %.o: %.f
 	$(F90) -c $(FLAGS) -o $@ $<
