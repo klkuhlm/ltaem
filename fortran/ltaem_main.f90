@@ -45,8 +45,8 @@ program ltaem_main
 
   ! read in data, initialize variables, allocate major structs
   call readInput(sol,dom,bg,c,e,part)
-  nc = size(c,1)
-  ne = size(e,1)
+  nc = size(c,dim=1)
+  ne = size(e,dim=1)
 
   ! nudge times on 'edge' of logcycle down a tiny bit to increase accuracy
   where (abs(nint(sol%t(:)) - sol%t(:)) < epsilon(sol%t(:)))

@@ -270,7 +270,7 @@ contains
     ne = dom%num(2)
     ntot = sum(dom%num)
 
-    ! later I will write code to do this automatically
+    ! TODO later I will write code to do this automatically
     open(unit=75, file=sol%elemhfname, status='old', action='read', iostat=ierr)
     if (ierr /= 0) then
        write(*,'(A)') 'ElementHierarchy: ERROR opening file '//sol%elemHFName// &
@@ -301,12 +301,12 @@ contains
     do line = 1,ntot
        read(75,*) dom%InclBg(line,1:ntot)
     end do    
+    close(75)
+
     do line = 1,ntot
        write(57,'('//chint//'(L1,1X),2(A,I0),A)') &
             & dom%InclBg(line,1:ntot), 'InclBg(',line,',1:',ntot,')'
     end do
-
-    close(75)
     close(57)
   end subroutine ElementHierarchy
 

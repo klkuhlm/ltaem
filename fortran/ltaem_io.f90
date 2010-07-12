@@ -843,47 +843,50 @@ contains
     use constants, only : DP
     use type_definitions, only : circle, ellipse, solution
     
-    type(circle), dimension(:), intent(in) :: c
+    type(circle),  dimension(:), intent(in) :: c
     type(ellipse), dimension(:), intent(in) :: e
     type(solution), intent(in) :: s
-    integer :: nc, ne, ntot, i, j, ierr
+    integer :: nc, ne, i, j, ierr
+    character(14) :: fmt
 
-    nc = size(c,1); ne = size(e,1)
-    ntot = nc + ne
+    nc = size(c,dim=1)
+    ne = size(e,dim=1)
+    fmt = '(2(ES13.5,1X))'
 
     ! write matching points to file
     open(unit=40, file=s%geomfname, status='replace', action='write', iostat=ierr)
     if (ierr /= 0) then
-       write(*,'(2A)') 'ltaem_io.f90 error opening output file for writing &
+       ! non-fatal error
+       write(*,'(2A)') 'WARNING: ltaem_io.f90 error opening output file for writing &
             &element matching locations ',s%geomFname
-       stop
-    end if
-    
-    write(40,'(A)') '# points along circumference of circular and elliptical elements'
-    do i = 1,nc
-       write(40,'(A,I0)') '# circular element ',i
-       do j = 1,c(i)%M
-          write(40,'(2(ES13.5,1X))')  c(i)%Zom(j)
+    else    
+       write(40,'(A)') '# points along circumference of circular and elliptical elements'
+       do i = 1,nc
+          write(40,'(A,I0)') '# circular element ',i
+          do j = 1,c(i)%M
+             write(40,fmt)  c(i)%Zom(j)
+          end do
+          if (c(i)%M > 1) then
+             ! joins circle back up with beginning for plotting
+             write(40,fmt)  c(i)%Zom(1)
+          end if
+          write(40,'(/)')    
        end do
-       if (c(i)%M > 1) then
-          ! joins circle back up with beginning for plotting
-          write(40,'(2(ES13.5,1X))')  c(i)%Zom(1)
-       end if
-       write(40,'(/)')    
-    end do
 
-    do i = 1,ne
-       write(40,'(A,I0)') '# elliptical element ',i
-       do j = 1,e(i)%M
-          write(40,'(2(ES13.5,1X))')  e(i)%Zom(j)
+       do i = 1,ne
+          write(40,'(A,I0)') '# elliptical element ',i
+          do j = 1,e(i)%M
+             write(40,fmt)  e(i)%Zom(j)
+          end do
+          if (e(i)%M > 1) then
+             ! joins ellipse back up with beginning for plotting
+             write(40,fmt)  e(i)%Zom(1)
+          end if
+          write(40,'(/)')    
        end do
-       if (e(i)%M > 1) then
-          ! joins ellipse back up with beginning for plotting
-          write(40,'(2(ES13.5,1X))')  e(i)%Zom(1)
-       end if
-       write(40,'(/)')    
-    end do
-    write(40,'(A)') '# EOF'
-    close(40)
+       write(40,'(A)') '# EOF'
+       close(40)
+    end if
+
   end subroutine writeGeometry
 end module file_ops
