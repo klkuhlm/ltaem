@@ -456,20 +456,35 @@ contains
           n0 = 1   ! inside of specified boundary circle
        end if
        kap(1:np) = kappa(p(1:np),c%element)
-       BRgp(1:np,0:N-1) = bK(Rgp*kap(1:np),N)
-       BR0(1:np,0:N-1) =  bK(c%r*kap(1:np),N)
-    else
-       n0 = 1
-       kap(1:np) = kappa(p(1:np),c%parent)
        BRgp(1:np,0:N-1) = bI(Rgp*kap(1:np),N)
        BR0(1:np,0:N-1) =  bI(c%r*kap(1:np),N)
+       
+!!$       print *, 'BRgp  max:',maxval(abs(BRgp)),' min:',minval(abs(BRgp))
+!!$       print *, 'BR0   max:',maxval(abs(BR0)), ' min:',minval(abs(BR0))
+!!$       print *, 'coeff max:',maxval(abs(c%coeff(lo:hi,n0:n0+2*N-2))), &
+!!$            &' min:',minval(abs(c%coeff(lo:hi,n0:n0+2*N-2)))
+    else
+       n0 = 1 
+       kap(1:np) = kappa(p(1:np),c%parent)
+       BRgp(1:np,0:N-1) = bK(Rgp*kap(1:np),N)
+       BR0(1:np,0:N-1) =  bK(c%r*kap(1:np),N)
     end if
+
     aa(1:np,0:N-1) = c%coeff(lo:hi,n0:n0+N-1)
     bb(1:np,0) = 0.0 ! insert zero to make odd/even same shape
     bb(1:np,1:N-1) = c%coeff(lo:hi,n0+N:n0+2*N-2)
+
     H(1:np) = sum(BRgp(1:np,0:N-1)/BR0(1:np,0:N-1)* &
          & ( aa(1:np,0:N-1)*spread(cos(vr(0:N-1)*Pgp),1,np) + &
          &   bb(1:np,0:N-1)*spread(sin(vr(0:N-1)*Pgp),1,np) ),dim=2)
+    
+!!$    if (inside) then
+!!$       print *, 'H ev:',sum(BRgp(1:np,0:N-1)/BR0(1:np,0:N-1)* &
+!!$         & ( aa(1:np,0:N-1)*spread(cos(vr(0:N-1)*Pgp),1,np) ),dim=2)
+!!$       print *, 'H od:',sum(BRgp(1:np,0:N-1)/BR0(1:np,0:N-1)* &
+!!$         & ( bb(1:np,0:N-1)*spread(sin(vr(0:N-1)*Pgp),1,np) ),dim=2)
+!!$    end if
+
   end function circle_calc
 
   function circle_deriv(p,c,lo,hi,Rgp,Pgp,inside) result(dH)
@@ -505,19 +520,21 @@ contains
           n0 = 1   ! inside of specified boundary circle
        end if
        kap(1:np) = kappa(p(:),c%element)
-       call dBK(Rgp*kap(1:np),N,BRgp(1:np,0:N-1),dBRgp(1:np,0:N-1))
+       call dBI(Rgp*kap(1:np),N,BRgp(1:np,0:N-1),dBRgp(1:np,0:N-1))
        dBRgp(1:np,0:N-1) = spread(kap(1:np),dim=2,ncopies=N)*dBRgp(1:np,0:N-1)
-       BR0(1:np,0:N-1) = bK(c%r*kap(1:np),N)
+       BR0(1:np,0:N-1) = bI(c%r*kap(1:np),N)
     else
        n0 = 1
        kap(1:np) = kappa(p(:),c%parent)
-       call dBI(Rgp*kap(:),N,BRgp(1:np,0:N-1),dBRgp(1:np,0:N-1))
+       call dBK(Rgp*kap(:),N,BRgp(1:np,0:N-1),dBRgp(1:np,0:N-1))
        dBRgp(1:np,0:N-1) = spread(kap(1:np),dim=2,ncopies=N)*dBRgp(1:np,0:N-1)
-       BR0(1:np,0:N-1) =  bI(c%r*kap(1:np),N)
+       BR0(1:np,0:N-1) =  bK(c%r*kap(1:np),N)
     end if
+
     aa(1:np,0:N-1) = c%coeff(lo:hi,n0:n0+N-1)
     bb(1:np,0) = 0.0 ! insert zero to make odd/even same shape
     bb(1:np,1:N-1) = c%coeff(lo:hi,n0+N:n0+2*N-2)
+
     ! dPot_dR
     dH(1:np,1) = sum(dBRgp(1:np,0:N-1)/BR0(1:np,0:N-1)* &  
          & ( aa(1:np,0:N-1)*spread(cos(vr(0:N-1)*Pgp),1,np) + &

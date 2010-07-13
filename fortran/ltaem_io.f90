@@ -141,7 +141,12 @@ contains
     endif
 
     ! inverse Laplace transform parameters
-    read(15,*) sol%alpha, sol%tol, sol%m
+    read(15,*,iostat=ierr) sol%alpha, sol%tol, sol%m
+    if (ierr /= 0) stop 'error on line 7 of input file'
+    if (sol%M < 1) then
+       print *, 'input file (line 7) sol%M must be > 0: ',sol%M
+       stop
+    end if
     if (sol%tol < epsilon(sol%tol)) then
        sol%tol = epsilon(sol%tol)
        write(*,'(A,ES11.5)') 'WARNING: increased INVLAP solution tolerance to ',sol%tol 

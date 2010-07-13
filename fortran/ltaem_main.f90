@@ -98,7 +98,7 @@ program ltaem_main
      end if
 
      ! only do matching if there is at least one matching element
-     if(count(e(:)%match) + count(c(:)%match) > 0) then
+     if(any(e(:)%match) .or. any(c(:)%match)) then
         
         ! calculate coefficients for each value of Laplace parameter
         ! ** common between particle tracking and contours/hydrographs **
@@ -112,12 +112,12 @@ program ltaem_main
            call ellipse_init(e,bg,reshape(s,[tnP]))
         end if
 
-        idx = 0
+        idx = 0 ! initialize index
         do ilogt = iminlogt,imaxlogt-1
            write(*,'(A,I0,A)') 'log t= 10^(',ilogt,')'
            if (nt(ilogt) > 0) then
               do j = 1,2*sol%m+1
-                 idx = idx+ 1
+                 idx = idx+1
                  write(*,'(I0,1X,2(A,ES10.3),A)') j, '(',real(s(j,ilogt)),',',aimag(s(j,ilogt)),')'
                  call matrix_solution(c,e,dom,sol,s(j,ilogt),idx)
               end do
@@ -150,7 +150,7 @@ program ltaem_main
 
   else ! do not re-calculate coefficients (this only makes sense if num matching elements > 0)
 
-     if(count(e(:)%match) + count(c(:)%match) > 0) then
+     if(any(e(:)%match) .or. any(c(:)%match)) then
         open(unit=77, file=sol%coefffname, status='old', action='read', iostat=ierr)
         if (ierr /= 0) then
            ! go back and recalc if no restart file
@@ -159,7 +159,7 @@ program ltaem_main
            goto 111
         end if
 
-        read(77,*) !! not doing anything with input file, but maybe I should eventually
+        read(77,*) !! TODO not doing anything with input file, but I should
         read(77,*) iminlogt,imaxlogt,nc,ne ! scalars
         allocate(s(2*sol%m+1,iminlogt:imaxlogt-1), nt(iminlogt:imaxlogt-1), &
              & tee(iminlogt:imaxlogt-1),stat=ierr)
@@ -196,12 +196,11 @@ program ltaem_main
            call ellipse_init(e,bg,reshape(s,[tnp]))
         end if
 
-        ! read needed data calculated in previous run from file
         write(*,'(A)') 'matching results successfully read from file'
      end if
 
-  end if ! re-calculate coefficients
-
+  end if
+  
   !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   if(sol%contour) then ! contour output (x,y locations outerproduct of x,y vectors)
 
@@ -216,14 +215,15 @@ program ltaem_main
 #endif
 
      do j = 1,sol%nx
-        write (*,'(A,ES14.6E1)') 'x: ',sol%x(j)
+        write (*,'(A,ES12.4E1)') 'x: ',sol%x(j)
         do i = 1,sol%ny
 
            calcZ = cmplx(sol%x(j),sol%y(i),DP)
 
-           !! compute f(p) for all values of p -- not just one log cycle of time -- at this location 
-           sol%hp(:) =  headCalc(calcZ,reshape(s,[tnp]),1,tnp,dom,c,e,bg)
-           sol%vp(:,:) = velCalc(calcZ,reshape(s,[tnp]),1,tnp,dom,c,e,bg)
+           !! compute f(p) for all values of p
+           !! not just one log cycle of time -- at this location 
+           sol%hp(1:tnp) =    headCalc(calcZ,reshape(s,[tnp]),1,tnp,dom,c,e,bg)
+           sol%vp(1:tnp,1:2) = velCalc(calcZ,reshape(s,[tnp]),1,tnp,dom,c,e,bg)
 
            !! invert solutions one log-cycle of t at a time
            do ilogt = iminlogt,imaxlogt-1
@@ -233,11 +233,13 @@ program ltaem_main
               hit = sum(nt(iminlogt:ilogt))
               
               !! group of Laplace parameters corresponding to this logcycle
-              lop = (ilogt - iminlogt)*size(s,1) + 1
-              hip = lop + size(s,1) - 1
+              lop = (ilogt - iminlogt)*size(s,dim=1) + 1
+              hip = lop + size(s,dim=1) - 1
 
-              sol%h(j,i,lot:hit) =   invlap(sol%t(lot:hit),tee(ilogt),sol%hp(lop:hip),sol%INVLT)
-              sol%v(j,i,lot:hit,:) = invlap(sol%t(lot:hit),tee(ilogt),sol%vp(lop:hip,:),sol%INVLT)
+              sol%h(j,i,lot:hit) =     invlap(sol%t(lot:hit), tee(ilogt), &
+                   & sol%hp(lop:hip), sol%INVLT)
+              sol%v(j,i,lot:hit,1:2) = invlap(sol%t(lot:hit), tee(ilogt), &
+                   & sol%vp(lop:hip,1:2), sol%INVLT)
            end do
         end do
      end do
@@ -278,18 +280,6 @@ program ltaem_main
 
   !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   ! cleanup memory and write output to file
-
-  if (sol%particle) then 
-     ! make sure correct output if doing particle tracking
-     if (sol%output /= 4 .and. sol%output /= 5) then
-        sol%output = 4
-     end if
-  else
-     ! reset back to gnuplot output if not particle tracking
-     if (sol%output == 4) sol%output = 1
-  end if
-
-  ! call subroutine to write output to file
   call writeResults(sol,part)
 
   deallocate(sol%h,sol%hp,sol%v,sol%vp, stat=ierr)

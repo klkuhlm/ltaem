@@ -129,7 +129,7 @@ contains
           ! put specified flux effects on RHS
 
           ! &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-          ! this area should be computed differently than 2*pi????
+          ! TODO this area should be computed differently than 2*pi????
           ! &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
           r%RHS(1:M) = time(p,e%time,.false.)*e%bdryQ/(2.0*PI*e%r)
        end select
