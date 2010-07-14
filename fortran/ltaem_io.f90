@@ -13,7 +13,7 @@ contains
   ! data structures used to store data.
   subroutine readInput(sol,dom,bg,c,e,p)
     use type_definitions, only : solution, particle, domain, element, circle, ellipse
-    use constants, only : DP, lenFN
+    use constants, only : DP, lenFN, PI
 
     type(solution), intent(inout) :: sol
     type(particle), intent(out), allocatable :: p(:)
@@ -25,7 +25,7 @@ contains
     character(4) :: chint
     character(20), dimension(3) :: fmt
     character(46) :: lfmt = '(I0,1X,    (ES12.5,1X),A,    (ES12.5,1X),A,I0)'
-    character(lenFN+5) :: echofname
+    character(lenFN+5) :: echofname, circleFname, ellipseFname, particleFname
     integer :: ierr,j,ntot,nC,nE  ! #elements, #circles, #ellipses
 
     open(unit=15, file=sol%infname, status='old', action='read', iostat=ierr)
@@ -43,12 +43,13 @@ contains
        ! add a file variable to set Emacs to auto-revert mode
        write(16,'(A)') '-*-auto-revert-*-'
     endif   
-    
+
+
     ! solution-specific and background aquifer parameters
-    read(15,*,iostat=ierr) sol%particle, sol%contour, sol%output, &
+    read(15,*,iostat=ierr) sol%calc, sol%particle, sol%contour, sol%output, &
          & sol%outFname, sol%coeffFName, sol%elemHfName, sol%geomfName
     if (ierr /= 0) stop 'error on line 1 of input file'
-    ! types:: logical, logical, integer, 4*string
+    ! types:: 3*logical, integer, 4*string
     ! some simple debugging of problem-type / output-type combinations
     if (sol%output < 1 .or. (sol%output > 5 .and. sol%output /= 10 &
          & .and. sol%output /= 11)) then
@@ -100,10 +101,10 @@ contains
     end if
 
     ! echo input from first 3 lines to file
-    write(16,'(2(1L,1X),I0,5(1X,A))') sol%particle, sol%contour, sol%output, &
+    write(16,'(3(1L,1X),I0,5(1X,A))') sol%calc, sol%particle, sol%contour, sol%output, &
          & trim(sol%outFname), trim(sol%coeffFName), trim(sol%elemHfName), &
-         & trim(sol%geomFname),'  ||    particle?, contour?, output,// &
-         & out/coeff/hierarchy/geometry file names'
+         & trim(sol%geomFname),'  ||    re-calculate coefficients?, particle?, &
+         & contour?, output, out/coeff/hierarchy/geometry file names'
     write(16,'(3(ES11.5,1X),1L,3(1X,ES11.5),1X,I0,A)') bg%por, bg%k, bg%ss, &
          & bg%leakFlag, bg%aquitardK, bg%aquitardSs, bg%aquitardb, bg%ms, & 
          & '  ||    por, k, Ss, leaky flag, K2, Ss2, b2, ellipse MS'
@@ -154,75 +155,83 @@ contains
     write(16,'(2(ES11.5,1X),I0,A)') sol%alpha, sol%tol, sol%m,'  ||    alpha, tol, M'
 
     ! circular (includes wells)
-    read(15,*) dom%num(1)
+    read(15,*) dom%num(1),circleFname
     nc = dom%num(1)
     if (nc > 0) then
+       open(unit=22, file=circleFname, status='old', action='read',iostat=ierr)
+       if (ierr /= 0) then
+          write(*,'(2A)') 'READINPUT: error opening circular data file for reading ',circleFname
+          stop
+       else
+          write(16,'(A)') trim(circleFname)//' opened for reading circular data'
+       end if
+
        allocate(c(nc), stat=ierr)
        if (ierr /= 0) stop 'ltaem_io.f90 error allocating c()'
-       read(15,*) c(:)%n
+       read(22,*) c(:)%n
        if (any(c%n < 1)) then
           print *, 'c%N must not be < 1',c%N
           stop
        end if
 
-       read(15,*) c(:)%m
+       read(22,*) c(:)%m
        if (any(c%M < 1)) then
           print *, 'c%M must not be < 1',c%M
           stop
        end if
 
-       read(15,*) c(:)%ibnd
+       read(22,*) c(:)%ibnd
        if (any(c%ibnd < -1 .or. c%ibnd > 2)) then
           print *, 'c%ibnd must be in {-1,0,1,2}',c%ibnd
           stop
        end if
           
-       read(15,*) c(:)%CalcIn ! calculate inside this element?
-       read(15,*) c(:)%StorIn ! account for free-water storage effects inside element?
+       read(22,*) c(:)%CalcIn ! calculate inside this element?
+       read(22,*) c(:)%StorIn ! account for free-water storage effects inside element?
 
-       read(15,*) c(:)%r
+       read(22,*) c(:)%r
        if (any(c%r < epsilon(0.0))) then
           print *, 'c%r must be > 0.0',c%r
           stop
        end if
 
-       read(15,*) c(:)%x ! any real number is ok
-       read(15,*) c(:)%y
+       read(22,*) c(:)%x ! any real number is ok
+       read(22,*) c(:)%y
 
-       read(15,*) c(:)%k
+       read(22,*) c(:)%k
        if (any(c%k < epsilon(0.0))) then
           print *, 'c%K must be > 0.0',c%k
           stop
        end if      
 
-       read(15,*) c(:)%Ss
+       read(22,*) c(:)%Ss
        if (any(c%ss < epsilon(0.0))) then
           print *, 'c%Ss must be > 0.0',c%Ss
           stop
        end if      
 
-       read(15,*) c(:)%por
+       read(22,*) c(:)%por
        if (any(c%por < epsilon(0.0))) then
           print *, 'c%por must be > 0.0',c%por
           stop
        end if      
 
-       read(15,*) c(:)%areaQ ! area source strength (flux)
-       read(15,*) c(:)%bdryQ ! streng of specified value on bdry (head or flux) 
+       read(22,*) c(:)%areaQ ! area source strength (flux)
+       read(22,*) c(:)%bdryQ ! streng of specified value on bdry (head or flux) 
        do j=1,size(c,dim=1)
-          read(15,'(I3)', advance='no') c(j)%AreaTime 
+          read(22,'(I3)', advance='no') c(j)%AreaTime 
           if (c(j)%AreaTime > -1) then
              ! functional time behavior
              allocate(c(j)%ATPar(2),stat=ierr)
              if (ierr /= 0) stop 'ltaem_io.f90 error allocating c%(j)%ATPAR(2)'
-             read(15,*) c(j)%ATPar(:)
+             read(22,*) c(j)%ATPar(:)
              write(16,'(I0,2(1X,ES12.5),A,I0)') c(j)%AreaTime,c(j)%ATPar(:),&
                   &'  ||  Area time behavior, par1, par2 for circle ',j
           else
              ! piecewise-constant time behavior 
              allocate(c(j)%ATPar(-2*c(j)%AreaTime+1),stat=ierr)
              if (ierr /= 0) stop 'ltaem_io.f90 error allocating c%(j)%ATPAR(:)'
-             read(15,*) c(j)%ATPar(:)
+             read(22,*) c(j)%ATPar(:)
              lfmt = '(I0,1X,    (ES12.5,1X),A,    (ES12.5,1X),A,I0)'
              write(lfmt(8:11),'(I4.4)')  size(c(j)%ATPar(:-c(j)%AreaTime+1),1)
              write(lfmt(26:29),'(I4.4)') size(c(j)%ATPar(-c(j)%AreaTime+2:),1)
@@ -232,17 +241,17 @@ contains
           end if
        end do
        do j=1,size(c,dim=1)
-          read(15,'(I3)', advance='no') c(j)%BdryTime
+          read(22,'(I3)', advance='no') c(j)%BdryTime
           if (c(j)%BdryTime > -1) then
              allocate(c(j)%BTPar(2),stat=ierr)
              if (ierr /= 0) stop 'ltaem_io.f90 error allocating c%(j)%BTPAR(2)'
-             read(15,*) c(j)%BTPar(:)
+             read(22,*) c(j)%BTPar(:)
              write(16,'(I0,2(1X,ES12.5),A,I0)') c(j)%BdryTime,c(j)%BTPar(:),&
                   &'  ||  Bdry time behavior, par1, par2 for circle ',j
           else
              allocate(c(j)%BTPar(-2*c(j)%BdryTime+1),stat=ierr)
              if (ierr /= 0) stop 'ltaem_io.f90 error allocating c%(j)%BTPAR(:)'
-             read(15,*) c(j)%BTPar(:)
+             read(22,*) c(j)%BTPar(:)
              write(lfmt(8:11),'(I4.4)')  size(c(j)%BTPar(:-c(j)%BdryTime+1),1)
              write(lfmt(26:29),'(I4.4)') size(c(j)%BTPar(-c(j)%BdryTime+2:),1)
              write(16,lfmt) c(j)%BdryTime,c(j)%BTPar(:-c(j)%BdryTime+1),' | ',&
@@ -250,49 +259,51 @@ contains
                   &'  ||    Bdry ti, tf | strength for circle ',j
           end if
        end do
-       read(15,*) c(:)%leakFlag  ! handled elsewhere
-       read(15,*) c(:)%aquitardK
+       read(22,*) c(:)%leakFlag  ! checking handled elsewhere
+       read(22,*) c(:)%aquitardK
        if (any(c%aquitardK < epsilon(0.0))) then
           print *, 'c%aquitardK must be > 0.0',c%aquitardk
           stop
        end if      
 
-       read(15,*) c(:)%aquitardSs
+       read(22,*) c(:)%aquitardSs
        if (any(c%aquitardSS < epsilon(0.0))) then
           print *, 'c%aquitardSs must be > 0.0',c%aquitardSs
           stop
        end if      
 
-       read(15,*) c(:)%aquitardb  !aquitard thickness
+       read(22,*) c(:)%aquitardb  !aquitard thickness
        if (any(c%aquitardB < epsilon(0.0))) then
           print *, 'c%aquitardB must be > 0.0',c%aquitardB
           stop
        end if      
 
-       read(15,*) c(:)%unconfinedFlag ! handled elsewhere
-       read(15,*) c(:)%Sy
+       read(22,*) c(:)%unconfinedFlag ! checking handled elsewhere
+       read(22,*) c(:)%Sy
        if (any(c%sy < epsilon(0.0))) then
           print *, 'c%Sy must be > 0.0',c%sy
           stop
        end if      
 
-       read(15,*) c(:)%Kz
+       read(22,*) c(:)%Kz
        if (any(c%kz < epsilon(0.0))) then
           print *, 'c%Kz must be > 0.0',c%kz
           stop
        end if      
 
-       read(15,*) c(:)%b  ! aquifer thickness
+       read(22,*) c(:)%b  ! aquifer thickness
        if (any(c%b < epsilon(0.0))) then
           print *, 'c%B must be > 0.0',c%b
           stop
        end if      
 
-       read(15,*) c(:)%dskin ! dimensionless skin
+       read(22,*) c(:)%dskin ! dimensionless skin
        if (any(c%dskin < epsilon(0.0))) then
           print *, 'c%Dskin must be > 0.0',c%dskin
           stop
        end if            
+
+       close(22)
    
        where (c(:)%ibnd == -1 .or. c(:)%ibnd == 0 .or. c(:)%ibnd == +1)
           c(:)%match = .true.
@@ -347,29 +358,38 @@ contains
        end do
        
     else
+       ! no circular elements
        allocate(c(0),stat=ierr)
        if (ierr /= 0) stop 'error allocating c(0)'
     end if
 
     ! elliptical (includes line sources/sinks)
-    read(15,*) dom%num(2)
+    read(15,*) dom%num(2), ellipseFname
     ne = dom%num(2)
     if (ne > 0) then
+       open(unit=33, file=circleFname, status='old', action='read',iostat=ierr)
+       if (ierr /= 0) then
+          write(*,'(2A)') 'READINPUT: error opening elliptical data file for reading ',ellipseFname
+          stop
+       else
+          write(16,'(A)') trim(ellipseFname)//' opened for reading elliptical data'
+       end if
+
        allocate(e(ne),stat=ierr)
        if (ierr /= 0) stop 'ltaem_io.f90 error allocating e()'
-       read(15,*) e(:)%n
+       read(33,*) e(:)%n
        if (any(e%n < 1)) then
           print *, 'e%N must not be < 1',e%N
           stop
        end if
 
-       read(15,*) e(:)%m
+       read(33,*) e(:)%m
        if (any(e%m < 1)) then
           print *, 'e%M must not be < 1',e%M
           stop
        end if
 
-       read(15,*) e(:)%ms ! bg%ms read above
+       read(33,*) e(:)%ms ! bg%ms read above
        ! checked more carefully in Mathieu function library
        if (any(e%ms < e%n) .or. any(bg%ms < e%n)) then  
           print *, 'e%ms must not be < e%n + buffer: e%N',e%N,'e%MS',e%ms
@@ -377,48 +397,69 @@ contains
           stop
        end if
 
-       read(15,*) e(:)%ibnd
+       read(33,*) e(:)%ibnd
        if (any(e%ibnd < -1 .or. e%ibnd > 2)) then
           print *, 'e%ibnd must be in {-1,0,1,2}',e%ibnd
           stop
        end if
 
-       read(15,*) e(:)%CalcIn
-       read(15,*) e(:)%StorIn
+       read(33,*) e(:)%CalcIn
+       read(33,*) e(:)%StorIn
        
-       read(15,*) e(:)%r   ! eta
+       read(33,*) e(:)%r   ! eta
        if (any(e%r < epsilon(0.0))) then
           print *, 'e%r must be > 0.0',e%r
           stop
        end if
 
-       read(15,*) e(:)%x
-       read(15,*) e(:)%y
+       read(33,*) e(:)%x
+       read(33,*) e(:)%y
 
-       read(15,*) e(:)%f
+       read(33,*) e(:)%f
        if (any(e%f < epsilon(0.0))) then
           print *, 'e%f must be > 0.0',e%f
           stop
        end if
 
-       read(15,*) e(:)%theta      
-       read(15,*) e(:)%k
-       read(15,*) e(:)%Ss
-       read(15,*) e(:)%por
-       read(15,*) e(:)%areaQ
-       read(15,*) e(:)%bdryQ
+       read(33,*) e(:)%theta      
+       if (any(e%theta < -PI) .or. any(e%theta > PI)) then
+          print *, 'e%theta must be -pi <= theta <= PI',e%theta
+          stop
+       end if
+
+       read(33,*) e(:)%k
+       if (any(e%k < epsilon(0.0))) then
+          print *, 'e%k must be > 0.0',e%k
+          stop
+       end if
+
+       read(33,*) e(:)%Ss
+       if (any(e%Ss < epsilon(0.0))) then
+          print *, 'e%Ss must be > 0.0',e%Ss
+          stop
+       end if
+
+       read(33,*) e(:)%por
+       if (any(e%por < epsilon(0.0))) then
+          print *, 'e%por must be > 0.0',e%por
+          stop
+       end if
+
+       read(33,*) e(:)%areaQ
+       read(33,*) e(:)%bdryQ
+
        do j=1,size(e,dim=1)
-          read(15,'(I3)', advance='no') e(j)%AreaTime 
+          read(33,'(I3)', advance='no') e(j)%AreaTime 
           if (e(j)%AreaTime > -1) then
              allocate(e(j)%ATPar(2),stat=ierr)
              if (ierr /= 0) stop 'ltaem_io.f90 error allocating e%(j)%ATPAR(2)'
-             read(15,*) e(j)%ATPar(:)
+             read(33,*) e(j)%ATPar(:)
              write(16,'(I0,2(1X,ES12.5),A,I0)') e(j)%AreaTime,e(j)%ATPar(:),&
                   &'  ||  Area time behavior, par1, par2 for ellipse ',j
           else
              allocate(e(j)%ATPar(-2*e(j)%AreaTime+1),stat=ierr)
              if (ierr /= 0) stop 'ltaem_io.f90 error allocating e%(j)%ATPAR(:)'
-             read(15,*) e(j)%ATPar(:)
+             read(33,*) e(j)%ATPar(:)
              write(lfmt(8:11),'(I3.3)')  size(e(j)%ATPar(:-e(j)%AreaTime+1),1)
              write(lfmt(26:29),'(I3.3)') size(e(j)%ATPar(-e(j)%AreaTime+2:),1)
              write(16,lfmt) e(j)%AreaTime,e(j)%ATPar(:-e(j)%AreaTime+1),' | ',&
@@ -427,7 +468,7 @@ contains
           end if
        end do
        do j=1,size(e,dim=1)
-          read(15,'(I3)', advance='no') e(j)%BdryTime
+          read(33,'(I3)', advance='no') e(j)%BdryTime
           if (e(j)%BdryTime > -1) then
              allocate(e(j)%BTPar(2),stat=ierr)
              if (ierr /= 0) stop 'ltaem_io.f90 error allocating e%(j)%BTPAR(2)'
@@ -437,7 +478,7 @@ contains
           else
              allocate(e(j)%BTPar(-2*e(j)%BdryTime+1),stat=ierr)
              if (ierr /= 0) stop 'ltaem_io.f90 error allocating e%(j)%BTPAR(:)'
-             read(15,*) e(j)%BTPar(:)
+             read(33,*) e(j)%BTPar(:)
              write(lfmt(8:11),'(I3.3)')  size(e(j)%BTPar(:-e(j)%BdryTime+1),1)
              write(lfmt(26:29),'(I3.3)') size(e(j)%BTPar(-e(j)%BdryTime+2:),1)
              write(16,lfmt) e(j)%BdryTime,e(j)%BTPar(:-e(j)%BdryTime+1),' | ',&
@@ -446,52 +487,54 @@ contains
           end if
        end do
 
-       read(15,*) e(:)%leakFlag  ! handled elsewhere
+       read(33,*) e(:)%leakFlag  ! checking handled elsewhere
 
-       read(15,*) e(:)%aquitardK
+       read(33,*) e(:)%aquitardK
        if (any(e%aquitardK < epsilon(0.0))) then
           print *, 'e%aquitardK must be > 0.0',e%aquitardK
           stop
        end if
 
-       read(15,*) e(:)%aquitardSs
+       read(33,*) e(:)%aquitardSs
        if (any(e%aquitardSs < epsilon(0.0))) then
           print *, 'e%aquitardSs must be > 0.0',e%aquitardSs
           stop
        end if
 
-       read(15,*) e(:)%aquitardb  
+       read(33,*) e(:)%aquitardb  
        if (any(e%aquitardb < epsilon(0.0))) then
           print *, 'e%aquitardb must be > 0.0',e%aquitardb
           stop
        end if
 
-       read(15,*) e(:)%unconfinedFlag
+       read(33,*) e(:)%unconfinedFlag
 
-       read(15,*) e(:)%Sy
+       read(33,*) e(:)%Sy
        if (any(e%Sy < epsilon(0.0))) then
           print *, 'e%Sy must be > 0.0',e%Sy
           stop
        end if
 
-       read(15,*) e(:)%Kz
+       read(33,*) e(:)%Kz
        if (any(e%Kz < epsilon(0.0))) then
           print *, 'e%Kz must be > 0.0',e%Kz
           stop
        end if
 
-       read(15,*) e(:)%b
+       read(33,*) e(:)%b
        if (any(e%b < epsilon(0.0))) then
           print *, 'e%b must be > 0.0',e%b
           stop
        end if
 
-       read(15,*) e(:)%dskin
+       read(33,*) e(:)%dskin
        if (any(e%dskin < epsilon(0.0))) then
           print *, 'e%dskin must be > 0.0',e%dskin
           stop
        end if
-
+       
+       close(33)
+       
        where (e(:)%ibnd == -1 .or. e(:)%ibnd == 0 .or. e(:)%ibnd == +1)
           e(:)%match = .true.
        elsewhere
@@ -542,10 +585,8 @@ contains
     end if
     
     ntot = sum(dom%num) ! total number of circular and elliptical elements
-    if (ntot < 1) then
-       stop 'ltaem_io.f90 Need at least one circular (including well) or&
+    if (ntot < 1) stop 'ltaem_io.f90 Need at least one circular (including well) or&
             & elliptical (including line) element.'
-    end if
 
     ! compute secondary parameters
     bg%alpha = bg%K/bg%Ss
@@ -571,24 +612,31 @@ contains
     write(16,'(ES11.5,A)') bg%alpha,'  ||    background hydraulic diffusivity'
     write(16,'(ES11.5,A)') bg%T,'  ||    background hydraulic diffusivity'
 
-    ! re-calculation parameter
-    read(15,*) sol%calc
-    write(16,'(1L,A)') sol%calc, '  || re-calculate coefficients?'
-
     ! particles
     if (sol%particle) then
-       read(15,*) sol%nPart,  sol%streakSkip
+       read(15,*) particleFname
+       open(unit=44, file=particleFname, status='old', action='read',iostat=ierr)
+       if (ierr /= 0) then
+          write(*,'(2A)') 'READINPUT: error opening particle data file for reading ',particleFname
+          stop
+       else
+          write(16,'(A)') trim(particleFname)//' opened for reading particle data'
+       end if
+
+       read(44,*) sol%nPart,  sol%streakSkip
        allocate(p(sol%nPart),stat=ierr)
        if (ierr /= 0) stop 'ltaem_io.f90 error allocating p()'
-       read(15,*) p(:)%tol 
-       read(15,*) p(:)%dt 
-       read(15,*) p(:)%maxStep
-       read(15,*) p(:)%x
-       read(15,*) p(:)%y
-       read(15,*) p(:)%ti
-       read(15,*) p(:)%tf
-       read(15,*) p(:)%int
-       read(15,*) p(:)%InclIn
+       ! TODO: error checking for particle data
+       read(44,*) p(:)%tol 
+       read(44,*) p(:)%dt 
+       read(44,*) p(:)%maxStep
+       read(44,*) p(:)%x
+       read(44,*) p(:)%y
+       read(44,*) p(:)%ti
+       read(44,*) p(:)%tf
+       read(44,*) p(:)%int
+       read(44,*) p(:)%InclIn
+       close(44)
 
        write(chint,'(I4.4)') sol%nPart
        fmt(1) = '('//chint//'(I0,1X),A)     ' ! integer
@@ -605,6 +653,7 @@ contains
        write(16,fmt(1)) p(:)%int, '  ||    particle integration method'
        write(16,fmt(2)) p(:)%InclIn, '  ||    particle begins inside CH/CF incl?'
     else
+       ! no particles
        allocate(p(0),stat=ierr)
        if (ierr /= 0) stop 'ltaem_io.f90 error allocating: p(0)'
     endif

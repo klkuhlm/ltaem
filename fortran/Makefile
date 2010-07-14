@@ -35,7 +35,7 @@ F90=gfortran-4.6
 DFLAGS=-O0 -Wall -Wextra -fbacktrace -gdwarf-3
 #DFLAGS+=-fbounds-check
 DFLAGS+=-frange-check -fcheck=all -finit-real=snan -finit-integer=-99999 -fbacktrace
-DFLAGS+=-fwhole-file -fpack-derived -frepack-arrays
+DFLAGS+=-fwhole-file ##-fpack-derived -frepack-arrays
 DFLAGS+=-cpp #-DDEBUG 
 #DFLAGS+=-fdump-rtl-expand
 PFLAGS=-O0 -g

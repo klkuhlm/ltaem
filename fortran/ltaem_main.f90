@@ -97,32 +97,32 @@ program ltaem_main
         if (ierr /= 0) stop 'ltaem_main.f90 error deallocating: logt,run'
      end if
 
-     ! only do matching if there is at least one matching element
-     if(any(e(:)%match) .or. any(c(:)%match)) then
+     sol%totalnP = product(shape(s)) ! total number of Laplace parameters across all times
+     tnp = sol%totalnP
         
-        ! calculate coefficients for each value of Laplace parameter
-        ! ** common between particle tracking and contours/hydrographs **
+     ! calculate coefficients for each value of Laplace parameter
+     ! ** common between particle tracking and contours/hydrographs **
+     
+     ! initialize Mathieu function matrices
+     if (ne > 0) then
+        write(*,'(A)') 'Computing Mathieu coefficients ...'
+        call ellipse_init(e,bg,reshape(s,[tnP]))
+     end if
 
-        sol%totalnP = product(shape(s)) ! total number of Laplace parameters across all times
-        tnp = sol%totalnP
-
-        ! initialize Mathieu function matrices
-        if (ne > 0) then
-           write(*,'(A)') 'Computing Mathieu coefficients ...'
-           call ellipse_init(e,bg,reshape(s,[tnP]))
+     idx = 0 ! initialize index
+     do ilogt = iminlogt,imaxlogt-1
+        write(*,'(A,I0,A)') 'log t= 10^(',ilogt,')'
+        if (nt(ilogt) > 0) then
+           do j = 1,2*sol%m+1
+              idx = idx+1
+              write(*,'(I0,1X,2(A,ES10.3),A)') j, '(',real(s(j,ilogt)),',',aimag(s(j,ilogt)),')'
+              call matrix_solution(c,e,dom,sol,s(j,ilogt),idx)
+           end do
         end if
+     end do
 
-        idx = 0 ! initialize index
-        do ilogt = iminlogt,imaxlogt-1
-           write(*,'(A,I0,A)') 'log t= 10^(',ilogt,')'
-           if (nt(ilogt) > 0) then
-              do j = 1,2*sol%m+1
-                 idx = idx+1
-                 write(*,'(I0,1X,2(A,ES10.3),A)') j, '(',real(s(j,ilogt)),',',aimag(s(j,ilogt)),')'
-                 call matrix_solution(c,e,dom,sol,s(j,ilogt),idx)
-              end do
-           end if
-        end do
+     ! only write output if there is at least one matching element
+     if(any(e(:)%match) .or. any(c(:)%match)) then
 
         !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         ! save coefficient matrices to file

@@ -77,14 +77,14 @@ contains
     ! TODO there should be a way to combine the two branches of this 
     ! if statement into a more general single branch.
 
-    print '(A,I0)', 'in ==',in
+!!$    print '(A,I0)', 'in ==',in
 
     !##################################################
     !! calculation point is outside all elements (in background)
     if (in == 0) then
        do j = 1,nc
           if (dom%InclUp(j) == 0) then  ! circle is also in background
-             print '(I0,A)', j,' circle also in background'
+!!$             print '(I0,A)', j,' circle also in background'
              H(1:np) = H(1:np) + &
                   & circle_calc(p,c(j),lo,hi,Rgp(j),Pgp(j),.false.)
           end if
@@ -92,7 +92,7 @@ contains
        
        do j = nc+1,ntot
           if (dom%InclUp(j) == 0) then  ! ellipse is also in background
-             print '(I0,A)', j,' ellipse also in background'
+!!$             print '(I0,A)', j,' ellipse also in background'
              H(1:np) = H(1:np) + &
                   & ellipse_calc(p,e(j-nc),lo,hi,Rgp(j),Pgp(j),.false.)
           end if
@@ -105,14 +105,14 @@ contains
        if (in <= nc) then
           ! calculation point is inside (or on bdry of) a circular element
           if (c(in)%calcin) then
-             print '(A,I0)', 'calc in circle ', in
+!!$             print '(A,I0)', 'calc in circle ', in
              H(1:np) = H(1:np) + &
                   & circle_calc(p,c(in),lo,hi,Rgp(in),Pgp(in),.true.)
           end if
        else 
           ! calculation point is inside (or on bdry of) an elliptical element
           if (e(in-nc)%calcin) then
-             print '(A,I0)', 'calc in ellipse ',in
+!!$             print '(A,I0)', 'calc in ellipse ',in
              H(1:np) = H(1:np) + &
                   & ellipse_calc(p,e(in-nc),lo,hi,Rgp(in),Pgp(in),.true.)
           end if
@@ -122,7 +122,7 @@ contains
        do oth = 1,nc
           ! oth element is a circle
           if (dom%InclIn(in,oth)) then
-             print '(2(A,I0))', 'other circle ',oth,' inside ',in
+!!$             print '(2(A,I0))', 'other circle ',oth,' inside ',in
              H(1:np) = H(1:np) + &
                   & circle_calc(p,c(oth),lo,hi,Rgp(oth),Pgp(oth),.false.)
           end if
@@ -130,7 +130,7 @@ contains
        do oth = nc+1,ntot
           ! other element is an ellipse
           if (dom%InclIn(in,oth)) then
-             print '(2(A,I0))', 'other ellipse ',oth,' inside ',in
+!!$             print '(2(A,I0))', 'other ellipse ',oth,' inside ',in
              H(1:np) = H(1:np) + &
                   & ellipse_calc(p,e(oth-nc),lo,hi,Rgp(oth),Pgp(oth),.false.)
           end if

@@ -475,6 +475,9 @@ contains
        BR0(1:np,0:N-1) =  bK(c%r*kap(1:np),N)
     end if
 
+!!$    print *, 'np,lo,hi,n0,N',np,lo,hi,n0,N
+!!$    print *, 'coeff:',shape(c%coeff)
+
     aa(1:np,0:N-1) = c%coeff(lo:hi,n0:n0+N-1)
     bb(1:np,0) = 0.0 ! insert zero to make odd/even same shape
     bb(1:np,1:N-1) = c%coeff(lo:hi,n0+N:n0+2*N-2)
