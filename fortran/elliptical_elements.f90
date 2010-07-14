@@ -168,13 +168,14 @@ contains
        nrows = 2*M
        loM = M+1
        hiM = 2*M
-    elseif (el%ibnd == 2 .and. (.not. el%storIn)) then
+    elseif (el%ibnd == 2) then
        nrows = 0
     else
        nrows = M
        loM = 1
        hiM = M
     end if
+
     ! source element determines number of columns
     if (e%ibnd == 0) then
        ncols = 4*N-2
@@ -184,24 +185,17 @@ contains
     end if
 
     allocate(r%LHS(nrows,ncols), r%RHS(nrows), stat=ierr)
-    if (ierr /= 0) then
-       stop 'elliptical_elements.f90:ellipse_match_other() error allocating&
-            &r%LHS, r%RHS'
-    end if
+    if (ierr /= 0) stop 'elliptical_elements.f90:ellipse_match_other() error allocating&
+         &r%LHS, r%RHS'
     r%LHS = 0.0
     r%RHS = 0.0
-
-    print *, 'debug ellipse',nrows,ncols,loM,hiM
 
     if (nrows > 0) then
        if (dom%inclBg(src,targ) .or. dom%InclIn(src,targ)) then
 
           allocate(RMn(1:M,0:N-1,0:1), RMn0(0:N-1,0:1), cemat(1:M,0:N-1), semat(1:M,1:N-1), stat=ierr)
-          if (ierr /= 0) then
-             stop 'elliptical_elements.f90:ellipse_match_other() error allocating:&
+          if (ierr /= 0) stop 'elliptical_elements.f90:ellipse_match_other() error allocating:&
                &RMn, RMn0, cemat, semat'
-          end if
-          
 
           ! setup LHS 
           ! for matching or specified total head target elements
@@ -253,8 +247,8 @@ contains
                 end if
 
                 ! head effects due to ellipse on inside other element
-                r%LHS(1:M,loN:loN+N-1) = RMn(1:M,0:N-1,0)/spread(RMn0(0:N-1,0),1,M)*cemat(1:M,0:N-1)/K ! c_n
-                r%LHS(1:M,loN+N:hiN)   = RMn(1:M,1:N-1,1)/spread(RMn0(1:N-1,1),1,M)*semat(1:M,0:N-1)/K ! d_n
+                r%LHS(1:M,loN:loN+N-1) = -RMn(1:M,0:N-1,0)/spread(RMn0(0:N-1,0),1,M)*cemat(1:M,0:N-1)/K ! c_n
+                r%LHS(1:M,loN+N:hiN)   = -RMn(1:M,1:N-1,1)/spread(RMn0(1:N-1,1),1,M)*semat(1:M,0:N-1)/K ! d_n
 
              end if
              
@@ -269,11 +263,8 @@ contains
           if (el%ibnd == 0 .or. el%ibnd == +1 .or. el%ibnd == +2) then
              allocate(dRMn(M,0:N-1,0:1), dcemat(1:M,0:N-1), dsemat(1:M,1:N-1), &
                   & dPot_dR(M,2*N-1), dPot_dP(M,2*N-1), dPot_dX(M,2*N-1),dPot_dY(M,2*N-1), stat=ierr)
-             if (ierr /= 0) then
-                stop 'elliptical_elements.f90 error allocating:&
-                     & dRMn, dcemat, dsemat, dPot_dR, dPot_dP, dPot_dX, dPot_dY'
-             end if
-             
+             if (ierr /= 0) stop 'elliptical_elements.f90 error allocating:&
+                  & dRMn, dcemat, dsemat, dPot_dR, dPot_dP, dPot_dX, dPot_dY'
 
              ! flux effects of source ellpise on target element
              if (dom%inclBg(src,targ)) then
@@ -306,8 +297,8 @@ contains
                    RMn(1:M,0:N-1,0) = transpose(Ie(e%mat(idx), vi(0:N-1), e%G(targ)%Rgm(1:M)))
                    RMn(1:M,1:N-1,1) = transpose(Io(e%mat(idx), vi(1:N-1), e%G(targ)%Rgm(1:M)))
                    RMn(1:M,0,1) = 0.0
-                   RMn0(0:N-1,0) = Ie(e%mat(idx), vi(0:N-1), e%r)
-                   RMn0(1:N-1,1) = Io(e%mat(idx), vi(1:N-1), e%r)
+                   RMn0(0:N-1,0) = -Ie(e%mat(idx), vi(0:N-1), e%r) ! apply in/out-side sign here
+                   RMn0(1:N-1,1) = -Io(e%mat(idx), vi(1:N-1), e%r)
                    RMn0(0,1) = 0.0
                 end if
                 dcemat(1:M,0:N-1) = transpose(dce(e%mat(idx), vi(0:N-1), e%G(targ)%Pgm(1:M)))
@@ -343,42 +334,33 @@ contains
 
              ! project these from elliptical onto Cartesian coordinates
              allocate(hsq(size(e%G(targ)%Rgm),2*N-1), stat=ierr)
-             if (ierr /= 0) then
-                stop 'elliptical_elements.f90 error allocating: hsq'
-             end if
-             
+             if (ierr /= 0) stop 'elliptical_elements.f90 error allocating: hsq'
 
              ! squared metric factor -- less a common f
              hsq = spread(e%f/2.0*(cosh(2.0*e%G(targ)%Rgm) - cos(2.0*e%G(targ)%Pgm)),2,2*N-1) 
              dPot_dX = (dPot_dR*spread(sinh(e%G(targ)%Rgm)*cos(e%G(targ)%Pgm),2,2*N-1) - &
-                  & dPot_dP*spread(cosh(e%G(targ)%Rgm)*sin(e%G(targ)%Pgm),2,2*N-1))/hsq
+                      & dPot_dP*spread(cosh(e%G(targ)%Rgm)*sin(e%G(targ)%Pgm),2,2*N-1))/hsq
              dPot_dY = (dPot_dR*spread(cosh(e%G(targ)%Rgm)*sin(e%G(targ)%Pgm),2,2*N-1) + &
-                  & dPot_dP*spread(sinh(e%G(targ)%Rgm)*cos(e%G(targ)%Pgm),2,2*N-1))/hsq
+                      & dPot_dP*spread(sinh(e%G(targ)%Rgm)*cos(e%G(targ)%Pgm),2,2*N-1))/hsq
 
              deallocate(hsq,stat=ierr)
-             if (ierr /= 0) then
-                stop 'elliptical_elements.f90 error deallocating: hsq'
-             end if
-             
+             if (ierr /= 0) stop 'elliptical_elements.f90 error deallocating: hsq'
 
              ! project from Cartesian to "radial" coordinate of target element
              if (el%id <= dom%num(1)) then
                 ! other element is a circle
                 if (el%ibnd == 2) then
-                   ! other element is a specified elemental flux circle
-                   if (el%StorIn) then
-                      ! other element is a well with wellbore storage (Type III BC)
-                      r%LHS(1:M,loN:loN+N-1) = RMn(1:M,0:N-1,0)/spread(RMn0(0:N-1,0),1,M)*cemat(1:M,0:N-1)/K
-                      r%LHS(1:M,loN+N:hiN) =   RMn(1:M,1:N-1,1)/spread(RMn0(1:N-1,1),1,M)*semat(1:M,1:N-1)/K
+                   ! other element is a well with wellbore storage (Type III BC)
+                   r%LHS(1:M,loN:loN+N-1) = RMn(1:M,0:N-1,0)/spread(RMn0(0:N-1,0),1,M)*cemat(1:M,0:N-1)/K
+                   r%LHS(1:M,loN+N:hiN) =   RMn(1:M,1:N-1,1)/spread(RMn0(1:N-1,1),1,M)*semat(1:M,1:N-1)/K
 
-                      ! head effects of source ellipse
-                      r%LHS(1:M,loN:hiN) = -(el%r*p/el%parent%T)*r%LHS(1:M,loN:hiN)
+                   ! head effects of source ellipse
+                   r%LHS(1:M,loN:hiN) = -(el%r*p/el%parent%T)*r%LHS(1:M,loN:hiN)
 
-                      ! radial flux effects of element
-                      r%LHS(1:M,loN:hiN) = r%LHS + (2.0 + el%r**2*el%dskin*p/el%parent%T)* &
-                           & (dPot_dX*spread(cos(el%Pcm),2,2*N-1) + &
-                           &  dPot_dY*spread(sin(el%Pcm),2,2*N-1))
-                   end if
+                   ! radial flux effects of element
+                   r%LHS(1:M,loN:hiN) = r%LHS + (2.0 + el%r**2*el%dskin*p/el%parent%T)* &
+                        & (dPot_dX*spread(cos(el%Pcm),2,2*N-1) + &
+                        &  dPot_dY*spread(sin(el%Pcm),2,2*N-1))
                 else
                    ! other element is a standard circle 
                    r%LHS(loM:hiM,loN:hiN) = dPot_dX*spread(cos(el%Pcm),2,2*N-1) + &
@@ -391,23 +373,20 @@ contains
 
              end if
              deallocate(dRMn,dcemat,dsemat,dPot_dR,dPot_dP,dPot_dX,dPot_dY,stat=ierr)
-             if (ierr /= 0) then
-                stop 'elliptical_elements.f90, error deallocating:&
-                     & dRMn, dcemat, dsemat, dPot_dR, dPot_dP, dPot_dX, dPot_dY'
-             end if
+             if (ierr /= 0) stop 'elliptical_elements.f90, error deallocating:&
+                  & dRMn, dcemat, dsemat, dPot_dR, dPot_dP, dPot_dX, dPot_dY'
              
           end if
           deallocate(RMn,RMn0,cemat,semat,stat=ierr)
-          if (ierr /= 0) then
-             stop 'elliptical_elements.f90:elliptical_match_other(), &
+          if (ierr /= 0) stop 'elliptical_elements.f90:elliptical_match_other(), &
                   &error deallocating: RMn, RMn0, cemat, semat'
-          end if
           
           if (e%ibnd == 2) then
              ! sum line source effects and move to RHS, re-setting LHS to 0 unknowns
              ! only uses even-order even coefficients (~1/4 of 2N-1)
-             r%RHS(1:hiM) = sum(spread(line(e,p,idx),1,hiM)*r%LHS(1:hiM,1:N:2))
+             r%RHS(1:hiM) = -sum(spread(line(e,p,idx),1,hiM)*r%LHS(1:hiM,1:N:2))
              deallocate(r%LHS,stat=ierr)
+
              if (ierr /= 0) then
                 stop 'elliptical_elements.f90 error deallocating: r%LHS'
              end if
