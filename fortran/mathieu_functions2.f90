@@ -1,5 +1,5 @@
 module mathieu_functions
-  use constants, only : DP
+  use constants, only : DP   
   implicit none
 
   type, public :: mathieu
@@ -9,7 +9,7 @@ module mathieu_functions
      complex(DP), allocatable :: mcn(:),A(:,:,:), B(:,:,:)  ! 4*M; 1:M, 0:M-1, 0:1
   end type mathieu
 
-  private  !! only interfaces and mathieu_init are publicly callable
+  private  !! only interfaces, mathieu_init, and debugging routine are publicly callable
   public :: ce, Dce, se, Dse, Ke, Ko, DKe, DKo, Ie, Io, DIe, DIo, mathieu_init, print_mathieu_type
 
   interface ce   ! even first kind angular MF
@@ -141,24 +141,17 @@ contains
 
     ! main diagonal/ r counting from 0:m-1 like McLachlan
     Coeff(:,:) = 0.0
-    forall(i=1:M-1) 
-       Coeff(i+1,i+1) = cmplx((2*i)**2, 0, DP)
-    end forall
+    forall(i=1:M-1) Coeff(i+1,i+1) = cmplx((2*i)**2, 0, DP)
     
     ! off diagonals
-    forall(i=1:m, j=1:m, j==i+1 .or. j==i-1) 
-       Coeff(i,j) = q
-    end forall
+    forall(i=1:m, j=1:m, j==i+1 .or. j==i-1) Coeff(i,j) = q
         
     ! special case
     Coeff(2,1) = 2.0_DP*q
 
     lwork = 2*M+1
     allocate(work(lwork),stat=ierr) 
-    if (ierr /= 0) then
-       write(*,'(A,(I0,1X))') 'error allocating lwork ',lwork
-       stop 9005
-    end if
+    if (ierr /= 0) stop 'mathieu_functions2.f90 error allocating work '
 
     call zgeev('N','V',M,Coeff,M,mat%mcn(1:m),dc,di,mat%A(1:m,0:m-1,0),M,&
          & work,lwork,rwork,info)
@@ -180,13 +173,9 @@ contains
     Coeff(:,:) = 0.0
     Coeff(1,1) = 1.0_DP + q
     
-    forall(i=1:m-1) 
-       Coeff(i+1,i+1) = cmplx((2*i+1)**2, 0, DP)
-    end forall
+    forall(i=1:m-1) Coeff(i+1,i+1) = cmplx((2*i+1)**2, 0, DP)
     
-    forall(i=1:m, j=1:m, j==i+1 .or. j==i-1) 
-       Coeff(i,j) = q    
-    end forall
+    forall(i=1:m, j=1:m, j==i+1 .or. j==i-1) Coeff(i,j) = q    
     
     call zgeev('N','V',M,Coeff,M,mat%mcn(m+1:2*m),dc,di,mat%A(1:m,0:m-1,1),M, &
          & work,lwork,rwork,info)
@@ -208,13 +197,9 @@ contains
     ! this one not shifted by one, since 2n+2 -> 2n 
     !! (but starting from one, rather than zero)
     Coeff(:,:) = 0.0
-    forall(i=1:m) 
-       Coeff(i,i) = cmplx((2*i)**2, 0, DP)
-    end forall
+    forall(i=1:m) Coeff(i,i) = cmplx((2*i)**2, 0, DP)
     
-    forall(i=1:m, j=1:m, j==i+1 .or. j==i-1) 
-       Coeff(i,j) = q 
-    end forall
+    forall(i=1:m, j=1:m, j==i+1 .or. j==i-1) Coeff(i,j) = q 
 
     call zgeev('N','V',M,Coeff,M,mat%mcn(2*m+1:3*m),dc,di,mat%B(1:m,0:m-1,0),M,&
          &work,lwork,rwork,info)
@@ -235,13 +220,9 @@ contains
 
     Coeff(:,:) = 0.0
     Coeff(1,1) = 1.0_DP - q
-    forall(i=1:m-1) 
-       Coeff(i+1,i+1) = cmplx((2*i+1)**2, 0, DP)
-    end forall
+    forall(i=1:m-1) Coeff(i+1,i+1) = cmplx((2*i+1)**2, 0, DP)
     
-    forall(i=1:m, j=1:m, j==i+1 .or. j==i-1) 
-       Coeff(i,j) = q 
-    end forall
+    forall(i=1:m, j=1:m, j==i+1 .or. j==i-1) Coeff(i,j) = q 
 
     call zgeev('N','V',M,Coeff,M,mat%mcn(3*m+1:4*m),dc,di,mat%B(1:m,0:m-1,1),M,&
          &work,lwork,rwork,info)
@@ -255,10 +236,7 @@ contains
     mat%B(:,:,1) = mat%B(:,:,1)/spread(w,1,m)
 
     deallocate(coeff,rwork,w,work,stat=ierr)
-    if (ierr /= 0) then 
-       write(*,'(A)')'mathieu_functions2.f90 error deallocating memory: coeff,rwork,w,work'
-       stop 9010
-    end if
+    if (ierr /= 0) stop 'mathieu_functions2.f90 error deallocating memory: coeff,rwork,w,work'
 
     ! perform some heuristic checking of max allowable order
     diag = sum(abs(diagonal(mat%A(:,:,0),0)))/m
@@ -304,7 +282,8 @@ contains
 
     nz = size(z)
     call angfcnsetup(mf,n,v,vi,EV,OD)
-    nje = size(EV); njo = size(OD)
+    nje = size(EV)
+    njo = size(OD)
     j = floor(n/2.0)
     
     ce(EV,:) = sum(spread(mf%A(:,j(EV),0),3,nz)* &
@@ -335,7 +314,8 @@ contains
 
     nz = size(z)
     call angfcnsetup(mf,n,v,vi,EV,OD)
-    nje = size(EV); njo = size(OD)
+    nje = size(EV)
+    njo = size(OD)
     j = floor((n-1)/2.0)
     where (n==0) j = 0
 
@@ -367,7 +347,8 @@ contains
 
     nz = size(z)
     call angfcnsetup(mf,n,v,vi,EV,OD)
-    nje = size(EV); njo = size(OD)
+    nje = size(EV)
+    njo = size(OD)
     j = floor(n/2.0)
 
     Dce(EV,:) = sum(spread(spread(2*v,2,nje)*mf%A(:,j(EV),0),3,nz)* &
@@ -397,7 +378,8 @@ contains
 
     nz = size(z)
     call angfcnsetup(mf,n,v,vi,EV,OD)
-    nje = size(EV); njo = size(OD)
+    nje = size(EV)
+    njo = size(OD)
     j = floor((n-1)/2.0)
     where (n==0) j=0
 
@@ -429,9 +411,11 @@ contains
     complex(DP) :: sqrtq
     integer :: nje, njo, nz, M
 
-    nz = size(z); M = mf%M
+    nz = size(z)
+    M = mf%M
     call radfcnsetup(mf,n,z,sqrtq,v1,v2,v,vi,EV,OD)
-    nje = size(EV); njo = size(OD)
+    nje = size(EV)
+    njo = size(OD)
     j = floor(n/2.0)
     call BesselI_val(v1,M+1,I1(0:M,1:nz))
     call BesselI_val(v2,M+1,I2(0:M,1:nz))
@@ -465,9 +449,11 @@ contains
     complex(DP) :: sqrtq
     integer :: nje, njo, nz, M
 
-    nz = size(z); M = mf%M
+    nz = size(z)
+    M = mf%M
     call radfcnsetup(mf,n,z,sqrtq,v1,v2,v,vi,EV,OD)
-    nje = size(EV); njo = size(OD)
+    nje = size(EV)
+    njo = size(OD)
     j = floor((n-1)/2.0)
     where (n==0) j=0
     call BesselI_val(v1,m+2,I1(0:m+1,:))
@@ -503,9 +489,11 @@ contains
     complex(DP) :: sqrtq
     integer :: nje, njo, nz, m
 
-    nz = size(z); m = mf%M
+    nz = size(z)
+    m = mf%M
     call radfcnsetup(mf,n,z,sqrtq,v1,v2,v,vi,EV,OD)
-    nje = size(EV); njo = size(OD)
+    nje = size(EV)
+    njo = size(OD)
     j = floor(real(n,DP)/2.0)
     call BesselI_val(v1,m+1,I(0:m,:))
     call BesselK_val(v2,m+1,K(0:m,:))
@@ -539,9 +527,11 @@ contains
     complex(DP) :: sqrtq
     integer :: nje, njo, nz, m
 
-    nz = size(z); m = mf%M
+    nz = size(z)
+    m = mf%M
     call radfcnsetup(mf,n,z,sqrtq,v1,v2,v,vi,EV,OD)
-    nje = size(EV); njo = size(OD)
+    nje = size(EV)
+    njo = size(OD)
     j = floor((n-1)/2.0)
     where(n==0) j=0
     call BesselI_val(v1,m+2,I(0:m+1,:))
@@ -579,9 +569,11 @@ contains
     complex(DP) :: sqrtq
     integer :: nje, njo, nz, m
 
-    nz = size(z); m = mf%M
+    nz = size(z)
+    m = mf%M
     call radderivfcnsetup(mf,n,z,sqrtq,v1,v2,enz,epz,v,vi,EV,OD)
-    nje = size(EV); njo = size(OD)
+    nje = size(EV)
+    njo = size(OD)
     j = floor(n/2.0)
     call BesselI_val_and_deriv(v1,m+1,I1(0:m,:),DI1(0:m,:))
     call BesselI_val_and_deriv(v2,m+1,I2(0:m,:),DI2(0:m,:))
@@ -618,9 +610,11 @@ contains
     complex(DP) :: sqrtq
     integer :: nje, njo, nz, m
 
-    nz = size(z); m = mf%M
+    nz = size(z)
+    m = mf%M
     call radderivfcnsetup(mf,n,z,sqrtq,v1,v2,enz,epz,v,vi,EV,OD)
-    nje = size(EV); njo = size(OD)
+    nje = size(EV)
+    njo = size(OD)
     j = floor((n-1)/2.0)
     where (n==0) j=0
     call BesselI_val_and_deriv(v1,m+2,I1(0:m+1,:),DI1(0:m+1,:))
@@ -662,9 +656,11 @@ contains
     complex(DP) :: sqrtq
     integer :: nje, njo, nz, m
 
-    nz = size(z); m = mf%M
+    nz = size(z)
+    m = mf%M
     call radderivfcnsetup(mf,n,z,sqrtq,v1,v2,enz,epz,v,vi,EV,OD)
-    nje = size(EV); njo = size(OD)
+    nje = size(EV)
+    njo = size(OD)
     j = floor(n/2.0)
     call BesselI_val_and_deriv(v1,m+1,I(0:m,:),DI(0:m,:))
     call BesselK_val_and_deriv(v2,m+1,K(0:m,:),DK(0:m,:))
@@ -702,9 +698,11 @@ contains
     complex(DP) :: sqrtq
     integer :: nje, njo, nz, m
 
-    nz = size(z); m = mf%M
+    nz = size(z)
+    m = mf%M
     call radderivfcnsetup(mf,n,z,sqrtq,v1,v2,enz,epz,v,vi,EV,OD)
-    nje = size(EV); njo = size(OD)
+    nje = size(EV)
+    njo = size(OD)
     j = floor((n-1)/2.0)
     where (n==0) j=0
     call BesselI_val_and_deriv(v1,m+2,I(0:m+1,:),DI(0:m+1,:))
@@ -1122,9 +1120,7 @@ contains
 
     ! compute the "sign" vector
     vi = 1.0_DP
-    where (mod(i,2)==1)
-       vi = -1.0_DP
-    end where
+    where (mod(i,2)==1) vi = -1.0_DP
 
     sqrtq = sqrt(mf%q)
     v1 = sqrtq*exp(-z)
@@ -1159,9 +1155,7 @@ contains
 
     ! compute the "sign" vector
     vi = 1.0_DP
-    where (mod(i,2)==1)
-       vi = -1.0_DP
-    end where
+    where (mod(i,2)==1) vi = -1.0_DP
 
     enz = spread(exp(-z),dim=1,ncopies=mf%m)
     epz = spread(exp( z),dim=1,ncopies=mf%m)
@@ -1233,6 +1227,9 @@ contains
     integer, intent(in) :: n
     complex(DP), intent(out), dimension(0:n-1,size(arg)) :: I, ID
 
+    ! the recurrence relationships assume at least three entries
+    if (n < 3) stop 'mathieu_functions2.f90 : besseli_val_and_deriv, n must be > 3'
+
     call BesselI_val(arg,n,I(0:n-1,:))
 
     ID(1:n-2,:) = 0.5_DP*(I(0:n-3,:) + I(2:n-1,:)) ! middle
@@ -1291,6 +1288,8 @@ contains
     integer, intent(in) :: n
     complex(DP), intent(out), dimension(0:n-1,size(arg)) :: K, KD
 
+    ! the recurrence relationships assume at least three entries
+    if (n < 3) stop 'mathieu_functions2.f90 : besselk_val_and_deriv, n must be > 3'
     call BesselK_val(arg,n,K(0:n-1,:))
 
     KD(1:n-2,:) = -0.5_DP*(K(0:n-3,:) + K(2:n-1,:)) ! middle
