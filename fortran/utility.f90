@@ -1,9 +1,10 @@
 ! some general? functions collected in one place
 
 module utility
-
   implicit none
-  public 
+
+  private
+  public :: diagonal, logspace, linspace, outerprod, ccosh, cacosh, ynot
 
   interface diagonal
      module procedure diagonal_z, diagonal_d
@@ -47,6 +48,7 @@ contains
     complex(DP), dimension(size(ca),size(db)) :: c
     c = spread(ca,dim=2,ncopies=size(db))*spread(db,dim=1,ncopies=size(ca))
   end function outerprod_dz
+
   pure function outerprod_zd(da,cb) result(c)
     use constants, only : DP
     real(DP), intent(in), dimension(:) :: da
@@ -154,14 +156,15 @@ contains
   ! return the approximate circumference of an ellipse
   ! given the radius in elliptical coordinates, and 
   ! the semi-focal distance (YNOT formula)
-  elemental function ellipse_circircumference(psi,f) result(P)
+  elemental function ynot(e) result(P)
     use constants, only : DP, LN2, LNPIOV2
-    real(DP), intent(in) :: psi, f
+    use type_definitions, only : ellipse
+    type(ellipse), intent(in) :: e
     real(DP) :: P, y
 
     ! semi-major/minor length a:=f*cosh/sinh(psi)
     y = LN2/LNPIOV2
-    P = 4.0_DP*((f*cosh(psi))**y + (f*sinh(psi))**y)**(1.0_DP/y)
+    P = 4.0_DP*((e%f*cosh(e%r))**y + (e%f*sinh(e%r))**y)**(1.0_DP/y)
 
-  end function ellipse_circircumference
+  end function ynot
 end module utility

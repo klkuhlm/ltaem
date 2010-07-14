@@ -18,6 +18,7 @@ contains
     use time_mod, only : time
     use type_definitions, only : ellipse, match_result
     use mathieu_functions, only : ce, se, Ke, Ko, dKe, dKo, Ie, Io, dIe, dIo
+    use utility, only : ynot 
     implicit none
 
     type(ellipse), intent(in) :: e
@@ -94,10 +95,10 @@ contains
           dRMn(1:N-1,1) = dKo(e%parent%mat(idx), vi(1:N-1), e%r) ! odd deriv
           dRMn(0,1) = 0.0
 
-          r%LHS(loM:hiM,1:N) =       spread(dRMn(0:N-1,0)/RMn(0:N-1,0), 1,M)* &
-                                            & cemat(1:M,0:N-1,0) ! a_n flux
-          r%LHS(loM:hiM,N+1:2*N-1) = spread(dRMn(1:N-1,1)/RMn(1:N-1,1), 1,M)* &
-                                            & semat(1:M,1:N-1,1) ! b_n flux
+          r%LHS(loM:hiM,1:N) = &
+               & spread(dRMn(0:N-1,0)/RMn(0:N-1,0), 1,M)*cemat(1:M,0:N-1,0) ! a_n flux
+          r%LHS(loM:hiM,N+1:2*N-1) = &
+               & spread(dRMn(1:N-1,1)/RMn(1:N-1,1), 1,M)*semat(1:M,1:N-1,1) ! b_n flux
 
           if (e%ibnd == 0 .or. (e%ibnd == 1 .and. e%calcin)) then
              RMn(0:N-1,0) =   Ie(e%mat(idx), vi(0:N-1), e%r)
@@ -107,10 +108,10 @@ contains
              dRMn(1:N-1,1) = dIo(e%mat(idx), vi(1:N-1), e%r)
              dRMn(0,1) = 0.0
 
-             r%LHS(loM:hiM,2*N:3*N-1) = -spread(dRMn(0:N-1,0)/RMn(0:N-1,0), 1,M)* &
-                                              & cemat(1:M,0:N-1,0) ! c_n flux
-             r%LHS(loM:hiM,3*N:4*N-2) = -spread(dRMn(1:N-1,1)/RMn(1:N-1,1), 1,M)* &
-                                              & semat(1:M,1:N-1,1) ! d_n flux
+             r%LHS(loM:hiM,2*N:3*N-1) = &
+                  & -spread(dRMn(0:N-1,0)/RMn(0:N-1,0), 1,M)*cemat(1:M,0:N-1,0) ! c_n flux
+             r%LHS(loM:hiM,3*N:4*N-2) = &
+                  & -spread(dRMn(1:N-1,1)/RMn(1:N-1,1), 1,M)*semat(1:M,1:N-1,1) ! d_n flux
           end if
           deallocate(RMn,dRMn,stat=ierr)
           if (ierr /= 0) stop 'elliptical_elements.f90 error deallocating: RMn,dRMn'
@@ -127,11 +128,7 @@ contains
           r%RHS(M+1:2*M) = 0.0_DP ! area source has no flux effects
        case(1)
           ! put specified flux effects on RHS
-
-          ! &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-          ! TODO this area should be computed differently than 2*pi????
-          ! &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-          r%RHS(1:M) = time(p,e%time,.false.)*e%bdryQ/(2.0*PI*e%r)
+          r%RHS(1:M) = time(p,e%time,.false.)*e%bdryQ/ynot(e)
        end select
     end if
   end function ellipse_match_self

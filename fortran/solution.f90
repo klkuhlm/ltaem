@@ -252,5 +252,4 @@ contains
 
   end function line
 
-
 end module solution_mod
