@@ -128,7 +128,7 @@ contains
           r%RHS(M+1:2*M) = 0.0_DP ! area source has no flux effects
        case(1)
           ! put specified flux effects on RHS
-          r%RHS(1:M) = time(p,e%time,.false.)*e%bdryQ/ynot(e)
+          r%RHS(1:M) = time(p,e%time,.false.)*e%bdryQ/ynot(e%r,e%f)
        end select
     end if
   end function ellipse_match_self

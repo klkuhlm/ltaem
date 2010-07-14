@@ -156,15 +156,14 @@ contains
   ! return the approximate circumference of an ellipse
   ! given the radius in elliptical coordinates, and 
   ! the semi-focal distance (YNOT formula)
-  elemental function ynot(e) result(P)
+  elemental function ynot(eta,f) result(P)
     use constants, only : DP, LN2, LNPIOV2
-    use type_definitions, only : ellipse
-    type(ellipse), intent(in) :: e
+    real(DP), intent(in) :: eta,f
     real(DP) :: P, y
 
     ! semi-major/minor length a:=f*cosh/sinh(psi)
     y = LN2/LNPIOV2
-    P = 4.0_DP*((e%f*cosh(e%r))**y + (e%f*sinh(e%r))**y)**(1.0_DP/y)
+    P = 4.0_DP*((f*cosh(eta))**y + (f*sinh(eta))**y)**(1.0_DP/y)
 
   end function ynot
 end module utility

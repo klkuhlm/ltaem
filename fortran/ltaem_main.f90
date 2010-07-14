@@ -6,7 +6,7 @@
 ! treated as special case ellipses.
 
 program ltaem_main
-  use constants, only : DP, PI
+  use constants, only : DP, PI, LN2, LNPIOV2
   use type_definitions, only : domain, element, circle, ellipse, solution, INVLT, particle
   use file_ops, only : readinput, writeresults
   use inverse_Laplace_Transform, only : invlap => deHoog_invlap, pvalues => deHoog_pvalues
