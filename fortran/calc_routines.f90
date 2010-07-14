@@ -78,7 +78,6 @@ contains
     ! if statement into a more general single branch.
 
 !!$    print '(A,I0)', 'in ==',in
-
     !##################################################
     !! calculation point is outside all elements (in background)
     if (in == 0) then

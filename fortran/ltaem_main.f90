@@ -99,14 +99,16 @@ program ltaem_main
 
      sol%totalnP = product(shape(s)) ! total number of Laplace parameters across all times
      tnp = sol%totalnP
-        
+
+     print *, 'shape(s)',shape(s),' tnp',tnp
+
      ! calculate coefficients for each value of Laplace parameter
      ! ** common between particle tracking and contours/hydrographs **
      
      ! initialize Mathieu function matrices
      if (ne > 0) then
         write(*,'(A)') 'Computing Mathieu coefficients ...'
-        call ellipse_init(e,bg,reshape(s,[tnP]))
+        call ellipse_init(e,bg,s)
      end if
 
      idx = 0 ! initialize index
@@ -193,7 +195,7 @@ program ltaem_main
         ! re-initialize Mathieu function matrices
         if (ne > 0) then
            write(*,'(A)') 'computing Mathieu coefficients ...'
-           call ellipse_init(e,bg,reshape(s,[tnp]))
+           call ellipse_init(e,bg,s)
         end if
 
         write(*,'(A)') 'matching results successfully read from file'

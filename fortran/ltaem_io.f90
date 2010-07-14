@@ -28,9 +28,9 @@ contains
     character(lenFN+5) :: echofname, circleFname, ellipseFname, particleFname
     integer :: ierr,j,ntot,nC,nE  ! #elements, #circles, #ellipses
 
-    open(unit=15, file=sol%infname, status='old', action='read', iostat=ierr)
+    open(unit=15, file=trim(sol%infname), status='old', action='read', iostat=ierr)
     if (ierr /= 0) then
-       write(*,'(2A)') 'READINPUT: error opening input file ',sol%infname
+       write(*,'(2A)') 'READINPUT: error opening input file ',trim(sol%infname)
        stop 100
     endif
 
@@ -158,9 +158,9 @@ contains
     read(15,*) dom%num(1),circleFname
     nc = dom%num(1)
     if (nc > 0) then
-       open(unit=22, file=circleFname, status='old', action='read',iostat=ierr)
+       open(unit=22, file=trim(circleFname), status='old', action='read',iostat=ierr)
        if (ierr /= 0) then
-          write(*,'(2A)') 'READINPUT: error opening circular data file for reading ',circleFname
+          write(*,'(2A)') 'READINPUT: error opening circular data file for reading ',trim(circleFname)
           stop
        else
           write(16,'(A)') trim(circleFname)//' opened for reading circular data'
@@ -367,9 +367,9 @@ contains
     read(15,*) dom%num(2), ellipseFname
     ne = dom%num(2)
     if (ne > 0) then
-       open(unit=33, file=circleFname, status='old', action='read',iostat=ierr)
+       open(unit=33, file=trim(ellipseFname), status='old', action='read',iostat=ierr)
        if (ierr /= 0) then
-          write(*,'(2A)') 'READINPUT: error opening elliptical data file for reading ',ellipseFname
+          write(*,'(2A)') 'READINPUT: error opening elliptical data file for reading ',trim(ellipseFname)
           stop
        else
           write(16,'(A)') trim(ellipseFname)//' opened for reading elliptical data'
@@ -407,8 +407,8 @@ contains
        read(33,*) e(:)%StorIn
        
        read(33,*) e(:)%r   ! eta
-       if (any(e%r < epsilon(0.0))) then
-          print *, 'e%r must be > 0.0',e%r
+       if (any(e%r < 0.0)) then
+          print *, 'e%r must be >= 0.0',e%r
           stop
        end if
 
@@ -472,7 +472,7 @@ contains
           if (e(j)%BdryTime > -1) then
              allocate(e(j)%BTPar(2),stat=ierr)
              if (ierr /= 0) stop 'ltaem_io.f90 error allocating e%(j)%BTPAR(2)'
-             read(15,*) e(j)%BTPar(:)
+             read(33,*) e(j)%BTPar(:)
              write(16,'(I0,2(1X,ES12.5),A,I0)') e(j)%BdryTime,e(j)%BTPar(:),&
                   &'  ||  Bdry time behavior, par1, par2 for ellipse ',j
           else
