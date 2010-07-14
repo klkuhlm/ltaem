@@ -1,4 +1,4 @@
-True False  True  1  well_single_circle_contour.xyz  dump.out  well_single_circle.elem  well_single_circle.geom    ::  recalculate coeff?, particle?, contour?, output flag, outputFN, coeffFN (output), elementHierarchy (input), geometryFN (output)
+True  False  True  1  single_well_contour.xyz  dump.out  single_well.elem  single_well.geom    ::  re-compute coefficients?, particle?, contour?, output flag, outputFN, coeffFN (output), elementHierarchy (input), geometryFN (output)
 2.0D-1  2.0D0  1.0D-4   0  1.0D0  1.0D-4  1.0D0  20  ::  por, k, Ss, leakFlag, K2, Ss2, b2, ellipse MS
 1.5D-1  2.0D0  False  1.0  :: Sy, Kz, unconfined?, b
 40  40  1  :: nx, ny, nt
@@ -6,8 +6,9 @@ True False  True  1  well_single_circle_contour.xyz  dump.out  well_single_circl
 0.000000000000000000e+00 2.820512820512820901e-02 5.641025641025641801e-02 8.461538461538462008e-02 1.128205128205128360e-01 1.410256410256410520e-01 1.692307692307692402e-01 1.974358974358974561e-01 2.256410256410256721e-01 2.538461538461538880e-01 2.820512820512821039e-01 3.102564102564103199e-01 3.384615384615384803e-01 3.666666666666666963e-01 3.948717948717949122e-01 4.230769230769231282e-01 4.512820512820513441e-01 4.794871794871795601e-01 5.076923076923077760e-01 5.358974358974359919e-01 5.641025641025642079e-01 5.923076923076924238e-01 6.205128205128206398e-01 6.487179487179488557e-01 6.769230769230769607e-01 7.051282051282051766e-01 7.333333333333333925e-01 7.615384615384616085e-01 7.897435897435898244e-01 8.179487179487180404e-01 8.461538461538462563e-01 8.743589743589744723e-01 9.025641025641026882e-01 9.307692307692309042e-01 9.589743589743591201e-01 9.871794871794873361e-01 1.015384615384615552e+00 1.043589743589743657e+00 1.071794871794871984e+00 1.100000000000000089e+00 :: y
 0.125  :: t
 1.0D-6  1.0D-8  5  :: alpha, tolerance, M
-2  well_single_circle_circles.in     :: number of circular elements, circle data file
-1  well_single_circle_ellipses.in    :: number of elliptical elements, ellipse data file
-not_used   ::  particle data file
+0  file_not_used      :: number of circular elements, circular elements input file
+1  single_line_ellipses.in      :: number of elliptical elements, elliptical elements input file
+file_not_used     :: particle inputs file
+
 
      
