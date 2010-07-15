@@ -257,6 +257,7 @@ contains
                    ! specified flux (finite-radius well no storage)
                    ! save head effects of well onto RHS
                    r%RHS(1:M) = -well(c,p)*r%LHS(1:M,1)
+                   r%LHS(1:M,1) = 0.0
                 end if
              end if
           end if
@@ -364,9 +365,11 @@ contains
 
        ! save flux effects of well onto RHS
        if (dom%inclBg(src,targ)) then
-          factor = -1.0
+          ! source well in background of target element
+          factor = -1.0_DP
        else
-          factor = 1.0
+          ! source well inside target element
+          factor = 1.0_DP
        end if
        
        r%RHS(loM:hiM) = factor*well(c,p)*r%LHS(loM:hiM,loN)
@@ -378,15 +381,9 @@ contains
        end if
 
        deallocate(r%LHS,stat=ierr)
-       if (ierr /= 0) then
-          stop 'circular_elements:circle_match_self() error deallocating r%LHS'
-       end if
-       
+       if (ierr /= 0) stop 'circular_elements:circle_match_self() error deallocating r%LHS'
        allocate(r%LHS(hiM,0),stat=ierr)
-       if (ierr /= 0) then
-          stop 'circular_elements:circle_match_self() error re-allocating r%LHS'
-       end if
-       
+       if (ierr /= 0) stop 'circular_elements:circle_match_self() error re-allocating r%LHS'
     end if
 
   end function circle_match_other
@@ -405,7 +402,6 @@ contains
     
     Kn(0:1) = bK(kappa(p,c%parent)*c%r,2)
     a0 = Kn(0)*time(p,c%time,.false.)*c%bdryQ/(2.0*PI*c%r*Kn(1))
-    
   end function well
   
   function storwell(c,p) result(a0)
@@ -464,19 +460,12 @@ contains
        BRgp(1:np,0:N-1) = bI(Rgp*kap(1:np),N)
        BR0(1:np,0:N-1) =  bI(c%r*kap(1:np),N)
        
-!!$       print *, 'BRgp  max:',maxval(abs(BRgp)),' min:',minval(abs(BRgp))
-!!$       print *, 'BR0   max:',maxval(abs(BR0)), ' min:',minval(abs(BR0))
-!!$       print *, 'coeff max:',maxval(abs(c%coeff(lo:hi,n0:n0+2*N-2))), &
-!!$            &' min:',minval(abs(c%coeff(lo:hi,n0:n0+2*N-2)))
     else
        n0 = 1 
        kap(1:np) = kappa(p(1:np),c%parent)
        BRgp(1:np,0:N-1) = bK(Rgp*kap(1:np),N)
        BR0(1:np,0:N-1) =  bK(c%r*kap(1:np),N)
     end if
-
-!!$    print *, 'np,lo,hi,n0,N',np,lo,hi,n0,N
-!!$    print *, 'coeff:',shape(c%coeff)
 
     aa(1:np,0:N-1) = c%coeff(lo:hi,n0:n0+N-1)
     bb(1:np,0) = 0.0 ! insert zero to make odd/even same shape
@@ -485,13 +474,6 @@ contains
     H(1:np) = sum(BRgp(1:np,0:N-1)/BR0(1:np,0:N-1)* &
          & ( aa(1:np,0:N-1)*spread(cos(vr(0:N-1)*Pgp),1,np) + &
          &   bb(1:np,0:N-1)*spread(sin(vr(0:N-1)*Pgp),1,np) ),dim=2)
-    
-!!$    if (inside) then
-!!$       print *, 'H ev:',sum(BRgp(1:np,0:N-1)/BR0(1:np,0:N-1)* &
-!!$         & ( aa(1:np,0:N-1)*spread(cos(vr(0:N-1)*Pgp),1,np) ),dim=2)
-!!$       print *, 'H od:',sum(BRgp(1:np,0:N-1)/BR0(1:np,0:N-1)* &
-!!$         & ( bb(1:np,0:N-1)*spread(sin(vr(0:N-1)*Pgp),1,np) ),dim=2)
-!!$    end if
 
   end function circle_calc
 
@@ -547,6 +529,7 @@ contains
     dH(1:np,1) = sum(dBRgp(1:np,0:N-1)/BR0(1:np,0:N-1)* &  
          & ( aa(1:np,0:N-1)*spread(cos(vr(0:N-1)*Pgp),1,np) + &
          &   bb(1:np,0:N-1)*spread(sin(vr(0:N-1)*Pgp),1,np) ),dim=2)
+
     ! dPot_dTheta
     dH(1:np,2) = sum(BRgp(1:np,0:N-1)/BR0(1:np,0:N-1)*spread(vr(0:N-1),1,np)* &  
          & ( bb(1:np,0:N-1)*spread(cos(vr(0:N-1)*Pgp),1,np) - &
