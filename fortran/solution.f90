@@ -149,6 +149,7 @@ contains
           b(row(rr,0):row(rr,2)) = b(row(rr,0):row(rr,2)) + res(rr,cc)%RHS
        end do
     end do
+
     deallocate(res,stat=ierr)
     if (ierr /= 0) stop 'solution.f90: error deallocating res'
 
@@ -163,14 +164,16 @@ contains
     
     ! put result into local coeff variables
     do i=1,nc
-       ! circles
+       ! circles -- ensure container for results is allocated
        if (.not. allocated(c(i)%coeff)) then
+          ! solution for each value of p, saved as a 2D matrix
           allocate(c(i)%coeff(sol%totalnP,col(i,1)), stat=ierr)
           if (ierr /= 0) then
              print '(A,I0,A)', 'solution.f90: error allocating c(',i,')%coeff'
              stop
           end if
        end if
+
        if (.not. (c(i)%ibnd == 2 .and. (.not. c(i)%storin))) then
           ! coefficients come from least-squares solution above
           c(i)%coeff(idx,:) = b(col(i,0):col(i,2))
@@ -183,10 +186,11 @@ contains
              allocate(c(i)%coeff(sol%totalnP,1), stat=ierr)
              if (ierr /= 0) stop 'solution.f90: error re-allocating c(i)%coeff'
           end if
-          ! get coefficients from well routine
+          ! get a0 coefficient from well routine
           c(i)%coeff(idx,1) = well(c(i),p)
        end if
     end do
+
     do i=1,ne
        ! ellipses
        if (.not. allocated(e(i)%coeff)) then
@@ -204,10 +208,11 @@ contains
              ! fix size of coefficient container
              deallocate(e(i)%coeff, stat=ierr)
              if (ierr /= 0) stop 'solution.f90: error deallocating e(i)%coeff'
+             ! allocate space for all the even (a_n) coefficients
              allocate(e(i)%coeff(sol%totalnP,2*e(i)%N-1), stat=ierr)
              if (ierr /= 0) stop 'solution.f90: error re-allocating e(i)%coeff'
           end if
-          ! get coefficients from line routine
+          ! get coefficients from line routine (only even-order, even coeff used)
           e(i)%coeff(idx,:) = 0.0 
           e(i)%coeff(idx,1:e(i)%N:2) = line(e(i),p,idx) ! a_(2n)
        end if
@@ -245,9 +250,10 @@ contains
     ! factor of 4 different from Kuhlman&Neuman paper
     ! include Radial/dRadial MF here to balance with those in general solution
     a2n(1:nmax) = time(p,e%time,.false.)*e%bdryQ/(2.0*PI)* &
-            & Ke(e%parent%mat(idx), vi(0:N-1:2), e%r) / dKe(e%parent%mat(idx), vi(0:N-1:2), e%r)* &
-            & (-vs(0:N-1:2))*sum(arg(1:MS,1:nmax)*conjg(e%parent%mat(idx)%A(1:MS,0:nmax-1,0)),dim=1)
+            & Ke(e%parent%mat(idx), vi(0:N-1:2), e%r) / &
+            & dKe(e%parent%mat(idx), vi(0:N-1:2), e%r)* &
+            & (-vs(0:N-1:2))*sum( arg(1:MS,1:nmax)* &
+            & conjg(e%parent%mat(idx)%A(1:MS,0:nmax-1,0)), dim=1)
 
   end function line
-
 end module solution_mod

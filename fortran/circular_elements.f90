@@ -65,18 +65,18 @@ contains
     if (ierr /= 0) stop 'circular_elements.f90:circle_match_self() error &
          &allocating: r%LHS, r%RHS'
 
-    cmat(1:M,0:N-1) = cos(outerprod(c%Pcm(1:M), vi(0:N-1)))
-    smat(1:M,1:N-1) = sin(outerprod(c%Pcm(1:M), vi(1:N-1)))
+    cmat(1:M,0:N-1) = cos(outerprod(c%Pcm(1:M),vi(0:N-1)))
+    smat(1:M,1:N-1) = sin(outerprod(c%Pcm(1:M),vi(1:N-1)))
 
     ! setup LHS
     ! matching or specified total head
     if (c%ibnd == 0 .or. c%ibnd == -1) then
-       r%LHS(1:M,1:N) =       cmat(1:M,0:N-1)/c%parent%K ! a_n head
-       r%LHS(1:M,N+1:2*N-1) = smat(1:M,1:N-1)/c%parent%K ! b_n head
+       r%LHS(1:M,1:N) =       cmat(:,0:N-1)/c%parent%K ! a_n head
+       r%LHS(1:M,N+1:2*N-1) = smat(:,1:N-1)/c%parent%K ! b_n head
 
        if (c%ibnd == 0 .or. (c%ibnd == -1 .and. c%calcin)) then
-          r%LHS(1:M,2*N:3*N-1) = -cmat(1:M,0:N-1)/c%K ! c_n head
-          r%LHS(1:M,3*N:4*N-2) = -smat(1:M,1:N-1)/c%K ! d_n head
+          r%LHS(1:M,2*N:3*N-1) = -cmat(:,0:N-1)/c%K ! c_n head
+          r%LHS(1:M,3*N:4*N-2) = -smat(:,1:N-1)/c%K ! d_n head
        end if
     end if
     
@@ -112,10 +112,11 @@ contains
        ! put constant area source term effects (from inside the element) on RHS
        ! TODO : handle area source in background
        r%RHS(1:M) = -time(p,c%time,.true.)*c%areaQ*c%Ss/kappa(p,c%element)**2
-       r%RHS(M+1:2*M) = 0.0 ! area source has no flux effects
+       r%RHS(M+1:2*M) = 0.0 ! constant area source has no flux effects
     case(1)
        ! put specified flux effects on RHS
-       r%RHS(1:M) = time(p,c%time,.false.)*c%bdryQ/(2.0*PI*c%r)
+       ! TODO : check addition of aquifer thickness to denominator
+       r%RHS(1:M) = time(p,c%time,.false.)*c%bdryQ/(2.0*PI*c%r*c%b)
     case(2)
        if (c%StorIn) then
           ! effects of wellbore storage and skin on finite-radius well
