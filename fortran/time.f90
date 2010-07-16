@@ -27,6 +27,8 @@ contains
     real(DP) :: tf
     
     np = size(p,1)
+
+    ! consolidate area and boundary time functions
     if (area) then
        flag = t%areaTime
        allocate(par(size(t%ATPar)))
@@ -36,6 +38,10 @@ contains
        allocate(par(size(t%BTPar)))
        par = t%BTPar
     end if
+
+#ifdef DEBUG
+    print *, 'time: area?',area,' flag',flag
+#endif
 
     select case(flag)
     case(1)
@@ -51,7 +57,7 @@ contains
        ! "step test": increasing by integer multiples of Q each 
        ! integer multiple of par1 time, off at par2
        mult(1:np) = 1.0/(p - p*exp(-par(1)*p)) * &
-            & (1.0 - exp(-par(2)*p))/p
+                      & (1.0 - exp(-par(2)*p))/p
     case(5)
        ! half square wave (only +), period 2*par1
        ! shifted to start at t=par2

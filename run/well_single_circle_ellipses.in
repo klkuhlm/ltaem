@@ -9,8 +9,8 @@ false :: storin?
 8.0D-1  :: y0
 1.25D-1  :: f
 -7.853982D-1  :: theta
-3.0D-1  :: K
-1.0D-5  :: Ss
+4.0D0  :: K
+1.0D-3  :: Ss
 1.5D-1  :: porosity
 0.0D-1  :: area source strength
 0.0D-1  :: boundary source strength

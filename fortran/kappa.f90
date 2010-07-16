@@ -15,11 +15,15 @@ contains
     use type_definitions, only : element
 
     complex(DP), intent(in), dimension(:) :: p
-    type(element), intent(in) :: el
+    type(element), intent(in) :: el ! circle, ellipse, or background
     complex(DP), dimension(size(p)) :: q
 
     integer :: np, ierr
     complex(DP), allocatable ::  kap2(:), exp2z(:)
+
+#ifdef DEBUG
+    print *, 'kappa el:',el%id,' leakFlag',el%leakFlag,' unconfinedFlag',el%unconfinedFlag
+#endif
 
     np = size(p)
     if (el%leakFlag /= 0) then

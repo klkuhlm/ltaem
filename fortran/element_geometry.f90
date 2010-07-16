@@ -36,6 +36,8 @@ contains
     allocate(dom%InclIn(0:ntot,ntot), dom%InclUp(ntot), dom%InclBg(ntot,ntot),stat=ierr)
     if (ierr /= 0) stop 'error allocating hierarchy matrices, dom%InclIn, dom%inclUp, dom%InclBg'
 
+    bg%id = 0
+
     ! vector of eqi-spaced locations on perimeter of circle and ellipse
     ! each element can have a different number of matching locations
     do i=1,nc
