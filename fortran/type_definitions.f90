@@ -10,7 +10,7 @@ module type_definitions
   type :: domain
      ! number of each type of element
      ! 1=circles (wells as special case), 2=ellipses (lines as special case)
-     integer, dimension(2) :: num = [0,0]
+     integer, dimension(2) :: num = [-999,-999]
 
      ! index of parent element
      integer, allocatable :: InclUp(:)
@@ -40,7 +40,7 @@ module type_definitions
      ! (is multiplied by constant strength too -- you probably want to set that to unity)
 
      ! type of time behavior for AREA/Boundary Head/Flux (see above)
-     integer :: AreaTime = 0, BdryTime = 0
+     integer :: AreaTime = -999, BdryTime = -999
 
      ! parameters related to different time behaviors (on, off, etc)
      real(DP), allocatable :: AtPar(:), BtPar(:)
