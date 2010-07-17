@@ -1031,7 +1031,7 @@ contains
   ! &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
   ! some utility routines
 
-#ifndef NOCHECK
+  ! possibly disable this checking subroutine for extra speed??
   subroutine check_cutoff(mf,n)
     type(mathieu), intent(in) :: mf
     integer, dimension(:), intent(in) :: n
@@ -1040,33 +1040,28 @@ contains
 
     if (any(n < 0)) then
        write(*,*) 'CHECK_CUTOFF: order of Mathieu functions must be >= 0',n
-       stop 'CHECK_CUTOFF: only non-negative orders'
+       stop 'CHECK_CUTOFF: only non-negative Mathieu function orders'
     end if
     
-    if (size(n) > 1) then
+    if (size(n,dim=1) > 1) then
        ! since vectors of integer indexing vectors are used on the LHS of
        ! expressions, we must test for many-to-one conditions, since it is a no-no
        offd = .TRUE.
        forall (i=1:size(n)) offd(i,i) = .FALSE.
+       ! check if off-diagonal terms in tensor product difference nxn - nxn are zero
        if (any((spread(n,2,size(n))-spread(n,1,size(n))) == 0 .and. offd)) then
           write(*,*) 'CHECK_CUTOFF: cannot have repeated indices in vector order',n
-          stop 'CHECK_CUTOFF: eliminate repeated indices'
+          stop 'CHECK_CUTOFF: eliminate repeated indices to Mathieu functions'
        end if
     end if
 
-    if (maxval(n,1) > mf%m - mf%buffer) then
+    if (maxval(n,dim=1) > mf%m - mf%buffer) then
        write(*,'(A,I0,3(A,ES12.4E3),2(A,I0))') 'CHECK_CUTOFF: max order=',maxval(n,1), &
             & ' too large for q=(',real(mf%q),',',aimag(mf%q), &
             & ') given CUTOFF=',mf%CUTOFF,'; buffer =',mf%buffer, ', M=',mf%M
-       stop 'CHECK_CUTOFF: increase M or decrease CUTOFF'
+       stop 'CHECK_CUTOFF: increase Mathieu function M or decrease CUTOFF'
     end if
   end subroutine check_cutoff
-#else
-  subroutine check_cutoff(mf,n)
-    type(mathieu), intent(in) :: mf
-    integer, dimension(:), intent(in) :: n
-  end subroutine check_cutoff
-#endif
 
   subroutine angfcnsetup(mf,n,v,vi,EV,OD)
     use constants, only : DP
@@ -1087,9 +1082,7 @@ contains
 
     ! compute the "sign" vector
     vi = 1.0_DP
-    where (mod(i,2)==1)
-       vi = -1.0_DP
-    end where
+    where (mod(i,2)==1) vi = -1.0_DP
 
     ! indexing vectors based on even/odd-ness of n
     forall (j=1:size(n)) nn(j) = j

@@ -33,10 +33,9 @@ contains
     complex(DP), dimension(size(z,dim=1),0:num-1) :: K
     complex(DP), dimension(0:num-1) :: tmp
     integer :: numzero, ierr, j
-    integer, parameter :: kode = 1
 
     do j = 1, size(z,dim=1)
-       call cbesk(z(j), 0.0_DP, kode, num, tmp(0:num-1), numzero, ierr)
+       call cbesk(z=z(j), fnu=0.0_DP, kode=1, n=num, cy=tmp(0:num-1), nz=numzero, ierr=ierr)
        ! either 0 or 3 are acceptable return codes
        if (.not.(ierr == 0 .or. ierr == 3)) then
           write(*,'(A,3(1X,I0))') 'besk_vectz error',numzero,ierr,j
@@ -62,10 +61,9 @@ contains
     complex(DP), dimension(size(z,dim=1),0:num-1) :: I
     complex(DP), dimension(0:num-1) :: tmp
     integer :: numzero, ierr, j
-    integer, parameter :: kode = 1
 
     do j = 1, size(z,dim=1)
-       call cbesi(z(j), 0.0_DP, kode, num, tmp(0:num-1), numzero, ierr)
+       call cbesi(z=z(j), fnu=0.0_DP, kode=1, n=num, cy=tmp(0:num-1), nz=numzero, ierr=ierr)
        ! either 0 or 3 are acceptable return codes
        if (.not.(ierr == 0 .or. ierr == 3)) then
           write(*,'(A,3(1X,I0))') 'besi_vectz error',numzero,ierr,j
