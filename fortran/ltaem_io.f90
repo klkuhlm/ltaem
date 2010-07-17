@@ -12,8 +12,8 @@ contains
   ! this routine read the main input file, and allocates the main 
   ! data structures used to store data.
   subroutine readInput(sol,dom,bg,c,e,p)
-    use type_definitions, only : solution, particle, domain, element, circle, ellipse
     use constants, only : DP, lenFN, PI
+    use type_definitions, only : solution, particle, domain, element, circle, ellipse
 
     type(solution), intent(inout) :: sol
     type(particle), intent(out), allocatable :: p(:)
