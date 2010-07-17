@@ -43,7 +43,7 @@ contains
     nt = size(t)
 
     ! there will be problems is fp(:)==0, or any values are NaN
-    if(maxval(abs(fp)) > tiny(1.0D0) .or. any(fp /= fp)) then
+    if(maxval(abs(fp)) > tiny(1.0_DP) .and. all(fp == fp)) then
 
        ! Re(p) -- this is the de Hoog parameter c
        gamma = lap%alpha - log(lap%tol)/(2.0*tee)
