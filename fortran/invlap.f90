@@ -101,8 +101,9 @@ contains
        ft(1:nt) =  exp(gamma*t(:))/tee * real(A(2*M,:)/B(2*M,:))
 
     else  !! entire f(p) vector is zero
-       ft = 0.0
-       write(*,*) 'f(t) not computed at t=',t, ' because max|fp|=', maxval(abs(fp))
+       ft = -999.
+       write(*,'(2(A,ES13.5),A,L1)') 'f(t) not computed at t=',t, &
+            & ' because max|fp|=', maxval(abs(fp)), ' any(NaN) ? =>',any(fp/=fp)
     end if
   end function deHoog_invLap_vect
 
