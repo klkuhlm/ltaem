@@ -10,15 +10,12 @@ module constants
   integer, parameter :: lenFN = 128
 
   ! useful? constants related to pi and ln
-  real(kind=DP), parameter :: PI =      4.0_DP*atan(1.0_DP)
-  real(kind=DP), parameter :: PIOV2 =   PI/2.0_DP
-
-  ! Euler calculated to precision=34 using mathematica (could be quad precision)
-  real(kind=DP), parameter :: EULER =   0.5772156649015328606065120900824025_DP
+  real(kind=DP), parameter :: PI =      4.0_DP*atan(1.0_DP) ! 3.14159...
+  real(kind=DP), parameter :: PIOV2 =   2.0_DP*atan(1.0_DP) ! 1.57079...
 
   ! these are both used in YNOT approximation to elliptical circumference
-  real(kind=DP), parameter :: LN2 =     log(2.0_DP)
-  real(kind=DP), parameter :: LNPIOV2 = log(PIOV2)
+  real(kind=DP), parameter :: LN2 =     log(2.0_DP) ! 0.693147...
+  real(kind=DP), parameter :: LNPIOV2 = log(PIOV2)  ! 0.451582...
 
   ! sqrt(-1)
   complex(kind=DP), parameter :: EYE = cmplx(0.0,1.0,DP)
