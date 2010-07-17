@@ -12,25 +12,26 @@ module elliptical_elements
   end interface
 
 contains
-  function ellipse_match_self(e,p,idx) result(r)
+  function ellipse_match_self(e,p,i) result(r)
     use constants, only : DP, PI
     use kappa_mod, only : kappa
     use time_mod, only : time
-    use type_definitions, only : ellipse, match_result
+    use type_definitions, only : ellipse, match_result, element
     use mathieu_functions, only : ce, se, Ke, Ko, dKe, dKo, Ie, Io, dIe, dIo
     use utility, only : ynot 
     implicit none
 
-    type(ellipse), intent(in) :: e
+    type(ellipse), target, intent(in) :: e
     complex(DP), intent(in) :: p
-    integer, intent(in) :: idx ! indicates which value of p (global state)
+    integer, intent(in) :: i ! indicates which value of p (global state)
     type(match_result) :: r
+    type(element), pointer :: f => null()  ! shortcut for parent of element 
 
     integer :: j, N, M, loM, hiM, ierr, nrows, ncols
     ! mod. radial Mathieu function (K{e,o} or I{e,o})
     complex(DP), allocatable :: RMn(:,:), dRMn(:,:)
-    complex(DP), dimension(1:e%M,0:e%N-1,0:1) :: cemat
-    complex(DP), dimension(1:e%M,1:e%N-1,0:1) :: semat
+    complex(DP), dimension(1:e%M, 0:e%N-1, 0:1) :: cemat
+    complex(DP), dimension(1:e%M, 1:e%N-1, 0:1) :: semat
     integer, dimension(0:e%N-1) :: vi
 
     N = e%N
@@ -61,21 +62,22 @@ contains
          & error allocating: r%LHS, r%RHS'
 
     if (e%ibnd /= 2) then
+       f => e%parent
 
        ! outside ang. mod. Mathieu fcns
-       cemat(1:M,0:N-1,0) = transpose(ce(e%parent%mat(idx), vi(0:N-1), e%Pcm(1:M)))
-       semat(1:M,1:N-1,0) = transpose(se(e%parent%mat(idx), vi(1:N-1), e%Pcm(1:M)))
+       cemat(1:M,0:N-1,0) = transpose(ce(f%mat(i), vi(0:N-1), e%Pcm(1:M)))
+       semat(1:M,1:N-1,0) = transpose(se(f%mat(i), vi(1:N-1), e%Pcm(1:M)))
        if (e%ibnd == 0 .or. (e%calcin .and. (e%ibnd == 1 .or. e%ibnd == -1))) then
           ! inside
-          cemat(1:M,0:N-1,1) = transpose(ce(e%mat(idx), vi(0:N-1), e%Pcm(1:M)))
-          semat(1:M,1:N-1,1) = transpose(se(e%mat(idx), vi(1:N-1), e%Pcm(1:M)))
+          cemat(1:M,0:N-1,1) = transpose(ce(e%mat(i), vi(0:N-1), e%Pcm(1:M)))
+          semat(1:M,1:N-1,1) = transpose(se(e%mat(i), vi(1:N-1), e%Pcm(1:M)))
        end if
 
        ! setup LHS
        ! matching or specified total head
        if (e%ibnd == 0 .or. e%ibnd == -1) then
-          r%LHS(1:M,1:N) =       cemat(1:M,0:N-1,0)/e%parent%K ! a_n head
-          r%LHS(1:M,N+1:2*N-1) = semat(1:M,1:N-1,0)/e%parent%K ! b_n head
+          r%LHS(1:M,1:N) =       cemat(1:M,0:N-1,0)/f%K ! a_n head
+          r%LHS(1:M,N+1:2*N-1) = semat(1:M,1:N-1,0)/f%K ! b_n head
 
           if (e%ibnd == 0 .or. (e%ibnd == -1 .and. e%calcin)) then
              r%LHS(1:M,2*N:3*N-1) = -cemat(1:M,0:N-1,1)/e%K ! c_n head
@@ -88,11 +90,11 @@ contains
           allocate(RMn(0:N-1,0:1),dRMn(0:N-1,0:1), stat=ierr)
           if (ierr /= 0) stop 'elliptical_elemen ts.f90 error allocating: RMn, dRMn'
 
-          RMn(0:N-1,0) =   Ke(e%parent%mat(idx), vi(0:N-1), e%r) ! even fn
-          RMn(1:N-1,1) =   Ko(e%parent%mat(idx), vi(1:N-1), e%r) ! odd fn
+          RMn(0:N-1,0) =   Ke(f%mat(i), vi(0:N-1), e%r) ! even fn
+          RMn(1:N-1,1) =   Ko(f%mat(i), vi(1:N-1), e%r) ! odd fn
           RMn(0,1) = 0.0
-          dRMn(0:N-1,0) = dKe(e%parent%mat(idx), vi(0:N-1), e%r) ! even deriv
-          dRMn(1:N-1,1) = dKo(e%parent%mat(idx), vi(1:N-1), e%r) ! odd deriv
+          dRMn(0:N-1,0) = dKe(f%mat(i), vi(0:N-1), e%r) ! even deriv
+          dRMn(1:N-1,1) = dKo(f%mat(i), vi(1:N-1), e%r) ! odd deriv
           dRMn(0,1) = 0.0
 
           r%LHS(loM:hiM,1:N) = &
@@ -101,11 +103,11 @@ contains
                & spread(dRMn(1:N-1,1)/RMn(1:N-1,1), 1,M)*semat(1:M,1:N-1,1) ! b_n flux
 
           if (e%ibnd == 0 .or. (e%ibnd == 1 .and. e%calcin)) then
-             RMn(0:N-1,0) =   Ie(e%mat(idx), vi(0:N-1), e%r)
-             RMn(1:N-1,1) =   Io(e%mat(idx), vi(1:N-1), e%r)
+             RMn(0:N-1,0) =   Ie(e%mat(i), vi(0:N-1), e%r)
+             RMn(1:N-1,1) =   Io(e%mat(i), vi(1:N-1), e%r)
              RMn(0,1) = 0.0
-             dRMn(0:N-1,0) = dIe(e%mat(idx), vi(0:N-1), e%r)
-             dRMn(1:N-1,1) = dIo(e%mat(idx), vi(1:N-1), e%r)
+             dRMn(0:N-1,0) = dIe(e%mat(i), vi(0:N-1), e%r)
+             dRMn(1:N-1,1) = dIo(e%mat(i), vi(1:N-1), e%r)
              dRMn(0,1) = 0.0
 
              r%LHS(loM:hiM,2*N:3*N-1) = &
@@ -124,12 +126,13 @@ contains
           r%RHS(1:M) = time(p,e%time,.false.)*e%bdryQ
        case(0)
           ! put constant area source term effects on RHS
-          r%RHS(1:M) = -time(p,e%time,.true.)*e%areaQ*e%Ss/kappa(p,e%parent)**2
+          r%RHS(1:M) = -time(p,e%time,.true.)*e%areaQ*e%Ss/kappa(p,f)**2
           r%RHS(M+1:2*M) = 0.0_DP ! area source has no flux effects
        case(1)
           ! put specified flux effects on RHS
           r%RHS(1:M) = time(p,e%time,.false.)*e%bdryQ/ynot(e%r,e%f)
        end select
+       f => null()
     end if
   end function ellipse_match_self
 

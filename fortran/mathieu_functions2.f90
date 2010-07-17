@@ -264,7 +264,7 @@ contains
   ! ce(q) is called Se(-q) by Blanch, or Qe(q) by Alhargan
   ! functions here use identities in 7.02 of Blanch's AMS#59 publication
   function ce_vect_nz(mf,n,z) result(ce)
-    use constants, only : DP, PI
+    use constants, only : DP, PI, PIOV2
     use utility, only : outerprod
 
     ! external arguments
@@ -287,10 +287,10 @@ contains
     j = floor(n/2.0)
     
     ce(EV,:) = sum(spread(mf%A(:,j(EV),0),3,nz)* &
-         & spread(cos(outerprod(2*v,PI/2.0-z)),2,nje),dim=1)
+         & spread(cos(outerprod(2*v,PIOV2-z)),2,nje),dim=1)
 
     ce(OD,:) = sum(spread(mf%B(:,j(OD),1),3,nz)* &
-         & spread(sin(outerprod(2*v+1,PI/2.0-z)),2,njo),dim=1)
+         & spread(sin(outerprod(2*v+1,PIOV2-z)),2,njo),dim=1)   
 
   end function ce_vect_nz
 
@@ -299,7 +299,7 @@ contains
   ! for vector order and argument (returns an outer-product type result)
   ! se is called So(-q) by Blanch and Qo(q) by Alhargan
   function se_vect_nz(mf,n,z) result(se)
-    use constants, only : DP, PI
+    use constants, only : DP, PI, PIOV2
     use utility, only : outerprod
     integer, dimension(:), intent(in) :: n
     real(DP), dimension(:), intent(in) :: z
@@ -320,10 +320,10 @@ contains
     where (n==0) j = 0
 
     se(EV,:) = sum(spread(mf%B(:,j(EV),0),3,nz)* &
-         & spread(sin(outerprod(2*v+2,PI/2.0-z)),2,nje),dim=1)
+         & spread(sin(outerprod(2*v+2,PIOV2-z)),2,nje),dim=1)
 
     se(OD,:) = sum(spread(mf%A(:,j(OD),1),3,nz)* &
-         & spread(cos(outerprod(2*v+1,PI/2.0-z)),2,njo),dim=1)
+         & spread(cos(outerprod(2*v+1,PIOV2-z)),2,njo),dim=1)
 
     where (spread(n,2,nz) == 0) se = -huge(1.0)  ! se_0() is invalid
   end function se_vect_nz
@@ -332,7 +332,7 @@ contains
   ! derivative of even angular modified mathieu function (q<0)
   ! for vector order and argument (returns an outer-product type result)
   function Dce_vect_nz(mf,n,z) result(Dce)
-    use constants, only : DP, PI
+    use constants, only : DP, PI, PIOV2
     use utility, only : outerprod
     integer, dimension(:), intent(in) :: n
     real(DP), dimension(:), intent(in) :: z
@@ -352,10 +352,10 @@ contains
     j = floor(n/2.0)
 
     Dce(EV,:) = sum(spread(spread(2*v,2,nje)*mf%A(:,j(EV),0),3,nz)* &
-         & spread(sin(outerprod(2*v,PI/2.0-z)),2,nje),dim=1)
+         & spread(sin(outerprod(2*v,PIOV2-z)),2,nje),dim=1)
 
     Dce(OD,:) = -sum(spread(spread(2*v+1,2,njo)*mf%B(:,j(OD),1),3,nz)* &
-         & spread(cos(outerprod(2*v+1,PI/2.0-z)),2,njo),dim=1)
+         & spread(cos(outerprod(2*v+1,PIOV2-z)),2,njo),dim=1)
 
   end function Dce_vect_nz
 
@@ -363,7 +363,7 @@ contains
   ! derivative of odd angular modified mathieu function (q<0)
   ! for vector order and argument (returns an outer-product type result)
   function Dse_vect_nz(mf,n,z) result(Dse)
-    use constants, only : DP, PI
+    use constants, only : DP, PI, PIOV2
     use utility, only : outerprod
     integer, dimension(:), intent(in) :: n
     real(DP), dimension(:), intent(in) :: z
@@ -384,10 +384,10 @@ contains
     where (n==0) j=0
 
     Dse(EV,:) = -sum(spread(spread(2*v+2,2,nje)*mf%B(:,j(EV),0),3,nz)* &
-         & spread(cos(outerprod(2*v+2,PI/2.0-z)),2,nje),dim=1)
+         & spread(cos(outerprod(2*v+2,PIOV2-z)),2,nje),dim=1)
 
     Dse(OD,:) = sum(spread(spread(2*v+1,2,njo)*mf%A(:,j(OD),1),3,nz)* &
-         & spread(sin(outerprod(2*v+1,PI/2.0-z)),2,njo),dim=1)
+         & spread(sin(outerprod(2*v+1,PIOV2-z)),2,njo),dim=1)
 
     where (spread(n,2,nz) == 0) Dse = -huge(1.0)  ! se_0() is undefined
   end function Dse_vect_nz

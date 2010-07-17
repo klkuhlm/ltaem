@@ -402,6 +402,7 @@ contains
     complex(DP), dimension(0:1) ::Kn
     
     Kn(0:1) = bK(kappa(p,c%parent)*c%r,2)
+    ! TODO: should this have a factor of "b" in the denominator?
     a0 = Kn(0)*time(p,c%time,.false.)*c%bdryQ/(2.0*PI*c%r*Kn(1))
   end function well
   
@@ -420,6 +421,7 @@ contains
 
     kap = kappa(p,c%parent)    
     Kn(0:1) = bK(kap*c%r,2)
+    ! TODO : should this have a factor of "b" in the denominator?
     a0 = -Kn(0)*((2.0 + c%r**2*c%dskin*p/c%parent%T)/(2.0*PI*c%r) + &
                & (Kn(0)*c%r*p)/(2.0*PI*c%r*kap*Kn(1)*c%parent%T))    
   end function storwell
