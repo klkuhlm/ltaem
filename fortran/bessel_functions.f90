@@ -3,7 +3,6 @@ module bessel_functions
   ! this module is a wrapper for the complex Bessel funcitons
   ! implemented by Amos, Algorithm 644 TOMS, Vol 21, No 4, 1995
 
-  use constants, only : DP
   implicit none
 
   private
@@ -27,6 +26,7 @@ contains
 
   ! K Bessel function for vector argument / vector of N
   function besk_vectz(z,num) result(K)
+    use constants, only : DP
     use complex_bessel, only : cbesk
     complex(DP), dimension(:), intent(in) :: z
     integer, intent(in) :: num
@@ -47,6 +47,7 @@ contains
 
   ! K Bessel function for scalar argument / vector of N
   function besk_zscal(z,num) result(K)
+    use constants, only : DP
     complex(DP), intent(in) :: z
     integer, intent(in) :: num
     complex(DP), dimension(0:num-1) :: K
@@ -55,6 +56,7 @@ contains
 
   ! I Bessel function for vector argument / vector of N
   function besi_vectz(z,num) result(I)
+    use constants, only : DP
     use complex_bessel, only : cbesi
     complex(DP), dimension(:), intent(in) :: z
     integer, intent(in) :: num
@@ -75,6 +77,7 @@ contains
 
   ! I Bessel function for scalar argument / vector of N
   function besi_zscal(z,num) result(I)
+    use constants, only : DP
     complex(DP), intent(in) :: z
     integer, intent(in) :: num
     complex(DP), dimension(0:num-1) :: I
@@ -86,6 +89,7 @@ contains
   ! these routines do not include the derivative of the argument
   !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   subroutine besId_zvect(z,n,I,ID)
+    use constants, only : DP
     complex(DP), dimension(:), intent(in) :: z
     integer, intent(in) :: n
     complex(DP), intent(out), dimension(size(z,dim=1),0:n-1) :: I, ID
@@ -108,6 +112,7 @@ contains
   end subroutine besId_zvect
 
   subroutine besId_zscal(z,n,I,ID)
+    use constants, only : DP
     complex(DP), intent(in) :: z
     integer, intent(in) :: n
     complex(DP), intent(out), dimension(0:n-1) :: I, ID
@@ -118,6 +123,7 @@ contains
   end subroutine besId_zscal
 
   subroutine besKd_zvect(z,n,K,KD)
+    use constants, only : DP
     complex(DP), dimension(:), intent(in) :: z
     integer, intent(in) :: n
     complex(DP), intent(out), dimension(size(z,dim=1),0:n-1) :: K, KD
@@ -141,6 +147,7 @@ contains
   end subroutine besKd_zvect
 
   subroutine besKd_zscal(z,n,K,KD)
+    use constants, only : DP
     complex(DP), intent(in) :: z
     integer, intent(in) :: n
     complex(DP), intent(out), dimension(0:n-1) :: K, KD
