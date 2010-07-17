@@ -258,7 +258,7 @@ contains
                    ! specified flux (finite-radius well no storage)
                    ! save head effects of well onto RHS
                    r%RHS(1:M) = -well(c,p)*r%LHS(1:M,1)
-                   r%LHS(1:M,1) = 0.0
+                   r%LHS(1:M,1) = 0.0 ! LHS matrix re-allocated to zero size below
                 end if
              end if
           end if
@@ -444,7 +444,6 @@ contains
 
 #ifdef DEBUG
     print *, 'circle_calc: C:',c%id,' lo:',lo,' hi:',hi,' Rgp:',Rgp,' Pgp:',Pgp,' inside:',inside
-    print *, 'c%coeff:',shape(c%coeff)
 #endif
 
     N = c%N
@@ -452,25 +451,31 @@ contains
     vr(0:N-1) = real([(i,i=0,N-1)],DP)
 
     if (inside) then
-       if (c%match) then
-          n0 = 2*N ! inside of matching circle
+       if (c%ibnd == 0) then
+          n0 = 2*N ! inside of matching circle 
        else
-          n0 = 1   ! inside of specified boundary circle
+          n0 = 1   ! inside of specified {head,flux} boundary circle
        end if
-       kap(1:np) = kappa(p(1:np),c%element)
-       BRgp(1:np,0:N-1) = bI(Rgp*kap(1:np),N)
-       BR0(1:np,0:N-1) =  bI(c%r*kap(1:np),N)
+       kap(1:np) = kappa(p(:),c%element)
+       BRgp(1:np,0:N-1) = bI(Rgp*kap(:),N)
+       BR0(1:np,0:N-1) =  bI(c%r*kap(:),N)
        
     else
        n0 = 1 
-       kap(1:np) = kappa(p(1:np),c%parent)
-       BRgp(1:np,0:N-1) = bK(Rgp*kap(1:np),N)
-       BR0(1:np,0:N-1) =  bK(c%r*kap(1:np),N)
+       kap(1:np) = kappa(p(:),c%parent)
+       BRgp(1:np,0:N-1) = bK(Rgp*kap(:),N)
+       BR0(1:np,0:N-1) =  bK(c%r*kap(:),N)
     end if
 
-    aa(1:np,0:N-1) = c%coeff(lo:hi,n0:n0+N-1)
-    bb(1:np,0) = 0.0 ! insert zero to make odd/even same shape
-    bb(1:np,1:N-1) = c%coeff(lo:hi,n0+N:n0+2*N-2)
+    ! if inside
+    ! c_n for specified 1:N,      for matching 2N:3N-1
+    ! d_n for specified N+1:2N-1, for matching 3N:4N-2
+
+    ! if outside >> a_n is 1:N, b_n is N+1:2N-1 
+
+    aa(1:np,0:N-1) = c%coeff(lo:hi,n0:n0+N-1) ! a_n or c_n
+    bb(1:np,0) = 0.0 ! make odd/even conformable
+    bb(1:np,1:N-1) = c%coeff(lo:hi,n0+N:n0+2*N-2) ! b_n or d_n
 
     H(1:np) = sum(BRgp(1:np,0:N-1)/BR0(1:np,0:N-1)* &
          & ( aa(1:np,0:N-1)*spread(cos(vr(0:N-1)*Pgp),1,np) + &
@@ -511,19 +516,19 @@ contains
           n0 = 1   ! inside of specified boundary circle
        end if
        kap(1:np) = kappa(p(:),c%element)
-       call dBI(Rgp*kap(1:np),N,BRgp(1:np,0:N-1),dBRgp(1:np,0:N-1))
-       dBRgp(1:np,0:N-1) = spread(kap(1:np),dim=2,ncopies=N)*dBRgp(1:np,0:N-1)
-       BR0(1:np,0:N-1) = bI(c%r*kap(1:np),N)
+       call dBI(Rgp*kap(:),N,BRgp(1:np,0:N-1),dBRgp(1:np,0:N-1))
+       dBRgp(1:np,0:N-1) = spread(kap(:),2,N)*dBRgp(:,:)
+       BR0(1:np,0:N-1) = bI(c%r*kap(:),N)
     else
        n0 = 1
        kap(1:np) = kappa(p(:),c%parent)
        call dBK(Rgp*kap(:),N,BRgp(1:np,0:N-1),dBRgp(1:np,0:N-1))
-       dBRgp(1:np,0:N-1) = spread(kap(1:np),dim=2,ncopies=N)*dBRgp(1:np,0:N-1)
-       BR0(1:np,0:N-1) =  bK(c%r*kap(1:np),N)
+       dBRgp(1:np,0:N-1) = spread(kap(1:np),2,N)*dBRgp(:,:)
+       BR0(1:np,0:N-1) =  bK(c%r*kap(:),N)
     end if
 
     aa(1:np,0:N-1) = c%coeff(lo:hi,n0:n0+N-1)
-    bb(1:np,0) = 0.0 ! insert zero to make odd/even same shape
+    bb(1:np,0) = 0.0 ! make odd/even conformable
     bb(1:np,1:N-1) = c%coeff(lo:hi,n0+N:n0+2*N-2)
 
     ! dPot_dR
