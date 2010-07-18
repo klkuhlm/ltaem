@@ -4,9 +4,9 @@ module utility
   implicit none
 
   private
-  public :: diagonal, logspace, linspace, outer, ccosh, cacosh, ynot
+  public :: diag, logspace, linspace, outer, ccosh, cacosh, ynot
 
-  interface diagonal
+  interface diag
      module procedure diagonal_z, diagonal_d
   end interface
   

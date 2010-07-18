@@ -54,7 +54,7 @@ contains
     ! Mathieu parameter (q), the norm and matrix size (M) are optional
 
     use constants, only : DP
-    use utility, only : diagonal
+    use utility, only : diag
 
     interface ! LAPACK 3.2.1 eigenvalue/eigenfunction routine
        subroutine ZGEEV(JOBVL,JOBVR,N,A,LDA,W,VL,LDVL,VR,LDVR,WORK, &
@@ -75,7 +75,7 @@ contains
     ! resulting structure defined at top of containing module
     type(mathieu) :: mat
     integer :: i, j, M, ierr
-    real(DP) :: diag
+    real(DP) :: dg
 
     ! just one matrix of recursion coefficients (used 4 times)
     complex(DP), allocatable :: coeff(:,:)
@@ -130,8 +130,10 @@ contains
     allocate(coeff(M,M), rwork(33*M), w(M), mat%mcn(4*M), mat%A(1:M,0:M-1,0:1), mat%B(1:M,0:M-1,0:1), stat=ierr)    
     if (ierr /= 0) then
        stop 'error allocating mcn,A,B,coeff,rwork,w'
+#ifdef DEBUG
     else
        print '(A,I0)', 'ZGEEV irwork:',size(rwork,dim=1)
+#endif
     end if
     
 
@@ -179,7 +181,6 @@ contains
     Coeff(1,1) = 1.0_DP + q
     
     forall(i=1:m-1) Coeff(i+1,i+1) = cmplx((2*i+1)**2, 0, DP)
-    
     forall(i=1:m, j=1:m, j==i+1 .or. j==i-1) Coeff(i,j) = q    
     
     call zgeev('N','V',M,Coeff,M,mat%mcn(m+1:2*m),dc,di,mat%A(1:m,0:m-1,1),M, &
@@ -202,8 +203,8 @@ contains
     ! this one not shifted by one, since 2n+2 -> 2n 
     !! (but starting from one, rather than zero)
     Coeff(:,:) = 0.0
+
     forall(i=1:m) Coeff(i,i) = cmplx((2*i)**2, 0, DP)
-    
     forall(i=1:m, j=1:m, j==i+1 .or. j==i-1) Coeff(i,j) = q 
 
     call zgeev('N','V',M,Coeff,M,mat%mcn(2*m+1:3*m),dc,di,mat%B(1:m,0:m-1,0),M,&
@@ -225,8 +226,8 @@ contains
 
     Coeff(:,:) = 0.0
     Coeff(1,1) = 1.0_DP - q
-    forall(i=1:m-1) Coeff(i+1,i+1) = cmplx((2*i+1)**2, 0, DP)
-    
+
+    forall(i=1:m-1) Coeff(i+1,i+1) = cmplx((2*i+1)**2, 0, DP)   
     forall(i=1:m, j=1:m, j==i+1 .or. j==i-1) Coeff(i,j) = q 
 
     call zgeev('N','V',M,Coeff,M,mat%mcn(3*m+1:4*m),dc,di,mat%B(1:m,0:m-1,1),M,&
@@ -244,12 +245,11 @@ contains
     if (ierr /= 0) stop 'mathieu_functions2.f90 error deallocating memory: coeff,rwork,w,work'
 
     ! perform some heuristic checking of max allowable order
-    diag = sum(abs(diagonal(mat%A(:,:,0),0)))/m
-    mat%buffer = -999
+    dg = sum(abs(diag(mat%A(:,:,0),0)))/m
 
     bufcheck: do j=1,m
-       if    (sum(abs(diagonal(mat%A(:,:,0), j)))/(diag*(m-j)) < mat%CUTOFF .and. &
-            & sum(abs(diagonal(mat%A(:,:,0),-j)))/(diag*(m-j)) < mat%CUTOFF) then
+       if (sum(abs(diag(mat%A(:,:,0), j)))/(dg*(m-j)) < mat%CUTOFF .and. &
+         & sum(abs(diag(mat%A(:,:,0),-j)))/(dg*(m-j)) < mat%CUTOFF) then
            mat%buffer = j
            exit bufcheck
         end if

@@ -30,7 +30,7 @@ contains
        end subroutine ZGELS
     end interface
 
-    type(circle), dimension(:), intent(inout) :: c
+    type(circle),  dimension(:), intent(inout) :: c
     type(ellipse), dimension(:), intent(inout) :: e
     type(domain), intent(in) :: dom
     type(solution), intent(in) :: sol
@@ -40,15 +40,15 @@ contains
     complex(DP), allocatable :: A(:,:), b(:)
     type(match_result), allocatable :: res(:,:) ! results(target_id,source_id)
     integer, allocatable :: row(:,:), col(:,:) ! row/column trackers
-    integer :: nc, ne, ntot, i, j, bigM, bigN, rr,cc
+    integer :: nc, ne, ntot, i, j, bigM, bigN, rr,cc, ierr
 
-    ! things only needed for LAPACK routine
+    ! only needed for LAPACK routine
     ! size(work) should be ~ 33xbigN? (32-bit linux)
     complex(DP), allocatable :: WORK(:)
-    integer :: IERR
 
 #ifdef DEBUG
-    print *, 'matrix_solution: c:',c%id,' e:',e%id,' dom:',dom%num,' p:',p,' idx:',idx
+    print '((2A,I0),A,I0,1x,I0,A,ES13.5,1x,ES13.5,A,I0)', &
+         & '== matrix_solution: c:',c%id,' e:',e%id,' dom:',dom%num,' p:',p,' idx:',idx
 #endif
 
     nc = size(c,dim=1)
@@ -131,14 +131,16 @@ contains
     allocate(A(bigM,bigN), b(bigM), stat=ierr)
     if (ierr /= 0) stop 'solution.f90 error allocating: A,b'
     b = 0.0
-    print *, 'N,M',bigN,bigM,':: shape(A)',shape(A),':: shape(b)',shape(b)
+    print '(2(A,I0,1X,I0),A,I0)', 'N,M',bigN,bigM,':: shape(A)',shape(A),':: shape(b)',shape(b)
 
     if (any(c%match) .or. any(e%match)) then
        allocate(work(33*bigN),stat=ierr)
        if (ierr /= 0) then
           stop 'solution.f90 error allocating: work'
+#ifdef DEBUG
        else
           print '(A,I0)', 'ZGELS iwork=',size(work,dim=1)
+#endif
        end if
        
     end if
