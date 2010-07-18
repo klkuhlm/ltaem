@@ -216,6 +216,7 @@ program ltaem_main
      open(unit=404,file='calcloc.vdebug',status='replace',action='write')
 #endif
 
+     !$OMP PARALLEL DO
      do j = 1,sol%nx
         write (*,'(A,ES12.4E1)') 'x: ',sol%x(j)
         do i = 1,sol%ny
@@ -245,7 +246,8 @@ program ltaem_main
            end do
         end do
      end do
-     
+     !$OMP END PARALLEL DO
+
 #ifdef DEBUG
      close(303)
      close(404)

@@ -38,8 +38,8 @@ DFLAGS+=-fbounds-check
 #DFLAGS+=-fwhole-file ##-fpack-derived -frepack-arrays
 DFLAGS+=-cpp -DDEBUG 
 #DFLAGS+=-fdump-rtl-expand
-PFLAGS=-O0 -g
-LINKFLAG=-O0 -g
+PFLAGS=-O0 -cpp -g -fopenmp
+LINKFLAG=-O0 -g -fopenmp
 ###################################
 
 # switch between performance or debugging flags
@@ -52,7 +52,7 @@ main: $(OBJS) $(MAIN)
 
 # this external library tends to produce spurious errors about implicit type conversions
 cbessel.o : ./external/cbessel.f90
-	$(F90) -c $(DFLAGS) -o $@ $<
+	$(F90) -c $(FLAGS) -o $@ $<
 
 %.o: %.f
 	$(F90) -c $(FLAGS) -o $@ $<
