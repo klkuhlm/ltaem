@@ -143,7 +143,7 @@ contains
        
        ! apply potential source term on inside of element
        H(1:np) = H(:) - elin%areaQ*elin%Ss*time(p,elin%time,.true.)/kappa(p,elin)**2
-       H(1:np) = H(:)*elin%K ! convert to head
+       H(1:np) = H(:)/elin%K ! convert to head
 
        elin => null()
 

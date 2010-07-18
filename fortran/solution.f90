@@ -47,8 +47,7 @@ contains
     complex(DP), allocatable :: WORK(:)
 
 #ifdef DEBUG
-    print '((2A,I0),A,I0,1x,I0,A,ES13.5,1x,ES13.5,A,I0)', &
-         & '== matrix_solution: c:',c%id,' e:',e%id,' dom:',dom%num,' p:',p,' idx:',idx
+    print *, 'matrix_solution: c:',c%id,' e:',e%id,' #tot el:',sum(dom%num(1:2)),' p:',p,' idx:',idx
 #endif
 
     nc = size(c,dim=1)
@@ -171,7 +170,10 @@ contains
 
     if (any(c%match) .or. any(e%match)) then
        ! use LAPACK routine to solve least-squares via Q-R decomposition
-       call ZGELS('N',bigM,bigN,1,A(:,:),bigM,b(:),bigM,WORK,size(work,dim=1),ierr)
+       ! this routine works for all three potential use cases
+       ! M>N (overdetermined), M==N (even-determined), and M<N (underdetermined)
+       call ZGELS(TRANSA='N',M=bigM,N=bigN,NRHS=1,A=A(:,:),LDA=bigM,B=b(:),LDB=bigM,&
+            & WORK=work,LDWORK=size(work,dim=1),INFO=ierr)
        if (ierr /= 0) then
           write(*,'(A,I0,2(A,ES10.3))') 'ZGELS error: ',ierr,' p:',real(p),'+i',aimag(p)
           stop 
@@ -184,10 +186,7 @@ contains
        if (.not. allocated(c(i)%coeff)) then
           ! solution for each value of p, saved as a 2D matrix
           allocate(c(i)%coeff(sol%totalnP,col(i,1)), stat=ierr)
-          if (ierr /= 0) then
-             print '(A,I0,A)', 'solution.f90: error allocating c(',i,')%coeff'
-             stop
-          end if
+          if (ierr /= 0) stop 'solution.f90: error allocating c(i)%coeff'
        end if
 
        if (.not. (c(i)%ibnd == 2 .and. (.not. c(i)%storin))) then
@@ -211,10 +210,7 @@ contains
        ! ellipses
        if (.not. allocated(e(i)%coeff)) then
           allocate(e(i)%coeff(sol%totalnp,col(nc+i,1)), stat=ierr)
-          if (ierr /= 0) then
-              print '(A,I0,A)', 'solution.f90: error allocating e(',i,')%coeff'
-              stop
-           end if
+          if (ierr /= 0) stop 'solution.f90: error allocating e(i)%coeff'
        end if
        if (.not. e(i)%ibnd == 2) then
           ! coefficients from least-squares solution above
@@ -257,11 +253,11 @@ contains
     N = e%N 
     MS = e%ms
     nmax = ceiling(e%N/2.0)
-    vi(0:MS-1) = [(i,i=0,MS-1)]  ! integer vector
-    vs = -1.0_DP ! sign vector
-    where (mod(vi,2)==0) vs = 1.0_DP
+    vi(0:MS-1) = [(i,i=0,MS-1)]  ! integer index vector
+    vs = -1.0 ! sign vector
+    where (mod(vi,2)==0) vs = 1.0
 
-    arg(1:MS,1:nmax) = spread(vs(0:MS-1)/real(1-(2*vi(0:MS-1))**2,DP),dim=2,ncopies=nmax)
+    arg(1:MS,1:nmax) = spread(vs(0:MS-1)/real(1-(2*vi(0:MS-1))**2,DP),2,nmax)
 
     ! factor of 4 different from Kuhlman&Neuman paper
     ! include Radial/dRadial MF here to balance with those in general solution
