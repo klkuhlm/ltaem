@@ -63,7 +63,7 @@ contains
          character(LEN=1), intent(in) :: JOBVL, JOBVR
          complex(KIND=8), intent(inout) :: A(N,N), WORK(LWORK)
          complex(KIND=8), intent(out) :: W(N), VL(LDVL,N), VR(LDVR,N)
-         real(KIND=8), intent(inout) :: RWORK(2*N)
+         real(KIND=8), intent(inout) :: RWORK(33*N)
          integer, intent(out) :: INFO
        end subroutine ZGEEV
     end interface
@@ -83,7 +83,7 @@ contains
     ! parameters for lapack routine
     complex(DP), allocatable :: work(:) ! 1:lwork
     complex(DP), dimension(1) :: dc
-    real(DP), allocatable :: rwork(:) ! 1:2*M
+    real(DP), allocatable :: rwork(:) ! 1:33*MS
     integer :: info, di, lwork
     real(DP), allocatable :: v(:), vi(:) ! 0:M
 
@@ -127,8 +127,13 @@ contains
     
     ! A/B 3rd dimension: 0(even) or 1(odd) cases of the second dimension
 
-    allocate(coeff(M,M), rwork(2*M), w(M), mat%mcn(4*M), mat%A(1:M,0:M-1,0:1), mat%B(1:M,0:M-1,0:1), stat=ierr)    
-    if (ierr /= 0) stop 'error allocating mcn,A,B,coeff,rwork,w'
+    allocate(coeff(M,M), rwork(33*M), w(M), mat%mcn(4*M), mat%A(1:M,0:M-1,0:1), mat%B(1:M,0:M-1,0:1), stat=ierr)    
+    if (ierr /= 0) then
+       stop 'error allocating mcn,A,B,coeff,rwork,w'
+    else
+       print '(A,I0)', 'ZGEEV irwork:',size(rwork,dim=1)
+    end if
+    
 
     di = 1 ! dummy integer for lapack
     dc(1) = 0.0 ! dummy complex for lapack

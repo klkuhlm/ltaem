@@ -11,12 +11,14 @@ module solution_mod
 contains
   subroutine matrix_solution(c,e,dom,sol,p,idx)
     use constants, only : DP
-    use type_definitions, only : circle, solution, ellipse, domain, match_result, print_match_result
+    use type_definitions, only : circle, solution, ellipse, domain, match_result
     use circular_elements, only : circle_match, well
     use elliptical_elements, only : ellipse_match ! line() is repeated below to accommodate gfortran bug
+#ifdef DEBUG
+    use type_definitions, only : print_match_result
+#endif
 
-    !! solve over-determined system via least-squares
-    interface
+    interface  !! solve over-determined system via least-squares
        subroutine ZGELS(TRANSA, M, N, NRHS, A, LDA, B, LDB, WORK, &
             & LDWORK, INFO)
          integer, intent(in) :: M, N, NRHS, LDA, LDB, LDWORK
@@ -41,8 +43,8 @@ contains
     integer :: nc, ne, ntot, i, j, bigM, bigN, rr,cc
 
     ! things only needed for LAPACK routine
-    integer, parameter :: iwork = 10250   ! <- optimal??? probably not
-    complex(DP), dimension(iwork) :: WORK
+    ! size(work) should be ~ 33xbigN? (32-bit linux)
+    complex(DP), allocatable :: WORK(:)
     integer :: IERR
 
 #ifdef DEBUG
@@ -125,9 +127,21 @@ contains
 
     bigM = sum(row(:,1)) ! total number rows/cols
     bigN = sum(col(:,1))
-    allocate(A(bigM,bigN), b(bigM))
+
+    allocate(A(bigM,bigN), b(bigM), stat=ierr)
+    if (ierr /= 0) stop 'solution.f90 error allocating: A,b'
     b = 0.0
     print *, 'N,M',bigN,bigM,':: shape(A)',shape(A),':: shape(b)',shape(b)
+
+    if (any(c%match) .or. any(e%match)) then
+       allocate(work(33*bigN),stat=ierr)
+       if (ierr /= 0) then
+          stop 'solution.f90 error allocating: work'
+       else
+          print '(A,I0)', 'ZGELS iwork=',size(work,dim=1)
+       end if
+       
+    end if
 
     forall (i=1:ntot)
        row(i,0) = 1 + sum(row(1:i-1,1))  ! lower bound
@@ -155,7 +169,7 @@ contains
 
     if (any(c%match) .or. any(e%match)) then
        ! use LAPACK routine to solve least-squares via Q-R decomposition
-       call ZGELS('N',bigM,bigN,1,A(:,:),bigM,b(:),bigM,WORK,IWORK,ierr)
+       call ZGELS('N',bigM,bigN,1,A(:,:),bigM,b(:),bigM,WORK,size(work,dim=1),ierr)
        if (ierr /= 0) then
           write(*,'(A,I0,2(A,ES10.3))') 'ZGELS error: ',ierr,' p:',real(p),'+i',aimag(p)
           stop 

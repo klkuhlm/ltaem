@@ -83,7 +83,7 @@ contains
             & ((1.0 + exp(-par(1)*p/2.0))*p)
     case(:-1)
        !! arbitrary piecewise constant pumping rate with n steps, from ti(1) to tf
-       n = abs(flag)
+       n = -flag
        allocate(ti(n),Q(0:n),stat=ierr)
        if (ierr /= 0) stop 'time.f90 error allocating: ti, Q'
 
