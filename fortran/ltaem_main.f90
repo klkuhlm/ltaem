@@ -204,7 +204,7 @@ program ltaem_main
   end if
   
   !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-  if(sol%contour) then ! contour output (x,y locations outerproduct of x,y vectors)
+  if(sol%contour) then ! contour output (x,y locations outer product of x,y vectors)
 
      write(*,'(A)') 'compute solution for plotting contours'
      allocate(sol%h(sol%nx,sol%ny,sol%nt),   sol%hp(tnP), &

@@ -4,7 +4,7 @@ module utility
   implicit none
 
   private
-  public :: diagonal, logspace, linspace, outerprod, ccosh, cacosh, ynot
+  public :: diagonal, logspace, linspace, outer, ccosh, cacosh, ynot
 
   interface diagonal
      module procedure diagonal_z, diagonal_d
@@ -14,7 +14,7 @@ module utility
      module procedure logspace_int, logspace_r, logspace_d
   end interface
   
-  interface outerprod
+  interface outer
      module procedure outerprod_r, outerprod_d, outerprod_z, outerprod_dz, outerprod_zd
   end interface
   

@@ -21,9 +21,9 @@ contains
     integer :: np, ierr
     complex(DP), allocatable ::  kap2(:), exp2z(:)
 
-#ifdef DEBUG
-    print *, 'kappa el:',el%id,' leakFlag',el%leakFlag,' unconfinedFlag',el%unconfinedFlag
-#endif
+!!$#ifdef DEBUG
+!!$    print *, 'kappa el:',el%id,' leakFlag',el%leakFlag,' unconfinedFlag',el%unconfinedFlag
+!!$#endif
 
     np = size(p)
     if (el%leakFlag /= 0) then

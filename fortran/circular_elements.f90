@@ -16,7 +16,7 @@ contains
     use constants, only : DP, PI
     use kappa_mod, only : kappa
     use time_mod, only : time
-    use utility, only : outerprod
+    use utility, only : outer
     use type_definitions, only : circle, match_result
     use bessel_functions, only : bK, bI, dbK, dbI
     implicit none
@@ -65,8 +65,8 @@ contains
     if (ierr /= 0) stop 'circular_elements.f90:circle_match_self() error &
          &allocating: r%LHS, r%RHS'
 
-    cmat(1:M,0:N-1) = cos(outerprod(c%Pcm(1:M),vi(0:N-1)))
-    smat(1:M,1:N-1) = sin(outerprod(c%Pcm(1:M),vi(1:N-1)))
+    cmat(1:M,0:N-1) = cos(outer(c%Pcm(1:M),vi(0:N-1)))
+    smat(1:M,1:N-1) = sin(outer(c%Pcm(1:M),vi(1:N-1)))
 
     ! setup LHS
     ! matching or specified total head
@@ -131,7 +131,7 @@ contains
     use constants, only : DP, PI
     use kappa_mod, only : kappa
     use time_mod, only : time
-    use utility, only : outerprod
+    use utility, only : outer
     use type_definitions, only : circle, domain, matching, match_result
     use bessel_functions, only : bK, bI, dbK, dbI
     implicit none
@@ -202,8 +202,8 @@ contains
           if (ierr /= 0) stop 'circular_elements.f90:circle_match_other() error allocating:&
                &Bn, Bn0, cmat, smat'
 
-          cmat(1:M,0:N-1) = cos(outerprod(c%G(targ)%Pgm(1:M), vi(0:N-1)))
-          smat(1:M,1:N-1) = sin(outerprod(c%G(targ)%Pgm(1:M), vi(1:N-1)))
+          cmat(1:M,0:N-1) = cos(outer(c%G(targ)%Pgm(1:M), vi(0:N-1)))
+          smat(1:M,1:N-1) = sin(outer(c%G(targ)%Pgm(1:M), vi(1:N-1)))
 
           ! setup LHS 
           ! $$$$$$$$$$ head effects of source (c) on target (el) $$$$$$$$$$

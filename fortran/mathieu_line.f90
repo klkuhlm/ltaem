@@ -36,7 +36,7 @@ contains
     use mathieu_functions
     use complex_bessel, only : cbesk
     use constants, only : DP, TWOPI, PI, PIOV2, CZERO, RONE
-    use utility, only : cacosh, outerprod, linspace
+    use utility, only : cacosh, outer, linspace
 
     interface  ! LAPACK least-squares routine
        subroutine zgelss(M, N, NRHS, A, LDA, B, LDB, S, RCOND, RANK, &
@@ -493,7 +493,7 @@ contains
   function pointhead(p,calcX,calcY,lin,pts) result(PH)
     use constants, only : DP, CZERO, TWOPI, PI
     use complex_bessel, only : cbesk
-    use utility, only : outerprod
+    use utility, only : outer
     implicit none
 
     complex(DP), intent(in), dimension(:) :: p
@@ -549,12 +549,12 @@ contains
        
     elseif (lin%calc_velx) then ! x flux
        PH(1:np) = sum(k1(1:np,1:pts)*&
-            & outerprod(lin%q*q(1:np)/(PI*real(PTS,DP)*p(1:np)*lin%k),&
+            & outer(lin%q*q(1:np)/(PI*real(PTS,DP)*p(1:np)*lin%k),&
             & (calcX-xi(1:pts))/r(1:pts)),dim=2)
        
     else ! y flux
        PH(1:np) = sum(k1(1:np,1:pts)*&
-            & outerprod(q(1:np)*lin%q/(PI*real(PTS,DP)*p(1:np)*lin%k),&
+            & outer(q(1:np)*lin%q/(PI*real(PTS,DP)*p(1:np)*lin%k),&
             & calcY/r(1:pts)),dim=2)
     end if
 

@@ -3,12 +3,12 @@ EXTERNAL=cbessel.o
 KKLOW=utility.o bessel_functions.o mathieu_functions2.o
 
 ##Work MacPro##############################
-LAPACKLIB=/Users/klkuhlm/src/lapack-3.2.1/lapack_MAC.a
-BLASLIB=/Users/klkuhlm/src/lapack-3.2.1/blas_MAC.a
+#LAPACKLIB=/Users/klkuhlm/src/lapack-3.2.1/lapack_MAC.a
+#BLASLIB=/Users/klkuhlm/src/lapack-3.2.1/blas_MAC.a
 
 ##Work linux laptop / home linux desktop ##########
-#LAPACKLIB=/home/kris/src/lapack-3.2.1/lapack_LINUX.a
-#BLASLIB=/home/kris/src/lapack-3.2.1/blas_LINUX.a
+LAPACKLIB=/home/kris/src/lapack-3.2.1/lapack_LINUX.a
+BLASLIB=/home/kris/src/lapack-3.2.1/blas_LINUX.a
 
 ### for intel compiler
 ##################################
@@ -31,11 +31,11 @@ OBJS=$(EXTERNAL) constants.o $(KKLOW) type_definitions.o $(KKHIGH)
 #####################################
 
 #### gfortran #################
-F90=gfortran-4.6
-DFLAGS=-O0 -Wall -Wextra -fbacktrace -gdwarf-3
-#DFLAGS+=-fbounds-check
-DFLAGS+=-frange-check -fcheck=all -finit-real=snan -finit-integer=-99999 -fbacktrace
-DFLAGS+=-fwhole-file ##-fpack-derived -frepack-arrays
+F90=gfortran-4.4
+DFLAGS=-O0 -Wall -Wextra -fbacktrace # -gdwarf-3
+DFLAGS+=-fbounds-check
+#DFLAGS+=-frange-check -fcheck=all -finit-real=snan -finit-integer=-99999 -fbacktrace
+#DFLAGS+=-fwhole-file ##-fpack-derived -frepack-arrays
 DFLAGS+=-cpp -DDEBUG 
 #DFLAGS+=-fdump-rtl-expand
 PFLAGS=-O0 -g
@@ -72,7 +72,7 @@ utility.o utility.mod : constants.mod
 bessel_functions.o bessel_functions.mod : complex_bessel.mod constants.mod bessel_functions.f90
 mathieu_functions2.o mathieu_functions.mod : constants.mod mathieu_functions2.f90
 kappa.o kappa_mod.mod : constants.mod type_definitions.mod kappa.f90
-time.o  time_mod.mod  : constants.mod type_definitions.mod time.f90
+time.o  time_mod.mod  : constants.mod type_definitions.mod utility.mod time.f90
 ltaem_io.o file_ops.mod : type_definitions.mod constants.mod ltaem_io.f90
 invlap.o inverse_laplace_transform.mod : constants.mod type_definitions.mod invlap.f90
 solution.o solution_mod.mod : constants.mod type_definitions.mod circular_elements.mod elliptical_elements.mod solution.f90
