@@ -10,7 +10,10 @@ module mathieu_functions
   end type mathieu
 
   private  !! only interfaces, mathieu_init, and debugging routine are publicly callable
-  public :: ce, Dce, se, Dse, Ke, Ko, DKe, DKo, Ie, Io, DIe, DIo, mathieu_init, print_mathieu_type
+  public :: ce, Dce, se, Dse, Ke, Ko, DKe, DKo, Ie, Io, DIe, DIo, mathieu_init
+#ifdef DEBUG
+  public :: print_mathieu_type
+#endif
 
   interface ce   ! even first kind angular MF
      module procedure ce_scalar_nz, ce_scalar_n, ce_scalar_z, ce_vect_nz
@@ -245,7 +248,7 @@ contains
     if (ierr /= 0) stop 'mathieu_functions2.f90 error deallocating memory: coeff,rwork,w,work'
 
     ! perform some heuristic checking of max allowable order
-    dg = sum(abs(diag(mat%A(:,:,0),0)))/m
+    dg = sum(abs(diag(mat%A(:,:,0),0)))/m ! average size of diagonal element
 
     bufcheck: do j=1,m
        if (sum(abs(diag(mat%A(:,:,0), j)))/(dg*(m-j)) < mat%CUTOFF .and. &
@@ -253,7 +256,7 @@ contains
            mat%buffer = j
            exit bufcheck
         end if
-        if (j == m) then
+        if (j >= m) then
            write(*,'(A,I0,3(A,ES10.3E2),A)') 'MATHIEU_INIT: matrix size=',m,&
                 & ' not large enough to meet tolerance=', mat%CUTOFF,' for q=(', &
                 & real(mat%q),',',aimag(mat%q),')'
@@ -1296,6 +1299,7 @@ contains
 
   end subroutine BesselK_val_and_deriv
 
+#ifdef DEBUG
   subroutine print_mathieu_type(m,n)
     type(mathieu), intent(in) :: m
     integer, intent(in) :: n
@@ -1315,5 +1319,6 @@ contains
     write(*,fmt) (' B(',j,',1:n,0):', ('(',real(m%B(j,i,0)),',',aimag(m%B(j,i,0)),')',i=1,n),j=1,n)
     write(*,fmt) (' B(',j,',1:n,1):', ('(',real(m%B(j,i,1)),',',aimag(m%B(j,i,1)),')',i=1,n),j=1,n)
   end subroutine print_mathieu_type
+#endif
 
 end module mathieu_functions
