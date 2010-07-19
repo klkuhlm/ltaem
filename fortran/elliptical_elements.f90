@@ -64,7 +64,7 @@ contains
     if (e%ibnd /= 2) then
        f => e%parent
 
-       ! outside ang. mod. Mathieu fcns
+       ! outside ang. mod. Mathieu fcns (last dimension is inside/outside)
        cemat(1:M,0:N-1,0) = transpose(ce(f%mat(i), vi(0:N-1), e%Pcm(1:M)))
        semat(1:M,1:N-1,0) = transpose(se(f%mat(i), vi(1:N-1), e%Pcm(1:M)))
        if (e%ibnd == 0 .or. (e%calcin .and. (e%ibnd == 1 .or. e%ibnd == -1))) then
@@ -85,11 +85,12 @@ contains
           end if
        end if
 
-       ! matching or specified total flux
+       ! matching or specified flux
        if (e%ibnd == 0 .or. e%ibnd == +1 .or. e%ibnd == 2) then
           allocate(RMn(0:N-1,0:1),dRMn(0:N-1,0:1), stat=ierr)
           if (ierr /= 0) stop 'elliptical_elemen ts.f90 error allocating: RMn, dRMn'
 
+          ! radial functions last dimension is even/odd
           RMn(0:N-1,0) =   Ke(f%mat(i), vi(0:N-1), e%r) ! even fn
           RMn(1:N-1,1) =   Ko(f%mat(i), vi(1:N-1), e%r) ! odd fn
           RMn(0,1) = 0.0
@@ -97,10 +98,8 @@ contains
           dRMn(1:N-1,1) = dKo(f%mat(i), vi(1:N-1), e%r) ! odd deriv
           dRMn(0,1) = 0.0
 
-          r%LHS(loM:hiM,1:N) = &
-               & spread(dRMn(0:N-1,0)/RMn(0:N-1,0), 1,M)*cemat(1:M,0:N-1,0) ! a_n flux
-          r%LHS(loM:hiM,N+1:2*N-1) = &
-               & spread(dRMn(1:N-1,1)/RMn(1:N-1,1), 1,M)*semat(1:M,1:N-1,1) ! b_n flux
+          r%LHS(loM:hiM,1:N) =       spread(dRMn(0:N-1,0)/RMn(0:N-1,0), 1,M)*cemat(1:M,0:N-1,0) ! a_n flux
+          r%LHS(loM:hiM,N+1:2*N-1) = spread(dRMn(1:N-1,1)/RMn(1:N-1,1), 1,M)*semat(1:M,1:N-1,0) ! b_n flux
 
           if (e%ibnd == 0 .or. (e%ibnd == 1 .and. e%calcin)) then
              RMn(0:N-1,0) =   Ie(e%mat(i), vi(0:N-1), e%r)
@@ -110,10 +109,8 @@ contains
              dRMn(1:N-1,1) = dIo(e%mat(i), vi(1:N-1), e%r)
              dRMn(0,1) = 0.0
 
-             r%LHS(loM:hiM,2*N:3*N-1) = &
-                  & -spread(dRMn(0:N-1,0)/RMn(0:N-1,0), 1,M)*cemat(1:M,0:N-1,0) ! c_n flux
-             r%LHS(loM:hiM,3*N:4*N-2) = &
-                  & -spread(dRMn(1:N-1,1)/RMn(1:N-1,1), 1,M)*semat(1:M,1:N-1,1) ! d_n flux
+             r%LHS(loM:hiM,2*N:3*N-1) = -spread(dRMn(0:N-1,0)/RMn(0:N-1,0), 1,M)*cemat(1:M,0:N-1,1) ! c_n flux
+             r%LHS(loM:hiM,3*N:4*N-2) = -spread(dRMn(1:N-1,1)/RMn(1:N-1,1), 1,M)*semat(1:M,1:N-1,1) ! d_n flux
           end if
           deallocate(RMn,dRMn,stat=ierr)
           if (ierr /= 0) stop 'elliptical_elements.f90 error deallocating: RMn,dRMn'
@@ -252,11 +249,13 @@ contains
                 r%LHS(1:M,loN+N:hiN)   = -RMn(1:M,1:N-1,1)/spread(RMn0(1:N-1,1),1,M)*semat(1:M,0:N-1)/K ! d_n
 
              end if
-             
+
+#ifdef DEBUG             
              print '(2(A,ES10.2E3))', '|cemat|  max',maxval(abs(cemat)),' min',minval(abs(cemat))
              print '(2(A,ES10.2E3))', '|semat|  max',maxval(abs(semat)),' min',minval(abs(semat))
              print '(2(A,ES10.2E3))', '|RMn|    max',maxval(abs(RMn(:,1:,:))),' min',minval(abs(RMn(:,1:,:)))
              print '(2(A,ES10.2E3))', '|RMn0|   max',maxval(abs(RMn0(1:,:))),' min',minval(abs(RMn0(1:,:)))
+#endif
 
           end if
 
@@ -458,9 +457,9 @@ contains
     complex(DP), dimension(size(p,1),0:e%N-1,0:1) :: RMRgp,RMR0,AM
     integer :: n0, np, i, j, N
 
-#ifdef DEBUG
-    print *, 'ellipse_calc: e:',e%id,' lo:',lo,' hi:',hi,' Rgp:',Rgp,' Pgp:',Pgp,' inside:',inside
-#endif
+!!$#ifdef DEBUG
+!!$    print *, 'ellipse_calc: e:',e%id,' lo:',lo,' hi:',hi,' Rgp:',Rgp,' Pgp:',Pgp,' inside:',inside
+!!$#endif
 
     N = e%N
     np = size(p,1)
@@ -521,9 +520,9 @@ contains
     complex(DP), dimension(size(p,1),0:e%N-1,0:1) :: RMRgp,RMR0,AM,dRMRgp,dAM
     integer :: n0, np, i, j, N
 
-#ifdef DEBUG
-    print *, 'ellipse_deriv: e:',e%id,' lo:',lo,' hi:',hi,' Rgp:',Rgp,' Pgp:',Pgp,' inside:',inside
-#endif
+!!$#ifdef DEBUG
+!!$    print *, 'ellipse_deriv: e:',e%id,' lo:',lo,' hi:',hi,' Rgp:',Rgp,' Pgp:',Pgp,' inside:',inside
+!!$#endif
 
     N = e%N
     np = size(p,1)

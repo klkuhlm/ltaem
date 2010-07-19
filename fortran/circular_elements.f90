@@ -131,7 +131,7 @@ contains
     use constants, only : DP, PI
     use kappa_mod, only : kappa
     use time_mod, only : time
-    use utility, only : outer
+    use utility, only : outer, rotate_vel_mat
     use type_definitions, only : circle, domain, matching, match_result
     use bessel_functions, only : bK, bI, dbK, dbI
     implicit none
@@ -346,6 +346,8 @@ contains
                                           & dPot_dY*spread(sin(el%Pcm),2,2*N-1)
                 end if
              else
+                call rotate_vel_mat(dPot_dX,dPot_dY,-el%theta)
+
                 ! other element is an ellipse
                 r%LHS(loM:hiM,loN:hiN) = dPot_dX*spread(el%f*sinh(el%r)*cos(el%Pcm(1:M)),2,2*N-1) + &
                                        & dPot_dY*spread(el%f*cosh(el%r)*sin(el%Pcm(1:M)),2,2*N-1)
@@ -444,9 +446,9 @@ contains
     integer :: n0, np, i, N
     complex(DP), dimension(size(p,1)) :: kap
 
-#ifdef DEBUG
-    print *, 'circle_calc: C:',c%id,' lo:',lo,' hi:',hi,' Rgp:',Rgp,' Pgp:',Pgp,' inside:',inside
-#endif
+!!$#ifdef DEBUG
+!!$    print *, 'circle_calc: C:',c%id,' lo:',lo,' hi:',hi,' Rgp:',Rgp,' Pgp:',Pgp,' inside:',inside
+!!$#endif
 
     N = c%N
     np = size(p,1)
@@ -503,9 +505,9 @@ contains
     integer :: n0, np, i, N
     complex(DP), dimension(size(p,1)) :: kap
 
-#ifdef DEBUG
-    print *, 'circle_deriv: c:',c%id,' lo:',lo,' hi:',hi,' Rgp:',Rgp,' Pgp:',Pgp,' inside:',inside
-#endif
+!!$#ifdef DEBUG
+!!$    print *, 'circle_deriv: c:',c%id,' lo:',lo,' hi:',hi,' Rgp:',Rgp,' Pgp:',Pgp,' inside:',inside
+!!$#endif
 
     N = c%N
     np = size(p,1)

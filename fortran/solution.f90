@@ -63,21 +63,32 @@ contains
     ! accumulate result into matrices of structures
     do i=1,nc
        ! circle on self
+#ifdef DEBUG
        print '(4(A,I0))', 'circle on self: ',i,' N:',c(i)%N,' M:',c(i)%M,' ibnd:',c(i)%ibnd
+#endif
+
        res(i,i) = circle_match(c(i),p)
+
 #ifdef DEBUG
        call print_match_result(res(i,i))
 #endif
        row(i,1) = size(res(i,i)%RHS,1)
        col(i,1) = size(res(i,i)%LHS,2)
+
+#ifdef DEBUG
        print '(2(A,I0))', ' resulting row:',row(i,1),' col:',col(i,1)
+#endif
 
        ! circle on other circle
        do j=1,nc
           if(i/=j) then
+#ifdef DEBUG
              print '(A,2(1X,I0),4(A,I0))', 'circle on circle:',i,j,' N:',c(i)%N,' M:',c(j)%M, &
                   &' <-ibnd:',c(i)%ibnd,' ->ibnd:',c(j)%ibnd
+#endif 
+
              res(j,i) = circle_match(c(i),c(j)%matching,dom,p)
+
 #ifdef DEBUG
              call print_match_result(res(j,i))
 #endif
@@ -86,9 +97,13 @@ contains
 
        ! circle on other ellipse
        do j=1,ne
+#ifdef DEBUG
           print '(A,2(1X,I0),4(A,I0))', 'circle on ellipse:',i,j+nc,' N:',c(i)%N,' M:',e(j)%M, &
                &' <-ibnd:',c(i)%ibnd,' ->ibnd:',e(j)%ibnd
+#endif
+
           res(j+nc,i) = circle_match(c(i),e(j)%matching,dom,p)
+
 #ifdef DEBUG
           call print_match_result(res(j+nc,i))
 #endif
@@ -97,15 +112,22 @@ contains
 
     do i = 1, ne
        ! ellipse on self
+#ifdef DEBUG
        print '(5(A,I0))', 'before ellipse on self: ',nc+i,' MS:',e(i)%ms,&
             &' N:',e(i)%N,' M:',e(i)%M,' ibnd:',e(i)%ibnd
+#endif
+
        res(nc+i,nc+i) = ellipse_match(e(i),p,idx)
+
 #ifdef DEBUG
        call print_match_result(res(nc+i,nc+i))
 #endif
        row(i+nc,1) = size(res(nc+i,nc+i)%RHS,1)
        col(i+nc,1) = size(res(nc+i,nc+i)%LHS,2)
+
+#ifdef DEBUG
        print '(2(A,I0))', 'resulting row:',row(i+nc,1),' col:',col(i+nc,1)
+#endif
 
        ! ellipse on other circle
        do j = 1, nc
@@ -119,8 +141,12 @@ contains
        ! ellipse on other ellipse
        do j = 1, ne
           if (i /= j) then
+#ifdef DEBUG
              print '(A,2(1X,I0))', 'ellipse on ellipse:',nc+i,nc+j
+#endif
+
              res(nc+j,nc+i) = ellipse_match(e(i),e(j)%matching,dom,p,idx)
+
 #ifdef DEBUG
              call print_match_result(res(nc+j,nc+i))
 #endif
@@ -155,16 +181,20 @@ contains
        col(i,2) = sum(col(1:i,1))
     end forall
 
+#ifdef DEBUG
     print '(A,I0,1X,I0)','shape(res): ',shape(res)
+#endif
 
     ! convert structures into single matrix for solution via least squares
     do rr=1,ntot
        do cc=1,ntot
+#ifdef DEBUG
           print '(2(A,I0))', 'row ',rr,' col ',cc
           print '(2(A,2(1X,I0)))','row lo:hi',row(rr,0),row(rr,2),'  col lo:hi',col(cc,0),col(cc,2)
           print '(A,2(1X,I0))', 'LHS shape:',shape(res(rr,cc)%LHS)
-          A(row(rr,0):row(rr,2),col(cc,0):col(cc,2)) = res(rr,cc)%LHS
           print '(A,2(1X,I0))', 'RHS shape:',shape(res(rr,cc)%RHS)
+#endif
+          A(row(rr,0):row(rr,2),col(cc,0):col(cc,2)) = res(rr,cc)%LHS
           b(row(rr,0):row(rr,2)) = b(row(rr,0):row(rr,2)) + res(rr,cc)%RHS
        end do
     end do
