@@ -20,7 +20,7 @@ module unsat_type_definitions
      logical, allocatable :: InclIn(:,:), InclBg(:,:)
   end type domain
    
-  type, extends(time) :: element
+  type :: element
 
      ! global id for the current element
      integer :: id = -999
@@ -110,7 +110,7 @@ module unsat_type_definitions
   end type ellipse
 
   ! things relating to the numerical solution, independent from flow elements
-  type, extends(INVLT) :: solution
+  type :: solution
 
      ! calculate contours (thru space) vs. calculate hydrographs (thru time)
      logical :: contour = .false.
