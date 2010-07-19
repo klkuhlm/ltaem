@@ -38,12 +38,12 @@ DFLAGS+=-fbounds-check
 #DFLAGS+=-fwhole-file -fpack-derived -frepack-arrays
 DFLAGS+=-cpp -DDEBUG 
 #DFLAGS+=-fdump-rtl-expand
-PFLAGS=-O3 -march=native -cpp #-fopenmp # -fwhole-file
+PFLAGS=-O3 -march=native -cpp -fopenmp # -fwhole-file
 LINKFLAG=-$(PFLAGS)
 ###################################
 
 # switch between performance or debugging flags
-FLAGS=$(DFLAGS)
+FLAGS=$(PFLAGS)
 
 # the link step
 main: $(OBJS) $(MAIN)

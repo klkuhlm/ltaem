@@ -216,9 +216,10 @@ program ltaem_main
      open(unit=404,file='calcloc.vdebug',status='replace',action='write')
 #endif
 
-     !$OMP PARALLEL DO DEFAULT(PRIVATE) SHARED(s,dom,c,e,bg,nt,tee)
      do j = 1,sol%nx
         write (*,'(A,ES12.4E1)') 'x: ',sol%x(j)
+
+        !$OMP PARALLEL DO DEFAULT(PRIVATE) SHARED(sol)
         do i = 1,sol%ny
 
            calcZ = cmplx(sol%x(j),sol%y(i),DP)
@@ -245,8 +246,8 @@ program ltaem_main
                    & sol%vp(lop:hip,1:2), sol%INVLT)
            end do
         end do
-     end do
      !$OMP END PARALLEL DO
+     end do
 
 #ifdef DEBUG
      close(303)
