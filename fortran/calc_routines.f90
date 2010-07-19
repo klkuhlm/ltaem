@@ -167,10 +167,11 @@ contains
     complex(DP), dimension(size(p,1),2) :: v, dH
 
     real(DP) :: hsq
+    real(DP), allocatable :: rot(:,:)
     real(DP), dimension(sum(dom%num)) :: Rgp, Pgp
     type(element), pointer :: elin => null()
     integer :: in, oth 
-    integer :: np, nc, ne, ntot, j
+    integer :: np, nc, ne, ntot, j, i, ierr
 
     call check_np(p,lo,hi)
     nc = dom%num(1)
@@ -210,13 +211,33 @@ contains
        
        do j = nc+1,ntot
           if (dom%InclUp(j) == 0) then  ! ellipse is also in background
+             
+             ! eta and psi components of gradient
              dH(1:np,1:2) = ellipse_deriv(p,e(j-nc),lo,hi,Rgp(j),Pgp(j),.false.)
-             ! project onto X and Y
+             
+             ! project onto local cartesian coordinate system
+             ! at center of ellipse (rotate with +x parallel to focal line)
              hsq = e(j-nc)%f/2.0_DP*(cosh(2.0_DP*Rgp(j)) - cos(2.0_DP*Pgp(j)))
              v(1:np,1) = v(:,1) + (sinh(Rgp(j))*cos(Pgp(j))*dH(:,1) - &
                                 &  cosh(Rgp(j))*sin(Pgp(j))*dH(:,2))/hsq
              v(1:np,2) = v(:,2) + (cosh(Rgp(j))*sin(Pgp(j))*dH(:,1) + &
                                 &  sinh(Rgp(j))*cos(Pgp(j))*dH(:,2))/hsq
+
+             ! can't use complex math (i.e., exp(-i theta)) because "x" and "y"
+             ! components are themselves complex here
+             allocate(rot(2,2),stat=ierr) ! rotation matrix
+             if (ierr /= 0) stop 'calc_routines.f90 error allocating: rot'
+             rot(1,1) = cos(e(j-nc)%theta)
+             rot(2,1) = sin(e(j-nc)%theta)
+             rot(2,2) = rot(1,1)
+             rot(1,2) = -rot(2,1)
+
+             forall (i = 1:np)
+                v(i,1:2) = matmul(rot(1:2,1:2),v(i,1:2))
+             end forall
+             deallocate(rot,stat=ierr)
+
+             if (ierr /= 0) stop 'calc_routines.f90 error deallocating: rot'
           end if
        end do
        v(1:np,1:2) = -v(1:np,1:2)/bg%por ! return velocity (gradient points uphill)

@@ -30,6 +30,10 @@ contains
        end subroutine ZGELS
     end interface
 
+#ifdef DEBUG
+    character(13) :: fmt
+#endif
+
     type(circle),  dimension(:), intent(inout) :: c
     type(ellipse), dimension(:), intent(inout) :: e
     type(domain), intent(in) :: dom
@@ -227,6 +231,17 @@ contains
           ! get coefficients from line routine (only even-order, even coeff used)
           e(i)%coeff(idx,:) = 0.0 
           e(i)%coeff(idx,1:e(i)%N:2) = line(e(i),p,idx) ! a_(2n)
+#ifdef DEBUG
+          print *, 'line source coefficients: N:',e(i)%N,' shape(coeff)',&
+               & shape(e(i)%coeff),' shape(line)',shape(line(e(i),p,idx))
+          fmt = '(  (I12,12X))'
+          write(fmt(2:3),'(I2.2)') size(e(i)%coeff,dim=2)
+          write(*,fmt) (j,j=1,size(e(i)%coeff,dim=2))
+          do j=1,size(e(i)%coeff,dim=2)
+             write(*,'(2(A,ES10.2E3),A)',advance='no'),'(',real(e(i)%coeff(idx,j)),',',aimag(e(i)%coeff(idx,j)),') '
+          end do
+          write(*,*)
+#endif
        end if
     end do
     deallocate(A,b,row,col,stat=ierr)

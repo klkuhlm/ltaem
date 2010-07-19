@@ -3,12 +3,12 @@ EXTERNAL=cbessel.o
 KKLOW=utility.o bessel_functions.o mathieu_functions2.o
 
 ##Work MacPro##############################
-LAPACKLIB=/Users/klkuhlm/src/lapack-3.2.1/lapack_MAC.a
-BLASLIB=/Users/klkuhlm/src/lapack-3.2.1/blas_MAC.a
+#LAPACKLIB=/Users/klkuhlm/src/lapack-3.2.1/lapack_MAC.a
+#BLASLIB=/Users/klkuhlm/src/lapack-3.2.1/blas_MAC.a
 
 ##Work linux laptop / home linux desktop ##########
-#LAPACKLIB=/home/kris/src/lapack-3.2.1/lapack_LINUX.a
-#BLASLIB=/home/kris/src/lapack-3.2.1/blas_LINUX.a
+LAPACKLIB=/home/kris/src/lapack-3.2.1/lapack_LINUX.a
+BLASLIB=/home/kris/src/lapack-3.2.1/blas_LINUX.a
 
 ### for intel compiler
 ##################################
@@ -31,19 +31,19 @@ OBJS=$(EXTERNAL) constants.o $(KKLOW) type_definitions.o $(KKHIGH)
 #####################################
 
 #### gfortran #################
-F90=gfortran-4.6
-DFLAGS=-O0 -Wall -Wextra -fbacktrace -gdwarf-3
-#DFLAGS+=-fbounds-check
-DFLAGS+=-frange-check -fcheck=all -finit-real=snan -finit-integer=-99999 -fbacktrace
-DFLAGS+=-fwhole-file -fpack-derived -frepack-arrays
-DFLAGS+=-cpp #-DDEBUG 
+F90=gfortran-4.4
+DFLAGS=-O0 -Wall -Wextra -fbacktrace #-gdwarf-3
+DFLAGS+=-fbounds-check
+#DFLAGS+=-frange-check -fcheck=all -finit-real=snan -finit-integer=-99999 -fbacktrace
+#DFLAGS+=-fwhole-file -fpack-derived -frepack-arrays
+DFLAGS+=-cpp -DDEBUG 
 #DFLAGS+=-fdump-rtl-expand
-PFLAGS=-O3 -march=native -cpp -fwhole-file -fopenmp
+PFLAGS=-O3 -march=native -cpp #-fopenmp # -fwhole-file
 LINKFLAG=-$(PFLAGS)
 ###################################
 
 # switch between performance or debugging flags
-FLAGS=$(PFLAGS)
+FLAGS=$(DFLAGS)
 
 # the link step
 main: $(OBJS) $(MAIN)

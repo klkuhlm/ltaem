@@ -469,8 +469,10 @@ contains
           j = lo+i-1
           RMRgp(i,0:N-1,0) = Ie(e%mat(j),vi(0:N-1),Rgp)
           RMRgp(i,1:N-1,1) = Io(e%mat(j),vi(1:N-1),Rgp)
+
           RMR0(i,0:N-1,0) =  Ie(e%mat(j),vi(0:N-1),e%r)
           RMR0(i,1:N-1,1) =  Io(e%mat(j),vi(1:N-1),e%r)
+
           AM(i,0:N-1,0) =    ce(e%mat(j),vi(0:N-1),Pgp)
           AM(i,1:N-1,1) =    se(e%mat(j),vi(1:N-1),Pgp)
        end do
@@ -480,8 +482,10 @@ contains
           j = lo+i-1
           RMRgp(i,0:N-1,0) = Ke(e%parent%mat(j),vi(0:N-1),Rgp)
           RMRgp(i,1:N-1,1) = Ko(e%parent%mat(j),vi(1:N-1),Rgp)
+
           RMR0(i,0:N-1,0) =  Ke(e%parent%mat(j),vi(0:N-1),e%r)
           RMR0(i,1:N-1,1) =  Ko(e%parent%mat(j),vi(1:N-1),e%r)
+
           AM(i,0:N-1,0) =    ce(e%parent%mat(j),vi(0:N-1),Pgp)
           AM(i,1:N-1,1) =    se(e%parent%mat(j),vi(1:N-1),Pgp)
        end do
@@ -526,12 +530,15 @@ contains
        end if
        do i=1,np
           j = lo+i-1
+          ! radial Mathieu functions -> to calc point
           RMRgp(i,0:N-1,0) =   Ie(e%mat(j),vi(0:N-1),Rgp)
           RMRgp(i,1:N-1,1) =   Io(e%mat(j),vi(1:N-1),Rgp)
           dRMRgp(i,0:N-1,0) = dIe(e%mat(j),vi(0:N-1),Rgp)
           dRMRgp(i,1:N-1,1) = dIo(e%mat(j),vi(1:N-1),Rgp)
+          ! radial Mathieu functions -> to bdry of ellipse
           RMR0(i,0:N-1,0) =    Ie(e%mat(j),vi(0:N-1),e%r)
           RMR0(i,1:N-1,1) =    Io(e%mat(j),vi(1:N-1),e%r)
+          ! angular mathieu funcitons -> to calc point
           AM(i,0:N-1,0) =      ce(e%mat(j),vi(0:N-1),Pgp)
           AM(i,1:N-1,1) =      se(e%mat(j),vi(1:N-1),Pgp)
           dAM(i,0:N-1,0) =    dce(e%mat(j),vi(0:N-1),Pgp)
@@ -545,8 +552,10 @@ contains
           RMRgp(i,1:N-1,1) =   Ko(e%parent%mat(j),vi(1:N-1),Rgp)
           dRMRgp(i,0:N-1,0) = dKe(e%parent%mat(j),vi(0:N-1),Rgp)
           dRMRgp(i,1:N-1,1) = dKo(e%parent%mat(j),vi(1:N-1),Rgp)
+
           RMR0(i,0:N-1,0) =    Ke(e%parent%mat(j),vi(0:N-1),e%r)
           RMR0(i,1:N-1,1) =    Ko(e%parent%mat(j),vi(1:N-1),e%r)
+
           AM(i,0:N-1,0) =      ce(e%parent%mat(j),vi(0:N-1),Pgp)
           AM(i,1:N-1,1) =      se(e%parent%mat(j),vi(1:N-1),Pgp)
           dAM(i,0:N-1,0) =    dce(e%parent%mat(j),vi(0:N-1),Pgp)
@@ -560,6 +569,7 @@ contains
                & sum(dRMRgp(1:np,1:N-1,1)/RMR0(1:np,1:N-1,1)*bb(1:np,1:N-1)*AM(1:np,1:N-1,1), 2)
     dH(1:np,2) = sum(RMRgp(1:np,0:N-1,0)/RMR0(1:np,0:N-1,0)*aa(1:np,0:N-1)*dAM(1:np,0:N-1,0), 2) + &
                & sum(RMRgp(1:np,1:N-1,1)/RMR0(1:np,1:N-1,1)*bb(1:np,1:N-1)*dAM(1:np,1:N-1,1), 2)
+    dH(:,2) = 0.0
   end function ellipse_deriv
 
 end module elliptical_elements
