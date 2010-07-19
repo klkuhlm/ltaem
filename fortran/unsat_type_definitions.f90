@@ -4,8 +4,8 @@ module unsat_type_definitions
   implicit none
 
   private 
-  public :: domain, time, element, match_result, matching, circle, ellipse, &
-       & INVLT, solution, particle, print_match_result
+  public :: domain, element, match_result, matching, circle, ellipse, &
+       & solution, print_match_result
   
   type :: domain
      ! number of each type of element
@@ -93,7 +93,7 @@ module unsat_type_definitions
      type(geom), allocatable :: G(:) ! number of elements
 
      ! coefficients determined through matching
-     complex(DP), allocatable :: coeff(:,:)
+     complex(DP), allocatable :: coeff(:)
   end type matching
 
   type, extends(matching) :: circle

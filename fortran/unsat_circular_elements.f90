@@ -1,7 +1,7 @@
 ! this module contains the basic functions defining the head or flux 
 ! effects of a circular element.
 
-module circular_elements
+module unsat_circular_elements
   implicit none
 
   private
@@ -12,17 +12,14 @@ module circular_elements
   end interface
     
 contains
-  function circle_match_self(c,p) result(r)
+  function circle_match_self(c) result(r)
     use constants, only : DP, PI
-    use kappa_mod, only : kappa
-    use time_mod, only : time
     use utility, only : outer
     use type_definitions, only : circle, match_result
     use bessel_functions, only : bK, bI, dbK, dbI
     implicit none
 
     type(circle), intent(in) :: c
-    complex(DP), intent(in) :: p
     type(match_result) :: r
 
     integer :: j, N, M, loM, hiM, ierr, nrows, ncols
@@ -30,6 +27,7 @@ contains
     complex(DP) :: kap
     real(DP) :: cmat(1:c%M,0:c%N-1), smat(1:c%M,1:c%N-1)
     real(DP), dimension(0:c%N-1) :: vi
+    complex(DP), allocatable :: H(:,:), dH(:,:)
 
     N = c%N
     M = c%M
@@ -68,15 +66,30 @@ contains
     cmat(1:M,0:N-1) = cos(outer(c%Pcm(1:M),vi(0:N-1)))
     smat(1:M,1:N-1) = sin(outer(c%Pcm(1:M),vi(1:N-1)))
 
+    allocate(H(M,ncols),dH(M,ncols),stat=ierr)
+    if (ierr /= 0) stop 'unsat_circular_elements.f90 error allocating: h,dh'
+
     ! setup LHS
+
+    ! head needed for  both head (Type I) and flux (Type III) matching
+    H(1:M,1:N) =       cmat(:,0:N-1) ! a_n head
+    H(1:M,N+1:2*N-1) = smat(:,1:N-1) ! b_n head
+    if (c%ibnd == 0 .or. c%calcin) then
+       H(1:M,2*N:3*N-1) = -cmat(:,0:N-1) ! c_n head
+       H(1:M,3*N:4*N-2) = -smat(:,1:N-1) ! d_n head
+    end if
+    
     ! matching or specified total head
     if (c%ibnd == 0 .or. c%ibnd == -1) then
-       r%LHS(1:M,1:N) =       cmat(:,0:N-1)/c%parent%K ! a_n head
-       r%LHS(1:M,N+1:2*N-1) = smat(:,1:N-1)/c%parent%K ! b_n head
+       
+       r%LHS(1:M,1:2*N-1) = H(1:M,1:2*N-1)* &
+            & spread(exp(-c%parent%alpha*c%r*sin(c%Pcm(1:M))/2.0),2,2*N-1)
 
        if (c%ibnd == 0 .or. (c%ibnd == -1 .and. c%calcin)) then
-          r%LHS(1:M,2*N:3*N-1) = -cmat(:,0:N-1)/c%K ! c_n head
-          r%LHS(1:M,3*N:4*N-2) = -smat(:,1:N-1)/c%K ! d_n head
+
+          r%LHS(1:M,2*N:4*N-2) = H(1:M,2*N:4*N-2)* &
+               & spread(exp(-c%alpha*c%r*sin(c%Pcm(1:M))/2.0),2,2*N-1)
+
        end if
     end if
     
@@ -88,49 +101,57 @@ contains
        call dBK(kap*c%r,N,Bn(0:N-1),dBn(0:N-1))
        dBn(0:N-1) = kap*dBn(0:N-1)
 
-       r%LHS(loM:hiM,1:N) =       spread(dBn(0:N-1)/Bn(0:N-1),1,M)*cmat(:,0:N-1) ! a_n flux
-       r%LHS(loM:hiM,N+1:2*N-1) = spread(dBn(1:N-1)/Bn(1:N-1),1,M)*smat(:,1:N-1) ! b_n flux
+       dH(1:M,1:N) =       spread(dBn(0:N-1)/Bn(0:N-1),1,M)*cmat(:,0:N-1) ! a_n flux
+       dH(1:M,N+1:2*N-1) = spread(dBn(1:N-1)/Bn(1:N-1),1,M)*smat(:,1:N-1) ! b_n flux
+
+       ! flux matching becomes type-III BC due to exponential transformation
+       r%LHS(loM:hiM,1:2*N-1) = (dH(:,1:2*N-1) - H(:,1:2*N-1)*&
+            & spread(sin(c%Pcm(1:M))*c%parent%alpha/2.0),2,2*N-1)*&
+            & spread(exp(-c%parent%alpha*c%r*sin(c%Pcm(1:M))/2.0),2,2*N-1)
        
        if (c%ibnd == 0 .or. (c%ibnd == 1 .and. c%calcin)) then
           kap = kappa(p,c%element)
           call dBI(kap*c%r,N,Bn(0:N-1),dBn(0:N-1))
           dBn(0:N-1) = kap*dBn(0:N-1)
           
-          r%LHS(loM:hiM,2*N:3*N-1) = -spread(dBn(0:N-1)/Bn(0:N-1),1,M)*cmat(:,0:N-1) ! c_n flux
-          r%LHS(loM:hiM,3*N:4*N-2) = -spread(dBn(1:N-1)/Bn(1:N-1),1,M)*smat(:,1:N-1) ! d_n flux
+          dH(1:M,2*N:3*N-1) = -spread(dBn(0:N-1)/Bn(0:N-1),1,M)*cmat(:,0:N-1) ! c_n flux
+          dH(1:M,3*N:4*N-2) = -spread(dBn(1:N-1)/Bn(1:N-1),1,M)*smat(:,1:N-1) ! d_n flux
+
+          r%LHS(loM:hiM,1:2*N-1) = (dH(:,1:2*N-1) - H(:,1:2*N-1)*&
+               & spread(sin(c%Pcm(1:M))*c%alpha/2.0),2,2*N-1)*&
+               & spread(exp(-c%alpha*c%r*sin(c%Pcm(1:M))/2.0),2,2*N-1)
+          
        end if
        deallocate(Bn,dBn, stat=ierr)
        if (ierr /= 0) stop 'circular_elements.f90 error deallocating: Bn,dBn'
+
     end if
     
     ! setup RHS
     select case(c%ibnd)
     case(-1)
-       ! put specified head on RHS
-       r%RHS(1:M) = time(p,c%time,.false.)*c%bdryQ
+       ! put specified head out _outside_ of element on RHS
+       r%RHS(1:M) = c%bdryQ
     case(0)
-       ! put constant area source term effects (from inside the element) on RHS
-       ! TODO : handle area source in background
-       r%RHS(1:M) = -time(p,c%time,.true.)*c%areaQ*c%Ss/kappa(p,c%element)**2
-       r%RHS(M+1:2*M) = 0.0 ! constant area source has no flux effects
+       ! TODO : handle unsaturated area sources???
+       r%RHS(1:2*M) = 0.0 ! currently no effects
     case(1)
-       ! put specified flux effects on RHS
+       ! put specified flux on _outside_ of element on RHS
        ! TODO : check addition of aquifer thickness to denominator
-       r%RHS(1:M) = time(p,c%time,.false.)*c%bdryQ/(2.0*PI*c%r*c%b)
+       r%RHS(1:M) = c%bdryQ/(2.0*PI*c%r*c%b)
     case(2)
-       if (c%StorIn) then
-          ! effects of wellbore storage and skin on finite-radius well
-          ! effects of other elements on this one show up in off-diagonals
-          r%LHS(1:M,1) = storwell(c,p)*r%LHS(1:M,1)
-          r%RHS(1:M) = time(p,c%time,.false.)*c%bdryQ/(PI*c%r*c%parent%T)
-       end if
+       ! effects of finite-radius well (no wellbore storage)
+       r%LHS(1:M,1) = well(c)*r%LHS(1:M,1)
+       r%RHS(1:M) = c%bdryQ/(PI*c%r*c%parent%T)
     end select
+
+    ! factor to convert from pressure (little psi) to helmholtz variable (big psi)
+    r%RHS(1:M) = r%RHS(1:M)*exp(-c%parent%alpha*c%r*sin(c%Pcm(1:M))/2.0)
+
   end function circle_match_self
 
-  function circle_match_other(c,el,dom,p) result(r)
+  function circle_match_other(c,el,dom) result(r)
     use constants, only : DP, PI
-    use kappa_mod, only : kappa
-    use time_mod, only : time
     use utility, only : outer, rotate_vel_mat
     use type_definitions, only : circle, domain, matching, match_result
     use bessel_functions, only : bK, bI, dbK, dbI
@@ -139,7 +160,6 @@ contains
     type(circle), intent(in) :: c ! source circle
     type(matching), intent(in) :: el ! target element (circle or ellipse)
     type(domain), intent(in) :: dom
-    complex(DP), intent(in) :: p
     type(match_result) :: r
 
     integer :: j, src, targ, N, M, loM, hiM, loN, hiN, ierr, nrows, ncols
@@ -392,43 +412,20 @@ contains
 
   end function circle_match_other
 
-  function well(c,p) result(a0)
+  function well(c) result(a0)
     ! this function returns the a_0 coefficient for a simple "well"
     use constants, only : DP, PI
-    use kappa_mod, only : kappa
-    use time_mod, only : time
     use type_definitions, only : circle
     use bessel_functions, only : bK
     type(circle), intent(in) :: c
-    complex(DP), intent(in) :: p
     complex(DP) :: a0
     complex(DP), dimension(0:1) ::Kn
     
-    Kn(0:1) = bK(kappa(p,c%parent)*c%r,2)
+    Kn(0:1) = bK((c%parent%alpha/2.0)**2 *c%r,2)
     ! TODO: should this have a factor of "b" in the denominator?
-    a0 = Kn(0)*time(p,c%time,.false.)*c%bdryQ/(2.0*PI*c%r*Kn(1))
+    a0 = Kn(0)*c%bdryQ/(2.0*PI*c%r*Kn(1))
   end function well
   
-  function storwell(c,p) result(a0)
-    ! this function returns the a_0 coefficient for a
-    ! well with wellbore storage and skin
-    use constants, only : DP, PI
-    use kappa_mod, only : kappa
-    use type_definitions, only : circle
-    use bessel_functions, only : bK
-    
-    type(circle), intent(in) :: c
-    complex(DP), intent(in) :: p
-    complex(DP) :: a0, kap
-    complex(DP), dimension(0:1) :: Kn
-
-    kap = kappa(p,c%parent)    
-    Kn(0:1) = bK(kap*c%r,2)
-    ! TODO : should this have a factor of "b" in the denominator?
-    a0 = -Kn(0)*((2.0 + c%r**2*c%dskin*p/c%parent%T)/(2.0*PI*c%r) + &
-               & (Kn(0)*c%r*p)/(2.0*PI*c%r*kap*Kn(1)*c%parent%T))    
-  end function storwell
-
   function circle_calc(p,c,lo,hi,Rgp,Pgp,inside) result(H)
     use constants, only : DP
     use kappa_mod, only : kappa
@@ -546,5 +543,5 @@ contains
          & ( bb(1:np,0:N-1)*spread(cos(vr(0:N-1)*Pgp),1,np) - &
          &   aa(1:np,0:N-1)*spread(sin(vr(0:N-1)*Pgp),1,np) ),dim=2)    
   end function circle_deriv
-end module circular_elements
+end module unsat_circular_elements
 
