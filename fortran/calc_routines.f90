@@ -153,6 +153,7 @@ contains
     use elliptical_elements, only : ellipse_deriv
     use kappa_mod, only : kappa
     use time_mod, only : time
+    use utility, only : rotate_vel
 #ifdef DEBUG
     use constants, only : PI
 #endif
@@ -213,7 +214,7 @@ contains
              
              ! eta and psi components of gradient
              dH(1:np,1:2) = ellipse_deriv(p,e(j-nc),lo,hi,Rgp(j),Pgp(j),.false.)
-             dH(1:np,1:2) = rotate_vel(dH(:,:),e(j-nc))
+             dH(1:np,1:2) = rotate_vel(dH(:,1:2),e(j-nc))
 
              hsq = e(j-nc)%f/2.0_DP*(cosh(2.0_DP*Rgp(j)) - cos(2.0_DP*Pgp(j)))
              v(1:np,1) = v(:,1) + (sinh(Rgp(j))*cos(Pgp(j))*dH(:,1) - &
@@ -239,7 +240,7 @@ contains
           ! calculation point is inside or on the boundary of an elliptical element
           if (e(in-nc)%calcin) then
              dH(1:np,1:2) = ellipse_deriv(p,e(in-nc),lo,hi,Rgp(in),Pgp(in),.true.)
-             dH(1:np,1:2) = rotate_vel(dH(:,:),e(in-nc))
+             dH(1:np,1:2) = rotate_vel(dH(:,1:2),e(in-nc))
              
              hsq = e(in-nc)%f/2.0_DP*(cosh(2.0_DP*Rgp(in)) - cos(2.0_DP*Pgp(in)))
              v(1:np,1) = v(:,1) + (sinh(Rgp(in))*cos(Pgp(in))*dH(:,1) - &
@@ -264,7 +265,8 @@ contains
           ! other element is an ellipse
           if (dom%InclIn(in,oth)) then
              dH(1:np,1:2) = ellipse_deriv(p,e(oth-nc),lo,hi,Rgp(oth),Pgp(oth),.false.)
-             dH(1:np,1:2) = rotate_vel(dH(:,:),e(oth-nc)) 
+             dH(1:np,1:2) = rotate_vel(dH(:,1:2),e(oth-nc)) 
+
              hsq = e(oth-nc)%f/2.0_DP*(cosh(2.0_DP*Rgp(oth)) - cos(2.0_DP*Pgp(oth)))
              v(1:np,1) = v(:,1) + (sinh(Rgp(oth))*cos(Pgp(oth))*dH(:,1) - &
                                  & cosh(Rgp(oth))*sin(Pgp(oth))*dH(:,2))/hsq
@@ -394,27 +396,5 @@ contains
        stop
     end if
   end subroutine check_np
-
-  function rotate_vel(v,e) result(w)
-    use constants, only : DP
-    use type_definitions, only : ellipse
-    complex(DP), dimension(:,:), intent(inout) :: v
-    type(ellipse), intent(in) :: e
-    complex(DP), dimension(size(v,dim=1),2) :: w
-    real(DP), dimension(2,2) :: rot 
-    integer :: i
-
-    ! can't use complex math (i.e., exp(-i theta)) because "x" and "y"
-    ! components are themselves complex here
-    rot(1,1) = cos(e%theta)
-    rot(2,1) = sin(e%theta)
-    rot(2,2) = rot(1,1)
-    rot(1,2) = -rot(2,1)
-    
-    forall (i = 1:size(v,dim=1))
-       w(i,1:2) = matmul(rot(1:2,1:2),v(i,1:2))
-    end forall
-    
-  end function rotate_vel
   
 end module calc_routines

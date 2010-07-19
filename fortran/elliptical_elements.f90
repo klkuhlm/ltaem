@@ -343,6 +343,9 @@ contains
              dPot_dY = (dPot_dR*spread(cosh(e%G(targ)%Rgm)*sin(e%G(targ)%Pgm),2,2*N-1) + &
                       & dPot_dP*spread(sinh(e%G(targ)%Rgm)*cos(e%G(targ)%Pgm),2,2*N-1))/hsq
 
+             ! rotate to compensate for potentially rotated ellipse
+             call rotate_vel_mat(dPot_dX,dPot_dY,e)
+
              deallocate(hsq,stat=ierr)
              if (ierr /= 0) stop 'elliptical_elements.f90 error deallocating: hsq'
 

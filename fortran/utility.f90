@@ -4,7 +4,7 @@ module utility
   implicit none
 
   private
-  public :: diag, logspace, linspace, outer, ccosh, cacosh, ynot
+  public :: diag, logspace, linspace, outer, ccosh, cacosh, ynot, rotate_vel, rotate_vel_mat
 
   interface diag
      module procedure diagonal_z, diagonal_d
@@ -166,4 +166,53 @@ contains
     P = 4.0_DP*((f*cosh(eta))**y + (f*sinh(eta))**y)**(1.0_DP/y)
 
   end function ynot
+
+  function rotate_vel(v,e) result(w)
+    use constants, only : DP
+    use type_definitions, only : ellipse
+    complex(DP), dimension(:,:), intent(in) :: v
+    type(ellipse), intent(in) :: e
+    complex(DP), dimension(size(v,dim=1),2) :: w
+    real(DP), dimension(2,2) :: rot 
+    integer :: i
+
+    ! can't use complex math (i.e., exp(-i theta)) because "x" and "y"
+    ! components are themselves complex here
+    rot(1,1) = cos(e%theta)
+    rot(2,1) = sin(e%theta)
+    rot(2,2) = rot(1,1)
+    rot(1,2) = -rot(2,1)
+    
+    forall (i = 1:size(v,dim=1))
+       w(i,1:2) = matmul(rot(1:2,1:2),v(i,1:2))
+    end forall
+    
+  end function rotate_vel
+
+  subroutine rotate_vel_mat(u,v,e,fwd)
+    use constants, only : DP
+    use type_definitions, only : ellipse
+    complex(DP), dimension(:,:), intent(inout) :: u,v
+    type(ellipse), intent(in) :: e
+    complex(DP), dimension(size(u,dim=2),2) :: yin, yout
+    logical, intent(in) :: fwd
+    integer :: i
+    real(DP) :: factor
+
+    if (fwd) then
+       factor = 1.0_DP
+    else
+       factor = 
+
+    do i = 1,size(u,dim=1)
+       yin(:,1) = u(i,:)
+       yin(:,2) = v(i,:)
+       yout(:,1:2) = rotate_vel_vect(yin,e)
+       u(i,:) = yout(:,1)
+       v(i,:) = yout(:,2)
+    end do
+    
+  end subroutine rotate_vel_mat
+  
+
 end module utility
