@@ -58,92 +58,90 @@ contains
     if (ierr /= 0) stop 'circular_elements.f90:circle_match_self() error &
          &allocating: r%LHS, r%RHS'
 
-    cmat(1:M,0:N-1) = cos(outer(c%Pcm(1:M),vi(0:N-1)))
-    smat(1:M,1:N-1) = sin(outer(c%Pcm(1:M),vi(1:N-1)))
+    if (c%ibnd /= 2) then
 
-    allocate(H(M,ncols),dH(M,ncols),stat=ierr)
-    if (ierr /= 0) stop 'unsat_circular_elements.f90 error allocating: h,dh'
+       cmat(1:M,0:N-1) = cos(outer(c%Pcm(1:M),vi(0:N-1)))
+       smat(1:M,1:N-1) = sin(outer(c%Pcm(1:M),vi(1:N-1)))
 
-    ! setup LHS
+       allocate(H(M,ncols),dH(M,ncols),stat=ierr)
+       if (ierr /= 0) stop 'unsat_circular_elements.f90 error allocating: h,dh'
 
-    ! head needed for  both head (Type I) and flux (Type III) matching
-    H(1:M,1:N) =       cmat(:,0:N-1) ! a_n head
-    H(1:M,N+1:2*N-1) = smat(:,1:N-1) ! b_n head
-    if (c%ibnd == 0 .or. c%calcin) then
-       H(1:M,2*N:3*N-1) = -cmat(:,0:N-1) ! c_n head
-       H(1:M,3*N:4*N-2) = -smat(:,1:N-1) ! d_n head
-    end if
-    
-    ! matching or specified total head
-    if (c%ibnd == 0 .or. c%ibnd == -1) then
-       
-       r%LHS(1:M,1:2*N-1) = H(1:M,1:2*N-1)* &
-            & spread(exp(-c%parent%alpha*c%r*sin(c%Pcm(1:M))/2.0),2,2*N-1)
+       ! setup LHS
 
-       if (c%ibnd == 0 .or. (c%ibnd == -1 .and. c%calcin)) then
-
-          r%LHS(1:M,2*N:4*N-2) = H(1:M,2*N:4*N-2)* &
-               & spread(exp(-c%alpha*c%r*sin(c%Pcm(1:M))/2.0),2,2*N-1)
-
+       ! head needed for  both head (Type I) and flux (Type III) matching
+       H(:,1:N) =       cmat(:,0:N-1) ! a_n head
+       H(:,N+1:2*N-1) = smat(:,1:N-1) ! b_n head
+       if (c%ibnd == 0) then
+          H(:,2*N:3*N-1) = -cmat(:,0:N-1) ! c_n head
+          H(:,3*N:4*N-2) = -smat(:,1:N-1) ! d_n head
        end if
-    end if
-    
-    ! matching or specified total flux
-    if (c%ibnd == 0 .or. c%ibnd == +1 .or. c%ibnd == 2) then
-       allocate(Bn(0:N-1), dBn(0:N-1), stat=ierr)
-       if (ierr /= 0) stop 'circular_elements.f90 error allocating: Bn,dBn'
-       kap = (c%parent%alpha/2.0)**2 
-       call dBK(kap*c%r,N,Bn(0:N-1),dBn(0:N-1))
-       dBn(0:N-1) = kap*dBn(0:N-1)
 
-       dH(1:M,1:N) =       spread(dBn(0:N-1)/Bn(0:N-1),1,M)*cmat(:,0:N-1) ! a_n flux
-       dH(1:M,N+1:2*N-1) = spread(dBn(1:N-1)/Bn(1:N-1),1,M)*smat(:,1:N-1) ! b_n flux
+       ! matching or specified total head
+       if (c%ibnd == 0 .or. c%ibnd == -1) then
 
-       ! flux matching becomes type-III BC due to exponential transformation
-       r%LHS(loM:hiM,1:2*N-1) = (dH(:,1:2*N-1) - H(:,1:2*N-1)*&
-            & spread(sin(c%Pcm(1:M))*c%parent%alpha/2.0,2,2*N-1))*&
-            & spread(exp(-c%parent%alpha*c%r*sin(c%Pcm(1:M))/2.0),2,2*N-1)
-       
-       if (c%ibnd == 0 .or. (c%ibnd == 1 .and. c%calcin)) then
-          kap = (c%alpha/2.0)**2
-          call dBI(kap*c%r,N,Bn(0:N-1),dBn(0:N-1))
+          r%LHS(1:M,1:2*N-1) = H(:,1:2*N-1)* &
+               & spread(exp(-c%parent%alpha*c%r*sin(c%Pcm(1:M))/2.0),2,2*N-1)
+
+          if (c%ibnd == 0) then
+
+             r%LHS(1:M,2*N:4*N-2) = H(:,2*N:4*N-2)* &
+                  & spread(exp(-c%alpha*c%r*sin(c%Pcm(1:M))/2.0),2,2*N-1)
+
+          end if
+       end if
+
+       ! matching or specified total flux
+       if (c%ibnd == 0 .or. c%ibnd == +1 .or. c%ibnd == 2) then
+          allocate(Bn(0:N-1), dBn(0:N-1), stat=ierr)
+          if (ierr /= 0) stop 'circular_elements.f90 error allocating: Bn,dBn'
+          kap = (c%parent%alpha/2.0)**2 
+          call dBK(kap*c%r,N,Bn(0:N-1),dBn(0:N-1))
           dBn(0:N-1) = kap*dBn(0:N-1)
-          
-          dH(1:M,2*N:3*N-1) = -spread(dBn(0:N-1)/Bn(0:N-1),1,M)*cmat(:,0:N-1) ! c_n flux
-          dH(1:M,3*N:4*N-2) = -spread(dBn(1:N-1)/Bn(1:N-1),1,M)*smat(:,1:N-1) ! d_n flux
 
+          dH(1:M,1:N) =       spread(dBn(0:N-1)/Bn(0:N-1),1,M)*cmat(:,0:N-1) ! a_n flux
+          dH(1:M,N+1:2*N-1) = spread(dBn(1:N-1)/Bn(1:N-1),1,M)*smat(:,1:N-1) ! b_n flux
+
+          ! flux matching becomes type-III BC due to exponential transformation
           r%LHS(loM:hiM,1:2*N-1) = (dH(:,1:2*N-1) - H(:,1:2*N-1)*&
-               & spread(sin(c%Pcm(1:M))*c%alpha/2.0,2,2*N-1))*&
-               & spread(exp(-c%alpha*c%r*sin(c%Pcm(1:M))/2.0),2,2*N-1)
-          
+               & spread(sin(c%Pcm(1:M))*c%parent%alpha/2.0,2,2*N-1))*&
+               & spread(exp(-c%parent%alpha*c%r*sin(c%Pcm(1:M))/2.0),2,2*N-1)
+
+          if (c%ibnd == 0) then
+             kap = (c%alpha/2.0)**2
+             call dBI(kap*c%r,N,Bn(0:N-1),dBn(0:N-1))
+             dBn(0:N-1) = kap*dBn(0:N-1)
+
+             dH(1:M,2*N:3*N-1) = -spread(dBn(0:N-1)/Bn(0:N-1),1,M)*cmat(:,0:N-1) ! c_n flux
+             dH(1:M,3*N:4*N-2) = -spread(dBn(1:N-1)/Bn(1:N-1),1,M)*smat(:,1:N-1) ! d_n flux
+
+             r%LHS(loM:hiM,1:2*N-1) = (dH(:,1:2*N-1) - H(:,1:2*N-1)*&
+                  & spread(sin(c%Pcm(1:M))*c%alpha/2.0,2,2*N-1))*&
+                  & spread(exp(-c%alpha*c%r*sin(c%Pcm(1:M))/2.0),2,2*N-1)
+
+          end if
+          deallocate(Bn,dBn, stat=ierr)
+          if (ierr /= 0) stop 'circular_elements.f90 error deallocating: Bn,dBn'
+
        end if
-       deallocate(Bn,dBn, stat=ierr)
-       if (ierr /= 0) stop 'circular_elements.f90 error deallocating: Bn,dBn'
+
+       ! setup RHS
+       select case(c%ibnd)
+       case(-1)
+          ! put specified head out _outside_ of element on RHS
+          r%RHS(1:M) = c%bdryQ
+       case(0)
+          ! TODO : handle unsaturated area sources???
+          r%RHS(1:2*M) = 0.0 ! currently no effects
+       case(1)
+          ! put specified flux on _outside_ of element on RHS
+          ! TODO : check addition of aquifer thickness to denominator
+          r%RHS(1:M) = c%bdryQ/(2.0*PI*c%r)
+       end select
+
+       ! factor to convert from pressure (little psi) to helmholtz variable (big psi)
+       r%RHS(1:M) = r%RHS(1:M)*exp(-c%parent%alpha*c%r*sin(c%Pcm(1:M))/2.0)
 
     end if
-    
-    ! setup RHS
-    select case(c%ibnd)
-    case(-1)
-       ! put specified head out _outside_ of element on RHS
-       r%RHS(1:M) = c%bdryQ
-    case(0)
-       ! TODO : handle unsaturated area sources???
-       r%RHS(1:2*M) = 0.0 ! currently no effects
-    case(1)
-       ! put specified flux on _outside_ of element on RHS
-       ! TODO : check addition of aquifer thickness to denominator
-       r%RHS(1:M) = c%bdryQ/(2.0*PI*c%r)
-    case(2)
-       ! effects of finite-radius well (no wellbore storage)
-       ! TODO: what is K in unsaturated zone?
-       r%LHS(1:M,1) = well(c)*r%LHS(1:M,1)
-       r%RHS(1:M) = c%bdryQ/(PI*c%r)
-    end select
-
-    ! factor to convert from pressure (little psi) to helmholtz variable (big psi)
-    r%RHS(1:M) = r%RHS(1:M)*exp(-c%parent%alpha*c%r*sin(c%Pcm(1:M))/2.0)
-
   end function circle_match_self
 
   function circle_match_other(c,el,dom) result(r)
@@ -330,7 +328,6 @@ contains
     complex(DP), dimension(0:1) ::Kn
     
     Kn(0:1) = bK((c%parent%alpha/(2.0,0.0))**2 *c%r,2)
-    ! TODO: should this have a factor of "b" in the denominator?
     a0 = Kn(0)*c%bdryQ/(2.0*PI*c%r*Kn(1))
   end function well
   

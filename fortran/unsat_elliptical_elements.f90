@@ -1,7 +1,7 @@
 ! this module contains the basic functions defining the head or flux 
 ! effects of a elliptical element.
 
-module elliptical_elements
+module unsat_elliptical_elements
   implicit none
 
   private
@@ -12,18 +12,14 @@ module elliptical_elements
   end interface
 
 contains
-  function ellipse_match_self(e,p,i) result(r)
+  function ellipse_match_self(e) result(r)
     use constants, only : DP, PI
-    use kappa_mod, only : kappa
-    use time_mod, only : time
     use type_definitions, only : ellipse, match_result, element
     use mathieu_functions, only : ce, se, Ke, Ko, dKe, dKo, Ie, Io, dIe, dIo
     use utility, only : ynot 
     implicit none
 
     type(ellipse), target, intent(in) :: e
-    complex(DP), intent(in) :: p
-    integer, intent(in) :: i ! indicates which value of p (global state)
     type(match_result) :: r
     type(element), pointer :: f => null()  ! shortcut for parent of element 
 
@@ -33,6 +29,7 @@ contains
     complex(DP), dimension(1:e%M, 0:e%N-1, 0:1) :: cemat
     complex(DP), dimension(1:e%M, 1:e%N-1, 0:1) :: semat
     integer, dimension(0:e%N-1) :: vi
+    complex(DP), allocatable(:,:) :: H,dH
 
     N = e%N
     M = e%M
@@ -67,21 +64,31 @@ contains
        ! outside ang. mod. Mathieu fcns (last dimension is inside/outside)
        cemat(1:M,0:N-1,0) = transpose(ce(f%mat(i), vi(0:N-1), e%Pcm(1:M)))
        semat(1:M,1:N-1,0) = transpose(se(f%mat(i), vi(1:N-1), e%Pcm(1:M)))
-       if (e%ibnd == 0 .or. (e%calcin .and. (e%ibnd == 1 .or. e%ibnd == -1))) then
+       if (e%ibnd == 0) then
           ! inside
           cemat(1:M,0:N-1,1) = transpose(ce(e%mat(i), vi(0:N-1), e%Pcm(1:M)))
           semat(1:M,1:N-1,1) = transpose(se(e%mat(i), vi(1:N-1), e%Pcm(1:M)))
        end if
 
+       allocate(h(M,ncols),dH(M,ncols,stat=ierr)
+       if (ierr /= 0) stop 'unsat_elliptical_elements.f90 error allocating: h,dh')
+
        ! setup LHS
+       H(:,1:N) =       cemat(1:M,0:N-1,0) ! a_n head
+       H(:,N+1:2*N-1) = semat(1:M,1:N-1,0) ! b_n head
+       if (e%ibnd == 0) then
+          H(:,2*N:3*N-1) = -cemat(1:M,0:N-1,1) ! c_n head
+          H(:,3*N:4*N-2) = -semat(1:M,1:N-1,1) ! d_n head
+       end if
+       
        ! matching or specified total head
        if (e%ibnd == 0 .or. e%ibnd == -1) then
-          r%LHS(1:M,1:N) =       cemat(1:M,0:N-1,0)/f%K ! a_n head
-          r%LHS(1:M,N+1:2*N-1) = semat(1:M,1:N-1,0)/f%K ! b_n head
+          r%LHS(1:M,1:2*N-1) = H(:,1:2*N-1)* &
+               & spread(exp(e%parent%alpha*e%f/2.0*sinh(e%r)*sin(e%Pcm(1:M))),2,2*N-1)
 
-          if (e%ibnd == 0 .or. (e%ibnd == -1 .and. e%calcin)) then
-             r%LHS(1:M,2*N:3*N-1) = -cemat(1:M,0:N-1,1)/e%K ! c_n head
-             r%LHS(1:M,3*N:4*N-2) = -semat(1:M,1:N-1,1)/e%K ! d_n head
+          if (e%ibnd == 0) then
+             r%LHS(1:M,2*N:4*N-2) = H(:,2*N:4*N-2)*&
+                  & spread(exp(e%alpha*e%f/2.0*sinh(e%r)*sin(e%Pcm(1:M))),2,2*N-1)
           end if
        end if
 
@@ -91,17 +98,19 @@ contains
           if (ierr /= 0) stop 'elliptical_elemen ts.f90 error allocating: RMn, dRMn'
 
           ! radial functions last dimension is even/odd
-          RMn(0:N-1,0) =   Ke(f%mat(i), vi(0:N-1), e%r) ! even fn
-          RMn(1:N-1,1) =   Ko(f%mat(i), vi(1:N-1), e%r) ! odd fn
+          RMn(0:N-1,0) =   Ke(f%mat, vi(0:N-1), e%r) ! even fn
+          RMn(1:N-1,1) =   Ko(f%mat, vi(1:N-1), e%r) ! odd fn
           RMn(0,1) = 0.0
-          dRMn(0:N-1,0) = dKe(f%mat(i), vi(0:N-1), e%r) ! even deriv
-          dRMn(1:N-1,1) = dKo(f%mat(i), vi(1:N-1), e%r) ! odd deriv
+          dRMn(0:N-1,0) = dKe(f%mat, vi(0:N-1), e%r) ! even deriv
+          dRMn(1:N-1,1) = dKo(f%mat, vi(1:N-1), e%r) ! odd deriv
           dRMn(0,1) = 0.0
+
+          
 
           r%LHS(loM:hiM,1:N) =       spread(dRMn(0:N-1,0)/RMn(0:N-1,0), 1,M)*cemat(1:M,0:N-1,0) ! a_n flux
           r%LHS(loM:hiM,N+1:2*N-1) = spread(dRMn(1:N-1,1)/RMn(1:N-1,1), 1,M)*semat(1:M,1:N-1,0) ! b_n flux
 
-          if (e%ibnd == 0 .or. (e%ibnd == 1 .and. e%calcin)) then
+          if (e%ibnd == 0) then
              RMn(0:N-1,0) =   Ie(e%mat(i), vi(0:N-1), e%r)
              RMn(1:N-1,1) =   Io(e%mat(i), vi(1:N-1), e%r)
              RMn(0,1) = 0.0
