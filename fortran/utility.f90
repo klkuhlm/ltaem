@@ -167,19 +167,19 @@ contains
 
   end function ynot
 
-  function rotate_vel(v,e) result(w)
+  function rotate_vel(v,theta) result(w)
     use constants, only : DP
-    use type_definitions, only : ellipse
     complex(DP), dimension(:,:), intent(in) :: v
-    type(ellipse), intent(in) :: e
+    real(DP), intent(in) :: theta
+
     complex(DP), dimension(size(v,dim=1),2) :: w
     real(DP), dimension(2,2) :: rot 
     integer :: i
 
     ! can't use complex math (i.e., exp(-i theta)) because "x" and "y"
     ! components are themselves complex here
-    rot(1,1) = cos(e%theta)
-    rot(2,1) = sin(e%theta)
+    rot(1,1) = cos(theta)
+    rot(2,1) = sin(theta)
     rot(2,2) = rot(1,1)
     rot(1,2) = -rot(2,1)
     
@@ -189,30 +189,21 @@ contains
     
   end function rotate_vel
 
-  subroutine rotate_vel_mat(u,v,e,fwd)
+  subroutine rotate_vel_mat(u,v,theta)
     use constants, only : DP
-    use type_definitions, only : ellipse
     complex(DP), dimension(:,:), intent(inout) :: u,v
-    type(ellipse), intent(in) :: e
+    real(DP), intent(in) :: theta
     complex(DP), dimension(size(u,dim=2),2) :: yin, yout
-    logical, intent(in) :: fwd
     integer :: i
-    real(DP) :: factor
-
-    if (fwd) then
-       factor = 1.0_DP
-    else
-       factor = 
 
     do i = 1,size(u,dim=1)
        yin(:,1) = u(i,:)
        yin(:,2) = v(i,:)
-       yout(:,1:2) = rotate_vel_vect(yin,e)
+       yout(:,1:2) = rotate_vel(yin,theta)
        u(i,:) = yout(:,1)
        v(i,:) = yout(:,2)
     end do
     
   end subroutine rotate_vel_mat
-  
 
 end module utility

@@ -214,7 +214,7 @@ contains
              
              ! eta and psi components of gradient
              dH(1:np,1:2) = ellipse_deriv(p,e(j-nc),lo,hi,Rgp(j),Pgp(j),.false.)
-             dH(1:np,1:2) = rotate_vel(dH(:,1:2),e(j-nc))
+             dH(1:np,1:2) = rotate_vel(dH(:,1:2),e(j-nc)%theta)
 
              hsq = e(j-nc)%f/2.0_DP*(cosh(2.0_DP*Rgp(j)) - cos(2.0_DP*Pgp(j)))
              v(1:np,1) = v(:,1) + (sinh(Rgp(j))*cos(Pgp(j))*dH(:,1) - &
@@ -240,7 +240,7 @@ contains
           ! calculation point is inside or on the boundary of an elliptical element
           if (e(in-nc)%calcin) then
              dH(1:np,1:2) = ellipse_deriv(p,e(in-nc),lo,hi,Rgp(in),Pgp(in),.true.)
-             dH(1:np,1:2) = rotate_vel(dH(:,1:2),e(in-nc))
+             dH(1:np,1:2) = rotate_vel(dH(:,1:2),e(in-nc)%theta)
              
              hsq = e(in-nc)%f/2.0_DP*(cosh(2.0_DP*Rgp(in)) - cos(2.0_DP*Pgp(in)))
              v(1:np,1) = v(:,1) + (sinh(Rgp(in))*cos(Pgp(in))*dH(:,1) - &
@@ -265,7 +265,7 @@ contains
           ! other element is an ellipse
           if (dom%InclIn(in,oth)) then
              dH(1:np,1:2) = ellipse_deriv(p,e(oth-nc),lo,hi,Rgp(oth),Pgp(oth),.false.)
-             dH(1:np,1:2) = rotate_vel(dH(:,1:2),e(oth-nc)) 
+             dH(1:np,1:2) = rotate_vel(dH(:,1:2),e(oth-nc)%theta) 
 
              hsq = e(oth-nc)%f/2.0_DP*(cosh(2.0_DP*Rgp(oth)) - cos(2.0_DP*Pgp(oth)))
              v(1:np,1) = v(:,1) + (sinh(Rgp(oth))*cos(Pgp(oth))*dH(:,1) - &

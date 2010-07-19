@@ -140,6 +140,7 @@ contains
     use constants, only : DP
     use type_definitions, only : ellipse, domain, matching, match_result
     use mathieu_functions, only : ce, se, dce, dse, Ke, Ko, dKe, dKo, Ie, Io, dIe, dIo
+    use utility, only : rotate_vel_mat
     implicit none
 
     type(ellipse), intent(in) :: e ! source ellipse
@@ -343,8 +344,8 @@ contains
              dPot_dY = (dPot_dR*spread(cosh(e%G(targ)%Rgm)*sin(e%G(targ)%Pgm),2,2*N-1) + &
                       & dPot_dP*spread(sinh(e%G(targ)%Rgm)*cos(e%G(targ)%Pgm),2,2*N-1))/hsq
 
-             ! rotate to compensate for potentially rotated ellipse
-             call rotate_vel_mat(dPot_dX,dPot_dY,e)
+             ! rotate to compensate for potentially arbitrary source ellipse
+             call rotate_vel_mat(dPot_dX,dPot_dY,e%theta)
 
              deallocate(hsq,stat=ierr)
              if (ierr /= 0) stop 'elliptical_elements.f90 error deallocating: hsq'
@@ -370,6 +371,9 @@ contains
                         & dPot_dY*spread(sin(el%Pcm),2,2*N-1)
                 end if
              else
+                ! rotate to compensate for arbitrary target ellipse
+                call rotate_vel_mat(dPot_dX,dPot_dY,-el%theta)
+                
                 ! other element is a different ellipse
                 r%LHS(loM:hiM,loN:hiN) = dPot_dX*spread(el%f*sinh(el%r)*cos(el%Pcm(1:M)),2,2*N-1) + &
                      & dPot_dY*spread(el%f*cosh(el%r)*sin(el%Pcm(1:M)),2,2*N-1)
@@ -424,10 +428,10 @@ contains
     MS = e%ms
     nmax = ceiling(e%N/2.0)
     vi(0:MS-1) = [(i,i=0,MS-1)]  ! integer vector
-    vs = -1.0_DP ! sign vector
-    where (mod(vi,2)==0) vs = 1.0_DP
+    vs = -1.0 ! sign vector
+    where (mod(vi,2)==0) vs = 1.0
 
-    arg(1:MS,1:nmax) = spread(vs(0:MS-1)/real(1-(2*vi(0:MS-1))**2,DP),dim=2,ncopies=nmax)
+    arg(1:MS,1:nmax) = spread(vs(0:MS-1)/real(1-(2*vi(0:MS-1))**2,DP),2,nmax)
     
     ! factor of 4 different from Kuhlman&Neuman paper
     ! include Radial/dRadial MF here to balance with those in general solution
