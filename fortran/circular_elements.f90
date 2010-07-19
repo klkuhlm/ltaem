@@ -346,6 +346,7 @@ contains
                                           & dPot_dY*spread(sin(el%Pcm),2,2*N-1)
                 end if
              else
+                ! rotate to allow for arbitrary oriented ellipse
                 call rotate_vel_mat(dPot_dX,dPot_dY,-el%theta)
 
                 ! other element is an ellipse
