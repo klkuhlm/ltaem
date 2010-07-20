@@ -1,12 +1,12 @@
 10 :: N
 22 :: M
 18  :: ms
-1  :: ibnd (-1=CH, +1=CF, 2=source)
-false :: calcin?
-0.0D-1  :: r
+0  :: ibnd (-1=CH, 0=match, +1=CF, 2=source)
+true :: calcin?
+2.5D-1  :: r
 7.0D-1  :: x0
 8.0D-1  :: y0
 2.5D-1  :: f
--7.853982D-1  :: theta
+0.0   -7.853982D-1  :: theta
 1.0D-1  :: alpha
 0.0D-1  :: boundary source strength

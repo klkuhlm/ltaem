@@ -47,14 +47,14 @@ contains
     read(15,*,iostat=ierr) sol%output, sol%outFname, sol%geomfName
     if (ierr /= 0) stop 'error on line 1 of input file'
 
-    read(15,*,iostat=ierr) bg%alpha, bg%ms
+    read(15,*,iostat=ierr) bg%alpha, bg%qz0, bg%ms
     if (ierr /= 0) stop 'error on line 2 of input file'
 
     ! echo input from first 2 lines to file
     write(16,*) sol%output, trim(sol%outFname), &
          & trim(sol%geomFname),'  ||    output, out/geometry file names'
 
-    write(16,*) bg%alpha, bg%ms, '  ||    alpha, ellipse MS'
+    write(16,*) bg%alpha, bg%qz0, bg%ms, '  ||    alpha, qz0, ellipse MS'
 
     ! desired solution points/times
     read(15,*,iostat=ierr) sol%nx, sol%ny

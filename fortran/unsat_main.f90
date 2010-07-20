@@ -49,7 +49,7 @@ program steady_unsat_main
      
      ! allocate/initialize each element for each value of p
      do j = 1, size(e,1)
-        if (e(j)%ibnd == 0 .or. e(j)%calcin) then
+        if (e(j)%ibnd == 0) then
            e(j)%mat = mathieu_init(cmplx(e(j)%alpha/2.0,0.0,DP)**2,MM=e(j)%MS)
         end if
      end do
@@ -59,11 +59,11 @@ program steady_unsat_main
   call matrix_solution(c,e,dom)
  
   allocate(sol%h(sol%nx,sol%ny), sol%v(sol%nx,sol%ny,2), stat=ierr)
-  if (ierr /= 0) stop 'ltaem_main.f90 error allocating contour: sol%h,sol%hp,sol%v,sol%vp'
+  if (ierr /= 0) stop 'unsat_main.f90 error allocating contour: sol%h,sol%hp,sol%v,sol%vp'
 
 #ifdef DEBUG
-  open(unit=303,file='calcloc.debug',status='replace',action='write')
-  open(unit=404,file='calcloc.vdebug',status='replace',action='write')
+  open(unit=303,file='unsat_calcloc.debug',status='replace',action='write')
+  open(unit=404,file='unsat_calcloc.vdebug',status='replace',action='write')
 #endif
 
   !$OMP PARALLEL DO DEFAULT(PRIVATE) SHARED(sol,dom,c,e,bg)

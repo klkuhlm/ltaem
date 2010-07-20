@@ -44,6 +44,8 @@ module unsat_type_definitions
      type(mathieu) :: mat
      integer :: ms = -999 ! not used in circle
 
+     real(DP) :: qz0 = -999. ! background uniform vertical flow
+
   end type element
     
   type :: geom

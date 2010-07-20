@@ -122,11 +122,11 @@ contains
 
        end if
 
-       ! setup RHS
+       ! setup RHS (in terms of pressure)
        select case(c%ibnd)
        case(-1)
           ! put specified head out _outside_ of element on RHS
-          r%RHS(1:M) = c%bdryQ
+          r%RHS(1:M) = c%bdryQ 
        case(0)
           ! TODO : handle unsaturated area sources???
           r%RHS(1:2*M) = 0.0 ! currently no effects
@@ -137,7 +137,10 @@ contains
        end select
 
        ! factor to convert from pressure (little psi) to helmholtz variable (big psi)
-       r%RHS(1:M) = r%RHS(:)*exp(-f%alpha/2.0*c%r*sin(c%Pcm(1:M)))
+       r%RHS(1:M) = r%RHS(1:M)*exp(f%alpha/2.0*c%r*sin(c%Pcm(1:M)))
+
+       ! add in uniform flow
+       r%RHS(1:M) = r%RHS(1:M) - f%qz0/f%alpha
 
        f => null()
     end if

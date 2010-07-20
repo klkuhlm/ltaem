@@ -132,7 +132,7 @@ contains
           if (ierr /= 0) stop 'elliptical_elements.f90 error deallocating: RMn,dRMn'
        end if
 
-       ! setup RHS
+       ! setup RHS (here in terms of pressure)
        select case(e%ibnd)
        case(-1)
           ! put specified head on RHS
@@ -146,7 +146,11 @@ contains
           r%RHS(1:M) = e%bdryQ/ynot(e%r,e%f)
        end select
 
-       r%RHS(1:M) = r%RHS(:)*exp(e%f/2.0*sinh(e%r)*sin(e%Pcm(:))*f%alpha)
+       ! convert pressure (little psi) to helmholtz variable (big Psi)
+       r%RHS(1:M) = r%RHS(1:M)*exp(-e%f/2.0*sinh(e%r)*sin(e%Pcm(:))*f%alpha)
+
+       ! add in uniform flow
+       r%RHS(1:M) = r%RHS(1:M) - f%qz0/f%alpha
 
        f => null()
     end if
@@ -486,4 +490,3 @@ contains
 
   end function ellipse_deriv
 end module unsat_elliptical_elements
-

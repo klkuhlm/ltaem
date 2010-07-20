@@ -24,11 +24,12 @@ contains
 
     complex(DP), intent(in) :: Z  ! location for calculation (complex coordinates)
     type(domain), intent(in) :: dom
-    type(circle),  dimension(:), intent(in) :: c
-    type(ellipse), dimension(:), intent(in) :: e
+    type(circle),  target, dimension(:), intent(in) :: c
+    type(ellipse), target, dimension(:), intent(in) :: e
     type(element), intent(in) :: bg
     complex(DP) :: H  
 
+    type(element), pointer :: elin => null()
     real(DP), dimension(sum(dom%num)) :: Rgp, Pgp
     integer :: nc, ne, ntot, j, in
 
@@ -84,11 +85,14 @@ contains
        ! z is "down" coordinate in problem
        ! z = -y (y is imaginary part of Z)
        H = H*exp(-bg%alpha*aimag(Z)/2.0) ! convert to head
+       
+       H = H + bg%qz0/bg%alpha
 
     !##################################################
     !! calculation point is inside an element (not background)
     else
        if (in <= nc) then
+          elin => c(in)%element
           ! calculation point is inside (or on bdry of) a circular element
           if (c(in)%calcin) then
              H = circle_calc(c(in),Rgp(in),Pgp(in),.true.)
@@ -96,6 +100,7 @@ contains
              H = 0.0 ! inside an element labeled no-calc
           end if
        else 
+          elin => e(in-nc)%element
           ! calculation point is inside (or on bdry of) an elliptical element
           if (e(in-nc)%calcin) then
              H = ellipse_calc(e(in-nc),Rgp(in),Pgp(in),.true.)
@@ -107,8 +112,8 @@ contains
        ! apply potential source term on inside of element
        ! TODO : handle unsaturated source terms???
 
-       H = H*exp(-bg%alpha*aimag(Z)/2.0) ! convert to head
-
+       H = H*exp(-elin%alpha*aimag(Z)/2.0) ! convert to head
+       elin => null()
     end if
   end function headCalc
 
