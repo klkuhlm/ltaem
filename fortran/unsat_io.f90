@@ -46,14 +46,14 @@ contains
     read(15,*,iostat=ierr) sol%output, sol%outFname, sol%geomfName
     if (ierr /= 0) stop 'error on line 1 of input file'
 
-    read(15,*,iostat=ierr) bg%alpha, bg%qz0, bg%ms
+    read(15,*,iostat=ierr) bg%alpha, bg%ks, bg%qz0, bg%ms
     if (ierr /= 0) stop 'error on line 2 of input file'
 
     ! echo input from first 2 lines to file
     write(16,*) sol%output, trim(sol%outFname), &
          & trim(sol%geomFname),'  ||    output, out/geometry file names'
 
-    write(16,*) bg%alpha, bg%qz0, bg%ms, '  ||    alpha, qz0, ellipse MS'
+    write(16,*) bg%alpha, bg%qz0, bg%ks, bg%ms, '  ||    alpha, qz0, ellipse MS'
 
     ! desired solution points/times
     read(15,*,iostat=ierr) sol%nx, sol%ny
@@ -128,6 +128,12 @@ contains
           stop
        end if      
 
+       read(22,*) c(:)%Ks
+       if (any(c%Ks < epsilon(0.0))) then
+          print *, 'c%Ks must be > 0.0',c%Ks
+          stop
+       end if      
+
        read(22,*) c(:)%bdryQ ! streng of specified value on bdry (head or flux) 
        close(22)
    
@@ -151,7 +157,8 @@ contains
        write(16,fmt(3)) c(:)%r, '  ||    circle radius'
        write(16,fmt(3)) c(:)%x, '  ||    circle center x'
        write(16,fmt(3)) c(:)%y, '  ||    circle center y'
-       write(16,fmt(3)) c(:)%alpha, '  ||    circle aquifer alpha'
+       write(16,fmt(3)) c(:)%alpha, '  ||    circle alpha'
+       write(16,fmt(3)) c(:)%ks, '  ||    circle Ks'
        write(16,fmt(3)) c(:)%bdryQ, '  ||    circle boundry rch rate or head'
        
     else
@@ -224,6 +231,12 @@ contains
        end if
 
        read(33,*) e(:)%alpha
+       if (any(e%alpha < epsilon(0.0))) then
+          print *, 'e%alpha must be > 0.0',e%alpha
+          stop
+       end if
+
+       read(33,*) e(:)%ks
        if (any(e%alpha < epsilon(0.0))) then
           print *, 'e%alpha must be > 0.0',e%alpha
           stop
