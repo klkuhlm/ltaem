@@ -59,7 +59,7 @@ program steady_unsat_main
      
   end if
 
-  call unsat_matrix_solution(c,e,dom,sol)
+  call unsat_matrix_solution(c,e,dom)
  
   !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   if(sol%contour) then ! contour output (x,y locations outer product of x,y vectors)
