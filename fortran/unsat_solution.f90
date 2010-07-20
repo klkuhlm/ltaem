@@ -9,12 +9,11 @@ module solution_mod
   public :: unsat_matrix_solution
 
 contains
-  subroutine unsat_matrix_solution(c,e,dom,sol)
+  subroutine unsat_matrix_solution(c,e,dom)
     use constants, only : DP
-    use type_definitions, only : circle, solution, ellipse, domain, match_result
-    use circular_elements, only : circle_match, well
-    use elliptical_elements, only : ellipse_match ! line() is repeated below to accommodate gfortran bug
-    use type_definitions, only : print_match_result
+    use unsat_type_definitions, only : circle, solution, ellipse, domain, match_result,print_match_result
+    use unsat_circular_elements, only : circle_match, well
+    use unsat_elliptical_elements, only : ellipse_match
 
     interface  !! solve over-determined system via least-squares
        subroutine ZGELS(TRANSA, M, N, NRHS, A, LDA, B, LDB, WORK, &
@@ -28,12 +27,9 @@ contains
        end subroutine ZGELS
     end interface
 
-    character(13) :: fmt
-
     type(circle),  dimension(:), intent(inout) :: c
     type(ellipse), dimension(:), intent(inout) :: e
     type(domain), intent(in) :: dom
-    type(solution), intent(in) :: sol
 
     complex(DP), allocatable :: A(:,:), b(:)
     type(match_result), allocatable :: res(:,:) ! results(target_id,source_id)
@@ -44,7 +40,9 @@ contains
     ! size(work) should be ~ 33xbigN? (32-bit linux)
     complex(DP), allocatable :: WORK(:)
 
-    print *, 'matrix_solution: c:',c%id,' e:',e%id,' #tot el:',sum(dom%num(1:2)),' p:',p,' idx:',idx
+#ifdef DEBUG
+    print *, 'matrix_solution: c:',c%id,' e:',e%id,' #tot el:',sum(dom%num(1:2))
+#endif
 
     nc = size(c,dim=1)
     ne = size(e,dim=1)
@@ -57,8 +55,7 @@ contains
        ! circle on self
        print '(4(A,I0))', 'circle on self: ',i,' N:',c(i)%N,' M:',c(i)%M,' ibnd:',c(i)%ibnd
 
-       res(i,i) = circle_match(c(i),p)
-
+       res(i,i) = circle_match(c(i))
        call print_match_result(res(i,i))
        row(i,1) = size(res(i,i)%RHS,1)
        col(i,1) = size(res(i,i)%LHS,2)
@@ -71,8 +68,7 @@ contains
              print '(A,2(1X,I0),4(A,I0))', 'circle on circle:',i,j,' N:',c(i)%N,' M:',c(j)%M, &
                   &' <-ibnd:',c(i)%ibnd,' ->ibnd:',c(j)%ibnd
 
-             res(j,i) = circle_match(c(i),c(j)%matching,dom,p)
-
+             res(j,i) = circle_match(c(i),c(j)%matching,dom)
              call print_match_result(res(j,i))
           end if
        end do
@@ -82,8 +78,7 @@ contains
           print '(A,2(1X,I0),4(A,I0))', 'circle on ellipse:',i,j+nc,' N:',c(i)%N,' M:',e(j)%M, &
                &' <-ibnd:',c(i)%ibnd,' ->ibnd:',e(j)%ibnd
 
-          res(j+nc,i) = circle_match(c(i),e(j)%matching,dom,p)
-
+          res(j+nc,i) = circle_match(c(i),e(j)%matching,dom)
           call print_match_result(res(j+nc,i))
        end do
     end do
@@ -93,7 +88,7 @@ contains
        print '(5(A,I0))', 'before ellipse on self: ',nc+i,' MS:',e(i)%ms,&
             &' N:',e(i)%N,' M:',e(i)%M,' ibnd:',e(i)%ibnd
 
-       res(nc+i,nc+i) = ellipse_match(e(i),p,idx)
+       res(nc+i,nc+i) = ellipse_match(e(i))
 
        call print_match_result(res(nc+i,nc+i))
        row(i+nc,1) = size(res(nc+i,nc+i)%RHS,1)
@@ -104,7 +99,7 @@ contains
        ! ellipse on other circle
        do j = 1, nc
           print '(A,2(1X,I0))', 'ellipse on circle:',nc+i,j
-          res(j,nc+i) = ellipse_match(e(i),c(j)%matching,dom,p,idx)
+          res(j,nc+i) = ellipse_match(e(i),c(j)%matching,dom)
           call print_match_result(res(j,nc+i))
        end do
 
@@ -113,8 +108,7 @@ contains
           if (i /= j) then
              print '(A,2(1X,I0))', 'ellipse on ellipse:',nc+i,nc+j
 
-             res(nc+j,nc+i) = ellipse_match(e(i),e(j)%matching,dom,p,idx)
-
+             res(nc+j,nc+i) = ellipse_match(e(i),e(j)%matching,dom)
              call print_match_result(res(nc+j,nc+i))
           end if
        end do
@@ -169,7 +163,7 @@ contains
        call ZGELS(TRANSA='N',M=bigM,N=bigN,NRHS=1,A=A(:,:),LDA=bigM,B=b(:),LDB=bigM,&
             & WORK=work,LDWORK=size(work,dim=1),INFO=ierr)
        if (ierr /= 0) then
-          write(*,'(A,I0,2(A,ES10.3))') 'ZGELS error: ',ierr,' p:',real(p),'+i',aimag(p)
+          write(*,'(A,I0)') 'ZGELS error: ',ierr
           stop 
        end if
     end if
@@ -181,7 +175,7 @@ contains
        allocate(c(i)%coeff(col(i,1)), stat=ierr)
        if (ierr /= 0) stop 'solution.f90: error allocating c(i)%coeff'
 
-       if (.not. (c(i)%ibnd == 2 .and. (.not. c(i)%storin))) then
+       if (.not. c(i)%ibnd == 2) then
           ! coefficients come from least-squares solution above
           c(i)%coeff(:) = b(col(i,0):col(i,2))
        else
@@ -237,11 +231,10 @@ contains
     
   end subroutine unsat_matrix_solution
 
-  ! this function should be in elliptical_elements module, but gfortran bug forces it to be here.
   function line(e) result(a2n)
     ! this function returns the coefficients for a specified-flux line source
     use constants, only : DP, PI
-    use type_definitions, only : ellipse
+    use unsat_type_definitions, only : ellipse
     use mathieu_functions, only : Ke,dKe
 
     type(ellipse), intent(in) :: e
@@ -254,19 +247,17 @@ contains
     N = e%N 
     MS = e%ms
     nmax = ceiling(e%N/2.0)
-    vi(0:MS-1) = [(i,i=0,MS-1)]  ! integer index vector
+    vi(0:MS-1) = [(i,i=0,MS-1)]  ! integer vector
     vs = -1.0 ! sign vector
     where (mod(vi,2)==0) vs = 1.0
 
     arg(1:MS,1:nmax) = spread(vs(0:MS-1)/real(1-(2*vi(0:MS-1))**2,DP),2,nmax)
-
+    
     ! factor of 4 different from Kuhlman&Neuman paper
     ! include Radial/dRadial MF here to balance with those in general solution
     a2n(1:nmax) = e%bdryQ/(2.0*PI)* &
-            & Ke(e%parent%mat(idx), vi(0:N-1:2), e%r) / &
-            & dKe(e%parent%mat(idx), vi(0:N-1:2), e%r)* &
-            & (-vs(0:N-1:2))*sum( arg(1:MS,1:nmax)* &
-            & conjg(e%parent%mat%A(1:MS,0:nmax-1,0)), dim=1)
+            & Ke(e%parent%mat, vi(0:N-1:2), e%r) / dKe(e%parent%mat, vi(0:N-1:2), e%r)* &
+            & (-vs(0:N-1:2))*sum(arg(1:MS,1:nmax)*conjg(e%parent%mat%A(1:MS,0:nmax-1,0)),dim=1)
 
   end function line
 end module solution_mod
