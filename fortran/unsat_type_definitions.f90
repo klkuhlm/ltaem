@@ -118,8 +118,7 @@ module unsat_type_definitions
      logical :: calc = .false.
      
      ! input/output filenames
-     character(lenFN) :: outfname='unset', infname='unset', &
-          & coefffname='unset', elemHfName='unset', geomFname='unset'
+     character(lenFN) :: outfname='unset', infname='unset', elemHfName='unset'
      
      ! output index (1= Gnuplot map (x,y,z triplets; times separated by blank lines);
      !               2= Matlab map (matrix output separate files);
@@ -132,14 +131,12 @@ module unsat_type_definitions
      integer :: output = -999
      
      ! x-spacing vector, y-spacing vector, time vector
-     integer :: nx = -999, ny = -999, nt = -999
-     real(DP), allocatable :: x(:), y(:), t(:)
+     integer :: nx = -999, ny = -999
+     real(DP), allocatable :: x(:), y(:)
 
      ! containers for time-domain final results (x,y,t,[i:j])
-     real(DP),    allocatable :: h(:,:,:), v(:,:,:,:)
+     real(DP),    allocatable :: h(:,:), v(:,:,:)
 
-     ! container for transformed-space intermediate results
-     complex(DP), allocatable :: hp(:), vp(:,:)
   end type solution
 
 contains
