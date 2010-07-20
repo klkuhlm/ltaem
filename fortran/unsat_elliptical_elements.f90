@@ -481,11 +481,8 @@ contains
     dPsi = sum(RMRgp(0:N-1,0)/RMR0(0:N-1,0)*aa(0:N-1)*dAM(0:N-1,0)) + &
          & sum(RMRgp(1:N-1,1)/RMR0(1:N-1,1)*bb(1:N-1)*dAM(1:N-1,1))
 
-    dH(1) = (dEta + H*e%f/2.0*cosh(Rgp)*sin(Pgp)*alpha)*&
-         & exp(-alpha*e%f/2.0*sinh(Rgp)*sin(Pgp))
-
-    dH(2) = (dEta + H*e%f/2.0*sinh(Rgp)*cos(Pgp)*alpha)*&
-         & exp(-alpha*e%f/2.0*sinh(Rgp)*sin(Pgp))
+    dH(1) = (dEta + H*e%f/2.0*cosh(Rgp)*sin(Pgp)*alpha)
+    dH(2) = (dEta + H*e%f/2.0*sinh(Rgp)*cos(Pgp)*alpha)
 
   end function ellipse_deriv
 end module unsat_elliptical_elements

@@ -429,11 +429,8 @@ contains
          & ( bb(0:N-1)*cos(vr(0:N-1)*Pgp) - &
          &   aa(0:N-1)*sin(vr(0:N-1)*Pgp) ))    
 
-    dH(1) = (dR - H*sin(Pgp)*alpha/2.0)*&
-         & exp(-alpha*Rgp*sin(Pgp)/2.0)
-
-    dH(2) = (dTh - H*Rgp*cos(Pgp)*alpha/2.0)*&
-         & exp(-alpha*Rgp*sin(Pgp)/2.0)
+    dH(1) = (dR - H*sin(Pgp)*alpha/2.0)
+    dH(2) = (dTh - H*Rgp*cos(Pgp)*alpha/2.0)
 
   end function circle_deriv
 end module unsat_circular_elements

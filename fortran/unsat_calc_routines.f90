@@ -24,15 +24,14 @@ contains
 
     complex(DP), intent(in) :: Z  ! location for calculation (complex coordinates)
     type(domain), intent(in) :: dom
-    type(circle),  target, dimension(:), intent(in) :: c
-    type(ellipse), target, dimension(:), intent(in) :: e
+    type(circle),  dimension(:), intent(in) :: c
+    type(ellipse), dimension(:), intent(in) :: e
     type(element), intent(in) :: bg
     complex(DP) :: H  
 
     real(DP), dimension(sum(dom%num)) :: Rgp, Pgp
-    type(element), pointer :: elin => null()
-    integer :: nc, ne, ntot, j
-    integer :: in, oth
+    integer :: nc, ne, ntot, j, in
+
 #ifdef DEBUG
     complex(DP) :: Ztmp
 #endif
@@ -78,12 +77,13 @@ contains
     if (in == 0) then
        do j = 1,nc
           H = H + circle_calc(c(j),Rgp(j),Pgp(j),.false.)
-       end do
-       
+       end do       
        do j = nc+1,ntot
           H = H + ellipse_calc(e(j-nc),Rgp(j),Pgp(j),.false.)
        end do
-       H = H ! convert to head
+       ! z is "down" coordinate in problem
+       ! z = -y (y is imaginary part of Z)
+       H = H*exp(-bg%alpha*aimag(Z)/2.0) ! convert to head
 
     !##################################################
     !! calculation point is inside an element (not background)
@@ -93,28 +93,21 @@ contains
           if (c(in)%calcin) then
              H = circle_calc(c(in),Rgp(in),Pgp(in),.true.)
           else
-             H = 0.0
+             H = 0.0 ! inside an element labeled no-calc
           end if
        else 
           ! calculation point is inside (or on bdry of) an elliptical element
           if (e(in-nc)%calcin) then
              H = ellipse_calc(e(in-nc),Rgp(in),Pgp(in),.true.)
           else
-             H = 0.0
+             H = 0.0 ! inside an element labeled no-calc
           end if
        end if
-       
-       if (in <= nc) then
-          elin => c(in)%element     ! circle 
-       else
-          elin => e(in-nc)%element  ! ellipse
-       end if
-       
+              
        ! apply potential source term on inside of element
-       H = H - elin%areaQ*elin%Ss*time(p,elin%time,.true.)/kappa(p,elin)**2
-       H = H ! convert to head
+       ! TODO : handle unsaturated source terms???
 
-       elin => null()
+       H = H*exp(-bg%alpha*aimag(Z)/2.0) ! convert to head
 
     end if
   end function headCalc
@@ -136,13 +129,13 @@ contains
     type(circle),  target, dimension(:), intent(in) :: c
     type(ellipse), target, dimension(:), intent(in) :: e
     type(element), intent(in) :: bg
-    complex(DP), dimension(2) :: v, dH
+    complex(DP), dimension(2) :: v
+    complex(DP), dimension(1,2) :: dH
 
+    type(element), pointer :: elin
     real(DP) :: hsq
     real(DP), dimension(sum(dom%num)) :: Rgp, Pgp
-    type(element), pointer :: elin => null()
-    integer :: in, oth 
-    integer :: nc, ne, ntot, j
+    integer :: nc, ne, ntot, j, in
 
     nc = dom%num(1)
     ne = dom%num(2)
@@ -168,59 +161,54 @@ contains
     !! calculation point is outside all inclusions
     if (in == 0) then
        do j = 1,nc
-          dH(1:2) = circle_deriv(p,c(j),lo,hi,Rgp(j),Pgp(j),.false.)
+          dH(1,1:2) = circle_deriv(c(j),Rgp(j),Pgp(j),.false.)
           ! project onto X and Y
-          v(1) = v(1) + cos(Pgp(j))*dH(1) - sin(Pgp(j))*dH(2)/Rgp(j) ! x
-          v(2) = v(2) + sin(Pgp(j))*dH(1) + cos(Pgp(j))*dH(2)/Rgp(j) ! y
-          end if
+          v(1) = v(1) + cos(Pgp(j))*dH(1,1) - sin(Pgp(j))*dH(1,2)/Rgp(j) ! x
+          v(2) = v(2) + sin(Pgp(j))*dH(1,1) + cos(Pgp(j))*dH(1,2)/Rgp(j) ! y
        end do
        
        do j = nc+1,ntot
           ! eta and psi components of gradient
-          dH(1:2) = ellipse_deriv(p,e(j-nc),lo,hi,Rgp(j),Pgp(j),.false.)
-          dH(1:2) = rotate_vel(dH(:,1:2),e(j-nc)%theta)
+          dH(1,1:2) = ellipse_deriv(e(j-nc),Rgp(j),Pgp(j),.false.)
+          dH(:,1:2) = rotate_vel(dH(:,1:2),e(j-nc)%theta)
 
           hsq = e(j-nc)%f/2.0_DP*(cosh(2.0_DP*Rgp(j)) - cos(2.0_DP*Pgp(j)))
-          v(1) = v(1) + (sinh(Rgp(j))*cos(Pgp(j))*dH(1) - &
-                      &  cosh(Rgp(j))*sin(Pgp(j))*dH(2))/hsq
-          v(2) = v(2) + (cosh(Rgp(j))*sin(Pgp(j))*dH(1) + &
-                      &  sinh(Rgp(j))*cos(Pgp(j))*dH(2))/hsq
+          v(1) = v(1) + (sinh(Rgp(j))*cos(Pgp(j))*dH(1,1) - &
+                      &  cosh(Rgp(j))*sin(Pgp(j))*dH(1,2))/hsq
+          v(2) = v(2) + (cosh(Rgp(j))*sin(Pgp(j))*dH(1,1) + &
+                      &  sinh(Rgp(j))*cos(Pgp(j))*dH(1,2))/hsq
        end do
-       v(1:2) = -v(1:2) ! return velocity (gradient points uphill)
+       ! return velocity (gradient points uphill)
+       ! convert to head
+       v(1:2) = -v(1:2)*exp(-bg%alpha*aimag(Z)/2.0)
        
     !##################################################
     else
        if (in <= nc) then
+          elin => c(in)%element
           !! calculation point is inside (or on bdry of) a circular element
           if (c(in)%calcin) then
-             dH(1:2) = circle_deriv(p,c(in),lo,hi,Rgp(in),Pgp(in),.true.)
-             v(1) = cos(Pgp(in))*dH(1) - sin(Pgp(in))*dH(2)/Rgp(in)
-             v(2) = sin(Pgp(in))*dH(1) + cos(Pgp(in))*dH(2)/Rgp(in)
+             dH(1,1:2) = circle_deriv(c(in),Rgp(in),Pgp(in),.true.)
+             v(1) = cos(Pgp(in))*dH(1,1) - sin(Pgp(in))*dH(1,2)/Rgp(in)
+             v(2) = sin(Pgp(in))*dH(1,1) + cos(Pgp(in))*dH(1,2)/Rgp(in)
           end if
        else 
+          elin => e(in-nc)%element
           ! calculation point is inside or on the boundary of an elliptical element
           if (e(in-nc)%calcin) then
-             dH(1:2) = ellipse_deriv(p,e(in-nc),lo,hi,Rgp(in),Pgp(in),.true.)
-             dH(1:2) = rotate_vel(dH(:,1:2),e(in-nc)%theta)
+             dH(1,1:2) = ellipse_deriv(e(in-nc),Rgp(in),Pgp(in),.true.)
+             dH(:,1:2) = rotate_vel(dH(:,1:2),e(in-nc)%theta)
              
              hsq = e(in-nc)%f/2.0_DP*(cosh(2.0_DP*Rgp(in)) - cos(2.0_DP*Pgp(in)))
-             v(1) = (sinh(Rgp(in))*cos(Pgp(in))*dH(1) - &
-                  &  cosh(Rgp(in))*sin(Pgp(in))*dH(2))/hsq
-             v(2) = (cosh(Rgp(in))*sin(Pgp(in))*dH(1) + &
-                  &  sinh(Rgp(in))*cos(Pgp(in))*dH(2))/hsq
+             v(1) = (sinh(Rgp(in))*cos(Pgp(in))*dH(1,1) - &
+                  &  cosh(Rgp(in))*sin(Pgp(in))*dH(1,2))/hsq
+             v(2) = (cosh(Rgp(in))*sin(Pgp(in))*dH(1,1) + &
+                  &  sinh(Rgp(in))*cos(Pgp(in))*dH(1,2))/hsq
 
           end if
        end if
        
-       if (in <= nc) then
-          elin => c(in)%element     ! circle 
-       else
-          elin => e(in-nc)%element  ! ellipse
-       end if
-
-       ! area source has no flux effects, since it is a constant WRT space
-       v(1:2) = -v(1:2) ! gradient points uphill
-
+       v(1:2) = -v(1:2)*exp(-elin%alpha*aimag(Z)/2.0)
        elin => null()
 
     end if
@@ -229,7 +217,7 @@ contains
   !##################################################
   subroutine calcLocation(Z,c,e,dom,Rgp,Pgp,inside)
     use constants, only : DP, EYE
-    use type_definitions, only : circle, ellipse, domain
+    use unsat_type_definitions, only : circle, ellipse, domain
     use utility, only : ccosh, cacosh
 
     complex(DP), intent(in) :: Z
@@ -243,7 +231,7 @@ contains
     complex(DP), dimension(dom%num(2)) :: Ztmp
     integer, dimension(sum(dom%num)) :: inout
 
-    integer :: nc, ne, ntot, j, first, second, third, k
+    integer :: nc, ne, ntot, j, k
 
     nc = dom%num(1)
     ne = dom%num(2)
@@ -282,29 +270,8 @@ contains
           inside = 0
        case (1) ! inside one element
           inside = inout(1)
-       case (2) ! inside two elements
-          if (dom%InclUp(inout(1)) == 0) then
-             inside = inout(2)
-          else
-             inside = inout(1)
-          end if
-       case (3) ! inside three elements
-          do first = 1,3
-             do second = 1,3
-                if (second /= first) then
-                   do third = 1,3
-                      if ((third /= first) .and. (third /= second)) then
-                         if (dom%InclIn(inout(first),inout(second))  .and. &
-                              & dom%InclIn(inout(third),inout(first))) then 
-                            inside = inout(second)
-                         end if
-                      end if
-                   end do
-                end if
-             end do
-          end do
        case default
-          write(*,*) 'CALCLOCATION ERROR: more than triply-nested inclusions', dom%InclIn
+          write(*,*) 'unsat CALCLOCATION ERROR: nested inclusions not allowed', dom%InclIn
           stop 
        end select
     else
@@ -314,7 +281,7 @@ contains
        Pgp = -999.
     end if
 
-    ! move observation points inside ibnd==2 elements
+    ! move observation points inside ibnd==2 elements 
     where (Rgp(1:nc) < c%r .and. c%ibnd == 2)
        Rgp(1:nc) = c%r
     end where
@@ -324,4 +291,4 @@ contains
 
   end subroutine  calcLocation
   
-end module calc_routines
+end module unsat_calc_routines
