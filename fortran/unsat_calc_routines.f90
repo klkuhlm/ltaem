@@ -69,10 +69,6 @@ contains
     write(404,'(/)')
 #endif
 
-    ! TODO there should be a way to combine the two branches of this 
-    ! if statement into a more general single branch.
-
-!!$    print '(A,I0)', 'in ==',in
     !##################################################
     !! calculation point is outside all elements (in background)
     if (in == 0) then
@@ -84,9 +80,11 @@ contains
        end do
        ! z is "down" coordinate in problem
        ! z = -y (y is imaginary part of Z)
-       H = H*exp(-bg%alpha*aimag(Z)/2.0) ! convert to head
-       
-!!$       H = H + bg%qz0/bg%alpha
+       ! convert from Helmholtz potential to pressure head
+       H = H*exp(-bg%alpha*aimag(Z)/2.0) 
+
+       ! uniform flow in background
+       H = H - bg%qz0/bg%alpha
 
     !##################################################
     !! calculation point is inside an element (not background)
@@ -112,7 +110,9 @@ contains
        ! apply potential source term on inside of element
        ! TODO : handle unsaturated source terms???
 
-       H = H*exp(-elin%alpha*aimag(Z)/2.0) ! convert to head
+       ! convert from Helmholtz potential to pressure head
+       H = H*exp(-elin%alpha*aimag(Z)/2.0) 
+
        elin => null()
     end if
   end function headCalc
