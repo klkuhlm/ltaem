@@ -12,6 +12,7 @@ program steady_unsat_main
   use unsat_solution_mod, only : matrix_solution
   use unsat_calc_routines, only : headCalc, velCalc
   use unsat_geometry, only : distanceAngleCalcs
+  use mathieu_functions, only : mathieu_init
   implicit none
 
   ! types or "structs" that organize variables
@@ -33,7 +34,7 @@ program steady_unsat_main
   end if
 
   ! read in data, initialize variables, allocate major structs
-  call readInput(sol,dom,bg,c,e,part)
+  call readInput(sol,dom,bg,c,e)
   nc = size(c,dim=1)
   ne = size(e,dim=1)
   
@@ -45,12 +46,12 @@ program steady_unsat_main
      write(*,'(A)') 'Computing Mathieu coefficients ...'
      
      ! compute background
-     bg%mat = mathieu_init((bg%alpha/2.0)**2,MM=bg%ms)
+     bg%mat = mathieu_init((bg%alpha/cmplx(2.0,0.0,DP))**2,MM=bg%ms)
      
      ! allocate/initialize each element for each value of p
      do j = 1, size(e,1)
         if (e(j)%ibnd == 0 .or. e(j)%calcin) then
-           e(j)%mat = mathieu_init((e(j)%alpha/2.0)**2,MM=e(j)%MS)
+           e(j)%mat = mathieu_init((e(j)%alpha/cmplx(2.0,0.0,DP))**2,MM=e(j)%MS)
         end if
      end do
      

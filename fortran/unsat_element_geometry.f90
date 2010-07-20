@@ -12,7 +12,7 @@ contains
   ! initializes / calculates geometry - all global variables
   subroutine DistanceAngleCalcs(c,e,bg,dom,sol)
     use constants, only: DP, PI, EYE
-    use type_definitions, only : domain, circle, ellipse, element, solution, matching
+    use unsat_type_definitions, only : domain, circle, ellipse, element, solution, matching
     use file_ops, only : writeGeometry
     use utility, only : ccosh, cacosh
 
@@ -23,7 +23,7 @@ contains
     type(solution), intent(in) :: sol
     type(matching), pointer :: other => null()
 
-    integer :: i, j, ne, nc, ntot, par, M, ierr
+    integer :: i, j, ne, nc, ntot, M, ierr
     complex(DP), allocatable :: z(:)
 #ifdef DEBUG
     integer :: k

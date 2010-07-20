@@ -2,14 +2,14 @@
 ! element sub-matrix routines, and constructs the larger
 ! matrix used to compute the solution via LAPACK.
 
-module solution_mod
+module unsat_solution_mod
   implicit none
 
   private
-  public :: unsat_matrix_solution
+  public :: matrix_solution
 
 contains
-  subroutine unsat_matrix_solution(c,e,dom)
+  subroutine matrix_solution(c,e,dom)
     use constants, only : DP
     use unsat_type_definitions, only : circle, solution, ellipse, domain, match_result,print_match_result
     use unsat_circular_elements, only : circle_match, well
@@ -229,7 +229,7 @@ contains
     deallocate(A,b,row,col,stat=ierr)
     if (ierr /= 0) stop 'solution.f90: error deallocating A,B,row,col'
     
-  end subroutine unsat_matrix_solution
+  end subroutine matrix_solution
 
   function line(e) result(a2n)
     ! this function returns the coefficients for a specified-flux line source
@@ -260,4 +260,4 @@ contains
             & (-vs(0:N-1:2))*sum(arg(1:MS,1:nmax)*conjg(e%parent%mat%A(1:MS,0:nmax-1,0)),dim=1)
 
   end function line
-end module solution_mod
+end module unsat_solution_mod

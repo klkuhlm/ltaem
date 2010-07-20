@@ -1,6 +1,6 @@
 ! this module contains most of the I/O associated with unsaturated AEM
 
-module file_ops
+module unsat_file_ops
   implicit none  
   
   private
@@ -455,4 +455,4 @@ contains
     end if
 
   end subroutine writeGeometry
-end module file_ops
+end module unsat_file_ops
