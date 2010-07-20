@@ -146,11 +146,11 @@ contains
           r%RHS(1:M) = e%bdryQ/ynot(e%r,e%f)
        end select
 
-       ! convert pressure (little psi) to helmholtz variable (big Psi)
-       r%RHS(1:M) = r%RHS(1:M)*exp(-e%f/2.0*sinh(e%r)*sin(e%Pcm(:))*f%alpha)
-
        ! add in uniform flow
        r%RHS(1:M) = r%RHS(1:M) - f%qz0/f%alpha
+
+       ! convert pressure (little psi) to helmholtz variable (big Psi)
+       r%RHS(1:M) = r%RHS(1:M)*exp(-e%f/2.0*sinh(e%r)*sin(e%Pcm(:))*f%alpha)
 
        f => null()
     end if

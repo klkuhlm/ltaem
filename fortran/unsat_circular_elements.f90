@@ -136,11 +136,11 @@ contains
           r%RHS(1:M) = c%bdryQ/(2.0*PI*c%r)
        end select
 
-       ! factor to convert from pressure (little psi) to helmholtz variable (big psi)
-       r%RHS(1:M) = r%RHS(1:M)*exp(f%alpha/2.0*c%r*sin(c%Pcm(1:M)))
-
        ! add in uniform flow
        r%RHS(1:M) = r%RHS(1:M) - f%qz0/f%alpha
+
+       ! factor to convert from pressure (little psi) to helmholtz variable (big psi)
+       r%RHS(1:M) = r%RHS(1:M)*exp(f%alpha/2.0*c%r*sin(c%Pcm(1:M)))
 
        f => null()
     end if

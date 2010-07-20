@@ -28,6 +28,7 @@ contains
     type(ellipse), target, dimension(:), intent(in) :: e
     type(element), intent(in) :: bg
     complex(DP) :: H  
+    complex(DP) :: Ke
 
     type(element), pointer :: elin => null()
     real(DP), dimension(sum(dom%num)) :: Rgp, Pgp
@@ -80,11 +81,20 @@ contains
        end do
        ! z is "down" coordinate in problem
        ! z = -y (y is imaginary part of Z)
-       ! convert from Helmholtz potential to pressure head
+       ! convert from Helmholtz potential to 
+       ! Kirchhoff potential
        H = H*exp(-bg%alpha*aimag(Z)/2.0) 
 
-       ! uniform flow in background
-       H = H - bg%qz0/bg%alpha
+       ! uniform flow in background (in terms of Kirchhoff variable)
+       H = H + bg%qz0/bg%alpha
+
+       ! convert to pressure head
+       Ke = bg%Ks*exp(-bg%alpha*bg%he)
+       if (abs(H) > 0.0) then
+          H = log(bg%alpha*H/Ke)/bg%alpha
+       else
+          H = 0.0
+       end if
 
     !##################################################
     !! calculation point is inside an element (not background)
@@ -110,8 +120,16 @@ contains
        ! apply potential source term on inside of element
        ! TODO : handle unsaturated source terms???
 
-       ! convert from Helmholtz potential to pressure head
+       ! convert from Helmholtz potential to Kirchhoff potential
        H = H*exp(-elin%alpha*aimag(Z)/2.0) 
+
+       ! convert to pressure head
+       Ke = elin%Ks*exp(-elin%alpha*elin%he)
+       if (abs(H) > 0.0) then
+          H = log(elin%alpha*H/Ke)/elin%alpha     
+       else
+          H = 0.0
+       end if
 
        elin => null()
     end if

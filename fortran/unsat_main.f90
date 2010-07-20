@@ -45,12 +45,14 @@ program steady_unsat_main
      write(*,'(A)') 'Computing Mathieu coefficients ...'
      
      ! compute background
-     bg%mat = mathieu_init(cmplx(bg%alpha/2.0,0.0,DP)**2,MM=bg%ms)
+     bg%mat = mathieu_init(cmplx(bg%alpha/2.0,0.0,DP)**2, &
+          & MM=bg%ms,CUTOFF=bg%cutoff)
      
      ! allocate/initialize each element for each value of p
      do j = 1, size(e,1)
         if (e(j)%ibnd == 0) then
-           e(j)%mat = mathieu_init(cmplx(e(j)%alpha/2.0,0.0,DP)**2,MM=e(j)%MS)
+           e(j)%mat = mathieu_init(cmplx(e(j)%alpha/2.0,0.0,DP)**2, &
+                & MM=e(j)%MS,CUTOFF=e(j)%cutoff)
         end if
      end do
      
@@ -88,16 +90,10 @@ program steady_unsat_main
 #endif
 
   ! downward Z is -y
-  ! phi = log(H*exp(Z))/2.0
-  where (abs(sol%h) < epsilon(0.0))
-     ! zeros inside elements -> -infinity when logged
-     sol%smphi = 0.0
-  elsewhere
-     sol%smphi = 0.5_DP*log(-sol%h*spread(exp(-sol%y),1,sol%nx))
-  end where
-  
+  sol%smphi = sol%h
+
   ! PHI = phi - Z
-  sol%lgPHI = sol%smphi - spread(exp(-sol%y),1,sol%nx)
+  sol%lgPHI = sol%h - spread(exp(-sol%y),1,sol%nx)
 
   !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   ! cleanup memory and write output to file

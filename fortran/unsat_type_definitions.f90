@@ -43,8 +43,11 @@ module unsat_type_definitions
      ! structure containing matrices of mathieu function parameters
      type(mathieu) :: mat
      integer :: ms = -999 ! not used in circle
+     real(DP) :: cutoff
 
      real(DP) :: qz0 = -999. ! background uniform vertical flow
+     real(DP) :: Ks = -999. ! hydraulic conductivity @ saturation (K(h) <= Ks)
+     real(DP) :: he = -999. ! air entry pressure (h <= he)
 
   end type element
     

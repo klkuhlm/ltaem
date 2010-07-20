@@ -46,14 +46,14 @@ contains
     read(15,*,iostat=ierr) sol%output, sol%outFname, sol%geomfName
     if (ierr /= 0) stop 'error on line 1 of input file'
 
-    read(15,*,iostat=ierr) bg%alpha, bg%ks, bg%qz0, bg%ms
+    read(15,*,iostat=ierr) bg%alpha, bg%qz0, bg%ks, bg%he, bg%ms, bg%cutoff
     if (ierr /= 0) stop 'error on line 2 of input file'
 
     ! echo input from first 2 lines to file
     write(16,*) sol%output, trim(sol%outFname), &
          & trim(sol%geomFname),'  ||    output, out/geometry file names'
 
-    write(16,*) bg%alpha, bg%qz0, bg%ks, bg%ms, '  ||    alpha, qz0, ellipse MS'
+    write(16,*) bg%alpha, bg%qz0, bg%ks, bg%he, bg%ms, bg%cutoff, '  ||    alpha, qz0, Ks, he, ellipse MS, mathieu matrix cutoff'
 
     ! desired solution points/times
     read(15,*,iostat=ierr) sol%nx, sol%ny
@@ -134,6 +134,12 @@ contains
           stop
        end if      
 
+       read(22,*) c(:)%he
+       if (any(c%he < epsilon(0.0))) then
+          print *, 'c%he must be > 0.0',c%he
+          stop
+       end if      
+
        read(22,*) c(:)%bdryQ ! streng of specified value on bdry (head or flux) 
        close(22)
    
@@ -157,8 +163,9 @@ contains
        write(16,fmt(3)) c(:)%r, '  ||    circle radius'
        write(16,fmt(3)) c(:)%x, '  ||    circle center x'
        write(16,fmt(3)) c(:)%y, '  ||    circle center y'
-       write(16,fmt(3)) c(:)%alpha, '  ||    circle alpha'
-       write(16,fmt(3)) c(:)%ks, '  ||    circle Ks'
+       write(16,fmt(3)) c(:)%alpha, '  ||    circle alpha; sorptive number'
+       write(16,fmt(3)) c(:)%ks, '  ||    circle Ks; K @ saturation'
+       write(16,fmt(3)) c(:)%he, '  ||    circle he; air entry pressure (h <= he)'
        write(16,fmt(3)) c(:)%bdryQ, '  ||    circle boundry rch rate or head'
        
     else
@@ -201,6 +208,12 @@ contains
           stop
        end if
 
+       read(33,*) e(:)%cutoff
+       if (any(e%cutoff <= 0.0)) then
+          print *, 'e%cutoff must be > 0.0',e%cutoff
+          stop
+       end if
+
        read(33,*) e(:)%ibnd
        if (any(e%ibnd < -1 .or. e%ibnd > 2)) then
           print *, 'e%ibnd must be in {-1,0,1,2}',e%ibnd
@@ -237,8 +250,14 @@ contains
        end if
 
        read(33,*) e(:)%ks
-       if (any(e%alpha < epsilon(0.0))) then
-          print *, 'e%alpha must be > 0.0',e%alpha
+       if (any(e%ks < epsilon(0.0))) then
+          print *, 'e%ks must be > 0.0',e%ks
+          stop
+       end if
+
+       read(33,*) e(:)%he
+       if (any(e%he < epsilon(0.0))) then
+          print *, 'e%he must be > 0.0',e%he
           stop
        end if
 
@@ -260,6 +279,7 @@ contains
        write(16,fmt(1)) e(:)%n,'  ||   number of elliptical free parameter (Fourier coeffs)'
        write(16,fmt(1)) e(:)%m,'  ||   number of ellipse matching locations'
        write(16,fmt(1)) e(:)%ms,'  ||   size of "infinite" Mathieu matrices'
+       write(16,fmt(3)) e(:)%cutoff,'  ||   cutoff for "infinite" Mathieu matrices'
        write(16,fmt(1)) e(:)%ibnd, '  ||    ellipse ibnd array'
        write(16,fmt(2)) e(:)%match, '  ||    ellipse matching array'
        write(16,fmt(2)) e(:)%calcin, '  ||    calculate inside this ellipse?'
@@ -268,7 +288,9 @@ contains
        write(16,fmt(3)) e(:)%y, '  ||    ellipse center y'
        write(16,fmt(3)) e(:)%f, '  ||    ellipse semi-focal length'
        write(16,fmt(3)) e(:)%theta, '  ||    ellipse angle rotation with +x axis'
-       write(16,fmt(3)) e(:)%alpha, '  ||    ellipse aquifer alpha'
+       write(16,fmt(3)) e(:)%alpha, '  ||    ellipse alpha: sorptive number'
+       write(16,fmt(3)) e(:)%ks, '  ||    ellipse Ks: K @ saturation'
+       write(16,fmt(3)) e(:)%he, '  ||    ellipse he: air-entry pressure (h <= he)'
        write(16,fmt(3)) e(:)%bdryQ, '  ||     ellipse boundary rch rate or head'
     else
        allocate(e(0),stat=ierr)
