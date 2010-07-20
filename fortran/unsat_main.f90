@@ -58,6 +58,8 @@ program steady_unsat_main
 
   call matrix_solution(c,e,dom)
  
+  print *, 'coefficients computed, calculating solution'
+
   allocate(sol%h(sol%nx,sol%ny), sol%v(sol%nx,sol%ny,2), &
        & sol%smphi(sol%nx,sol%ny), sol%lgPHI(sol%nx,sol%ny), stat=ierr)
   if (ierr /= 0) stop 'unsat_main.f90 error allocating contour: sol%{h,v,smphi,lgphi}'
@@ -67,8 +69,8 @@ program steady_unsat_main
   open(unit=404,file='unsat_calcloc.vdebug',status='replace',action='write')
 #endif
 
-  !$OMP PARALLEL DO DEFAULT(PRIVATE) SHARED(sol,dom,c,e,bg)
   do j = 1,sol%nx
+     print *, 'x:',sol%x(j)
      do i = 1,sol%ny
         calcZ = cmplx(sol%x(j),sol%y(i),DP)
         
@@ -79,7 +81,6 @@ program steady_unsat_main
         
      end do
   end do
-  !$OMP END PARALLEL DO
 
 #ifdef DEBUG
   close(303)
@@ -88,7 +89,13 @@ program steady_unsat_main
 
   ! downward Z is -y
   ! phi = log(H*exp(Z))/2.0
-  sol%smphi = 0.5_DP*log(sol%h*spread(exp(-sol%y),1,sol%nx))
+  where (abs(sol%h) < epsilon(0.0))
+     ! zeros inside elements -> -infinity when logged
+     sol%smphi = 0.0
+  elsewhere
+     sol%smphi = 0.5_DP*log(-sol%h*spread(exp(-sol%y),1,sol%nx))
+  end where
+  
   ! PHI = phi - Z
   sol%lgPHI = sol%smphi - spread(exp(-sol%y),1,sol%nx)
 
