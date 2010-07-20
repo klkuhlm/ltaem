@@ -42,7 +42,6 @@ contains
        write(16,'(A)') '-*-auto-revert-*-'
     endif   
 
-
     ! solution-specific and background aquifer parameters
     read(15,*,iostat=ierr) sol%output, sol%outFname, sol%geomfName
     if (ierr /= 0) stop 'error on line 1 of input file'
@@ -277,7 +276,7 @@ contains
 
     type(solution), intent(in) :: s
 
-    character(4), dimension(2) :: chint
+    character(4) :: chint
     ! adjust the formats of location and results here
     character(6) :: xfmt = 'ES12.4'
     character(9) :: hfmt = 'ES22.14e3'
@@ -296,11 +295,12 @@ contains
 
        write(20,'(A)')   &
             & '#      X           Y               head&
-            &                 velx                  vely'
+            &                   velx                    vely&
+            &                   phi                     PHI'
        do j = 1, s%ny
           do k = 1, s%nx
-             write(20,'(2('//xfmt//',1X),3('//hfmt//',1X))') &
-                  & s%x(k), s%y(j), s%h(k,j), s%v(k,j,1:2)
+             write(20,'(2('//xfmt//',1X),5('//hfmt//',1X))') &
+                  & s%x(k), s%y(j), s%h(k,j), s%v(k,j,1:2), s%smphi(k,j), s%lgPHI(k,j)
           end do
        end do
        write(20,'(A)') '# EOF'
@@ -320,9 +320,9 @@ contains
        ! x-matrix has same row repeated numy times
        open(unit=20, file=trim(s%outfname)//'_x.dat', status='replace', &
             & action='write')
-       write(chint(1),'(i4.4)') s%nx
+       write(chint,'(i4.4)') s%nx
        do i = 1, s%ny
-          write (20,'('//chint(1)//'(1x,'//hfmt//'))') (s%x(j), j=1,s%nx)
+          write (20,'('//chint//'(1x,'//hfmt//'))') (s%x(j), j=1,s%nx)
        end do
        close(20)
 
@@ -330,7 +330,7 @@ contains
        open(unit=20, file=trim(s%outfname)//'_y.dat', status='replace', &
             & action='write')
        do i = 1, s%ny
-          write (20,'('//chint(1)//'(1x,'//hfmt//'))') (s%y(i), j=1,s%nx)
+          write (20,'('//chint//'(1x,'//hfmt//'))') (s%y(i), j=1,s%nx)
        end do
        close(20)
        
@@ -338,7 +338,7 @@ contains
        open(unit=20, file=trim(s%outfname)//'_head.dat', &
             & status='replace', action='write')
        do i = 1, s%ny
-          write (20,'('//chint(1)//'(1x,'//hfmt//'))') (s%h(j,i), j=1,s%nx)
+          write (20,'('//chint//'(1x,'//hfmt//'))') (s%h(j,i), j=1,s%nx)
        end do
        close(20)
 
@@ -346,7 +346,7 @@ contains
        open(unit=20, file=trim(s%outfname)//'_velx.dat', &
             & status='replace', action='write')
        do i = 1, s%ny
-          write (20,'('//chint(1)//'(1x,'//hfmt//'))') (s%v(j,i,1), j=1,s%nx)
+          write (20,'('//chint//'(1x,'//hfmt//'))') (s%v(j,i,1), j=1,s%nx)
        end do
        close(20)
 
@@ -354,13 +354,29 @@ contains
        open(unit=20, file=trim(s%outfname)//'_vely.dat', &
             & status='replace', action='write')
        do i = 1, s%ny
-          write (20,'('//chint(1)//'(1x,'//hfmt//'))') (s%v(j,i,2), j=1,s%nx)
+          write (20,'('//chint//'(1x,'//hfmt//'))') (s%v(j,i,2), j=1,s%nx)
+       end do
+       close(20)
+
+       ! phi-matrix
+       open(unit=20, file=trim(s%outfname)//'_smphi.dat', &
+            & status='replace', action='write')
+       do i = 1, s%ny
+          write (20,'('//chint//'(1x,'//hfmt//'))') (s%smphi(j,i), j=1,s%nx)
+       end do
+       close(20)
+
+       ! PHI-matrix
+       open(unit=20, file=trim(s%outfname)//'_lgPHI.dat', &
+            & status='replace', action='write')
+       do i = 1, s%ny
+          write (20,'('//chint//'(1x,'//hfmt//'))') (s%lgPHI(j,i), j=1,s%nx)
        end do
        close(20)
 
        write(*,'(/A)') '*********************************************************************'
        write(*,'(3A)') 'matlab output written to ', trim(s%outfname), &
-              & '{x,y,head,velx,vely}.dat'
+              & '{x,y,head,velx,vely,smphi,lgPHI}.dat'
        write(*,'(A)') '*********************************************************************'
        
        !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

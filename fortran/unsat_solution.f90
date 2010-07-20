@@ -185,6 +185,7 @@ contains
              ! fix size of coefficient container
              deallocate(c(i)%coeff, stat=ierr)
              if (ierr /= 0) stop 'solution.f90: error deallocating c(i)%coeff'
+
              allocate(c(i)%coeff(1), stat=ierr)
              if (ierr /= 0) stop 'solution.f90: error re-allocating c(i)%coeff'
           end if
@@ -204,6 +205,7 @@ contains
              ! fix size of coefficient container
              deallocate(e(i)%coeff, stat=ierr)
              if (ierr /= 0) stop 'solution.f90: error deallocating e(i)%coeff'
+
              ! allocate space for all the even (a_n) coefficients
              allocate(e(i)%coeff(2*e(i)%N-1), stat=ierr)
              if (ierr /= 0) stop 'solution.f90: error re-allocating e(i)%coeff'

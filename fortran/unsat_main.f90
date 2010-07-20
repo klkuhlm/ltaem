@@ -58,8 +58,9 @@ program steady_unsat_main
 
   call matrix_solution(c,e,dom)
  
-  allocate(sol%h(sol%nx,sol%ny), sol%v(sol%nx,sol%ny,2), stat=ierr)
-  if (ierr /= 0) stop 'unsat_main.f90 error allocating contour: sol%h,sol%hp,sol%v,sol%vp'
+  allocate(sol%h(sol%nx,sol%ny), sol%v(sol%nx,sol%ny,2), &
+       & sol%smphi(sol%nx,sol%ny), sol%lgPHI(sol%nx,sol%ny), stat=ierr)
+  if (ierr /= 0) stop 'unsat_main.f90 error allocating contour: sol%{h,v,smphi,lgphi}'
 
 #ifdef DEBUG
   open(unit=303,file='unsat_calcloc.debug',status='replace',action='write')
@@ -73,8 +74,8 @@ program steady_unsat_main
         
         !! compute f(p) for all values of p
         !! not just one log cycle of time -- at this location 
-        sol%h(j,i) =    headCalc(calcZ,dom,c,e,bg)
-        sol%v(j,i,1:2) = velCalc(calcZ,dom,c,e,bg)
+        sol%h(j,i) =    real(headCalc(calcZ,dom,c,e,bg))
+        sol%v(j,i,1:2) = real(velCalc(calcZ,dom,c,e,bg))
         
      end do
   end do
@@ -85,11 +86,17 @@ program steady_unsat_main
   close(404)
 #endif
 
+  ! downward Z is -y
+  ! phi = log(H*exp(Z))/2.0
+  sol%smphi = 0.5_DP*log(sol%h*spread(exp(-sol%y),1,sol%nx))
+  ! PHI = phi - Z
+  sol%lgPHI = sol%smphi - spread(exp(-sol%y),1,sol%nx)
+
   !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   ! cleanup memory and write output to file
   call writeResults(sol)
 
-  deallocate(c,e,sol%h,sol%v, stat=ierr)
+  deallocate(c,e, stat=ierr)
   if (ierr /= 0) print *, 'WARNING: problem deallocating: c,e,sol%{h,v} at end of program'
 
 end program steady_unsat_main

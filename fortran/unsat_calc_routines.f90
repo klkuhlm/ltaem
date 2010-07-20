@@ -86,7 +86,7 @@ contains
        ! z = -y (y is imaginary part of Z)
        H = H*exp(-bg%alpha*aimag(Z)/2.0) ! convert to head
        
-       H = H + bg%qz0/bg%alpha
+!!$       H = H + bg%qz0/bg%alpha
 
     !##################################################
     !! calculation point is inside an element (not background)

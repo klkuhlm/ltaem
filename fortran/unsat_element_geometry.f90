@@ -121,6 +121,7 @@ contains
           ! when only one matching location move to center of line between foci
           e(i)%Zcm(1) = cmplx(0.0,0.0,DP)
        end if
+
        deallocate(z,stat=ierr)
        if (ierr /= 0) stop 'element_geometry.f90 error deallocating memory, z1'
 

@@ -137,7 +137,7 @@ module unsat_type_definitions
      real(DP), allocatable :: x(:), y(:)
 
      ! containers for time-domain final results (x,y,t,[i:j])
-     real(DP),    allocatable :: h(:,:), v(:,:,:)
+     real(DP),    allocatable :: h(:,:), v(:,:,:), smphi(:,:), lgPHI(:,:)
 
   end type solution
 
