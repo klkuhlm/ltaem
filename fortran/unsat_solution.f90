@@ -34,7 +34,7 @@ contains
     complex(DP), allocatable :: A(:,:), b(:)
     type(match_result), allocatable :: res(:,:) ! results(target_id,source_id)
     integer, allocatable :: row(:,:), col(:,:) ! row/column trackers
-    integer :: nc, ne, ntot, i, j, bigM, bigN, rr,cc, ierr
+    integer :: nc, ne, ntot, i, j, bigM, bigN, rr,cc, ierr, k
 
     ! only needed for LAPACK routine
     ! size(work) should be ~ 33xbigN? (32-bit linux)
@@ -51,131 +51,135 @@ contains
     allocate(res(ntot,ntot), row(ntot,0:2), col(ntot,0:2), stat=ierr)
     if (ierr /= 0) stop 'solution.f90 error allocating: res,row,col'
 
-    ! accumulate result into matrices of structures
-    do i=1,nc
-       ! circle on self
-       print '(4(A,I0))', 'circle on self: ',i,' N:',c(i)%N,' M:',c(i)%M,' ibnd:',c(i)%ibnd
 
-       res(i,i) = circle_match(c(i))
-       call print_match_result(res(i,i))
-       row(i,1) = size(res(i,i)%RHS,1)
-       col(i,1) = size(res(i,i)%LHS,2)
-
-       print '(2(A,I0))', ' resulting row:',row(i,1),' col:',col(i,1)
-
-       ! circle on other circle
-       do j=1,nc
-          if(i/=j) then
-             print '(A,2(1X,I0),4(A,I0))', 'circle on circle:',i,j,' N:',c(i)%N,' M:',c(j)%M, &
-                  &' <-ibnd:',c(i)%ibnd,' ->ibnd:',c(j)%ibnd
-
-             res(j,i) = circle_match(c(i),c(j)%matching,dom)
-             call print_match_result(res(j,i))
-          end if
-       end do
-
-       ! circle on other ellipse
-       do j=1,ne
-          print '(A,2(1X,I0),4(A,I0))', 'circle on ellipse:',i,j+nc,' N:',c(i)%N,' M:',e(j)%M, &
-               &' <-ibnd:',c(i)%ibnd,' ->ibnd:',e(j)%ibnd
-
-          res(j+nc,i) = circle_match(c(i),e(j)%matching,dom)
-          call print_match_result(res(j+nc,i))
-       end do
-    end do
-
-    do i = 1, ne
-       ! ellipse on self
-       print '(5(A,I0))', 'before ellipse on self: ',nc+i,' MS:',e(i)%ms,&
-            &' N:',e(i)%N,' M:',e(i)%M,' ibnd:',e(i)%ibnd
-
-       res(nc+i,nc+i) = ellipse_match(e(i))
-
-       call print_match_result(res(nc+i,nc+i))
-       row(i+nc,1) = size(res(nc+i,nc+i)%RHS,1)
-       col(i+nc,1) = size(res(nc+i,nc+i)%LHS,2)
-
-       print '(2(A,I0))', 'resulting row:',row(i+nc,1),' col:',col(i+nc,1)
-
-       ! ellipse on other circle
-       do j = 1, nc
-          print '(A,2(1X,I0))', 'ellipse on circle:',nc+i,j
-          res(j,nc+i) = ellipse_match(e(i),c(j)%matching,dom)
-          call print_match_result(res(j,nc+i))
-       end do
-
-       ! ellipse on other ellipse
-       do j = 1, ne
-          if (i /= j) then
-             print '(A,2(1X,I0))', 'ellipse on ellipse:',nc+i,nc+j
-
-             res(nc+j,nc+i) = ellipse_match(e(i),e(j)%matching,dom)
-             call print_match_result(res(nc+j,nc+i))
-          end if
-       end do
-    end do
-
-    bigM = sum(row(:,1)) ! total number rows/cols
-    bigN = sum(col(:,1))
-
-    allocate(A(bigM,bigN), b(bigM), stat=ierr)
-    if (ierr /= 0) stop 'solution.f90 error allocating: A,b'
-    b = 0.0
-    print '(2(A,I0,1X,I0),A,I0)', 'N,M',bigN,bigM,':: shape(A)',shape(A),':: shape(b)',shape(b)
-
-    if (any(c%match) .or. any(e%match)) then
-       allocate(work(33*bigN),stat=ierr)
-       if (ierr /= 0) then
-          stop 'solution.f90 error allocating: work'
-       else
-          print '(A,I0)', 'ZGELS iwork=',size(work,dim=1)
-       end if
-       
-    end if
-
-    forall (i=1:ntot)
-       row(i,0) = 1 + sum(row(1:i-1,1))  ! lower bound
-       row(i,2) = sum(row(1:i,1))        ! upper bound
-       col(i,0) = 1 + sum(col(1:i-1,1))
-       col(i,2) = sum(col(1:i,1))
-    end forall
-
-    print '(A,I0,1X,I0)','shape(res): ',shape(res)
-
-    ! convert structures into single matrix for solution via least squares
-    do rr=1,ntot
-       do cc=1,ntot
-          print '(2(A,I0))', 'row ',rr,' col ',cc
-          print '(2(A,2(1X,I0)))','row lo:hi',row(rr,0),row(rr,2),'  col lo:hi',col(cc,0),col(cc,2)
-          print '(A,2(1X,I0))', 'LHS shape:',shape(res(rr,cc)%LHS)
-          print '(A,2(1X,I0))', 'RHS shape:',shape(res(rr,cc)%RHS)
-          A(row(rr,0):row(rr,2),col(cc,0):col(cc,2)) = res(rr,cc)%LHS
-          b(row(rr,0):row(rr,2)) = b(row(rr,0):row(rr,2)) + res(rr,cc)%RHS
-       end do
-    end do
-
-    deallocate(res,stat=ierr)
-    if (ierr /= 0) stop 'solution.f90: error deallocating res'
-
-    if (any(c%match) .or. any(e%match)) then
-       ! use LAPACK routine to solve least-squares via Q-R decomposition
-       ! this routine works for all three potential use cases
-       ! M>N (overdetermined), M==N (even-determined), and M<N (underdetermined)
-       call ZGELS(TRANSA='N',M=bigM,N=bigN,NRHS=1,A=A(:,:),LDA=bigM,B=b(:),LDB=bigM,&
-            & WORK=work,LDWORK=size(work,dim=1),INFO=ierr)
-       if (ierr /= 0) then
-          write(*,'(A,I0)') 'ZGELS error: ',ierr
-          stop 
-       end if
-    end if
+    do k = 1,100
+        ! accumulate result into matrices of structures
+        do i=1,nc
+           ! circle on self
+           print '(4(A,I0))', 'circle on self: ',i,' N:',c(i)%N,' M:',c(i)%M,' ibnd:',c(i)%ibnd
     
+           res(i,i) = circle_match(c(i))
+           call print_match_result(res(i,i))
+           row(i,1) = size(res(i,i)%RHS,1)
+           col(i,1) = size(res(i,i)%LHS,2)
+    
+           print '(2(A,I0))', ' resulting row:',row(i,1),' col:',col(i,1)
+    
+           ! circle on other circle
+           do j=1,nc
+              if(i/=j) then
+                 print '(A,2(1X,I0),4(A,I0))', 'circle on circle:',i,j,' N:',c(i)%N,' M:',c(j)%M, &
+                      &' <-ibnd:',c(i)%ibnd,' ->ibnd:',c(j)%ibnd
+    
+                 res(j,i) = circle_match(c(i),c(j)%matching,dom)
+                 call print_match_result(res(j,i))
+              end if
+           end do
+    
+           ! circle on other ellipse
+           do j=1,ne
+              print '(A,2(1X,I0),4(A,I0))', 'circle on ellipse:',i,j+nc,' N:',c(i)%N,' M:',e(j)%M, &
+                   &' <-ibnd:',c(i)%ibnd,' ->ibnd:',e(j)%ibnd
+    
+              res(j+nc,i) = circle_match(c(i),e(j)%matching,dom)
+              call print_match_result(res(j+nc,i))
+           end do
+        end do
+    
+        do i = 1, ne
+           ! ellipse on self
+           print '(5(A,I0))', 'before ellipse on self: ',nc+i,' MS:',e(i)%ms,&
+                &' N:',e(i)%N,' M:',e(i)%M,' ibnd:',e(i)%ibnd
+    
+           res(nc+i,nc+i) = ellipse_match(e(i))
+    
+           call print_match_result(res(nc+i,nc+i))
+           row(i+nc,1) = size(res(nc+i,nc+i)%RHS,1)
+           col(i+nc,1) = size(res(nc+i,nc+i)%LHS,2)
+    
+           print '(2(A,I0))', 'resulting row:',row(i+nc,1),' col:',col(i+nc,1)
+    
+           ! ellipse on other circle
+           do j = 1, nc
+              print '(A,2(1X,I0))', 'ellipse on circle:',nc+i,j
+              res(j,nc+i) = ellipse_match(e(i),c(j)%matching,dom)
+              call print_match_result(res(j,nc+i))
+           end do
+    
+           ! ellipse on other ellipse
+           do j = 1, ne
+              if (i /= j) then
+                 print '(A,2(1X,I0))', 'ellipse on ellipse:',nc+i,nc+j
+    
+                 res(nc+j,nc+i) = ellipse_match(e(i),e(j)%matching,dom)
+                 call print_match_result(res(nc+j,nc+i))
+              end if
+           end do
+        end do
+    
+        bigM = sum(row(:,1)) ! total number rows/cols
+        bigN = sum(col(:,1))
+    
+        allocate(A(bigM,bigN), b(bigM), stat=ierr)
+        if (ierr /= 0) stop 'solution.f90 error allocating: A,b'
+        b = 0.0
+        print '(2(A,I0,1X,I0),A,I0)', 'N,M',bigN,bigM,':: shape(A)',shape(A),':: shape(b)',shape(b)
+    
+        if (any(c%match) .or. any(e%match)) then
+           allocate(work(33*bigN),stat=ierr)
+           if (ierr /= 0) then
+              stop 'solution.f90 error allocating: work'
+           else
+              print '(A,I0)', 'ZGELS iwork=',size(work,dim=1)
+           end if
+           
+        end if
+    
+        forall (i=1:ntot)
+           row(i,0) = 1 + sum(row(1:i-1,1))  ! lower bound
+           row(i,2) = sum(row(1:i,1))        ! upper bound
+           col(i,0) = 1 + sum(col(1:i-1,1))
+           col(i,2) = sum(col(1:i,1))
+        end forall
+    
+        print '(A,I0,1X,I0)','shape(res): ',shape(res)
+    
+        ! convert structures into single matrix for solution via least squares
+        do rr=1,ntot
+           do cc=1,ntot
+              print '(2(A,I0))', 'row ',rr,' col ',cc
+              print '(2(A,2(1X,I0)))','row lo:hi',row(rr,0),row(rr,2),'  col lo:hi',col(cc,0),col(cc,2)
+              print '(A,2(1X,I0))', 'LHS shape:',shape(res(rr,cc)%LHS)
+              print '(A,2(1X,I0))', 'RHS shape:',shape(res(rr,cc)%RHS)
+              A(row(rr,0):row(rr,2),col(cc,0):col(cc,2)) = res(rr,cc)%LHS
+              b(row(rr,0):row(rr,2)) = b(row(rr,0):row(rr,2)) + res(rr,cc)%RHS
+           end do
+        end do
+    
+        deallocate(res,stat=ierr)
+        if (ierr /= 0) stop 'solution.f90: error deallocating res'
+    
+        if (any(c%match) .or. any(e%match)) then
+           ! use LAPACK routine to solve least-squares via Q-R decomposition
+           ! this routine works for all three potential use cases
+           ! M>N (overdetermined), M==N (even-determined), and M<N (underdetermined)
+           call ZGELS(TRANSA='N',M=bigM,N=bigN,NRHS=1,A=A(:,:),LDA=bigM,B=b(:),LDB=bigM,&
+                & WORK=work,LDWORK=size(work,dim=1),INFO=ierr)
+           if (ierr /= 0) then
+              write(*,'(A,I0)') 'ZGELS error: ',ierr
+              stop 
+           end if
+        end if
+     
     ! put result into local coeff variables
     do i=1,nc
        ! circles -- ensure container for results is allocated
        ! solution for each value of p, saved as a 2D matrix
-       allocate(c(i)%coeff(col(i,1)), stat=ierr)
-       if (ierr /= 0) stop 'solution.f90: error allocating c(i)%coeff'
-
+       if (.not. allocated(c(i)%coeff)) then
+          allocate(c(i)%coeff(col(i,1)), stat=ierr)
+          if (ierr /= 0) stop 'solution.f90: error allocating c(i)%coeff'
+       end if
+       
        if (.not. c(i)%ibnd == 2) then
           ! coefficients come from least-squares solution above
           c(i)%coeff(:) = b(col(i,0):col(i,2))
@@ -196,7 +200,11 @@ contains
 
     do i=1,ne
        ! ellipses
-       allocate(e(i)%coeff(col(nc+i,1)), stat=ierr)
+       if (.not. allocated(e(i)%coeff)) then
+          allocate(e(i)%coeff(col(nc+i,1)), stat=ierr)
+          if (ierr /= 0) stop 'solution.f90: error allocating e(i)%coeff'
+       end if
+       
        if (.not. e(i)%ibnd == 2) then
           ! coefficients from least-squares solution above
           e(i)%coeff(:) = b(col(nc+i,0):col(nc+i,2))
@@ -229,6 +237,9 @@ contains
 
        end if
     end do
+    
+ end do
+
     deallocate(A,b,row,col,stat=ierr)
     if (ierr /= 0) stop 'solution.f90: error deallocating A,B,row,col'
     
