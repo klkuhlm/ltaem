@@ -39,6 +39,7 @@ contains
     ! only needed for LAPACK routine
     ! size(work) should be ~ 33xbigN? (32-bit linux)
     complex(DP), allocatable :: WORK(:)
+    character(13) :: fmt
 
 #ifdef DEBUG
     print *, 'matrix_solution: c:',c%id,' e:',e%id,' #tot el:',sum(dom%num(1:2))

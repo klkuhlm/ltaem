@@ -3,12 +3,12 @@ EXTERNAL=cbessel.o
 KKLOW=utility.o bessel_functions.o mathieu_functions2.o
 
 ##Work MacPro##############################
-LAPACKLIB=/Users/klkuhlm/src/lapack-3.2.1/lapack_MAC.a
-BLASLIB=/Users/klkuhlm/src/lapack-3.2.1/blas_MAC.a
+#LAPACKLIB=/Users/klkuhlm/src/lapack-3.2.1/lapack_MAC.a
+#BLASLIB=/Users/klkuhlm/src/lapack-3.2.1/blas_MAC.a
 
 ##Work linux laptop / home linux desktop ##########
-#LAPACKLIB=/home/kris/src/lapack-3.2.1/lapack_LINUX.a
-#BLASLIB=/home/kris/src/lapack-3.2.1/blas_LINUX.a
+LAPACKLIB=/home/kris/src/lapack-3.2.1/lapack_LINUX.a
+BLASLIB=/home/kris/src/lapack-3.2.1/blas_LINUX.a
 
 ### for intel compiler
 ##################################
@@ -18,9 +18,16 @@ BLASLIB=/Users/klkuhlm/src/lapack-3.2.1/blas_MAC.a
 # main-program related
 ####################################
 KKHIGH=kappa.o time.o ltaem_io.o invlap.o ellipse_mathieu_init.o circular_elements.o elliptical_elements.o calc_routines.o element_geometry.o solution.o
+
+KKHIGHUNSAT=unsat_io.o unsat_circular_elements.o unsat_elliptical_elements.o unsat_calc_routines.o unsat_element_geometry.o unsat_solution.o
+
 MAIN=ltaem_main.o
+MAINUNSAT=unsat_main.o
+
 TARG=ltaem
+TARGUNSAT=unsat
 OBJS=$(EXTERNAL) constants.o $(KKLOW) type_definitions.o $(KKHIGH)
+OBJSUNSAT=$(EXTERNAL) constants.o $(KKLOW) unsat_type_definitions.o $(KKHIGHUNSAT)
 
 ############ ifort 11.1 ##########
 ##F90=ifort
@@ -31,11 +38,11 @@ OBJS=$(EXTERNAL) constants.o $(KKLOW) type_definitions.o $(KKHIGH)
 #####################################
 
 #### gfortran #################
-F90=gfortran-4.6
+F90=gfortran-4.4
 DFLAGS=-O0 -Wall -Wextra -fbacktrace -g
-#DFLAGS+=-fbounds-check
-DFLAGS+=-frange-check -fcheck=all -finit-real=snan -finit-integer=-99999 -fbacktrace
-#DFLAGS+=-fwhole-file -fpack-derived -frepack-arrays
+DFLAGS+=-fbounds-check
+#DFLAGS+=-frange-check -fcheck=all -finit-real=snan -finit-integer=-99999 -fbacktrace
+#DFLAGS+=-fwhole-file -fp1ack-derived -frepack-arrays
 DFLAGS+=-cpp -DDEBUG 
 #DFLAGS+=-fdump-rtl-expand
 PFLAGS=-O3 -march=native -cpp #-fopenmp # -fwhole-file
@@ -47,8 +54,12 @@ FLAGS=$(DFLAGS)
 
 # the link step
 main: $(OBJS) $(MAIN)
-	$(F90) $(LINKFLAG) -o $(TARG) $(OBJS) $(MAIN) $(LIBPATH) $(LAPACKLIB) $(BLASLIB)
+	$(F90) $(LINKFLAG) -o $(TARG) $(OBJS) $(MAIN) $(LAPACKLIB) $(BLASLIB)
 	install $(TARG) ../run/
+
+unsat: $(OBJSUNSAT) $(MAINUNSAT)
+	$(F90) $(LINKFLAG) -o $(TARGUNSAT) $(OBJSUNSAT) $(MAINUNSAT) $(LAPACKLIB) $(BLASLIB)
+	install $(TARGUNSAT) ../run/
 
 # this external library tends to produce spurious errors about implicit type conversions
 cbessel.o : ./external/cbessel.f90
@@ -82,6 +93,15 @@ elliptical_elements.o elliptical_elements.mod : constants.mod kappa_mod.mod time
 calc_routines.o calc_routines.mod : type_definitions.mod constants.mod circular_elements.mod elliptical_elements.mod kappa_mod.mod time_mod.mod utility.mod calc_routines.f90
 element_geometry.o geometry.mod : constants.mod type_definitions.mod file_ops.mod utility.mod element_geometry.f90
 ltaem_main.o : constants.mod type_definitions.mod file_ops.mod inverse_laplace_transform.mod solution_mod.mod calc_routines.mod geometry.mod ellipse_mathieu_init.mod ltaem_main.f90
+
+unsat_type_definitions.o unsat_type_definitions.mod : constants.mod mathieu_functions.mod unsat_type_definitions.f90
+unsat_io.o unsat_file_ops.mod : unsat_type_definitions.mod constants.mod unsat_io.f90
+unsat_solution.o unsat_solution_mod.mod : constants.mod unsat_type_definitions.mod unsat_circular_elements.mod unsat_elliptical_elements.mod unsat_solution.f90
+unsat_circular_elements.o unsat_circular_elements.mod : constants.mod utility.mod unsat_type_definitions.mod bessel_functions.mod unsat_circular_elements.f90
+unsat_elliptical_elements.o unsat_elliptical_elements.mod : constants.mod utility.mod unsat_type_definitions.mod mathieu_functions.mod unsat_elliptical_elements.f90
+unsat_calc_routines.o unsat_calc_routines.mod : unsat_type_definitions.mod constants.mod unsat_circular_elements.mod unsat_elliptical_elements.mod utility.mod unsat_calc_routines.f90
+unsat_element_geometry.o unsat_geometry.mod : constants.mod unsat_type_definitions.mod unsat_file_ops.mod utility.mod unsat_element_geometry.f90
+unsat_main.o : constants.mod unsat_type_definitions.mod unsat_file_ops.mod unsat_solution_mod.mod unsat_calc_routines.mod unsat_geometry.mod unsat_main.f90
 
 
 

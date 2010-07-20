@@ -118,7 +118,7 @@ module unsat_type_definitions
      logical :: calc = .false.
      
      ! input/output filenames
-     character(lenFN) :: outfname='unset', infname='unset', elemHfName='unset'
+     character(lenFN) :: outFName='unset', inFName='unset', geomFName='unset'
      
      ! output index (1= Gnuplot map (x,y,z triplets; times separated by blank lines);
      !               2= Matlab map (matrix output separate files);

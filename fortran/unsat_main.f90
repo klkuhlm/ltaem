@@ -1,8 +1,7 @@
 ! this is the driver routine for steady-state unsaturated flow
-! this can compute a steady-state solution either on a grid of locations and times,
-! at a single point through time (i.e., hydrograph), or at a particle location through
-! space and time.  The solution depends on the given properties of circular and 
-! elliptical elements.  Wells or points are treated as special case circles, and lines are
+! this can compute a steady-state solution either on a grid of locations.
+! The solution depends on the given properties of circular and 
+! elliptical elements.  Points are treated as special case circles, and lines are
 ! treated as special case ellipses.
 
 program steady_unsat_main
@@ -57,7 +56,7 @@ program steady_unsat_main
      
   end if
 
-  call unsat_matrix_solution(c,e,dom)
+  call matrix_solution(c,e,dom)
  
   allocate(sol%h(sol%nx,sol%ny), sol%v(sol%nx,sol%ny,2), stat=ierr)
   if (ierr /= 0) stop 'ltaem_main.f90 error allocating contour: sol%h,sol%hp,sol%v,sol%vp'

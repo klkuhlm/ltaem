@@ -57,16 +57,16 @@ contains
     write(16,*) bg%alpha, bg%ms, '  ||    alpha, ellipse MS'
 
     ! desired solution points/times
-    read(15,*,iostat=ierr) sol%nx, sol%ny, sol%nt
+    read(15,*,iostat=ierr) sol%nx, sol%ny
     if (ierr /= 0) stop 'error on line 3 of input file'
-    if (any([sol%nx,sol%ny,sol%nt] < 1)) then
-       print *, 'input file (line 3) sol%nx, sol%ny, sol%nt must be > 0:',&
-             & sol%nx, sol%ny, sol%nt
+    if (any([sol%nx,sol%ny] < 1)) then
+       print *, 'input file (line 3) sol%nx, sol%ny must be > 0:',&
+             & sol%nx, sol%ny
        stop
     end if
 
     allocate(sol%x(sol%nx), sol%y(sol%ny), stat=ierr)
-    if (ierr /= 0) stop 'ltaem_io.f90 error allocating: sol%x,sol%y,sol%t'
+    if (ierr /= 0) stop 'ltaem_io.f90 error allocating: sol%x,sol%y'
 
     read(15,*,iostat=ierr) sol%x(:)
     if (ierr /= 0) stop 'error on line 4 (sol%x(:)) of input file'
@@ -278,8 +278,8 @@ contains
     type(solution), intent(in) :: s
 
     character(4), dimension(2) :: chint
-    ! adjust the formats of time, location, and results here
-    character(6) :: tfmt = 'ES13.5', xfmt = 'ES12.4'
+    ! adjust the formats of location and results here
+    character(6) :: xfmt = 'ES12.4'
     character(9) :: hfmt = 'ES22.14e3'
     integer :: i, j, k
 
@@ -290,24 +290,19 @@ contains
 
        open(unit=20, file=s%outfname, status='replace', action='write')
        write(20,*) '# ltaem contour map output'
-       write(20,'(A,I0)') ' # t: ', s%nt
        write(20,'(A,I0)') ' # x: ', s%nx
        write(20,'(A,I0)') ' # y: ', s%ny
        write(20,'(A,I0)') ' # xy:', s%nx*s%ny     
 
-       do i = 1, s%nt
-          write(20,'(A,'//tfmt//')') ' # t= ',s%t(i)
-          write(20,'(A)')   &
-          & '#      X           Y               head&
-          &                 velx                  vely'
-          do j = 1, s%ny
-             do k = 1, s%nx
-                write(20,'(2('//xfmt//',1X),3('//hfmt//',1X))') &
-                     & s%x(k), s%y(j), s%h(k,j,i), s%v(k,j,i,1:2)
-             end do
+       write(20,'(A)')   &
+            & '#      X           Y               head&
+            &                 velx                  vely'
+       do j = 1, s%ny
+          do k = 1, s%nx
+             write(20,'(2('//xfmt//',1X),3('//hfmt//',1X))') &
+                  & s%x(k), s%y(j), s%h(k,j), s%v(k,j,1:2)
           end do
-          write(20,'(/)')
-       end do       
+       end do
        write(20,'(A)') '# EOF'
        close(20)
 
@@ -339,67 +334,35 @@ contains
        end do
        close(20)
        
-       do k = 1, s%nt
-          write(chint(2),'(i4.4)') k
-
-          ! head-matrix
-          open(unit=20, file=trim(s%outfname)//'_head_'//chint(2)//'.dat', &
-               & status='replace', action='write')
-          do i = 1, s%ny
-             write (20,'('//chint(1)//'(1x,'//hfmt//'))') (s%h(j,i,k), j=1,s%nx)
-          end do
-          close(20)
-
-          ! velx-matrix
-          open(unit=20, file=trim(s%outfname)//'_velx_'//chint(2)//'.dat', &
-               & status='replace', action='write')
-          do i = 1, s%ny
-             write (20,'('//chint(1)//'(1x,'//hfmt//'))') (s%v(j,i,k,1), j=1,s%nx)
-          end do
-          close(20)
-
-          ! vely-matrix
-          open(unit=20, file=trim(s%outfname)//'_vely_'//chint(2)//'.dat', &
-               & status='replace', action='write')
-          do i = 1, s%ny
-             write (20,'('//chint(1)//'(1x,'//hfmt//'))') (s%v(j,i,k,2), j=1,s%nx)
-          end do
-          close(20)
+       ! head-matrix
+       open(unit=20, file=trim(s%outfname)//'_head.dat', &
+            & status='replace', action='write')
+       do i = 1, s%ny
+          write (20,'('//chint(1)//'(1x,'//hfmt//'))') (s%h(j,i), j=1,s%nx)
        end do
+       close(20)
 
-       ! column of calculation times
-       open(unit=20, file=trim(s%outfname)//'_t.dat', status='replace', &
-            & action='write')
-       write (20,'('//tfmt//')') (s%t(j), j=1,s%nt)
+       ! velx-matrix
+       open(unit=20, file=trim(s%outfname)//'_velx.dat', &
+            & status='replace', action='write')
+       do i = 1, s%ny
+          write (20,'('//chint(1)//'(1x,'//hfmt//'))') (s%v(j,i,1), j=1,s%nx)
+       end do
+       close(20)
+
+       ! vely-matrix
+       open(unit=20, file=trim(s%outfname)//'_vely.dat', &
+            & status='replace', action='write')
+       do i = 1, s%ny
+          write (20,'('//chint(1)//'(1x,'//hfmt//'))') (s%v(j,i,2), j=1,s%nx)
+       end do
        close(20)
 
        write(*,'(/A)') '*********************************************************************'
        write(*,'(3A)') 'matlab output written to ', trim(s%outfname), &
-              & '{x,y,t,head{1-n},velx{1-n},vely{1-n}}.dat'
+              & '{x,y,head,velx,vely}.dat'
        write(*,'(A)') '*********************************************************************'
        
-       !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    case (10)
-
-       ! ** output for inverse in Matlab
-       ! column of time values at a location through time
-       ! locations separated by blank lines
-
-       do i = 1, s%nx
-          write(chint(1),'(I4.4)') i
-          open(unit=20, file=trim(s%outfname)//'_'//chint(1), status='replace', &
-               &action='write')
-          do k = 1, s%nt
-             write (20,'('//tfmt//',1X,'//hfmt//')') s%t(k),s%h(i,1,k)
-          end do
-          write(20,'(/)')
-          close(20)
-       end do       
-
-       write(*,'(/A)') '***********************************************************'
-       write(*,'(4A)') 'inverse output written to ',trim(s%outfname),'0000-',chint(1)
-       write(*,'(A)') '***********************************************************'
-
        !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
     case default
