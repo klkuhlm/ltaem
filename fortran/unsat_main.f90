@@ -21,8 +21,8 @@ program steady_unsat_main
   type(ellipse), allocatable :: e(:)
   type(solution) :: sol
   integer :: i, j, ierr
-  integer :: nc, ne     ! #-circles, #-ellipses
-  complex(DP) :: calcZ      ! calc-point-complex-coordinates
+  integer :: nc, ne    ! #-circles, #-ellipses
+  complex(DP) :: calcZ ! calc-point-complex-coordinates
 
   intrinsic :: get_command_argument
 
@@ -45,12 +45,12 @@ program steady_unsat_main
      write(*,'(A)') 'Computing Mathieu coefficients ...'
      
      ! compute background
-     bg%mat = mathieu_init((bg%alpha/cmplx(2.0,0.0,DP))**2,MM=bg%ms)
+     bg%mat = mathieu_init(cmplx(bg%alpha/2.0,0.0,DP)**2,MM=bg%ms)
      
      ! allocate/initialize each element for each value of p
      do j = 1, size(e,1)
         if (e(j)%ibnd == 0 .or. e(j)%calcin) then
-           e(j)%mat = mathieu_init((e(j)%alpha/cmplx(2.0,0.0,DP))**2,MM=e(j)%MS)
+           e(j)%mat = mathieu_init(cmplx(e(j)%alpha/2.0,0.0,DP)**2,MM=e(j)%MS)
         end if
      end do
      
