@@ -575,7 +575,6 @@ contains
                & sum(dRMRgp(1:np,1:N-1,1)/RMR0(1:np,1:N-1,1)*bb(1:np,1:N-1)*AM(1:np,1:N-1,1), 2)
     dH(1:np,2) = sum(RMRgp(1:np,0:N-1,0)/RMR0(1:np,0:N-1,0)*aa(1:np,0:N-1)*dAM(1:np,0:N-1,0), 2) + &
                & sum(RMRgp(1:np,1:N-1,1)/RMR0(1:np,1:N-1,1)*bb(1:np,1:N-1)*dAM(1:np,1:N-1,1), 2)
-    dH(:,2) = 0.0
   end function ellipse_deriv
 
 end module elliptical_elements

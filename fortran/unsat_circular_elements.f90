@@ -373,6 +373,7 @@ contains
          & ( aa(0:N-1)*cos(vr(0:N-1)*Pgp) + &
          &   bb(0:N-1)*sin(vr(0:N-1)*Pgp) ))
 
+    ! exp scaling not applied here
   end function circle_calc
 
   function circle_deriv(c,Rgp,Pgp,inside) result(dH)
@@ -389,20 +390,22 @@ contains
     real(DP), dimension(0:c%N-1) :: vr
     complex(DP), dimension(0:c%N-1) :: aa,bb,BRgp,BR0,dBRgp
     integer :: n0, i, N
-    complex(DP) :: kap
+    complex(DP) :: kap, alpha
 
     N = c%N
     vr(0:N-1) = real([(i,i=0,N-1)],DP)
 
     if (inside) then
        n0 = 2*N ! inside of matching circle
-       kap = (c%alpha/2.0)**2
+       alpha = c%alpha
+       kap = (alpha/2.0)**2
        call dBI(Rgp*kap,N,BRgp(0:N-1),dBRgp(0:N-1))
        dBRgp(0:N-1) = kap*dBRgp(:)
        BR0(0:N-1) = bI(c%r*kap,N)
     else
        n0 = 1
-       kap = (c%parent%alpha/2.0)**2
+       alpha = c%parent%alpha
+       kap = (alpha/2.0)**2
        call dBK(Rgp*kap,N,BRgp(0:N-1),dBRgp(0:N-1))
        dBRgp(0:N-1) = kap*dBRgp(:)
        BR0(0:N-1) =  bK(c%r*kap,N)
@@ -412,7 +415,9 @@ contains
     bb(0) = 0.0 ! make odd/even conformable
     bb(1:N-1) = c%coeff(n0+N:n0+2*N-2)
 
-    H = circle_calc(c,Rgp,Pgp,inside)
+    H = sum(BRgp(0:N-1)/BR0(0:N-1)* &
+         & ( aa(0:N-1)*cos(vr(0:N-1)*Pgp) + &
+         &   bb(0:N-1)*sin(vr(0:N-1)*Pgp) ))
 
     ! dPot_dR
     dR = sum(dBRgp(0:N-1)/BR0(0:N-1)* &  
@@ -424,11 +429,11 @@ contains
          & ( bb(0:N-1)*cos(vr(0:N-1)*Pgp) - &
          &   aa(0:N-1)*sin(vr(0:N-1)*Pgp) ))    
 
-    dH(1) = (dR - H*sin(Pgp)*c%alpha/2.0)*&
-         & exp(-c%alpha*Rgp*sin(Pgp)/2.0)
+    dH(1) = (dR - H*sin(Pgp)*alpha/2.0)*&
+         & exp(-alpha*Rgp*sin(Pgp)/2.0)
 
-    dH(2) = (dTh - H*Rgp*cos(Pgp)*c%alpha/2.0)*&
-         & exp(-c%alpha*Rgp*sin(Pgp)/2.0)
+    dH(2) = (dTh - H*Rgp*cos(Pgp)*alpha/2.0)*&
+         & exp(-alpha*Rgp*sin(Pgp)/2.0)
 
   end function circle_deriv
 end module unsat_circular_elements

@@ -14,7 +14,7 @@ module unsat_elliptical_elements
 contains
   function ellipse_match_self(e) result(r)
     use constants, only : DP, PI
-    use type_definitions, only : ellipse, match_result, element
+    use unsat_type_definitions, only : ellipse, match_result, element
     use mathieu_functions, only : ce, se, Ke, Ko, dKe, dKo, Ie, Io, dIe, dIo
     use utility, only : ynot 
     implicit none
@@ -29,7 +29,7 @@ contains
     complex(DP), dimension(1:e%M, 0:e%N-1, 0:1) :: cemat
     complex(DP), dimension(1:e%M, 1:e%N-1, 0:1) :: semat
     integer, dimension(0:e%N-1) :: vi
-    complex(DP), allocatable(:,:) :: H,dH
+    complex(DP), allocatable :: H(:,:),dH(:,:)
 
     N = e%N
     M = e%M
@@ -62,16 +62,16 @@ contains
        f => e%parent
 
        ! outside ang. mod. Mathieu fcns (last dimension is inside/outside)
-       cemat(1:M,0:N-1,0) = transpose(ce(f%mat(i), vi(0:N-1), e%Pcm(1:M)))
-       semat(1:M,1:N-1,0) = transpose(se(f%mat(i), vi(1:N-1), e%Pcm(1:M)))
+       cemat(1:M,0:N-1,0) = transpose(ce(f%mat, vi(0:N-1), e%Pcm(:)))
+       semat(1:M,1:N-1,0) = transpose(se(f%mat, vi(1:N-1), e%Pcm(:)))
        if (e%ibnd == 0) then
           ! inside
-          cemat(1:M,0:N-1,1) = transpose(ce(e%mat(i), vi(0:N-1), e%Pcm(1:M)))
-          semat(1:M,1:N-1,1) = transpose(se(e%mat(i), vi(1:N-1), e%Pcm(1:M)))
+          cemat(1:M,0:N-1,1) = transpose(ce(e%mat, vi(0:N-1), e%Pcm(:)))
+          semat(1:M,1:N-1,1) = transpose(se(e%mat, vi(1:N-1), e%Pcm(:)))
        end if
 
-       allocate(h(M,ncols),dH(M,ncols,stat=ierr)
-       if (ierr /= 0) stop 'unsat_elliptical_elements.f90 error allocating: h,dh')
+       allocate(h(M,ncols),dH(M,ncols),stat=ierr)
+       if (ierr /= 0) stop 'unsat_elliptical_elements.f90 error allocating: h,dh'
 
        ! setup LHS
        H(:,1:N) =       cemat(1:M,0:N-1,0) ! a_n head
@@ -154,7 +154,7 @@ contains
 
   function ellipse_match_other(e,el,dom) result(r)
     use constants, only : DP
-    use type_definitions, only : ellipse, domain, matching, match_result
+    use unsat_type_definitions, only : ellipse, domain, matching, match_result, element
     use mathieu_functions, only : ce, se, dce, dse, Ke, Ko, dKe, dKo, Ie, Io, dIe, dIo
     use utility, only : rotate_vel_mat
     implicit none
@@ -210,7 +210,7 @@ contains
     if (nrows > 0) then
        f => e%parent
 
-       allocate(RMn(1:M,0:N-1,0:1), RMn0(0:N-1,0:1), cemat(1:M,0:N-1), semat(1:M,1:N-1)&
+       allocate(RMn(1:M,0:N-1,0:1), RMn0(0:N-1,0:1), cemat(1:M,0:N-1), semat(1:M,1:N-1), &
             & H(M,2*N-1), dH(M,2*N-1), stat=ierr)
        if (ierr /= 0) stop 'elliptical_elements.f90:ellipse_match_other() error allocating:&
             &RMn, RMn0, cemat, semat'
@@ -222,8 +222,8 @@ contains
        RMn(1:M,0:N-1,0) = transpose(Ke(f%mat, vi(0:N-1), e%G(targ)%Rgm(:)))
        RMn(1:M,1:N-1,1) = transpose(Ko(f%mat, vi(1:N-1), e%G(targ)%Rgm(:)))
        RMn(1:M,0,1) = 0.0
-       RMn0(0:N-1,0) = Ke(e%parent%mat(idx), vi(0:N-1), e%r)
-       RMn0(1:N-1,1) = Ko(e%parent%mat(idx), vi(1:N-1), e%r)
+       RMn0(0:N-1,0) = Ke(e%parent%mat, vi(0:N-1), e%r)
+       RMn0(1:N-1,1) = Ko(e%parent%mat, vi(1:N-1), e%r)
        RMn0(0,1) = 0.0
        ! odd functions not needed for line source, but computed anyway
        
@@ -262,7 +262,7 @@ contains
           dH(1:M,N+1:2*N-1) = dRMn(:,1:N-1,1)/spread(RMn0(1:N-1,1),1,M)*semat(:,1:N-1)
 
           dPot_dR(:,1:2*N-1) = (dH(:,1:2*N-1) + H(:,1:2*N-1)*spread(&
-               & f%alpha*e%f/2.0*cosh(c%G(targ)%Rgm(:))*sin(c%G(targ)%Pgm(:)),2,2*N-1))* &
+               & f%alpha*e%f/2.0*cosh(e%G(targ)%Rgm(:))*sin(e%G(targ)%Pgm(:)),2,2*N-1))* &
                & spread(exp(f%alpha*e%f/2.0*sinh(e%G(targ)%Rgm(:))*&
                & sin(e%G(targ)%Pgm(:))),2,2*N-1)
 
@@ -271,7 +271,7 @@ contains
           dH(1:M,N+1:2*N-1) = RMn(:,1:N-1,1)/spread(RMn0(1:N-1,1),1,M)*dsemat(:,1:N-1)
 
           dPot_dP(:,1:2*N-1) = (dH(:,1:2*N-1) + H(:,1:2*N-1)*spread(&
-               & f%alpha*e%f/2.0*sinh(c%G(targ)%Rgm(:))*cos(c%G(targ)%Pgm(:)),2,2*N-1))* &
+               & f%alpha*e%f/2.0*sinh(e%G(targ)%Rgm(:))*cos(e%G(targ)%Pgm(:)),2,2*N-1))* &
                & spread(exp(f%alpha*e%f/2.0*sinh(e%G(targ)%Rgm(:))*&
                & sin(e%G(targ)%Pgm(:))),2,2*N-1)
 
@@ -318,7 +318,7 @@ contains
        if (e%ibnd == 2) then
           ! sum line source effects and move to RHS, re-setting LHS to 0 unknowns
           ! only uses even-order even coefficients (~1/4 of 2N-1)
-          r%RHS(1:hiM) = -sum(spread(line(e,p,idx),1,hiM)*r%LHS(1:hiM,1:N:2))
+          r%RHS(1:hiM) = -sum(spread(line(e),1,hiM)*r%LHS(1:hiM,1:N:2))
           deallocate(r%LHS,stat=ierr)
 
           if (ierr /= 0) then
@@ -336,15 +336,13 @@ contains
 
   end function ellipse_match_other
 
-  function line(e,p,idx) result(a2n)
+  function line(e) result(a2n)
     ! this function returns the coefficients for a specified-flux line source
     use constants, only : DP, PI
-    use time_mod, only : time
-    use type_definitions, only : ellipse
+    use unsat_type_definitions, only : ellipse
     use mathieu_functions, only : Ke,dKe
+
     type(ellipse), intent(in) :: e
-    complex(DP), intent(in) :: p
-    integer, intent(in) :: idx
     complex(DP), dimension(ceiling(e%N/2.0)) :: a2n ! only even coefficients of even order
     real(DP), dimension(0:e%ms-1) :: vs
     real(DP), dimension(1:e%ms,ceiling(e%N/2.0)) :: arg
@@ -362,149 +360,133 @@ contains
     
     ! factor of 4 different from Kuhlman&Neuman paper
     ! include Radial/dRadial MF here to balance with those in general solution
-    a2n(1:nmax) = time(p,e%time,.false.)*e%bdryQ/(2.0*PI)* &
-            & Ke(e%parent%mat(idx), vi(0:N-1:2), e%r) / dKe(e%parent%mat(idx), vi(0:N-1:2), e%r)* &
-            & (-vs(0:N-1:2))*sum(arg(1:MS,1:nmax)*conjg(e%parent%mat(idx)%A(1:MS,0:nmax-1,0)),dim=1)
+    a2n(1:nmax) = e%bdryQ/(2.0*PI)* &
+            & Ke(e%parent%mat, vi(0:N-1:2), e%r) / dKe(e%parent%mat, vi(0:N-1:2), e%r)* &
+            & (-vs(0:N-1:2))*sum(arg(1:MS,1:nmax)*conjg(e%parent%mat%A(1:MS,0:nmax-1,0)),dim=1)
 
   end function line
   
-  function ellipse_calc(p,e,lo,hi,Rgp,Pgp,inside) result(H)
+  function ellipse_calc(e,Rgp,Pgp,inside) result(H)
     use constants, only : DP
-    use type_definitions, only : ellipse
+    use unsat_type_definitions, only : ellipse
     use mathieu_functions, only : Ke,Ko, Ie,Io, ce,se
 
-    complex(DP), dimension(:), intent(in) :: p
     type(ellipse), intent(in) :: e
-    integer, intent(in) :: lo,hi 
     real(DP), intent(in) :: Rgp, Pgp
     logical, intent(in) :: inside
-    complex(DP), dimension(size(p,1)) :: H
+    complex(DP) :: H
 
     integer, dimension(0:e%N-1) :: vi
-    complex(DP), dimension(size(p,1),0:e%N-1) :: aa,bb
-    complex(DP), dimension(size(p,1),0:e%N-1,0:1) :: RMRgp,RMR0,AM
-    integer :: n0, np, i, j, N
-
-!!$#ifdef DEBUG
-!!$    print *, 'ellipse_calc: e:',e%id,' lo:',lo,' hi:',hi,' Rgp:',Rgp,' Pgp:',Pgp,' inside:',inside
-!!$#endif
+    complex(DP), dimension(0:e%N-1) :: aa,bb
+    complex(DP), dimension(0:e%N-1,0:1) :: RMRgp,RMR0,AM
+    integer :: n0, i, N
 
     N = e%N
-    np = size(p,1)
     vi(0:N-1) = [(i,i=0,N-1)]
 
     if (inside) then
-       if (e%match) then
-          n0 = 2*N ! inside of matching ellipse
-       else
-          n0 = 1   ! inside of specified boundary ellipse
-       end if
-       do i=1,np
-          j = lo+i-1
-          RMRgp(i,0:N-1,0) = Ie(e%mat(j),vi(0:N-1),Rgp)
-          RMRgp(i,1:N-1,1) = Io(e%mat(j),vi(1:N-1),Rgp)
+       n0 = 2*N ! inside of matching ellipse
 
-          RMR0(i,0:N-1,0) =  Ie(e%mat(j),vi(0:N-1),e%r)
-          RMR0(i,1:N-1,1) =  Io(e%mat(j),vi(1:N-1),e%r)
+       RMRgp(0:N-1,0) = Ie(e%mat,vi(0:N-1),Rgp)
+       RMRgp(1:N-1,1) = Io(e%mat,vi(1:N-1),Rgp)
+       
+       RMR0(0:N-1,0) =  Ie(e%mat,vi(0:N-1),e%r)
+       RMR0(1:N-1,1) =  Io(e%mat,vi(1:N-1),e%r)
 
-          AM(i,0:N-1,0) =    ce(e%mat(j),vi(0:N-1),Pgp)
-          AM(i,1:N-1,1) =    se(e%mat(j),vi(1:N-1),Pgp)
-       end do
+       AM(0:N-1,0) =    ce(e%mat,vi(0:N-1),Pgp)
+       AM(1:N-1,1) =    se(e%mat,vi(1:N-1),Pgp)
     else
        n0 = 1
-       do i=1,np
-          j = lo+i-1
-          RMRgp(i,0:N-1,0) = Ke(e%parent%mat(j),vi(0:N-1),Rgp)
-          RMRgp(i,1:N-1,1) = Ko(e%parent%mat(j),vi(1:N-1),Rgp)
+       RMRgp(0:N-1,0) = Ke(e%parent%mat,vi(0:N-1),Rgp)
+       RMRgp(1:N-1,1) = Ko(e%parent%mat,vi(1:N-1),Rgp)
 
-          RMR0(i,0:N-1,0) =  Ke(e%parent%mat(j),vi(0:N-1),e%r)
-          RMR0(i,1:N-1,1) =  Ko(e%parent%mat(j),vi(1:N-1),e%r)
+       RMR0(0:N-1,0) =  Ke(e%parent%mat,vi(0:N-1),e%r)
+       RMR0(1:N-1,1) =  Ko(e%parent%mat,vi(1:N-1),e%r)
 
-          AM(i,0:N-1,0) =    ce(e%parent%mat(j),vi(0:N-1),Pgp)
-          AM(i,1:N-1,1) =    se(e%parent%mat(j),vi(1:N-1),Pgp)
-       end do
+       AM(0:N-1,0) =    ce(e%parent%mat,vi(0:N-1),Pgp)
+       AM(1:N-1,1) =    se(e%parent%mat,vi(1:N-1),Pgp)
     end if
 
-    aa(1:np,0:N-1) = e%coeff(lo:hi,n0:n0+N-1)
-    bb(1:np,1:N-1) = e%coeff(lo:hi,n0+N:n0+2*N-2)
-    H(1:np) = sum(RMRgp(1:np,0:N-1,0)/RMR0(1:np,0:N-1,0)*aa(1:np,0:N-1)*AM(1:np,0:N-1,0), 2) + &
-            & sum(RMRgp(1:np,1:N-1,1)/RMR0(1:np,1:N-1,1)*bb(1:np,1:N-1)*AM(1:np,1:N-1,1), 2)
+    aa(0:N-1) = e%coeff(n0:n0+N-1)
+    bb(1:N-1) = e%coeff(n0+N:n0+2*N-2)
+
+    H = sum(RMRgp(0:N-1,0)/RMR0(0:N-1,0)*aa(0:N-1)*AM(0:N-1,0)) + &
+      & sum(RMRgp(1:N-1,1)/RMR0(1:N-1,1)*bb(1:N-1)*AM(1:N-1,1))
+
   end function ellipse_calc
 
-  function ellipse_deriv(p,e,lo,hi,Rgp,Pgp,inside) result(dH)
+  function ellipse_deriv(e,Rgp,Pgp,inside) result(dH)
     use constants, only : DP
-    use type_definitions, only : ellipse
+    use unsat_type_definitions, only : ellipse
     use mathieu_functions, only : Ke,Ko, Ie,Io, ce,se, dKe,dKo, dIe,dIo, dce,dse
 
-    complex(DP), dimension(:), intent(in) :: p
     type(ellipse), intent(in) :: e
-    integer, intent(in) :: lo,hi 
     real(DP), intent(in) :: Rgp, Pgp
     logical, intent(in) :: inside
-    complex(DP), dimension(size(p,1),2) :: dH ! dPot_dEta, dPot_dPsi
+    complex(DP), dimension(2) :: dH ! dPot_dEta, dPot_dPsi
+    complex(DP) :: H, dEta, dPsi
 
     integer, dimension(0:e%N-1) :: vi
-    complex(DP), dimension(size(p,1),0:e%N-1) :: aa,bb
-    complex(DP), dimension(size(p,1),0:e%N-1,0:1) :: RMRgp,RMR0,AM,dRMRgp,dAM
-    integer :: n0, np, i, j, N
-
-!!$#ifdef DEBUG
-!!$    print *, 'ellipse_deriv: e:',e%id,' lo:',lo,' hi:',hi,' Rgp:',Rgp,' Pgp:',Pgp,' inside:',inside
-!!$#endif
-
+    complex(DP), dimension(0:e%N-1) :: aa,bb
+    complex(DP), dimension(0:e%N-1,0:1) :: RMRgp,RMR0,AM,dRMRgp,dAM
+    integer :: n0, i, N
+    complex(DP) :: alpha
+    
     N = e%N
-    np = size(p,1)
     vi(0:N-1) = [(i,i=0,N-1)]
 
     if (inside) then
-       if (e%match) then
-          n0 = 2*N ! inside of matching ellipse
-       else
-          n0 = 1   ! inside of specified boundary ellipse
-       end if
-       do i=1,np
-          j = lo+i-1
-          ! radial Mathieu functions -> to calc point
-          RMRgp(i,0:N-1,0) =   Ie(e%mat(j),vi(0:N-1),Rgp)
-          RMRgp(i,1:N-1,1) =   Io(e%mat(j),vi(1:N-1),Rgp)
-          dRMRgp(i,0:N-1,0) = dIe(e%mat(j),vi(0:N-1),Rgp)
-          dRMRgp(i,1:N-1,1) = dIo(e%mat(j),vi(1:N-1),Rgp)
-          ! radial Mathieu functions -> to bdry of ellipse
-          RMR0(i,0:N-1,0) =    Ie(e%mat(j),vi(0:N-1),e%r)
-          RMR0(i,1:N-1,1) =    Io(e%mat(j),vi(1:N-1),e%r)
-          ! angular mathieu funcitons -> to calc point
-          AM(i,0:N-1,0) =      ce(e%mat(j),vi(0:N-1),Pgp)
-          AM(i,1:N-1,1) =      se(e%mat(j),vi(1:N-1),Pgp)
-          dAM(i,0:N-1,0) =    dce(e%mat(j),vi(0:N-1),Pgp)
-          dAM(i,1:N-1,1) =    dse(e%mat(j),vi(1:N-1),Pgp)
-       end do
+       n0 = 2*N ! inside of matching ellipse
+
+       ! radial Mathieu functions -> to calc point
+       RMRgp(0:N-1,0) =   Ie(e%mat,vi(0:N-1),Rgp)
+       RMRgp(1:N-1,1) =   Io(e%mat,vi(1:N-1),Rgp)
+       dRMRgp(0:N-1,0) = dIe(e%mat,vi(0:N-1),Rgp)
+       dRMRgp(1:N-1,1) = dIo(e%mat,vi(1:N-1),Rgp)
+       ! radial Mathieu functions -> to bdry of ellipse
+       RMR0(0:N-1,0) =    Ie(e%mat,vi(0:N-1),e%r)
+       RMR0(1:N-1,1) =    Io(e%mat,vi(1:N-1),e%r)
+       ! angular mathieu funcitons -> to calc point
+       AM(0:N-1,0) =      ce(e%mat,vi(0:N-1),Pgp)
+       AM(1:N-1,1) =      se(e%mat,vi(1:N-1),Pgp)
+       dAM(0:N-1,0) =    dce(e%mat,vi(0:N-1),Pgp)
+       dAM(1:N-1,1) =    dse(e%mat,vi(1:N-1),Pgp)
+       alpha = e%alpha
     else
        n0 = 1
-       do i=1,np
-          j = lo+i-1
-          RMRgp(i,0:N-1,0) =   Ke(e%parent%mat(j),vi(0:N-1),Rgp)
-          RMRgp(i,1:N-1,1) =   Ko(e%parent%mat(j),vi(1:N-1),Rgp)
-          dRMRgp(i,0:N-1,0) = dKe(e%parent%mat(j),vi(0:N-1),Rgp)
-          dRMRgp(i,1:N-1,1) = dKo(e%parent%mat(j),vi(1:N-1),Rgp)
+       RMRgp(0:N-1,0) =   Ke(e%parent%mat,vi(0:N-1),Rgp)
+       RMRgp(1:N-1,1) =   Ko(e%parent%mat,vi(1:N-1),Rgp)
+       dRMRgp(0:N-1,0) = dKe(e%parent%mat,vi(0:N-1),Rgp)
+       dRMRgp(1:N-1,1) = dKo(e%parent%mat,vi(1:N-1),Rgp)
 
-          RMR0(i,0:N-1,0) =    Ke(e%parent%mat(j),vi(0:N-1),e%r)
-          RMR0(i,1:N-1,1) =    Ko(e%parent%mat(j),vi(1:N-1),e%r)
+       RMR0(0:N-1,0) =    Ke(e%parent%mat,vi(0:N-1),e%r)
+       RMR0(1:N-1,1) =    Ko(e%parent%mat,vi(1:N-1),e%r)
 
-          AM(i,0:N-1,0) =      ce(e%parent%mat(j),vi(0:N-1),Pgp)
-          AM(i,1:N-1,1) =      se(e%parent%mat(j),vi(1:N-1),Pgp)
-          dAM(i,0:N-1,0) =    dce(e%parent%mat(j),vi(0:N-1),Pgp)
-          dAM(i,1:N-1,1) =    dse(e%parent%mat(j),vi(1:N-1),Pgp)
-       end do
+       AM(0:N-1,0) =      ce(e%parent%mat,vi(0:N-1),Pgp)
+       AM(1:N-1,1) =      se(e%parent%mat,vi(1:N-1),Pgp)
+       dAM(0:N-1,0) =    dce(e%parent%mat,vi(0:N-1),Pgp)
+       dAM(1:N-1,1) =    dse(e%parent%mat,vi(1:N-1),Pgp)
+       alpha = e%parent%alpha
     end if
 
-    aa(1:np,0:N-1) = e%coeff(lo:hi,n0:n0+N-1)
-    bb(1:np,1:N-1) = e%coeff(lo:hi,n0+N:n0+2*N-2)
-    dH(1:np,1) = sum(dRMRgp(1:np,0:N-1,0)/RMR0(1:np,0:N-1,0)*aa(1:np,0:N-1)*AM(1:np,0:N-1,0), 2) + &
-               & sum(dRMRgp(1:np,1:N-1,1)/RMR0(1:np,1:N-1,1)*bb(1:np,1:N-1)*AM(1:np,1:N-1,1), 2)
-    dH(1:np,2) = sum(RMRgp(1:np,0:N-1,0)/RMR0(1:np,0:N-1,0)*aa(1:np,0:N-1)*dAM(1:np,0:N-1,0), 2) + &
-               & sum(RMRgp(1:np,1:N-1,1)/RMR0(1:np,1:N-1,1)*bb(1:np,1:N-1)*dAM(1:np,1:N-1,1), 2)
-    dH(:,2) = 0.0
-  end function ellipse_deriv
+    aa(0:N-1) = e%coeff(n0:n0+N-1)
+    bb(1:N-1) = e%coeff(n0+N:n0+2*N-2)
 
-end module elliptical_elements
+    H = sum(RMRgp(0:N-1,0)/RMR0(0:N-1,0)*aa(0:N-1)*AM(0:N-1,0)) + &
+      & sum(RMRgp(1:N-1,1)/RMR0(1:N-1,1)*bb(1:N-1)*AM(1:N-1,1))
+
+    dEta = sum(dRMRgp(0:N-1,0)/RMR0(0:N-1,0)*aa(0:N-1)*AM(0:N-1,0)) + &
+         & sum(dRMRgp(1:N-1,1)/RMR0(1:N-1,1)*bb(1:N-1)*AM(1:N-1,1))
+
+    dPsi = sum(RMRgp(0:N-1,0)/RMR0(0:N-1,0)*aa(0:N-1)*dAM(0:N-1,0)) + &
+         & sum(RMRgp(1:N-1,1)/RMR0(1:N-1,1)*bb(1:N-1)*dAM(1:N-1,1))
+
+    dH(1) = (dEta + H*e%f/2.0*cosh(Rgp)*sin(Pgp)*alpha)*&
+         & exp(-alpha*e%f/2.0*sinh(Rgp)*sin(Pgp))
+
+    dH(2) = (dEta + H*e%f/2.0*sinh(Rgp)*cos(Pgp)*alpha)*&
+         & exp(-alpha*e%f/2.0*sinh(Rgp)*sin(Pgp))
+
+  end function ellipse_deriv
+end module unsat_elliptical_elements
 
