@@ -1,0 +1,142 @@
+%=============================================================================
+% Packages
+
+\NeedsTeXFormat{LaTeX2e} [1994/06/01]
+\documentclass{elsart}
+\usepackage [pagewise, mathlines, displaymath]{lineno}
+\usepackage{graphicx}
+\usepackage[reqno,intlimits,sumlimits]{amsmath}
+
+
+\renewcommand{\baselinestretch}{1.2}
+\renewcommand{\arraystretch}{1}
+
+\setlength{\oddsidemargin}{0.0in} \setlength{\hoffset}{0in}
+\setlength{\textwidth}{6.5in}
+\setlength{\topmargin}{0cm} \setlength{\voffset}{0.0in}
+\setlength{\textheight}{9in}
+
+\begin{document}
+
+\title{Computational issues and applications of line elements to model subsurface flow governed by the Helmholtz equation}
+\author{Mark and Kris}
+
+\maketitle
+
+\linenumbers
+
+\section{Introduction}
+
+Analytic line-sinks that fulfill the Helmholtz equation are versatile building blocks for the modeling of flow in the subsurface. So far, they have been applied to model steady flow in single and multiple aquifers, and transient flow single aquifers.
+The objective of this paper is to present two new applications: transient flow in a multi-aquifer system and steady unsaturated flow in a vertical cross-section. 
+
+Other flow fields: transient semi-confined flow? periodic flow in a semi-confined system?
+
+Two sets of line-sinks may be distinguished (e.g. Bakker 2008). The first set is obtained through integration of a point-sink along a line; they are referred to as integral line-sinks. The second set is obtained using fundamental solutions in elliptic coordinates; they are referred to as elliptic line-sinks. First, computational issues of the two sets are discussed, followed by the applications.
+
+\section{Governing equations}
+
+
+\section{Integral line-sinks}
+The potential for a line-sink with uniform inflow $s$ is obtained through integration of a point sink along a line (e.g. Bakker and Strack, 2003). The integration is commonly carried out in a local $X,Y$ coordinate system in which the line-sink lies along the $X$ axis with its center at the origin and its end points at $X=-1$ and $X=+1$. The transformation from the $x,y$ system to the $X,Y$ system is carried out in complex form as
+\begin{equation}
+Z = X+iY = \frac{2z-(z_1+z_2)}{z_2-z_1}
+\end{equation}
+The potential for a point sink with discharge $Q$ located at $Z_w$ in the $X,Y$ coordinate system is
+\begin{equation}
+\Phi = -\frac{Q}{2\pi}\text{K}_0(r)
+\end{equation}
+where $r=\sqrt{(X-X_w)^2+(Y-Y_w)^2}$, $(X_w,Y_w)$ is the location of the point sink in the $X,Y$ plane and 
+\begin{equation}
+\Lambda = 2\lambda/L
+\end{equation}
+where  bla bla
+
+The potential for a line-sink with uniform inflow $s$ is obtained through integration of the point sink (e.g., Bakker and Strack, 2003)
+\begin{equation} \label{lsintegral}
+\Phi = -\frac{sL}{4\pi} \int_{-1}^{1}\text{K}_0(r/\Lambda) d\Delta
+\end{equation}
+where $r=\sqrt{(X-D)^2+Y^2}$. Integration of (\ref{lsintegral}) is not possible in closed form. Heitzman (1977) analytically integrated a polynomial approximation of K$_0$ that is valid up to $2\Lambda$ (Abramowitz and Stegun, 1969, Eq. ..). Bakker and Strack (2003) integrated a polynomial approximation that is valid up to $8\lambda$ (Clenshaw, 1962). Gushyev and Haitjema (2010) integrated series representation (), which, as reported, can be evaluated accurately up to 12 $\lambda$.  
+
+\section{Elliptic line-sinks}
+The potential due to a line sink can be developed using elliptical coordinates, and the special functions that arise when separating the modified Helmholtz equation in these coordinates.  A line segment can be represented as an ellipse of zero radius (analogous to treating a point as a circle of zero radius).  The solution for the potential is represented as an infinite sum of angular and radial basis functions.  The coefficients for these elements are typically determined in the manner of other analytic elements (through matching and solving for the free coefficients, e.g., \cite{bakker2004two}) or for some simple boundary conditions and geometrical arrangements (e.g., one horizontal element with a constant-pressure boundary condition) they are computed analytically \cite{kuhlmanwarrick08}.
+
+An elliptic line-sink is given in terms of both angular and radial modified Mathieu functions as
+\begin{equation}
+  \label{eq:ellipse-line-sink}
+  \Phi(\eta,\psi) = \sum_{n=0}^{\infty} \text{Ke}_{n}(\eta;-q) \, \text{ce}_{n}(\psi;-q) + \sum_{n=1}^{\infty} \text{Ko}_{n}(\eta;-q) \, \text{se}_{n}(\psi;-q)
+\end{equation}
+where Ke and Ko are the even and odd second-kind modified radial Mathieu functions of Mathieu parameter $-q$, and ce and se are the even and odd first-kind modified angular Mathieu funcitons using the same Mathieu parameter.  The angular functions derive their names from ``sine-elliptic'' and ``cosine-elliptic''; they are sometimes referred to as Qe and Qo (e.g., \cite{alhargan2000}).  Since Mathieu functions are the natural basis functions for elliptical shapes, the only two sources of approximation in a numerical implementation of (\ref{eq:ellipse-line-sink}) are the truncation of the infinite series at a finite number of terms (similar to that experienced by Fourier series), and the numerical approximation involved in the compuation of Mathieu functions.  Numerical computation of Mathieu functions is computationally costly and involves at least two main steps.  The first step involves computation of the coefficients and characteristic numbers, which are in this case a function of $-q$, and is either done through evaluation of an infinite continued fraction (e.g., \cite{blanch1966numerical,alhargan2000}) or an eigenvalue problem for a large banded matrix (e.g., \cite{stamnes1995new,chaos2002mathieu}). The second step is the calculation of the angular and radial modified Mathieu functions, by evaluating truncated infinite series of trigonometric or modified Bessel functions, respectively.
+
+\section{Computational Issues}
+Discussion of the distance away from the element that the function may be evaluated and how that influences computational time. Next, discuss how the routines perform when evaluated for several x,y locations in one shot (i.e., vector computation), or for several lambda's (not sure what to call those yet, but I mean the parameter in the Helmholtz equation, which can now be complex).  Then maybe we can compare computational performance of two simple problems, maybe one that is easier for the integral elements and one that is easier for the elliptical elements.
+
+\subsection{Computational issues of integral line-sinks}
+Near the line-sink, the intergral is computed through analytic integration of the series representation of K$_0$ (Abramowitz and Stegun 1969). The convergence of this series is troublesome for larger arguments using finite-precision arithmetic (e.g. new A\&S reference). The number of terms needed in the series to achieve a relative error of 1E-6, 1E-4, and 1E-2 is shown in Fig. 1 as a function of $r/\lambda$. The lines stop when the relative error cannot be achieved using double precision arithmetic. For example, a relative error of 1E-6 can be achieved up to $r/lambda=11$. The form of the series expansion is identical to the form used by Bakker and Strack (2003). Analytic integration is carried out in a slightly modified manner, as the integrand is now complex. The 
+
+CONVERGENCE OF K0 WRITTEN IN WIRTINGER FORM
+
+CONVERGENCE OF ASYMPTOTIC EXPANSION OF K0
+
+ACCURACY OF GAUSSIAN QUADRATURE
+
+\section{Transient multi-aquifer flow}
+To model multi-aquifer flow, it is important to have elements for different lambda that have the same extraction rate, so they can be combined to cancel the flow in the 'unscreened' aquifers. 
+
+\section{Steady unsaturated flow}
+Use elliptical line-sinks to model the stream function for unsaturated flow around linear impermeable features. The equation is given in Raats (1970). The equation he presents needs one standard transformation to arrive at the HH equation, like used in Bakker and Nieber (2004). As there may be a large 'shadow' effect, the elliptical elements will shine as they can be evaluated many times lambda away from the element.
+
+Consider steady flow in the vadose zone. The hydraulic conductivity $k(h_p)$ is a function of the pressure head $h_p$ and is described by the Gardner model
+\begin{equation}
+k = k_s \exp(\alpha h_p)
+\end{equation}
+where $k_s$ is the hydraulic conductivity at saturation and $\alpha$ is a parameter dependent on the pore size distribution. The stream function $\psi$ is governed by (e.g. Raats 1970)
+\begin{equation} \label{psideq}
+\frac{ \partial^2\psi }{\partial x^2} + \frac{ \partial^2\psi }{\partial z^2}  = \alpha \frac{ \partial\psi }{\partial z} 
+\end{equation}
+The components $q_x$ and $q_z$ of the specific discharge are obtained as
+\begin{equation}
+q_x = -\frac{\partial\psi}{\partial z} \qquad q_z = \frac{\partial\psi}{\partial x}
+\end{equation}
+The function $\Psi$ is introduced as 
+\begin{equation}\label{psi2Psi}
+\Psi = \psi\exp(-\alpha z/2)
+\end{equation} so that  
+\begin{equation} \label{Psi2psi}
+\psi = \Psi \exp(\alpha z / 2)
+\end{equation}
+Substitution of (\ref{Psi2psi}) for $\psi$ in (\ref{psideq}) gives
+\begin{equation} \label{psideq}
+\frac{ \partial^2\Psi }{\partial x^2} + \frac{ \partial^2\Psi }{\partial z^2}  = \frac{\alpha^2}{4} \Psi
+\end{equation}
+
+As an application, flow around a number of impermeable, linear features is modeled, as for example shown in Fig. 1. Flow is uniform in absence of the impermeable features. The boundary condition along each impermeable feature is that the stream function is constant, and thus the function $\Psi$ varies exponentially with depth according to (\ref{psi2Psi}). 
+
+\begin{figure}
+\centering
+ %%\includegraphics[width=8cm]{ex.eps}
+  \caption{An example layout (although probably a poor one)}
+  \label{Fig6}
+\end{figure} 
+
+\section{Conclusions and Discussion}
+
+\section{References}
+
+Steady infiltration from line sources and furrows
+PAC Raats - Soil Science Society of America Journal, 1970 - Soil Sci Soc America
+
+\bibliographystyle{plain}
+\bibliography{kk}
+
+
+\end{document}
+
+%-----------------------------------------------------------------------------
+%  Define the page layout.
+
+\setlength{\oddsidemargin}{0.0in} \setlength{\hoffset}{0in}
+\setlength{\textwidth}{6.5in}
+
+\setlength{\topmargin}{0cm} \setlength{\voffset}{0.0in}
+\setlength{\textheight}{8.5in}
