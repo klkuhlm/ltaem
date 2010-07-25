@@ -64,20 +64,38 @@ The potential due to a line sink can be developed using elliptical coordinates, 
 An elliptic line-sink is given in terms of both angular and radial modified Mathieu functions as
 \begin{equation}
   \label{eq:ellipse-line-sink}
-  \Phi(\eta,\psi) = \sum_{n=0}^{\infty} \text{Ke}_{n}(\eta;-q) \, \text{ce}_{n}(\psi;-q) + \sum_{n=1}^{\infty} \text{Ko}_{n}(\eta;-q) \, \text{se}_{n}(\psi;-q)
+  \Phi(\eta,\psi) = \sum_{n=0}^{\infty} \hat{a}_n \text{Ke}_{n}(\eta;-q) \, \text{ce}_{n}(\psi;-q) + \sum_{n=1}^{\infty} \hat{b}_n \text{Ko}_{n}(\eta;-q) \, \text{se}_{n}(\psi;-q)
 \end{equation}
-where Ke and Ko are the even and odd second-kind modified radial Mathieu functions of Mathieu parameter $-q$, and ce and se are the even and odd first-kind modified angular Mathieu funcitons using the same Mathieu parameter.  The angular functions derive their names from ``sine-elliptic'' and ``cosine-elliptic''; they are sometimes referred to as Qe and Qo (e.g., \cite{alhargan2000}).  The interior radial modified Mathieu functions (Ie and Io) are not used in line sinks, and neither are 
+where Ke and Ko are the even and odd second-kind modified radial Mathieu functions of Mathieu parameter $-q$, $\hat{a}_n$ and $\hat{b}_n$ are the free coefficients to determine, and ce and se are the even and odd first-kind modified angular Mathieu funcitons using the same Mathieu parameter.  The angular functions derive their names from ``sine-elliptic'' and ``cosine-elliptic''; they are sometimes referred to as Qe and Qo (e.g., \cite{alhargan2000}).  The first-kind radial modified Mathieu functions (Ie and Io) are not used in line sinks because they become infinitely large as $\eta \rightarrow \infty$ (but they are used inside matching elements), and neither are the second-kind angular modified Mathieu functions (fe and ge), which are non-periodic.
+
+Operationally, the elliptic line sink is normalized by the value of the Mathieu functions at $\eta=0$, and resulting in
+\begin{equation}
+  \label{eq:norm-ellipse-line-sink}
+  \Phi(\eta,\psi) = \sum_{n=0}^{\infty} a_n \frac{\text{Ke}_{n}(\eta)}{\text{Ke}_{n}(0)} \, \text{ce}_{n}(\psi) + \sum_{n=1}^{\infty} b_n \frac{\text{Ko}_{n}(\eta)}{\text{Ko}_{n}(0)} \, \text{se}_{n}(\psi)
+\end{equation}
+where $a_n$ and $b_n$ are different free coefficients, and the dependence of all the Mathieu functions on the same value of the Mathieu parameter, $-q$, is understood.
 
 \subsection{Computational issues of Mathieu line-sinks}
 Since Mathieu functions are the natural basis functions for elliptical shapes, the only two significant sources of approximation in a numerical implementation of (\ref{eq:ellipse-line-sink}) are the truncation of the infinite series at a finite number of terms (similar to that experienced by Fourier series), and the numerical approximation involved in the compuation of Mathieu functions.  
 
-The convergence of sine and cosine on the circumference of a circle $(0 \le \theta \le 2 \pi)$, and the Gibb's phenomena that plague their use on discontinuous functions, are similar to the use of Mathieu functions in expanding  elliptical coordinates $(0 \le \psi \le 2 \pi)$.
+\subsubsection{Convergence of generalized Fourier series}
+The convergence of infinite trigonometric series used to expand potentials on the circumference of a circle are well known.  Gibb's phenomena plague the expansion of discontinuous functions, but otherwise the process is numerically well-behaved.  Similarly, Mathieu functions are well-suited to for expanding arbitrary functions along the circumference of an ellipse.  For smooth functions, the convergence of generalized Fourier series are fast.  The smoother the function being expanded, the faster the convergence \cite[\S2.6]{boyd00}, and the smaller the error committed in truncating the infinite series of basis functions.  
+
+Due to their popularity and wide use, there are numerous convergence acceleration techniques for decreasing Gibb's phenomena encountered with trigonometric series \cite[\S4.10]{lanczos88}.  Analogous methods do not exist for accelerating truncated series of angular Mathieu functions.
 
 \subsubsection{Numerical evaluation of Mathieu functions}
-Numerical computation of Mathieu functions, although straightforward, can be computationally costly and involves at least two main steps.  The first step involves computation of the coefficients and characteristic numbers, which are in this case a function of $-q$, and is either done through evaluation of an infinite continued fraction (e.g., \cite{blanch1966numerical,alhargan2000}) or an eigenvalue problem for an infinite banded matrix (e.g., \cite{delft73,stamnes1995new}). The second step is the calculation of the angular and radial modified Mathieu functions, by evaluating truncated infinite series of trigonometric or modified Bessel functions, respectively.
+Numerical computation of Mathieu functions, although straightforward, can be computationally costly and involves two main steps.  The first step is the computation of the coefficients and characteristic numbers, which are in this case a function of the parameter in the Helmholtz equation, and is either done through evaluation of an infinite continued fraction (e.g., \cite{blanch1966numerical,alhargan2000}) or an eigenvalue problem for an infinite banded matrix (e.g., \cite{delft73,stamnes1995new}). The matrix approach is popular because it is more general, and requires no initial guess, utilizing readily available software packages to compute eigenvalues and eigenvectors numerically (e.g., LAPACK routine ZGEEV \cite{anderson1999}).  The continued fraction approach is more specialized to a certain rage of Mathieu parameters and orders of Mathieu functions and potentially faster than the matrix approach.
+
+The second step in computing Mathieu functions is the calculation of the Mathieu function values themselves, by evaluating truncated infinite series of trigonometric or modified Bessel functions, respectively.  The radial Mathieu functions have several different classes of equivalent defining infinite series of hyperbolic trigonometric functions, Bessel functions, and products of Bessel functions \cite{mclachlan47,nist28wolf}.
 
 \section{Computational Issues}
-Discussion of the distance away from the element that the function may be evaluated and how that influences computational time. Next, discuss how the routines perform when evaluated for several x,y locations in one shot (i.e., vector computation), or for several lambda's (not sure what to call those yet, but I mean the parameter in the Helmholtz equation, which can now be complex).  Then maybe we can compare computational performance of two simple problems, maybe one that is easier for the integral elements and one that is easier for the elliptical elements.
+Discussion of the distance away from the element that the function may be evaluated and how that influences computational time. 
+
+The accuracy of the line sinks is related to the number of terms used in the approximation of the potential in (\ref{eq:ellipse-line-sink}), and in the number of terms used in the truncated infinite series involved in the computation of each Mathieu function evaluation.  The infinte matrix from which the eigenvalues (Mathieu characteristic numbers) and eigenvectors (Mathieu coefficients) are computed includes the parameter from the modified Helmholtz equation on the off-diagonal terms.  As $q$ becomes larger, the matrix becomes less diagonally dominant, and more ill-conditioned, requiring a larger matrix to approximate and therefore more terms to approximate the Mathieu functions accurately.  
+
+The number of terms used in the infinite series of Mathieu functions for the potential (\ref{eq:ellipse-line-sink}) will increase accuracy, but typically in matching
+
+Next, discuss how the routines perform when evaluated for several x,y locations in one shot (i.e., vector computation), or for several lambda's (not sure what to call those yet, but I mean the parameter in the Helmholtz equation, which can now be complex).  Then maybe we can compare computational performance of two simple problems, maybe one that is easier for the integral elements and one that is easier for the elliptical elements.
 
 \subsection{Computational issues of integral line-sinks}
 Near the line-sink, the intergral is computed through analytic integration of the series representation of K$_0$ (Abramowitz and Stegun 1969). The convergence of this series is troublesome for larger arguments using finite-precision arithmetic (e.g. new A\&S reference). The number of terms needed in the series to achieve a relative error of 1E-6, 1E-4, and 1E-2 is shown in Fig. 1 as a function of $r/\lambda$. The lines stop when the relative error cannot be achieved using double precision arithmetic. For example, a relative error of 1E-6 can be achieved up to $r/lambda=11$. The form of the series expansion is identical to the form used by Bakker and Strack (2003). Analytic integration is carried out in a slightly modified manner, as the integrand is now complex. The 
@@ -114,7 +132,7 @@ The function $\Psi$ is introduced as
 \psi = \Psi \exp(\alpha z / 2)
 \end{equation}
 Substitution of (\ref{Psi2psi}) for $\psi$ in (\ref{psideq}) gives
-\begin{equation} \label{psideq}
+\begin{equation} \label{psideq2}
 \frac{ \partial^2\Psi }{\partial x^2} + \frac{ \partial^2\Psi }{\partial z^2}  = \frac{\alpha^2}{4} \Psi
 \end{equation}
 
@@ -129,10 +147,10 @@ As an application, flow around a number of impermeable, linear features is model
 
 \section{Conclusions and Discussion}
 
-\section{References}
-
-Steady infiltration from line sources and furrows
-PAC Raats - Soil Science Society of America Journal, 1970 - Soil Sci Soc America
+%\section{References}
+%
+%Steady infiltration from line sources and furrows
+%PAC Raats - Soil Science Society of America Journal, 1970 - Soil Sci Soc America
 
 \bibliographystyle{plain}
 \bibliography{kk}
