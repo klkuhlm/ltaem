@@ -320,9 +320,11 @@ contains
 
              end if
 
+#ifdef DEBUG
              print '(2(A,ES10.2E3))', '|Dcemat| max',maxval(abs(dcemat)),' min',minval(abs(dcemat))
              print '(2(A,ES10.2E3))', '|Dsemat| max',maxval(abs(dsemat)),' min',minval(abs(dsemat))
              print '(2(A,ES10.2E3))', '|DRMn|   max',maxval(abs(dRMn(:,1:,:))),' min',minval(abs(dRMn(:,1:,:)))
+#endif
 
              ! derivative wrt radius of source element
              dPot_dR(1:M,1:N) =       dRMn(1:M,0:N-1,0)/spread(RMn0(0:N-1,0),1,M)*cemat(1:M,0:N-1)

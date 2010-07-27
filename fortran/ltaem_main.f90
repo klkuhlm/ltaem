@@ -14,6 +14,7 @@ program ltaem_main
   use calc_routines, only : headCalc, velCalc
   use geometry, only : distanceAngleCalcs
   use ellipse_mathieu_init, only : ellipse_init
+!!$  use omp_lib, only : omp_get_thread_num
   implicit none
 
   ! types or "structs" that organize variables
@@ -216,10 +217,10 @@ program ltaem_main
      open(unit=404,file='calcloc.vdebug',status='replace',action='write')
 #endif
 
+     !$OMP PARALLEL DO DEFAULT(PRIVATE) SHARED(s,e,c,dom,bg,tnp,sol,nt,tee)
      do j = 1,sol%nx
-        write (*,'(A,ES12.4E1)') 'x: ',sol%x(j)
+        write (*,*) 'x: ',sol%x(j) !!, OMP_get_thread_num()
 
-        !$OMP PARALLEL DO DEFAULT(PRIVATE) SHARED(sol)
         do i = 1,sol%ny
 
            calcZ = cmplx(sol%x(j),sol%y(i),DP)
@@ -246,8 +247,8 @@ program ltaem_main
                    & sol%vp(lop:hip,1:2), sol%INVLT)
            end do
         end do
-     !$OMP END PARALLEL DO
      end do
+     !$OMP END PARALLEL DO
 
 #ifdef DEBUG
      close(303)

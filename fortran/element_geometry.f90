@@ -64,40 +64,56 @@ contains
     ! setup pointers to parent elements
     bg%parent => null()  ! background has no parent
     do i=1,nc
+#ifdef DEBUG
        print *, 'geom circle parent ptrs: i=',i
+#endif
        par = dom%InclUp(i) 
        if (par==0) then
           ! circle has background as parent
           c(i)%parent => bg
+#ifdef DEBUG
           print *, 'parent is bg',par
+#endif
        elseif (par <= nc) then
           ! circle has another circle as parent
           c(i)%parent => c(par)%element
+#ifdef DEBUG
           print *, 'parent is circle',par
+#endif
        elseif (par <= ntot) then
           ! circle has ellipse as parent
           c(i)%parent => e(par)%element
+#ifdef DEBUG
           print *, 'parent is ellipse',par
+#endif
        else
           write(*,'(A,(1X,I0))') 'error in parent element index',par,i
           stop 200
        end if
     end do
     do i=1,ne
+#ifdef DEBUG
        print *, 'geom ellipse parent ptrs: i=',i
+#endif
        par = dom%InclUp(nc+i) 
        if (par == 0) then
           ! ellipse has background as parent
           e(i)%parent => bg
+#ifdef DEBUG
           print *, 'parent is bg',par
+#endif
        elseif (par <= nc) then
           ! ellipse has circle as parent
           e(i)%parent => c(par)%element
+#ifdef DEBUG
           print *, 'parent is circle',par
+#endif
        elseif (par <= ntot) then 
           ! ellipse has another ellipse as parent
           e(i)%parent => e(par)%element
+#ifdef DEBUG
           print *, 'parent is ellipse',par
+#endif
        else
           write(*,'(A,(1X,I0))') 'error in parent element index',par,i
           stop 201
