@@ -178,6 +178,9 @@ contains
        ! use LAPACK routine to solve least-squares via Q-R decomposition
        ! this routine works for all three potential use cases
        ! M>N (overdetermined), M==N (even-determined), and M<N (underdetermined)
+#ifdef DEBUG
+       print *, 'bigM',bigM,' bigN',bigN,' shape(A)',shape(A),' shape(b)',shape(b)
+#endif
        call ZGELS(TRANSA='N',M=bigM,N=bigN,NRHS=1,A=A(:,:),LDA=bigM,B=b(:),LDB=bigM,&
             & WORK=work,LDWORK=size(work,dim=1),INFO=ierr)
        if (ierr /= 0) then

@@ -5,12 +5,12 @@ F  F  :: calcin?
 F  F  :: storin?
 1.0D-3  1.0D-3   :: r
 -1.50D-1 1.5D-1   :: x0
-1.5D-1  -1.5D-1  :: y0
+2.1D-2  -2.1D-2  :: y0
 1.0D0 1.0D0    :: K
 1.0D0 1.0D0    :: Ss
 1.0D0 1.0D0    :: porosity
 0.0D0 0.0D0    :: area source strength
-2.5D-1 -2.5D-1   :: boundary source strength
+2.4D-1 -2.6D-1   :: boundary source strength
 001  0.0D0  0.0D0  :: area time flag, tpar1, tpar2
 001  0.0D0  0.0D0  :: area time flag, tpar1, tpar2
 001  0.0D0  0.0D0  :: boundary time flag, tpar1, tpar2

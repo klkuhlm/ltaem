@@ -321,7 +321,7 @@ contains
     Rgp(1:nc) = abs(Zgp(1:nc))
     Pgp(1:nc) = atan2(aimag(Zgp(1:nc)), real(Zgp(1:nc)))
     do j = 1, nc
-       if (Rgp(j) <= c(j)%r) then    ! inside or on boundary
+       if (Rgp(j) < c(j)%r) then    ! inside (not including on boundary)
           k = k+1
           inout(k) = j
        end if
@@ -333,7 +333,7 @@ contains
     Rgp(nc+1:ntot) =  real(Ztmp(1:ne))
     Pgp(nc+1:ntot) = aimag(Ztmp(1:ne))
     do j = 1, ne
-       if (Rgp(j+nc) <= e(j)%r) then    ! inside or on boundary
+       if (Rgp(j+nc) < e(j)%r) then    ! inside (not including on boundary)
           k = k+1
           inout(k) = j+nc
        end if
