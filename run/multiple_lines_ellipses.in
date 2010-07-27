@@ -1,0 +1,33 @@
+10 10 10 10 :: N
+22 22 22 22 :: M
+18 18 18 18 :: ms
+1  1  1  1  :: ibnd
+f  f  f  f :: calcin?
+f  f  f  f :: storin?
+0.0D0 0.0D0 0.0D0 0.0D0 :: r
+2.5D-1 2.5D-1 8.0D-1 8.0D-1  :: x0
+8.0D-1 2.5D-1 8.0D-1 2.5D-1  :: y0
+1.3D-1 1.3D-1 1.3D-1 1.3D-1  :: f
+-7.854D-1 -7.854D-1 7.854D-1 7.854D-1 :: theta
+1.0D0  1.0D0  1.0D0  1.0D0  :: K
+1.0D0  1.0D0  1.0D0  1.0D0  :: Ss
+1.0D0  1.0D0  1.0D0  1.0D0  :: porosity
+0.0D0  0.0D0  0.0D0  0.0D0  :: area source strength
+0.0D0  0.0D0  0.0D0  0.0D0  :: boundary source strength
+001  0.0D0  0.0D0 :: area time flag, tpar1, tpar2
+001  0.0D0  0.0D0 :: area time flag, tpar1, tpar2
+001  0.0D0  0.0D0 :: area time flag, tpar1, tpar2
+001  0.0D0  0.0D0 :: area time flag, tpar1, tpar2
+001  0.0D0  0.0D0 :: boundary time flag, tpar1, tpar2
+001  0.0D0  0.0D0 :: boundary time flag, tpar1, tpar2
+001  0.0D0  0.0D0 :: boundary time flag, tpar1, tpar2
+001  0.0D0  0.0D0 :: boundary time flag, tpar1, tpar2
+0      0      0      0  :: leaky type flag
+1.0D0  1.0D0  1.0D0  1.0D0 :: K2
+1.0D0  1.0D0  1.0D0  1.0D0 :: Ss2
+1.0D0  1.0D0  1.0D0  1.0D0 :: b2
+f      f      f      f     :: unconfined?
+1.0D0  1.0D0  1.0D0  1.0D0 :: Sy
+1.0D0  1.0D0  1.0D0  1.0D0 :: Kz
+1.0D0  1.0D0  1.0D0  1.0D0 :: b
+1.0D0  1.0D0  1.0D0  1.0D0 :: dimensionless skin
