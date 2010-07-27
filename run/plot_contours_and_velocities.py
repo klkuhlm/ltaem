@@ -36,7 +36,7 @@ vy = res[:,4].reshape((ny,nx))
 
 plt.figure()
 plt.subplot(121)
-plt.contourf(X,Y,h,50)
+plt.contour(X,Y,h,50)
 plt.axis('image')
 plt.xlabel('X')
 plt.ylabel('Y')
@@ -55,4 +55,4 @@ for el in elements:
     e = np.array(el[:][:-2])
     plt.plot(e[:,0],e[:,1],'k-')
 
-plt.savefig('test.png')
+plt.savefig('contours.eps')
