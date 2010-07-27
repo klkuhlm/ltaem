@@ -14,7 +14,7 @@ program ltaem_main
   use calc_routines, only : headCalc, velCalc
   use geometry, only : distanceAngleCalcs
   use ellipse_mathieu_init, only : ellipse_init
-!!$  use omp_lib, only : omp_get_thread_num
+  use omp_lib, only : omp_get_thread_num
   implicit none
 
   ! types or "structs" that organize variables
@@ -35,6 +35,7 @@ program ltaem_main
   complex(DP), allocatable :: s(:,:)       ! laplace-parameter(2*M-1,num-log-cycles)
   complex(DP) :: calcZ      ! calc-point-complex-coordinates
   character(6) :: elType    ! element-type {CIRCLE,ELLIPS}
+  complex(DP), allocatable :: hp(:),vp(:,:)
 
   intrinsic :: get_command_argument
 
@@ -208,27 +209,26 @@ program ltaem_main
   if(sol%contour) then ! contour output (x,y locations outer product of x,y vectors)
 
      write(*,'(A)') 'compute solution for plotting contours'
-     allocate(sol%h(sol%nx,sol%ny,sol%nt),   sol%hp(tnP), &
-          &   sol%v(sol%nx,sol%ny,sol%nt,2), sol%vp(tnP,2), stat=ierr)
-     if (ierr /= 0) stop 'ltaem_main.f90 error allocating contour: sol%h,sol%hp,sol%v,sol%vp'
+     allocate(sol%h(sol%nx,sol%ny,sol%nt),   hp(tnP), &
+          &   sol%v(sol%nx,sol%ny,sol%nt,2), vp(tnP,2), stat=ierr)
+     if (ierr /= 0) stop 'ltaem_main.f90 error allocating contour: sol%h,hp,sol%v,vp'
 
 #ifdef DEBUG
      open(unit=303,file='calcloc.debug',status='replace',action='write')
      open(unit=404,file='calcloc.vdebug',status='replace',action='write')
 #endif
 
-     !$OMP PARALLEL DO DEFAULT(PRIVATE) SHARED(s,e,c,dom,bg,tnp,sol,nt,tee)
+     !$OMP PARALLEL DO PRIVATE(i,j,calcZ,hp,vp,ilogt,lot,hit,lop,hip) SHARED(sol)
      do j = 1,sol%nx
-        write (*,*) 'x: ',sol%x(j) !!, OMP_get_thread_num()
-
+        write (*,*) 'x: ',sol%x(j), OMP_get_thread_num()
         do i = 1,sol%ny
 
            calcZ = cmplx(sol%x(j),sol%y(i),DP)
 
            !! compute f(p) for all values of p
            !! not just one log cycle of time -- at this location 
-           sol%hp(1:tnp) =    headCalc(calcZ,reshape(s,[tnp]),1,tnp,dom,c,e,bg)
-           sol%vp(1:tnp,1:2) = velCalc(calcZ,reshape(s,[tnp]),1,tnp,dom,c,e,bg)
+           hp(1:tnp) =    headCalc(calcZ,reshape(s,[tnp]),1,tnp,dom,c,e,bg)
+           vp(1:tnp,1:2) = velCalc(calcZ,reshape(s,[tnp]),1,tnp,dom,c,e,bg)
 
            !! invert solutions one log-cycle of t at a time
            do ilogt = iminlogt,imaxlogt-1
@@ -241,10 +241,8 @@ program ltaem_main
               lop = (ilogt - iminlogt)*size(s,dim=1) + 1
               hip = lop + size(s,dim=1) - 1
 
-              sol%h(j,i,lot:hit) =     invlap(sol%t(lot:hit), tee(ilogt), &
-                   & sol%hp(lop:hip), sol%INVLT)
-              sol%v(j,i,lot:hit,1:2) = invlap(sol%t(lot:hit), tee(ilogt), &
-                   & sol%vp(lop:hip,1:2), sol%INVLT)
+              sol%h(j,i,lot:hit) =     invlap(sol%t(lot:hit), tee(ilogt), hp(lop:hip), sol%INVLT)
+              sol%v(j,i,lot:hit,1:2) = invlap(sol%t(lot:hit), tee(ilogt), vp(lop:hip,1:2), sol%INVLT)
            end do
         end do
      end do
@@ -259,16 +257,16 @@ program ltaem_main
 
      write(*,'(A)') 'compute solution for plotting hydrograph'
 
-     allocate(sol%h(sol%nx,1,sol%nt), sol%hp(tnp), &
-          &   sol%v(sol%nx,1,sol%nt,2), sol%vp(tnp,2), stat=ierr)
-     if (ierr /= 0) stop 'ltaem_main.f90 error allocating hydrograph: sol%h,sol%hp,sol%v,sol%vp'
+     allocate(sol%h(sol%nx,1,sol%nt), hp(tnp), &
+          &   sol%v(sol%nx,1,sol%nt,2), vp(tnp,2), stat=ierr)
+     if (ierr /= 0) stop 'ltaem_main.f90 error allocating hydrograph: sol%h,hp,sol%v,vp'
      
      do i = 1,sol%nx
         write(*,'(A,2(1X,ES14.7E1))') 'location:',sol%x(i),sol%y(i)
 
         calcZ = cmplx(sol%x(j),sol%y(i),DP)
-        sol%hp(1:tnp) =  headCalc(calcZ,reshape(s,[tnp]),1,tnp,dom,c,e,bg)
-        sol%vp(1:tnp,:) = velCalc(calcZ,reshape(s,[tnp]),1,tnp,dom,c,e,bg)
+        hp(1:tnp) =  headCalc(calcZ,reshape(s,[tnp]),1,tnp,dom,c,e,bg)
+        vp(1:tnp,:) = velCalc(calcZ,reshape(s,[tnp]),1,tnp,dom,c,e,bg)
         
         do ilogt = iminlogt,imaxlogt-1
            lot = 1 + sum(nt(iminlogt:ilogt-1))
@@ -278,8 +276,8 @@ program ltaem_main
            hip = lop + size(s,1) - 1
 
            ! don't need second dimension of results matricies
-           sol%h(i,1,lot:hit) =   invlap(sol%t(lot:hit),tee(ilogt),sol%hp(lop:hip),sol%INVLT)
-           sol%v(i,1,lot:hit,:) = invlap(sol%t(lot:hit),tee(ilogt),sol%vp(lop:hip,:),sol%INVLT)
+           sol%h(i,1,lot:hit) =   invlap(sol%t(lot:hit),tee(ilogt),hp(lop:hip),sol%INVLT)
+           sol%v(i,1,lot:hit,:) = invlap(sol%t(lot:hit),tee(ilogt),vp(lop:hip,:),sol%INVLT)
         end do
      end do
   end if
@@ -288,7 +286,7 @@ program ltaem_main
   ! cleanup memory and write output to file
   call writeResults(sol,part)
 
-  deallocate(sol%h,sol%hp,sol%v,sol%vp, stat=ierr)
+  deallocate(sol%h,hp,sol%v,vp, stat=ierr)
   if (ierr /= 0) print *, 'WARNING: problem deallocating: sol%{h,p,v,vp} at end of program'
 
   deallocate(c,e,part,s,tee,nt, stat=ierr)

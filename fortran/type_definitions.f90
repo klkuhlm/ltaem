@@ -197,8 +197,6 @@ module type_definitions
      ! containers for time-domain final results (x,y,t,[i:j])
      real(DP),    allocatable :: h(:,:,:), v(:,:,:,:)
 
-     ! container for Laplace-space intermediate results
-     complex(DP), allocatable :: hp(:), vp(:,:)
   end type solution
 
   ! particle related parameters (one for each particle)
