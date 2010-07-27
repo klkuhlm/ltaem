@@ -1,13 +1,17 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from sys import argv
 
-basefn = 'wedge_contour.xyz'
-t = np.loadtxt(basefn+'_t.dat')
+if argv > 1:
+    basefn = argv[1]
+else:
+    print 'pass base filename as argument'
+    exit
+
+t = np.atleast_1d(np.loadtxt(basefn+'_t.dat'))
 nt = t.shape[0]
-
 X = np.loadtxt(basefn+'_x.dat')
 Y = np.loadtxt(basefn+'_y.dat')
-
 ny = X.shape[0]
 nx = X.shape[1]
 
@@ -36,26 +40,23 @@ del elements[-1] # EOF comment at end
 
 for val in range(nt):
     plt.figure(1)
-#    plt.subplot(121)
+    plt.subplot(121)
     plt.contour(X,Y,h[:,:,val],50)
-    plt.grid()
     plt.axis('image')
     plt.xlabel('X')
     plt.ylabel('Y')
-#    plt.title('head')
     for el in elements:
         e = np.array(el[:][:-2])
         plt.plot(e[:,0],e[:,1],'r-',lw=3)
     
-#    plt.subplot(122)
-#    plt.quiver(X,Y,v[:,:,0,val],v[:,:,1,val])
-#    plt.axis('image')
-#    plt.xlabel('X')
-#    plt.ylabel('Y')
-#    plt.title('velocity')
-#    for el in elements:
-#        e = np.array(el[:][:-2])
-#        plt.plot(e[:,0],e[:,1],'r-',lw=2)
+    plt.subplot(122)
+    plt.contourf(X,Y,np.log10(np.abs(v[:,:,0,val]+v[:,:,1,val]*1j)),20)
+    plt.quiver(X[::4,::4],Y[::4,::4],v[::4,::4,0,val],v[::4,::4,1,val])
+    plt.axis('image')
+    plt.xlabel('X')
+    for el in elements:
+        e = np.array(el[:][:-2])
+        plt.plot(e[:,0],e[:,1],'r-',lw=3)
     
     plt.savefig('%s_%4.4i_.eps' %(basefn,val))
     plt.close(1)
