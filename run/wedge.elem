@@ -1,0 +1,15 @@
+T  T  T  T  T  T :: InclIn(0:ntot,1:ntot)
+F  F  F  F  F  F
+F  F  F  F  F  F
+F  F  F  F  F  F
+F  F  F  F  F  F
+F  F  F  F  F  F
+F  F  F  F  F  F
+0  0  0  0  0  0 :: InclUp(1:ntot)
+F  T  T  T  T  T :: InclBg(1:ntot,1:ntot)
+T  F  T  T  T  T
+T  T  F  T  T  T
+T  T  T  F  T  T
+T  T  T  T  F  T
+T  T  T  T  T  F
+
