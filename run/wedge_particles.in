@@ -1,0 +1,5 @@
+2  10          :: #particles, streakSkip
+1.0D-4 1.0D-4  :: RKM tolerance
+1.0D-2 1.0D-2  :: RKM max step length
+1.0D-2 1.0D-2  :: dt step size
+0.0  0.2       :: starting x

@@ -8,5 +8,5 @@ True  False  True  1  wedge_contour.xyz  dump.out  wedge.elem  wedge.geom    :: 
 1.0D-6  1.0D-8  10  :: alpha, tolerance, M
 2  wedge_circles.in     :: number of circular elements, circular elements input file
 4  wedge_ellipses.in    :: number of elliptical elements, elliptical elements input file
-file_not_used     :: particle inputs file
+wedge_particles.in     :: particle inputs file
 
