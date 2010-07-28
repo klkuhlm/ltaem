@@ -135,29 +135,30 @@ contains
 
   function ellipse_match_other(e,el,dom,p,idx) result(r)
     use constants, only : DP
-    use type_definitions, only : ellipse, domain, matching, match_result
+    use type_definitions, only : ellipse, element, domain, matching, match_result
     use mathieu_functions, only : ce, se, dce, dse, Ke, Ko, dKe, dKo, Ie, Io, dIe, dIo
     use utility, only : rotate_vel_mat
     implicit none
 
-    type(ellipse), intent(in) :: e ! source ellipse
+    type(ellipse), target, intent(in) :: e ! source ellipse
     type(matching), intent(in) :: el ! target element (circle or ellipse)
     type(domain), intent(in) :: dom
     complex(DP), intent(in) :: p
     integer, intent(in) :: idx
     type(match_result) :: r 
 
-    integer :: j, src, targ, N, M, loN, hiN, loM, hiM, ierr, nrows, ncols
+    integer :: j, s, t, N, M, loN, hiN, loM, hiM, ierr, nrows, ncols
     complex(DP), allocatable :: cemat(:,:), semat(:,:), dcemat(:,:), dsemat(:,:) 
     integer, dimension(0:e%N-1) :: vi
     complex(DP), allocatable :: RMn(:,:,:), dRMn(:,:,:), RMn0(:,:)
     complex(DP), allocatable :: dPot_dR(:,:), dPot_dP(:,:), dPot_dX(:,:), dPot_dY(:,:)
     real(DP), allocatable :: hsq(:,:)
     real(DP) :: K
+    type(element), pointer :: f => null()
 
     N = e%N ! number of coefficients in the source elliptical element
-    targ = el%id
-    src = e%id
+    t = el%id  ! <= target
+    s = e%id   ! <= source
     vi(0:N-1) = [(j,j=0,N-1)]
 
     M = el%M
@@ -189,7 +190,9 @@ contains
     r%RHS = 0.0
 
     if (nrows > 0) then
-       if (dom%inclBg(src,targ) .or. dom%InclIn(src,targ)) then
+       f => e%parent
+
+       if (dom%inclBg(s,t) .or. dom%InclIn(s,t)) then
 
           allocate(RMn(1:M,0:N-1,0:1), RMn0(0:N-1,0:1), cemat(1:M,0:N-1), semat(1:M,1:N-1), stat=ierr)
           if (ierr /= 0) stop 'elliptical_elements.f90:ellipse_match_other() error allocating:&
@@ -199,23 +202,23 @@ contains
           ! for matching or specified total head target elements
           if (el%ibnd == 0 .or. el%ibnd == -1) then
 
-             if (dom%inclBg(src,targ)) then
+             if (dom%inclBg(s,t)) then
                 ! can the target element "see" the outside of the source element?
                 ! use exterior angular and radial modified Mathieu functions
-                cemat(1:M,0:N-1) = transpose(ce(e%parent%mat(idx), vi(0:N-1), e%G(targ)%Pgm(1:M)))
-                semat(1:M,1:N-1) = transpose(se(e%parent%mat(idx), vi(1:N-1), e%G(targ)%Pgm(1:M)))
-                RMn(1:M,0:N-1,0) = transpose(Ke(e%parent%mat(idx), vi(0:N-1), e%G(targ)%Rgm(1:M)))
-                RMn(1:M,1:N-1,1) = transpose(Ko(e%parent%mat(idx), vi(1:N-1), e%G(targ)%Rgm(1:M)))
+                cemat(1:M,0:N-1) = transpose(ce(f%mat(idx), vi(0:N-1), e%G(t)%Pgm(:)))
+                semat(1:M,1:N-1) = transpose(se(f%mat(idx), vi(1:N-1), e%G(t)%Pgm(:)))
+                RMn(1:M,0:N-1,0) = transpose(Ke(f%mat(idx), vi(0:N-1), e%G(t)%Rgm(:)))
+                RMn(1:M,1:N-1,1) = transpose(Ko(f%mat(idx), vi(1:N-1), e%G(t)%Rgm(:)))
                 RMn(1:M,0,1) = 0.0
-                RMn0(0:N-1,0) = Ke(e%parent%mat(idx), vi(0:N-1), e%r)
-                RMn0(1:N-1,1) = Ko(e%parent%mat(idx), vi(1:N-1), e%r)
+                RMn0(0:N-1,0) = Ke(f%mat(idx), vi(0:N-1), e%r)
+                RMn0(1:N-1,1) = Ko(f%mat(idx), vi(1:N-1), e%r)
                 RMn0(0,1) = 0.0
                 ! odd functions not needed for line source, but computed anyway
-                K = e%parent%K
+                K = f%K
 
                 ! head effects due to ellipse on outside other element
-                r%LHS(1:M,1:N) =       RMn(1:M,0:N-1,0)/spread(RMn0(0:N-1,0),1,M)*cemat(1:M,0:N-1)/e%parent%K ! a_n
-                r%LHS(1:M,N+1:2*N-1) = RMn(1:M,1:N-1,1)/spread(RMn0(1:N-1,1),1,M)*semat(1:M,1:N-1)/e%parent%K ! b_n
+                r%LHS(1:M,1:N) =       RMn(:,0:N-1,0)/spread(RMn0(0:N-1,0),1,M)*cemat(:,0:N-1)/f%K ! a_n
+                r%LHS(1:M,N+1:2*N-1) = RMn(:,1:N-1,1)/spread(RMn0(1:N-1,1),1,M)*semat(:,1:N-1)/f%K ! b_n
 
                 loN = 1
                 hiN = 2*N-1
@@ -224,10 +227,10 @@ contains
                 ! can target element "see" the inside of the source element?
                 ! i.e., is the source element the parent?
                 ! use interior angular and radial modified Mathieu functions
-                cemat(1:M,0:N-1) = transpose(ce(e%mat(idx), vi(0:N-1), e%G(targ)%Pgm(1:M)))
-                semat(1:M,1:N-1) = transpose(se(e%mat(idx), vi(1:N-1), e%G(targ)%Pgm(1:M)))
-                RMn(1:M,0:N-1,0) = transpose(Ie(e%mat(idx), vi(0:N-1), e%G(targ)%Rgm(1:M)))
-                RMn(1:M,1:N-1,1) = transpose(Io(e%mat(idx), vi(1:N-1), e%G(targ)%Rgm(1:M)))
+                cemat(1:M,0:N-1) = transpose(ce(e%mat(idx), vi(0:N-1), e%G(t)%Pgm(:)))
+                semat(1:M,1:N-1) = transpose(se(e%mat(idx), vi(1:N-1), e%G(t)%Pgm(:)))
+                RMn(1:M,0:N-1,0) = transpose(Ie(e%mat(idx), vi(0:N-1), e%G(t)%Rgm(:)))
+                RMn(1:M,1:N-1,1) = transpose(Io(e%mat(idx), vi(1:N-1), e%G(t)%Rgm(:)))
                 RMn(1:M,0,1) = 0.0
                 RMn0(0:N-1,0) = Ie(e%mat(idx), vi(0:N-1), e%r)
                 RMn0(1:N-1,1) = Io(e%mat(idx), vi(1:N-1), e%r)
@@ -245,8 +248,8 @@ contains
                 end if
 
                 ! head effects due to ellipse on inside other element
-                r%LHS(1:M,loN:loN+N-1) = -RMn(1:M,0:N-1,0)/spread(RMn0(0:N-1,0),1,M)*cemat(1:M,0:N-1)/K ! c_n
-                r%LHS(1:M,loN+N:hiN)   = -RMn(1:M,1:N-1,1)/spread(RMn0(1:N-1,1),1,M)*semat(1:M,0:N-1)/K ! d_n
+                r%LHS(1:M,loN:loN+N-1) = -RMn(:,0:N-1,0)/spread(RMn0(0:N-1,0),1,M)*cemat(:,0:N-1)/K ! c_n
+                r%LHS(1:M,loN+N:hiN)   = -RMn(:,1:N-1,1)/spread(RMn0(1:N-1,1),1,M)*semat(:,0:N-1)/K ! d_n
 
              end if
 
@@ -267,23 +270,23 @@ contains
                   & dRMn, dcemat, dsemat, dPot_dR, dPot_dP, dPot_dX, dPot_dY'
 
              ! flux effects of source ellpise on target element
-             if (dom%inclBg(src,targ)) then
+             if (dom%inclBg(s,t)) then
                 ! use exterior angular and radial modified mathieu functions
                 if (.not. el%ibnd == 0) then
-                   cemat(1:M,0:N-1) = transpose(ce(e%parent%mat(idx), vi(0:N-1), e%G(targ)%Pgm(1:M)))
-                   RMn(1:M,0:N-1,0) = transpose(Ke(e%parent%mat(idx), vi(0:N-1), e%G(targ)%Rgm(1:M)))
-                   RMn0(0:N-1,0) = Ke(e%parent%mat(idx), vi(0:N-1), e%r)
-                   semat(1:M,1:N-1) = transpose(se(e%parent%mat(idx), vi(1:N-1), e%G(targ)%Pgm(1:M)))
-                   RMn(1:M,1:N-1,1) = transpose(Ko(e%parent%mat(idx), vi(1:N-1), e%G(targ)%Rgm(1:M)))
+                   cemat(1:M,0:N-1) = transpose(ce(f%mat(idx), vi(0:N-1), e%G(t)%Pgm(:)))
+                   RMn(1:M,0:N-1,0) = transpose(Ke(f%mat(idx), vi(0:N-1), e%G(t)%Rgm(:)))
+                   RMn0(0:N-1,0) = Ke(f%mat(idx), vi(0:N-1), e%r)
+                   semat(1:M,1:N-1) = transpose(se(f%mat(idx), vi(1:N-1), e%G(t)%Pgm(:)))
+                   RMn(1:M,1:N-1,1) = transpose(Ko(f%mat(idx), vi(1:N-1), e%G(t)%Rgm(:)))
                    RMn(1:M,0,1) = 0.0
-                   RMn0(1:N-1,1) = Ko(e%parent%mat(idx), vi(1:N-1), e%r)
+                   RMn0(1:N-1,1) = Ko(f%mat(idx), vi(1:N-1), e%r)
                    RMn0(0,1) = 0.0
-                   K = e%parent%K
+                   K = f%K
                 end if
-                dcemat(1:M,0:N-1) = transpose(dce(e%parent%mat(idx), vi(0:N-1), e%G(targ)%Pgm(1:M)))
-                dRMn(1:M,0:N-1,0) = transpose(dKe(e%parent%mat(idx), vi(0:N-1), e%G(targ)%Rgm(1:M)))
-                dsemat(1:M,1:N-1) = transpose(dse(e%parent%mat(idx), vi(1:N-1), e%G(targ)%Pgm(1:M)))
-                dRMn(1:M,1:N-1,1) = transpose(dKo(e%parent%mat(idx), vi(1:N-1), e%G(targ)%Rgm(1:M)))
+                dcemat(1:M,0:N-1) = transpose(dce(f%mat(idx), vi(0:N-1), e%G(t)%Pgm(:)))
+                dRMn(1:M,0:N-1,0) = transpose(dKe(f%mat(idx), vi(0:N-1), e%G(t)%Rgm(:)))
+                dsemat(1:M,1:N-1) = transpose(dse(f%mat(idx), vi(1:N-1), e%G(t)%Pgm(:)))
+                dRMn(1:M,1:N-1,1) = transpose(dKo(f%mat(idx), vi(1:N-1), e%G(t)%Rgm(:)))
                 dRMn(1:M,0,1) = 0.0
 
                 loN = 1
@@ -292,19 +295,19 @@ contains
              else
                 ! use interior angular and radial modified Mathieu functions
                 if (.not. el%ibnd == 0) then
-                   cemat(1:M,0:N-1) = transpose(ce(e%mat(idx), vi(0:N-1), e%G(targ)%Pgm(1:M)))
-                   semat(1:M,1:N-1) = transpose(se(e%mat(idx), vi(1:N-1), e%G(targ)%Pgm(1:M)))
-                   RMn(1:M,0:N-1,0) = transpose(Ie(e%mat(idx), vi(0:N-1), e%G(targ)%Rgm(1:M)))
-                   RMn(1:M,1:N-1,1) = transpose(Io(e%mat(idx), vi(1:N-1), e%G(targ)%Rgm(1:M)))
+                   cemat(1:M,0:N-1) = transpose(ce(e%mat(idx), vi(0:N-1), e%G(t)%Pgm(:)))
+                   semat(1:M,1:N-1) = transpose(se(e%mat(idx), vi(1:N-1), e%G(t)%Pgm(:)))
+                   RMn(1:M,0:N-1,0) = transpose(Ie(e%mat(idx), vi(0:N-1), e%G(t)%Rgm(:)))
+                   RMn(1:M,1:N-1,1) = transpose(Io(e%mat(idx), vi(1:N-1), e%G(t)%Rgm(:)))
                    RMn(1:M,0,1) = 0.0
                    RMn0(0:N-1,0) = -Ie(e%mat(idx), vi(0:N-1), e%r) ! apply in/out-side sign here
                    RMn0(1:N-1,1) = -Io(e%mat(idx), vi(1:N-1), e%r)
                    RMn0(0,1) = 0.0
                 end if
-                dcemat(1:M,0:N-1) = transpose(dce(e%mat(idx), vi(0:N-1), e%G(targ)%Pgm(1:M)))
-                dsemat(1:M,1:N-1) = transpose(dse(e%mat(idx), vi(1:N-1), e%G(targ)%Pgm(1:M)))
-                dRMn(1:M,0:N-1,0) = transpose(dIe(e%mat(idx), vi(0:N-1), e%G(targ)%Rgm(1:M)))
-                dRMn(1:M,1:N-1,1) = transpose(dIo(e%mat(idx), vi(1:N-1), e%G(targ)%Rgm(1:M)))
+                dcemat(1:M,0:N-1) = transpose(dce(e%mat(idx), vi(0:N-1), e%G(t)%Pgm(:)))
+                dsemat(1:M,1:N-1) = transpose(dse(e%mat(idx), vi(1:N-1), e%G(t)%Pgm(:)))
+                dRMn(1:M,0:N-1,0) = transpose(dIe(e%mat(idx), vi(0:N-1), e%G(t)%Rgm(:)))
+                dRMn(1:M,1:N-1,1) = transpose(dIo(e%mat(idx), vi(1:N-1), e%G(t)%Rgm(:)))
                 dRMn(1:M,0,1) = 0.0
                 K = e%K
 
@@ -335,15 +338,15 @@ contains
              dPot_dP(1:M,N+1:2*N-1) = RMn(1:M,1:N-1,1)/spread(RMn0(1:N-1,1),1,M)*dsemat(1:M,1:N-1)
 
              ! project these from elliptical onto Cartesian coordinates
-             allocate(hsq(size(e%G(targ)%Rgm),2*N-1), stat=ierr)
+             allocate(hsq(size(e%G(t)%Rgm),2*N-1), stat=ierr)
              if (ierr /= 0) stop 'elliptical_elements.f90 error allocating: hsq'
 
              ! squared metric factor -- less a common f
-             hsq = spread(e%f/2.0*(cosh(2.0*e%G(targ)%Rgm) - cos(2.0*e%G(targ)%Pgm)),2,2*N-1) 
-             dPot_dX = (dPot_dR*spread(sinh(e%G(targ)%Rgm)*cos(e%G(targ)%Pgm),2,2*N-1) - &
-                      & dPot_dP*spread(cosh(e%G(targ)%Rgm)*sin(e%G(targ)%Pgm),2,2*N-1))/hsq
-             dPot_dY = (dPot_dR*spread(cosh(e%G(targ)%Rgm)*sin(e%G(targ)%Pgm),2,2*N-1) + &
-                      & dPot_dP*spread(sinh(e%G(targ)%Rgm)*cos(e%G(targ)%Pgm),2,2*N-1))/hsq
+             hsq = spread(e%f/2.0*(cosh(2.0*e%G(t)%Rgm) - cos(2.0*e%G(t)%Pgm)),2,2*N-1) 
+             dPot_dX = (dPot_dR*spread(sinh(e%G(t)%Rgm)*cos(e%G(t)%Pgm),2,2*N-1) - &
+                      & dPot_dP*spread(cosh(e%G(t)%Rgm)*sin(e%G(t)%Pgm),2,2*N-1))/hsq
+             dPot_dY = (dPot_dR*spread(cosh(e%G(t)%Rgm)*sin(e%G(t)%Pgm),2,2*N-1) + &
+                      & dPot_dP*spread(sinh(e%G(t)%Rgm)*cos(e%G(t)%Pgm),2,2*N-1))/hsq
 
              ! rotate to compensate for potentially arbitrary source ellipse
              call rotate_vel_mat(dPot_dX,dPot_dY,e%theta)

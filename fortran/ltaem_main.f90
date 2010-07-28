@@ -14,7 +14,9 @@ program ltaem_main
   use calc_routines, only : headCalc, velCalc
   use geometry, only : distanceAngleCalcs
   use ellipse_mathieu_init, only : ellipse_init
+#ifndef DEBUG
   use omp_lib, only : omp_get_thread_num
+#endif
   implicit none
 
   ! types or "structs" that organize variables
@@ -220,7 +222,7 @@ program ltaem_main
 
      !$OMP PARALLEL DO PRIVATE(i,j,calcZ,hp,vp,ilogt,lot,hit,lop,hip) SHARED(sol)
      do j = 1,sol%nx
-        write (*,*) 'x: ',sol%x(j), OMP_get_thread_num()
+        write (*,*) 'x: ',sol%x(j)! , OMP_get_thread_num()
         do i = 1,sol%ny
 
            calcZ = cmplx(sol%x(j),sol%y(i),DP)

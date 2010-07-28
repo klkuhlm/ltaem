@@ -63,10 +63,10 @@ contains
     ! accumulate result into matrices of structures
     do i=1,nc
        ! circle on self
-
        res(i,i) = circle_match(c(i),p)
 
 #ifdef DEBUG
+       print *, 'circle on self',i
        call print_match_result(res(i,i))
 #endif
        row(i,1) = size(res(i,i)%RHS,1)
@@ -75,10 +75,9 @@ contains
        ! circle on other circle
        do j=1,nc
           if(i/=j) then
-
              res(j,i) = circle_match(c(i),c(j)%matching,dom,p)
-
 #ifdef DEBUG
+             print *, 'circle',i,'on other circle',j
              call print_match_result(res(j,i))
 #endif
           end if
@@ -86,10 +85,9 @@ contains
 
        ! circle on other ellipse
        do j=1,ne
-
           res(j+nc,i) = circle_match(c(i),e(j)%matching,dom,p)
-
 #ifdef DEBUG
+          print *, 'circle',i,'on other ellipse',j+nc
           call print_match_result(res(j+nc,i))
 #endif
        end do
@@ -97,10 +95,9 @@ contains
 
     do i = 1, ne
        ! ellipse on self
-
        res(nc+i,nc+i) = ellipse_match(e(i),p,idx)
-
 #ifdef DEBUG
+       print *, 'ellipse on self',i
        call print_match_result(res(nc+i,nc+i))
 #endif
        row(i+nc,1) = size(res(nc+i,nc+i)%RHS,1)
@@ -110,6 +107,7 @@ contains
        do j = 1, nc
           res(j,nc+i) = ellipse_match(e(i),c(j)%matching,dom,p,idx)
 #ifdef DEBUG
+          print *, 'ellipse',i+nc,'on other circle',j
           call print_match_result(res(j,nc+i))
 #endif
        end do
@@ -117,10 +115,9 @@ contains
        ! ellipse on other ellipse
        do j = 1, ne
           if (i /= j) then
-
              res(nc+j,nc+i) = ellipse_match(e(i),e(j)%matching,dom,p,idx)
-
 #ifdef DEBUG
+             print *, 'ellipse',i+nc,'on other ellipse',j+nc
              call print_match_result(res(nc+j,nc+i))
 #endif
           end if
