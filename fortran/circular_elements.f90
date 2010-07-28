@@ -65,8 +65,8 @@ contains
     if (ierr /= 0) stop 'circular_elements.f90:circle_match_self() error &
          &allocating: r%LHS, r%RHS'
 
-    cmat(1:M,0:N-1) = cos(outer(c%Pcm(1:M),vi(0:N-1)))
-    smat(1:M,1:N-1) = sin(outer(c%Pcm(1:M),vi(1:N-1)))
+    cmat(1:M,0:N-1) = cos(outer(c%Pcm(:),vi(0:N-1)))
+    smat(1:M,1:N-1) = sin(outer(c%Pcm(:),vi(1:N-1)))
 
     ! setup LHS
     ! matching or specified total head
@@ -198,12 +198,12 @@ contains
     if (nrows > 0) then
        if (dom%inclBg(src,targ) .or. dom%InclIn(src,targ)) then
 
-          allocate(Bn(1:M,0:N-1),Bn0(0:N-1),cmat(1:M,0:N-1),smat(1:M,1:N-1), stat=ierr)
+          allocate(Bn(M,0:N-1),Bn0(0:N-1),cmat(M,0:N-1),smat(M,N-1), stat=ierr)
           if (ierr /= 0) stop 'circular_elements.f90:circle_match_other() error allocating:&
                &Bn, Bn0, cmat, smat'
 
-          cmat(1:M,0:N-1) = cos(outer(c%G(targ)%Pgm(1:M), vi(0:N-1)))
-          smat(1:M,1:N-1) = sin(outer(c%G(targ)%Pgm(1:M), vi(1:N-1)))
+          cmat(1:M,0:N-1) = cos(outer(c%G(targ)%Pgm(:), vi(0:N-1)))
+          smat(1:M,1:N-1) = sin(outer(c%G(targ)%Pgm(:), vi(1:N-1)))
 
           ! setup LHS 
           ! $$$$$$$$$$ head effects of source (c) on target (el) $$$$$$$$$$
@@ -214,7 +214,7 @@ contains
                 ! can the target element "see" the outside of the source element?
                 ! use exterior Bessel functions (Kn)
                 kap = kappa(p,c%parent)
-                Bn(1:M,0:N-1) = bK(kap*c%G(targ)%Rgm(1:M),N)
+                Bn(1:M,0:N-1) = bK(kap*c%G(targ)%Rgm(:),N)
                 Bn0(0:N-1) =    bK(kap*c%r,N)
 
                 ! head effects on outside of other element
@@ -230,7 +230,7 @@ contains
                 ! i.e., is the source element the parent?
                 ! use interior Bessel functions (In)
                 kap = kappa(p,c%element)
-                Bn(1:M,0:N-1) = bI(kap*c%G(targ)%Rgm(1:M),N)
+                Bn(1:M,0:N-1) = bI(kap*c%G(targ)%Rgm(:),N)
                 Bn0(0:N-1) =    bI(kap*c%r,N)
 
                 if (c%ibnd == 0) then
@@ -275,8 +275,8 @@ contains
              if (dom%inclBg(src,targ)) then
                 ! use exterior Bessel functions (Kn)
                 kap = kappa(p,c%parent) 
-                call dBK(kap*c%G(targ)%Rgm(1:M),N,Bn(1:M,0:N-1),dBn(1:M,0:N-1))
-                dBn(1:M,0:N-1) = kap*dBn(1:M,0:N-1)
+                call dBK(kap*c%G(targ)%Rgm(:),N,Bn(:,0:N-1),dBn(:,0:N-1))
+                dBn(1:M,0:N-1) = kap*dBn(:,0:N-1)
                 Bn0(0:N-1) = bK(kap*c%r,N)
                 K = c%parent%K
 
@@ -287,8 +287,8 @@ contains
              else
                 ! use interior Bessel functions (In)
                 kap = kappa(p,c%element)
-                call dBI(kap*c%G(targ)%Rgm(1:M),N,Bn(1:M,0:N-1),dBn(1:M,0:N-1))
-                dBn(1:M,0:N-1) = -kap*dBn(1:M,0:N-1) ! apply in/out-side sign here
+                call dBI(kap*c%G(targ)%Rgm(:),N,Bn(:,0:N-1),dBn(:,0:N-1))
+                dBn(1:M,0:N-1) = -kap*dBn(:,0:N-1) ! apply in/out-side sign here
                 Bn0(0:N-1) = bI(kap*c%r,N)
                 K = c%K
 
@@ -304,12 +304,12 @@ contains
              end if
 
              ! derivative wrt radius of source element
-             dPot_dR(1:M,1:N) =       dBn(1:M,0:N-1)/spread(Bn0(0:N-1),1,M)*cmat(1:M,0:N-1)
-             dPot_dR(1:M,N+1:2*N-1) = dBn(1:M,1:N-1)/spread(Bn0(1:N-1),1,M)*smat(1:M,1:N-1)
+             dPot_dR(1:M,1:N) =       dBn(:,0:N-1)/spread(Bn0(0:N-1),1,M)*cmat(:,0:N-1)
+             dPot_dR(1:M,N+1:2*N-1) = dBn(:,1:N-1)/spread(Bn0(1:N-1),1,M)*smat(:,1:N-1)
 
              if (el%ibnd == 2 .and. dom%inclBg(src,targ)) then
                 ! wellbore storage and skin from finite-radius well
-                dPot_dR(1:M,1) = storwell(c,p)*dPot_dR(1:M,1)
+                dPot_dR(1:M,1) = storwell(c,p)*dPot_dR(:,1)
                 dPot_dP(1:M,1:2*N-1) = 0.0 ! wells have angular symmetry
              else
                 ! derivative wrt angle of source element for more general circular elements
@@ -350,8 +350,8 @@ contains
                 call rotate_vel_mat(dPot_dX,dPot_dY,-el%theta)
 
                 ! other element is an ellipse
-                r%LHS(loM:hiM,loN:hiN) = dPot_dX*spread(el%f*sinh(el%r)*cos(el%Pcm(1:M)),2,2*N-1) + &
-                                       & dPot_dY*spread(el%f*cosh(el%r)*sin(el%Pcm(1:M)),2,2*N-1)
+                r%LHS(loM:hiM,loN:hiN) = dPot_dX*spread(el%f*sinh(el%r)*cos(el%Pcm(:)),2,2*N-1) + &
+                                       & dPot_dY*spread(el%f*cosh(el%r)*sin(el%Pcm(:)),2,2*N-1)
              end if
 
              deallocate(dBn, dPot_dR, dPot_dP, dPot_dX, dPot_dY, stat=ierr)

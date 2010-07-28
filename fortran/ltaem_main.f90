@@ -10,6 +10,7 @@ program ltaem_main
   use type_definitions, only : domain, element, circle, ellipse, solution, INVLT, particle
   use file_ops, only : readinput, writeresults
   use inverse_Laplace_Transform, only : invlap => deHoog_invlap, pvalues => deHoog_pvalues
+  use particle_integrate, only : rungeKuttaMerson, rungeKutta, fwdEuler
   use solution_mod, only : matrix_solution
   use calc_routines, only : headCalc, velCalc
   use geometry, only : distanceAngleCalcs
@@ -17,6 +18,7 @@ program ltaem_main
 #ifndef DEBUG
   use omp_lib, only : omp_get_thread_num
 #endif
+
   implicit none
 
   ! types or "structs" that organize variables
@@ -33,10 +35,12 @@ program ltaem_main
   integer :: ilogt, iminlogt, imaxlogt     ! indexes related to log10 time
   integer :: lot, hit, lop, hip, lo        ! local hi and lo indices for each log cycle
   integer, allocatable :: nt(:), run(:)    ! #-times-each-log-cycle, 0,1,2,3...
+  integer, allocatable :: parnumdt(:)      ! number of dt expected for each particle
   real(DP), allocatable :: logt(:), tee(:) ! log10-time(numt), T-in-deHoog(num-log-cycles)
   complex(DP), allocatable :: s(:,:)       ! laplace-parameter(2*M-1,num-log-cycles)
   complex(DP) :: calcZ      ! calc-point-complex-coordinates
   character(6) :: elType    ! element-type {CIRCLE,ELLIPS}
+  character(20) :: tmpfname
   complex(DP), allocatable :: hp(:),vp(:,:)
 
   intrinsic :: get_command_argument
@@ -71,9 +75,31 @@ program ltaem_main
   if (sol%calc) then
      if (sol%particle) then   ! particle tracking
         
-        stop 'no particle tracking implementation yet'
-        ! TODO not worrying about particle tracking right now
-        ! need to update the code used before
+        ! need to do something better here about particles starting at t=0?
+        do i=1, sol%nPart
+           if (p(i)%ti < 1.0D-5) then
+              p(i)%ti = 1.0D-5
+              write(*,'(A,I0,A)') '^^^^ start time for particle ',i,' reset to 1.0E-5 ^^^^'
+           end if
+        end do
+        
+        iminlogt = floor(  minval(log10(p(:)%ti)))
+        imaxlogt = ceiling(maxval(log10(p(:)%tf)))
+
+        allocate(s(2*INVm+1,iminlogt:imaxlogt), nt(iminlogt:imaxlogt), &
+             & tee(iminlogt:imaxlogt))
+
+        nt(iminlogt:imaxlogt) = 1
+
+        do ilogt = iminlogt, imaxlogt
+           ! 0.99 is "most" of a log-cycle
+           tee(ilogt) = min(10.0**(ilogt + 0.99), maxval(p(:)%tf))*2.0
+           s(:,ilogt) = pvalues(tee(ilogt),lap)
+        end do
+
+        ! to make it possible for particles / contours to share code...
+        imaxlogt = imaxlogt + 1
+        deallocate(run)
         
      !^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
      else   ! contour maps / hydrographs
@@ -206,9 +232,50 @@ program ltaem_main
      end if
 
   end if
+
+  !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  if(sol%particle) then ! integrate along particle path
+
+     write(*,'(A)') 'compute solution for tracking particles'
+     allocate(parnumdt(sol%nPart))
+
+     parnumdt(:) = ceiling((p(:)%tf - p(:)%ti)/p(:)%dt)
+
+     do i = 1,sol%nPart
+        allocate(p(i)%r(0:parnumdt(i),5))
+        p(:)%r(:,:) = 0.0        
+     end do
+
+     ! cycle over particles, integrating each
+     ! re-shape matrix s into a vector
+     tmpfname = 'calc_part_    .debug'
+
+     do j = 1, sol%nPart
+
+#ifdef DEBUG
+        write(tmpfname(11:14),'(I4.4)') j
+        open(unit=77,file=tmpfname,action='write',status='replace')
+#endif
+
+        select case (part(j)%int)
+        case (1)
+           call rungekuttamerson(s,tee,c,e,part(j),sol,lo)
+        case (2)
+                 call rungekutta(s,tee,c,e,part(j),sol,lo)
+        case (4)
+                   call fwdEuler(s,tee,c,e,part(j),sol,lo)
+        case default
+           write(*,'(A,I0,1X,I0)') 'invalid integration code', j, part(j)%int
+        end select
+
+#ifdef DEBUG
+        close(77)
+#endif
+
+     end do
   
   !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-  if(sol%contour) then ! contour output (x,y locations outer product of x,y vectors)
+  elseif(sol%contour) then ! contour output (x,y locations outer product of x,y vectors)
 
      write(*,'(A)') 'compute solution for plotting contours'
      allocate(sol%h(sol%nx,sol%ny,sol%nt),   hp(tnP), &

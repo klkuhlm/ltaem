@@ -65,23 +65,23 @@ contains
        f => e%parent
 
        ! outside ang. mod. Mathieu fcns (last dimension is inside/outside)
-       cemat(1:M,0:N-1,0) = transpose(ce(f%mat(i), vi(0:N-1), e%Pcm(1:M)))
-       semat(1:M,1:N-1,0) = transpose(se(f%mat(i), vi(1:N-1), e%Pcm(1:M)))
+       cemat(1:M,0:N-1,0) = transpose(ce(f%mat(i), vi(0:N-1), e%Pcm(:)))
+       semat(1:M,1:N-1,0) = transpose(se(f%mat(i), vi(1:N-1), e%Pcm(:)))
        if (e%ibnd == 0 .or. (e%calcin .and. (e%ibnd == 1 .or. e%ibnd == -1))) then
           ! inside
-          cemat(1:M,0:N-1,1) = transpose(ce(e%mat(i), vi(0:N-1), e%Pcm(1:M)))
-          semat(1:M,1:N-1,1) = transpose(se(e%mat(i), vi(1:N-1), e%Pcm(1:M)))
+          cemat(1:M,0:N-1,1) = transpose(ce(e%mat(i), vi(0:N-1), e%Pcm(:)))
+          semat(1:M,1:N-1,1) = transpose(se(e%mat(i), vi(1:N-1), e%Pcm(:)))
        end if
 
        ! setup LHS
        ! matching or specified total head
        if (e%ibnd == 0 .or. e%ibnd == -1) then
-          r%LHS(1:M,1:N) =       cemat(1:M,0:N-1,0)/f%K ! a_n head
-          r%LHS(1:M,N+1:2*N-1) = semat(1:M,1:N-1,0)/f%K ! b_n head
+          r%LHS(1:M,1:N) =       cemat(:,0:N-1,0)/f%K ! a_n head
+          r%LHS(1:M,N+1:2*N-1) = semat(:,1:N-1,0)/f%K ! b_n head
 
           if (e%ibnd == 0 .or. (e%ibnd == -1 .and. e%calcin)) then
-             r%LHS(1:M,2*N:3*N-1) = -cemat(1:M,0:N-1,1)/e%K ! c_n head
-             r%LHS(1:M,3*N:4*N-2) = -semat(1:M,1:N-1,1)/e%K ! d_n head
+             r%LHS(1:M,2*N:3*N-1) = -cemat(:,0:N-1,1)/e%K ! c_n head
+             r%LHS(1:M,3*N:4*N-2) = -semat(:,1:N-1,1)/e%K ! d_n head
           end if
        end if
 
@@ -98,8 +98,8 @@ contains
           dRMn(1:N-1,1) = dKo(f%mat(i), vi(1:N-1), e%r) ! odd deriv
           dRMn(0,1) = 0.0
 
-          r%LHS(loM:hiM,1:N) =       spread(dRMn(0:N-1,0)/RMn(0:N-1,0), 1,M)*cemat(1:M,0:N-1,0) ! a_n flux
-          r%LHS(loM:hiM,N+1:2*N-1) = spread(dRMn(1:N-1,1)/RMn(1:N-1,1), 1,M)*semat(1:M,1:N-1,0) ! b_n flux
+          r%LHS(loM:hiM,1:N) =       spread(dRMn(0:N-1,0)/RMn(0:N-1,0), 1,M)*cemat(:,0:N-1,0) ! a_n flux
+          r%LHS(loM:hiM,N+1:2*N-1) = spread(dRMn(1:N-1,1)/RMn(1:N-1,1), 1,M)*semat(:,1:N-1,0) ! b_n flux
 
           if (e%ibnd == 0 .or. (e%ibnd == 1 .and. e%calcin)) then
              RMn(0:N-1,0) =   Ie(e%mat(i), vi(0:N-1), e%r)
@@ -109,8 +109,8 @@ contains
              dRMn(1:N-1,1) = dIo(e%mat(i), vi(1:N-1), e%r)
              dRMn(0,1) = 0.0
 
-             r%LHS(loM:hiM,2*N:3*N-1) = -spread(dRMn(0:N-1,0)/RMn(0:N-1,0), 1,M)*cemat(1:M,0:N-1,1) ! c_n flux
-             r%LHS(loM:hiM,3*N:4*N-2) = -spread(dRMn(1:N-1,1)/RMn(1:N-1,1), 1,M)*semat(1:M,1:N-1,1) ! d_n flux
+             r%LHS(loM:hiM,2*N:3*N-1) = -spread(dRMn(0:N-1,0)/RMn(0:N-1,0), 1,M)*cemat(:,0:N-1,1) ! c_n flux
+             r%LHS(loM:hiM,3*N:4*N-2) = -spread(dRMn(1:N-1,1)/RMn(1:N-1,1), 1,M)*semat(:,1:N-1,1) ! d_n flux
           end if
           deallocate(RMn,dRMn,stat=ierr)
           if (ierr /= 0) stop 'elliptical_elements.f90 error deallocating: RMn,dRMn'
@@ -194,7 +194,7 @@ contains
 
        if (dom%inclBg(s,t) .or. dom%InclIn(s,t)) then
 
-          allocate(RMn(1:M,0:N-1,0:1), RMn0(0:N-1,0:1), cemat(1:M,0:N-1), semat(1:M,1:N-1), stat=ierr)
+          allocate(RMn(M,0:N-1,0:1), RMn0(0:N-1,0:1), cemat(M,0:N-1), semat(M,N-1), stat=ierr)
           if (ierr /= 0) stop 'elliptical_elements.f90:ellipse_match_other() error allocating:&
                &RMn, RMn0, cemat, semat'
 
@@ -264,7 +264,7 @@ contains
 
           ! for matching, specified total flux, or specified elemental flux target element
           if (el%ibnd == 0 .or. el%ibnd == +1 .or. el%ibnd == +2) then
-             allocate(dRMn(M,0:N-1,0:1), dcemat(1:M,0:N-1), dsemat(1:M,1:N-1), &
+             allocate(dRMn(M,0:N-1,0:1), dcemat(M,0:N-1), dsemat(M,N-1), &
                   & dPot_dR(M,2*N-1), dPot_dP(M,2*N-1), dPot_dX(M,2*N-1),dPot_dY(M,2*N-1), stat=ierr)
              if (ierr /= 0) stop 'elliptical_elements.f90 error allocating:&
                   & dRMn, dcemat, dsemat, dPot_dR, dPot_dP, dPot_dX, dPot_dY'
@@ -330,12 +330,12 @@ contains
 #endif
 
              ! derivative wrt radius of source element
-             dPot_dR(1:M,1:N) =       dRMn(1:M,0:N-1,0)/spread(RMn0(0:N-1,0),1,M)*cemat(1:M,0:N-1)
-             dPot_dR(1:M,N+1:2*N-1) = dRMn(1:M,1:N-1,1)/spread(RMn0(1:N-1,1),1,M)*semat(1:M,1:N-1)
+             dPot_dR(1:M,1:N) =       dRMn(:,0:N-1,0)/spread(RMn0(0:N-1,0),1,M)*cemat(:,0:N-1)
+             dPot_dR(1:M,N+1:2*N-1) = dRMn(:,1:N-1,1)/spread(RMn0(1:N-1,1),1,M)*semat(:,1:N-1)
 
              ! derivative wrt angle of source element 
-             dPot_dP(1:M,1:N) =       RMn(1:M,0:N-1,0)/spread(RMn0(0:N-1,0),1,M)*dcemat(1:M,0:N-1)
-             dPot_dP(1:M,N+1:2*N-1) = RMn(1:M,1:N-1,1)/spread(RMn0(1:N-1,1),1,M)*dsemat(1:M,1:N-1)
+             dPot_dP(1:M,1:N) =       RMn(:,0:N-1,0)/spread(RMn0(0:N-1,0),1,M)*dcemat(:,0:N-1)
+             dPot_dP(1:M,N+1:2*N-1) = RMn(:,1:N-1,1)/spread(RMn0(1:N-1,1),1,M)*dsemat(:,1:N-1)
 
              ! project these from elliptical onto Cartesian coordinates
              allocate(hsq(size(e%G(t)%Rgm),2*N-1), stat=ierr)
@@ -359,11 +359,11 @@ contains
                 ! other element is a circle
                 if (el%ibnd == 2) then
                    ! other element is a well with wellbore storage (Type III BC)
-                   r%LHS(1:M,loN:loN+N-1) = RMn(1:M,0:N-1,0)/spread(RMn0(0:N-1,0),1,M)*cemat(1:M,0:N-1)/K
-                   r%LHS(1:M,loN+N:hiN) =   RMn(1:M,1:N-1,1)/spread(RMn0(1:N-1,1),1,M)*semat(1:M,1:N-1)/K
+                   r%LHS(1:M,loN:loN+N-1) = RMn(:,0:N-1,0)/spread(RMn0(0:N-1,0),1,M)*cemat(:,0:N-1)/K
+                   r%LHS(1:M,loN+N:hiN) =   RMn(:,1:N-1,1)/spread(RMn0(1:N-1,1),1,M)*semat(:,1:N-1)/K
 
                    ! head effects of source ellipse
-                   r%LHS(1:M,loN:hiN) = -(el%r*p/el%parent%T)*r%LHS(1:M,loN:hiN)
+                   r%LHS(1:M,loN:hiN) = -(el%r*p/el%parent%T)*r%LHS(:,loN:hiN)
 
                    ! radial flux effects of element
                    r%LHS(1:M,loN:hiN) = r%LHS + (2.0 + el%r**2*el%dskin*p/el%parent%T)* &
@@ -379,8 +379,8 @@ contains
                 call rotate_vel_mat(dPot_dX,dPot_dY,-el%theta)
                 
                 ! other element is a different ellipse
-                r%LHS(loM:hiM,loN:hiN) = dPot_dX*spread(el%f*sinh(el%r)*cos(el%Pcm(1:M)),2,2*N-1) + &
-                     & dPot_dY*spread(el%f*cosh(el%r)*sin(el%Pcm(1:M)),2,2*N-1)
+                r%LHS(loM:hiM,loN:hiN) = dPot_dX*spread(el%f*sinh(el%r)*cos(el%Pcm(:)),2,2*N-1) + &
+                     & dPot_dY*spread(el%f*cosh(el%r)*sin(el%Pcm(:)),2,2*N-1)
 
              end if
              deallocate(dRMn,dcemat,dsemat,dPot_dR,dPot_dP,dPot_dX,dPot_dY,stat=ierr)
@@ -402,7 +402,7 @@ contains
                 stop 'elliptical_elements.f90 error deallocating: r%LHS'
              end if
              
-             allocate(r%LHS(1:hiM,0),stat=ierr)
+             allocate(r%LHS(hiM,0),stat=ierr)
              if (ierr /= 0) then
                 stop 'elliptical_elements.f90 error re-allocating: r%LHS'
              end if

@@ -5,20 +5,22 @@ module particle_integrate
 
 contains
 
-  subroutine rungekuttamerson(p,tee,coeff,lo,num)
-    ! results are saved to Presult, which is shared via module with main program
+  subroutine rungekuttamerson(p,tee,c,e,bg,part,sol,lo)
     use constants, only : DP
     use inverse_laplace_transform, only : invlap => deHoog_invlap
-    use element_specs, only : INValpha,INVtol,INVm,PARti, PARx, PARy, PARdt, PARtf, PARtol, PARmin, PARmaxStep
-    use calc_shared_data, only  : Presult
-    use calc_routines, only : velXCalc, velYCalc
+    use type_definitions, only : circle, ellipse, element, solution, particle
+    use calc_routines, only : velcalc
     implicit none
 
     integer, intent(in) :: lo
     real(DP), intent(in) :: tee(lo:)
     complex(DP), intent(in) :: p(1:,lo:) !! matrix of Laplace parameter np by nlogcycles
-    complex(DP), intent(in) :: coeff(1:,lo:,0:,1:)  !! coefficients of elements
-    integer, intent(in) :: num  !! which particle is being integrated
+    type(particle), intent(in) :: part
+    type(circle),  dimension(:), intent(in) :: c
+    type(ellipse), dimension(:), intent(in) :: e
+    type(element), intent(in) :: bg
+    type(solution), intent(inout) :: sol
+
     integer :: count, ilogc
     logical :: partEnd
     real(DP) :: xVelInit, yVelInit, xVelTrap, yVelTrap, xVelAB3, yVelAB3, xVelAB2, yVelAB2
@@ -28,9 +30,7 @@ contains
     real(DP), parameter :: safety = 0.9
 
     ! &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-    ! &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-    !        not using porosity correctly ?
-    ! &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+    !  TODO not using porosity correctly ?
     ! &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 
     ! read this in eventually: for now just set it here
@@ -333,156 +333,152 @@ contains
   end subroutine rungekutta
 
   !$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
-  subroutine fwdEuler(p,tee,coeff,lo,num)
+  subroutine fwdEuler(s,tee,c,e,p,bg,sol,lo)
     use constants, only : DP
     use inverse_laplace_transform, only : invlap => deHoog_invlap 
-    use element_specs, only : INValpha,INVtol,INVm,PARti, PARx, PARy, PARdt, PARtf
-    use calc_shared_data, only : Presult
-    use calc_routines, only : velXCalc, velYCalc
+    use type_definitions, only : circle, ellipse, element, solution, particle
+    use calc_routines, only : velCalc
     implicit none
 
-    integer, intent(in) :: lo
     real(DP), intent(in) :: tee(lo:)
-    complex(DP), intent(in) :: p(1:,lo:) !! matrix of Laplace parameter np by nlogcycles
+    complex(DP), intent(in) :: s(1:,lo:) !! matrix of Laplace parameter np by nlogcycles
     complex(DP), intent(in) :: coeff(1:,lo:,0:,1:)  ! coefficients for LT-AEM elements
-    integer, intent(in) :: num  ! number of particles
+    type(particle), intent(in) :: p
+    type(circle),  dimension(:), intent(in) :: c
+    type(ellipse), dimension(:), intent(in) :: e
+    type(element), intent(in) :: bg
+    type(solution), intent(inout) :: sol
 
-    complex(DP), dimension(1:size(p,1)) :: xp,yp
-    integer :: i, numdt, ilogc
+    complex(DP), dimension(1:size(s,1),2) :: velp
+    integer :: i, numdt, ilogc, lop, hip
     logical :: partEnd
-    real(DP) :: pt, px, py, dt, xvel, yvel, tf
+    real(DP) :: pt, px, py, dt, tf
+    real(DP), dimension(2) :: vel
 
-    pt = PARti(num)
-    px = PARx(num)
-    py = PARy(num)
-    dt = PARdt
-    tf = PARtf(num)
+    pt = p%ti
+    px = p%x
+    py = p%y
+    dt = p%dt
+    tf = p%tf
 
-    Presult(0,1,num) = pt
-    Presult(0,2,num) = px
-    Presult(0,3,num) = py
+    ! initialize with starting position
+    p%r(0,1) = pt
+    p%r(0,2) = px
+    p%r(0,3) = py
 
     ! 1st order fwd Euler
     numdt = ceiling((tf - pt)/dt)
     
     write(*,'(A)')    '****************************************'
-    write(*,'(A,I3)') 'forward Euler integration, particle ', num
+    write(*,'(A,I0)') 'forward Euler integration, particle ', num
     write(*,'(A)')    '****************************************'
 
     fe: do i = 1,numdt   
-       if(mod(i,500) ==0 ) write(*,'(A,ES12.6E2)') 't=',pt
+       if( mod(i,500) ==0 ) write(*,'(A,ES12.6E2)') 't=',pt
 
        ! see if particle will reach end this step
        if (pt + dt >= tf) then
-          write(*,'(A,I3,A,ES12.6E2)') 'particle',num,' reached specified ending time:',tf
+          write(*,'(A,I0,A,ES12.6E2)') 'particle',num,' reached specified ending time:',tf
           exit fe
        end if
 
        ! full step forward Euler
        ilogc = ceiling(log10(pt))
 
-       xp(:) = velXCalc(p(:,ilogc),px,py,coeff(:,ilogc,:,:))
-       yp(:) = velYCalc(p(:,ilogc),px,py)
+       lop = (ilogc-lo)*size(p,dim=1) + 1
+       hip = lop + size(p,dim=1)
 
-       xVel = invlap(INValpha,INVtol,pt,tee(ilogc),xp(:),INVm)
-       yVel = invlap(INValpha,INVtol,pt,tee(ilogc),yp(:),INVm)
+       velp(1:2) = velCalc(cmplx(px,py,DP),p(:,ilogc),lop,hip,dom,c,e,bg)
+       vel(1:2) = invlap(pt,tee(ilogc),velp(1:2),sol%INVLT)
 
-       px = px + dt*xvel
-       py = py + dt*yvel
+       px = px + dt*vel(1)
+       py = py + dt*vel(2)
 
        pt = pt + dt
 
-       Presult(i,1,num) = pt
-       Presult(i,2,num) = px
-       Presult(i,3,num) = py
-       Presult(i-1,4,num) = xvel
-       Presult(i-1,5,num) = yvel
+       p%r(i,1) = pt
+       p%r(i,2) = px
+       p%r(i,3) = py
+       p%r(i-1,4) = vel(1)
+       p%r(i-1,5) = vel(2)
 
-       partEnd = sinkCheck(px,py,num)
+       partEnd = sinkCheck(px,py,c,e)
+
        if (partEnd) then
-          write(*,'(A,I3,A,ES12.6E2)') 'particle ',num,' entered a sink at t=',pt
+          write(*,'(A,I0,A,ES12.6E2)') 'particle ',num,' entered a sink at t=',pt
           exit fe
        end if
-
     end do fe
   end subroutine fwdEuler
 
   !###########################################################################
-  ! re-allocate Presult array to longer/shorter first dimension, saving contents
-  ! Presult array is in a module
+  ! re-allocate particle%r array to longer first dimension
 
-  subroutine reallocate(newub)
+  subroutine reallocate(p,newub)
     use constants, only : DP
-    use error_handler, only : subError
-    use calc_shared_data, only : Presult
-    use element_specs, only : PARnum
+    use type_definitions, only : particle
     implicit none
 
     integer, intent(in) :: newub
-    integer :: oldub, ierr
-    real(DP), dimension(0:ubound(Presult,dim=1),5,PARnum) :: tmp
-    character(128) :: sn = 'allocate', csn = 'reallocate'
+    type(particle), intent(inout) :: p
+    real(DP), allocatable :: tmp(:,:)
 
-    oldub = ubound(Presult,dim=1)
-    tmp(0:oldub,:,:) = Presult(0:oldub,:,:)
+    intrinsic :: move_alloc
 
-    deallocate(Presult)
-    allocate(Presult(0:newub,5,PARnum), stat=ierr)
-    if (ierr /= 0) call subError(sn,ierr,csn)
-
-    Presult = 0.0_DP
-    if (newub > oldub) then
-       Presult(0:oldub,:,:) = tmp(0:oldub,:,:)
-    else
-       Presult(0:newub,:,:) = tmp(0:newub,:,:)
-    end if
+    allocate(tmp(0:newub,5))
+    tmp(0:ubound(p%r,dim=1),1:5) = p%r(0:,1:5)
+    
+    ! see section 17.5.3 of Metcalf, Reid & Cohen
+    call move_alloc(tmp,p%r)
 
   end subroutine reallocate
 
   !###########################################################################
   ! check if particle has moved into a sink
 
-  function sinkCheck(px,py,num) result(partEnd)
+  function sinkCheck(px,py,c,e) result(partEnd)
     use constants, only : DP
-    use element_specs, only : WLx, WLy, WLr, WLnum, CIx, CIy, CIr, CInum, PARInclIn, CIibnd
+    use type_definitions, only : ellipse, circle
     implicit none
 
-    real(DP), dimension(WLnum) :: rw
     real(DP), intent(in) :: px,py
-    integer, intent(in) :: num  ! index of particle
+    type(circle),  dimension(:), intent(in) :: c
+    type(ellipse), dimension(:), intent(in) :: e
     logical :: partEnd
-    integer :: i
-    real(DP) :: ri
 
     partEnd = .false.
 
-    ! did the particle enter a well?
-    forall (i = 1:WLnum)
-       rw(i) = sqrt((px - WLx(i))**2 + (py - WLy(i))**2)
-    end forall
-    if (any(rw <= WLr)) partEnd = .true.
+    ! did the particle enter an ibnd==2 circle (well)?
+    if (any(c%ibnd == 2) .and. sqrt((px-c%x)**2 + (py-c%y)**2) < c%r) then
+       partEnd = .true.
+    end if
+    
+    ! TODO add check for flowing into ibnd==2 ellipse (line sink)
 
-    ! did the particle enter/leave a constant head/flux inclusion?            
-    do i = 1,CInum     
-       if (CIibnd(i) /= 0) then ! not a matching inclusion
-          ri = sqrt((px - CIx(i))**2 + (py - CIy(i))**2)
+!!$    ! did the particle enter/leave a constant head/flux inclusion?            
+!!$    do i = 1,CInum     
+!!$       if (CIibnd(i) /= 0) then ! not a matching inclusion
+!!$          ri = sqrt((px - CIx(i))**2 + (py - CIy(i))**2)
+!!$
+!!$          ! particle started outside a CH/CF inclusion
+!!$          if (.not. PARInclIn(num)) then
+!!$             if (ri <= CIr(i)) then ! it is now inside a CH/CF inclusion
+!!$                partEnd = .true.
+!!$             end if
+!!$
+!!$          ! particle started inside a CH/CF inclusion
+!!$          else 
+!!$             if (ri >= CIr(i)) then ! it is now outside a CH/CF inclusion
+!!$                partEnd = .true. 
+!!$             end if
+!!$          end if
+!!$       end if
+!!$    end do
 
-          ! particle started outside a CH/CF inclusion
-          if (.not. PARInclIn(num)) then
-             if (ri <= CIr(i)) then ! it is now inside a CH/CF inclusion
-                partEnd = .true.
-             end if
+    ! TODO handle flowing into a constant head/flux element (from inside or
+    ! TODO from outside, circles or ellipses
 
-          ! particle started inside a CH/CF inclusion
-          else 
-             if (ri >= CIr(i)) then ! it is now outside a CH/CF inclusion
-                partEnd = .true. 
-             end if
-          end if
-       end if
-    end do
-
-    ! dealing with area-sinks is more complex, will be dealt with later
+    ! TODO dealing with area-sinks is more complex, will be dealt with later
   end function sinkCheck
 
 end module particle_integrate
