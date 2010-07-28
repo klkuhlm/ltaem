@@ -363,31 +363,30 @@ contains
           if (ierr /= 0) stop 'circular_elements.f90 error deallocating: Bn,Bn0,cmat,smat'
 
        end if
-    end if
-       
-    if (c%ibnd == 2 .and. (.not. c%storin)) then
-
-       ! save flux effects of well onto RHS
-       if (dom%inclBg(src,targ)) then
-          ! source well in background of target element
-          factor = -1.0_DP
-       else
-          ! source well inside target element
-          factor = 1.0_DP
+       if (c%ibnd == 2 .and. (.not. c%storin)) then
+   
+          ! save flux effects of well onto RHS
+          if (dom%inclBg(src,targ)) then
+             ! source well in background of target element
+             factor = -1.0_DP
+          else
+             ! source well inside target element
+             factor = 1.0_DP
+          end if
+          
+          r%RHS(loM:hiM) = factor*well(c,p)*r%LHS(loM:hiM,loN)
+   
+          if (el%ibnd == 0) then
+             hiM = 2*M
+          else
+             hiM = M
+          end if
+   
+          deallocate(r%LHS,stat=ierr)
+          if (ierr /= 0) stop 'circular_elements:circle_match_self() error deallocating r%LHS'
+          allocate(r%LHS(hiM,0),stat=ierr)
+          if (ierr /= 0) stop 'circular_elements:circle_match_self() error re-allocating r%LHS'
        end if
-       
-       r%RHS(loM:hiM) = factor*well(c,p)*r%LHS(loM:hiM,loN)
-
-       if (el%ibnd == 0) then
-          hiM = 2*M
-       else
-          hiM = M
-       end if
-
-       deallocate(r%LHS,stat=ierr)
-       if (ierr /= 0) stop 'circular_elements:circle_match_self() error deallocating r%LHS'
-       allocate(r%LHS(hiM,0),stat=ierr)
-       if (ierr /= 0) stop 'circular_elements:circle_match_self() error re-allocating r%LHS'
     end if
 
   end function circle_match_other
