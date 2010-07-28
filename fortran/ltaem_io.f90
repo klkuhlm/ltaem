@@ -610,7 +610,7 @@ contains
        write(16,fmt(3)) e(:)%T,'  ||    ellipse transmissivity'
     end if
     write(16,'(ES11.5,A)') bg%alpha,'  ||    background hydraulic diffusivity'
-    write(16,'(ES11.5,A)') bg%T,'  ||    background hydraulic diffusivity'
+    write(16,'(ES11.5,A)') bg%T,'  ||    background transmissivity'
 
     ! particles
     if (sol%particle) then

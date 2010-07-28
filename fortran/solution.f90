@@ -64,13 +64,13 @@ contains
     do i=1,nc
        ! circle on self
        res(i,i) = circle_match(c(i),p)
-
-#ifdef DEBUG
-       print *, 'circle on self',i
-       call print_match_result(res(i,i))
-#endif
        row(i,1) = size(res(i,i)%RHS,1)
        col(i,1) = size(res(i,i)%LHS,2)
+
+#ifdef DEBUG
+       print *, 'circle on self',i,' row',row(i,1),' col',col(i,1)
+!!$       call print_match_result(res(i,i))
+#endif
 
        ! circle on other circle
        do j=1,nc
@@ -78,7 +78,7 @@ contains
              res(j,i) = circle_match(c(i),c(j)%matching,dom,p)
 #ifdef DEBUG
              print *, 'circle',i,'on other circle',j
-             call print_match_result(res(j,i))
+!!$             call print_match_result(res(j,i))
 #endif
           end if
        end do
@@ -88,7 +88,7 @@ contains
           res(j+nc,i) = circle_match(c(i),e(j)%matching,dom,p)
 #ifdef DEBUG
           print *, 'circle',i,'on other ellipse',j+nc
-          call print_match_result(res(j+nc,i))
+!!$          call print_match_result(res(j+nc,i))
 #endif
        end do
     end do
@@ -96,19 +96,20 @@ contains
     do i = 1, ne
        ! ellipse on self
        res(nc+i,nc+i) = ellipse_match(e(i),p,idx)
-#ifdef DEBUG
-       print *, 'ellipse on self',i
-       call print_match_result(res(nc+i,nc+i))
-#endif
        row(i+nc,1) = size(res(nc+i,nc+i)%RHS,1)
        col(i+nc,1) = size(res(nc+i,nc+i)%LHS,2)
+
+#ifdef DEBUG
+       print *, 'ellipse on self',nc+i,' row',row(i+nc,1),' col',col(i+nc,1)
+!!$       call print_match_result(res(nc+i,nc+i))
+#endif
 
        ! ellipse on other circle
        do j = 1, nc
           res(j,nc+i) = ellipse_match(e(i),c(j)%matching,dom,p,idx)
 #ifdef DEBUG
           print *, 'ellipse',i+nc,'on other circle',j
-          call print_match_result(res(j,nc+i))
+!!$          call print_match_result(res(j,nc+i))
 #endif
        end do
 
@@ -118,7 +119,7 @@ contains
              res(nc+j,nc+i) = ellipse_match(e(i),e(j)%matching,dom,p,idx)
 #ifdef DEBUG
              print *, 'ellipse',i+nc,'on other ellipse',j+nc
-             call print_match_result(res(nc+j,nc+i))
+!!$             call print_match_result(res(nc+j,nc+i))
 #endif
           end if
        end do
