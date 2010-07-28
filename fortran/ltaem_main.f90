@@ -77,24 +77,24 @@ program ltaem_main
         
         ! need to do something better here about particles starting at t=0?
         do i=1, sol%nPart
-           if (p(i)%ti < 1.0D-5) then
-              p(i)%ti = 1.0D-5
+           if (part(i)%ti < 1.0D-5) then
+              part(i)%ti = 1.0D-5
               write(*,'(A,I0,A)') '^^^^ start time for particle ',i,' reset to 1.0E-5 ^^^^'
            end if
         end do
         
-        iminlogt = floor(  minval(log10(p(:)%ti)))
-        imaxlogt = ceiling(maxval(log10(p(:)%tf)))
+        iminlogt = floor(  minval(log10(part(:)%ti)))
+        imaxlogt = ceiling(maxval(log10(part(:)%tf)))
 
-        allocate(s(2*INVm+1,iminlogt:imaxlogt), nt(iminlogt:imaxlogt), &
+        allocate(s(2*sol%m+1,iminlogt:imaxlogt), nt(iminlogt:imaxlogt), &
              & tee(iminlogt:imaxlogt))
 
         nt(iminlogt:imaxlogt) = 1
 
         do ilogt = iminlogt, imaxlogt
            ! 0.99 is "most" of a log-cycle
-           tee(ilogt) = min(10.0**(ilogt + 0.99), maxval(p(:)%tf))*2.0
-           s(:,ilogt) = pvalues(tee(ilogt),lap)
+           tee(ilogt) = min(10.0**(ilogt + 0.99), maxval(part(:)%tf))*2.0
+           s(:,ilogt) = pvalues(tee(ilogt),sol%INVLT)
         end do
 
         ! to make it possible for particles / contours to share code...
@@ -239,11 +239,13 @@ program ltaem_main
      write(*,'(A)') 'compute solution for tracking particles'
      allocate(parnumdt(sol%nPart))
 
-     parnumdt(:) = ceiling((p(:)%tf - p(:)%ti)/p(:)%dt)
+     parnumdt(:) = ceiling((part(:)%tf - part(:)%ti)/part(:)%dt)
 
      do i = 1,sol%nPart
-        allocate(p(i)%r(0:parnumdt(i),5))
-        p(:)%r(:,:) = 0.0        
+        ! initialize particles
+        allocate(part(i)%r(0:parnumdt(i),5))
+        part(i)%r(:,:) = 0.0
+        part(i)%id = i
      end do
 
      ! cycle over particles, integrating each
@@ -259,11 +261,11 @@ program ltaem_main
 
         select case (part(j)%int)
         case (1)
-           call rungekuttamerson(s,tee,c,e,part(j),sol,lo)
+           call rungekuttamerson(s,tee,c,e,bg,sol,dom,part(j),lbound(tee,dim=1))
         case (2)
-                 call rungekutta(s,tee,c,e,part(j),sol,lo)
+                 call rungekutta(s,tee,c,e,bg,sol,dom,part(j),lbound(tee,dim=1))
         case (4)
-                   call fwdEuler(s,tee,c,e,part(j),sol,lo)
+                   call fwdEuler(s,tee,c,e,bg,sol,dom,part(j),lbound(tee,dim=1))
         case default
            write(*,'(A,I0,1X,I0)') 'invalid integration code', j, part(j)%int
         end select

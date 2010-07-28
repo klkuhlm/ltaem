@@ -10,7 +10,8 @@ module inverse_Laplace_Transform
   public :: deHoog_invlap, deHoog_pvalues
   
   interface deHoog_invlap
-     module procedure deHoog_invlap_vect, deHoog_invlap_scal, deHoog_invlap_vel
+     module procedure deHoog_invlap_vect, deHoog_invlap_scalt, &
+          & deHoog_invlap_vel_scalt, deHoog_invlap_vel
   end interface
   
 contains
@@ -107,7 +108,7 @@ contains
     end if
   end function deHoog_invLap_vect
 
-  function deHoog_invLap_scal(t,tee,fp,lap) result(ft)
+  function deHoog_invLap_scalt(t,tee,fp,lap) result(ft)
     use constants, only : DP
     use type_definitions, only : INVLT
     real(DP), intent(in) ::  t, tee 
@@ -116,7 +117,7 @@ contains
     real(DP) :: ft ! output
     
     ft = sum(deHoog_invLap_vect([t],tee,fp,lap))
-  end function deHoog_invLap_scal
+  end function deHoog_invLap_scalt
 
   function deHoog_invLap_vel(t,tee,fp,lap) result(ft)
     ! for use with velocity results, where second dimension is 2 (x,y)
@@ -131,6 +132,20 @@ contains
     ft(:,1) = deHoog_invLap_vect(t,tee,fp(:,1),lap) ! x vel
     ft(:,2) = deHoog_invLap_vect(t,tee,fp(:,2),lap) ! y vel
   end function deHoog_invLap_vel
+
+  function deHoog_invLap_vel_scalt(t,tee,fp,lap) result(ft)
+    ! for use with velocity results, where second dimension is 2 (x,y)
+    use constants, only : DP
+    use type_definitions, only : INVLT
+    real(DP), intent(in) :: t
+    real(DP), intent(in) ::  tee
+    complex(DP), intent(in), dimension(:,:) :: fp
+    type(INVLT), intent(in) :: lap
+    real(DP), dimension(2) :: ft ! output
+
+    ft(1) = sum(deHoog_invLap_vect([t],tee,fp(:,1),lap)) ! x vel
+    ft(2) = sum(deHoog_invLap_vect([t],tee,fp(:,2),lap)) ! y vel
+  end function deHoog_invLap_vel_scalt
   
   function deHoog_pvalues(tee,lap) result(p)
     use constants, only : DP, PI

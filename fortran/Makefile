@@ -17,7 +17,7 @@ BLASLIB=/Users/klkuhlm/src/lapack-3.2.1/blas_MAC.a
 
 # main-program related
 ####################################
-KKHIGH=kappa.o time.o ltaem_io.o invlap.o ellipse_mathieu_init.o circular_elements.o elliptical_elements.o calc_routines.o element_geometry.o solution.o
+KKHIGH=kappa.o time.o ltaem_io.o invlap.o ellipse_mathieu_init.o circular_elements.o elliptical_elements.o calc_routines.o element_geometry.o solution.o particle_integration.o
 
 KKHIGHUNSAT=unsat_io.o unsat_circular_elements.o unsat_elliptical_elements.o unsat_calc_routines.o unsat_element_geometry.o unsat_solution.o
 
@@ -91,6 +91,7 @@ elliptical_elements.o elliptical_elements.mod : constants.mod kappa_mod.mod time
 calc_routines.o calc_routines.mod : type_definitions.mod constants.mod circular_elements.mod elliptical_elements.mod kappa_mod.mod time_mod.mod utility.mod calc_routines.f90
 element_geometry.o geometry.mod : constants.mod type_definitions.mod file_ops.mod utility.mod element_geometry.f90
 ltaem_main.o : constants.mod type_definitions.mod file_ops.mod inverse_laplace_transform.mod solution_mod.mod calc_routines.mod geometry.mod ellipse_mathieu_init.mod ltaem_main.f90
+particle_integration.o particle_integrate.mod : constants.mod inverse_laplace_transform.mod type_definitions.mod calc_routines.mod
 
 unsat_type_definitions.o unsat_type_definitions.mod : constants.mod mathieu_functions.mod unsat_type_definitions.f90
 unsat_io.o unsat_file_ops.mod : unsat_type_definitions.mod constants.mod unsat_io.f90

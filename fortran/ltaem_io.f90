@@ -630,6 +630,7 @@ contains
        read(44,*) p(:)%tol 
        read(44,*) p(:)%dt 
        read(44,*) p(:)%maxStep
+       read(44,*) p(:)%min
        read(44,*) p(:)%x
        read(44,*) p(:)%y
        read(44,*) p(:)%ti
@@ -858,7 +859,7 @@ contains
           & '#     time          x            y             velx          vely '
           do k=1,p(i)%numt
              write (20,'('//tfmt//',2'//xfmt//',2'//hfmt//')') &
-                  & p(i)%result(1:5,k)
+                  & p(i)%r(1:5,k)
           end do
           write (20,'(/)')
        end do       
@@ -884,13 +885,13 @@ contains
 
        do i = 1, nt, s%streakSkip
           ! use maxval to ensure a non-zero time is reported
-          write (90,'(A'//tfmt//')') '# time:', maxval(p(i)%result(1,:)) 
+          write (90,'(A'//tfmt//')') '# time:', maxval(p(i)%r(1,:)) 
           write (90,'(A)') '#  particle       x            y&
                &           velx         vely'
           do j = 1, size(p,dim=1)
-             if (p(j)%result(1,i) > 0.0) then
+             if (p(j)%r(1,i) > 0.0) then
                 ! only write particle if it has non-zero data
-                write (90,'(I0,4(1X'//hfmt//'))')  j,p(j)%result(2:5,i)
+                write (90,'(I0,4(1X'//hfmt//'))')  j,p(j)%r(2:5,i)
              end if
           end do
           write (90,'(/)')

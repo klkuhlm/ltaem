@@ -211,7 +211,7 @@ module type_definitions
      ! 2 = Runge-Kutta        (4th order)
      ! 3 = Richardson Extrapolation (2nd order)
      ! 4 = Fwd Euler          (1st order)
-     integer :: int = -999
+     integer :: int = -999, id = -999
      
      ! error tolerance and minimum stepsize for rkm
      real(DP) :: tol = -999., min = -999., maxStep = -999.
@@ -225,7 +225,7 @@ module type_definitions
      ! results from particle tracking (for each particle)
      ! first dimension is always 5 (t,x,y,velx,vely)
      ! second dimension is long enough to hold all needed times
-     real(DP), allocatable :: result(:,:)
+     real(DP), allocatable :: r(:,:)
 
      ! number of time steps actuall used (some algorithms are adaptive)
      integer :: numt = -999
