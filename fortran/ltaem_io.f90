@@ -626,16 +626,52 @@ contains
        read(44,*) sol%nPart,  sol%streakSkip
        allocate(p(sol%nPart),stat=ierr)
        if (ierr /= 0) stop 'ltaem_io.f90 error allocating p()'
-       ! TODO: error checking for particle data
-       read(44,*) p(:)%tol 
-       read(44,*) p(:)%dt 
-       read(44,*) p(:)%maxStep
-       read(44,*) p(:)%min
+
+       read(44,*) p(:)%tol   ! error tolerance for rkm
+       if (any(p%tol < epsilon(1.0D0))) then
+          print *, 'p%tol must be > 0.0',p%tol
+          stop
+       end if      
+
+       read(44,*) p(:)%maxL  ! max step length for rkm
+       if (any(p%maxL < epsilon(1.0))) then
+          print *, 'p%maxL must be > 0.0',p%maxL
+          stop
+       end if      
+
+       read(44,*) p(:)%mindt  ! min step size for rkm
+       if (any(p%mindt < epsilon(1.0))) then
+          print *, 'p%mindt must be > 0.0',p%mindt
+          stop
+       end if
+       
+       read(44,*) p(:)%dt    ! time step (initial timestep for rkm)
+       if (any(p%dt < epsilon(1.0))) then
+          print *, 'p%dt must be > 0.0',p%dt
+          stop
+       end if
+
        read(44,*) p(:)%x
        read(44,*) p(:)%y
-       read(44,*) p(:)%ti
+
+       read(44,*) p(:)%ti ! particle start time
+       if (any(p%ti < epsilon(1.0))) then
+          print *, 'p%ti must be > 0.0',p%ti
+          stop
+       end if
+
        read(44,*) p(:)%tf
+       if (any(p%tf < p%ti)) then
+          print *, 'p%tf must be > p%ti  ti:',p%ti,' tf:',p%tf
+          stop
+       end if
+
        read(44,*) p(:)%int
+       if (any(p%int < 1 .or. p%int == 3 .or. p%int > 4)) then
+          print *, 'p%int must be {1,2,4}',p%int
+          stop
+       end if
+       
        read(44,*) p(:)%InclIn
        close(44)
 
@@ -644,9 +680,10 @@ contains
        fmt(2) = '('//chint//'(L1,1X),A)     ' ! logical
        fmt(3) = '('//chint//'(ES13.5,1X),A) ' ! real
 
-       write(16,fmt(3)) p(:)%tol,'  ||    particle solution tolerances'
-       write(16,fmt(3)) p(:)%dt,'  ||    particle dt'
-       write(16,fmt(3)) p(:)%maxStep,'  ||   particle max flux'
+       write(16,fmt(3)) p(:)%tol,'  ||    particle solution tolerances (RKM only)'
+       write(16,fmt(3)) p(:)%dt,'  ||    particle time step (RKM initial step)'
+       write(16,fmt(3)) p(:)%maxL,'  ||   particle max step length (RKM only)'
+       write(16,fmt(3)) p(:)%mindt,'  ||   particle min time step size (RKM only)'
        write(16,fmt(3)) p(:)%x, '  ||    particle initial x'
        write(16,fmt(3)) p(:)%y, '  ||    particle initial y'
        write(16,fmt(3)) p(:)%ti, '  ||    particle initial t'

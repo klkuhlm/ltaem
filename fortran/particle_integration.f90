@@ -150,7 +150,7 @@ contains
        ! only advance to next step if error level is acceptable
        ! _and_ resulting step is less than prescribed limit 
        ! _or_ we have gotten to the minimum step size (proceed anyways)
-       if ((error < p%tol .and. L <= p%maxStep) .or. dt <= p%min) then
+       if ((error < p%tol .and. L <= p%maxL) .or. dt <= p%mindt) then
           pt = pt + dt
           px = Simp(1)
           py = Simp(2)
@@ -177,7 +177,7 @@ contains
        ! Numerical Recipes, Press et al 1992, eqn 16.2.10, p 712
        if (.not. partEnd .and. pt <= p%tf) then
 
-          if (L > p%maxStep) then
+          if (L > p%maxL) then
              ! cut time step to minimize distance
              ! integrated in one step
              dt = dt/3.0
@@ -192,9 +192,9 @@ contains
 
           end if
 
-          if (dt <= p%min) then
+          if (dt <= p%mindt) then
              write(*,'(3(A,ES12.6E2))') 'min step; dt=',dt,' error=',error, ' pt=',pt
-             dt = p%min
+             dt = p%mindt
           end if
        end if
     end do rkm

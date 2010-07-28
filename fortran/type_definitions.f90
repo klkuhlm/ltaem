@@ -213,8 +213,8 @@ module type_definitions
      ! 4 = Fwd Euler          (1st order)
      integer :: int = -999, id = -999
      
-     ! error tolerance and minimum stepsize for rkm
-     real(DP) :: tol = -999., min = -999., maxStep = -999.
+     ! error tolerance, minimum stepsize, and max step length for rkm
+     real(DP) :: tol = -999., mindt = -999., maxL = -999.
      
      ! step size for other integration schemes (initial stepsize for rkm)
      real(DP) :: dt = -999.
