@@ -1,4 +1,4 @@
-True  False  True  1  wedge_contour.xyz  dump.out  wedge.elem  wedge.geom    ::  re-compute coefficients?, particle?, contour?, output flag, outputFN, coeffFN (output), elementHierarchy (input), geometryFN (output)
+True  True True  4  wedge_particles.dat  dump.out  wedge.elem  wedge.geom    ::  re-compute coefficients?, particle?, contour?, output flag, outputFN, coeffFN (output), elementHierarchy (input), geometryFN (output)
 2.0D-1  2.0D0  1.0D-4   0  1.0D0  1.0D-4  1.0D0  34  ::  por, k, Ss, leakFlag, K2, Ss2, b2, ellipse MS
 1.5D-1  2.0D0  False  1.0  :: Sy, Kz, unconfined?, b
 100  100  1  :: nx, ny, nt

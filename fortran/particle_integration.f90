@@ -34,6 +34,7 @@ contains
     !  TODO not using porosity correctly ?
     ! &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 
+    ns = size(s,dim=1)
     pt = p%ti
     px = p%x
     py = p%y
@@ -69,7 +70,7 @@ contains
        ! forward Euler 1/3-step  (predictor)
        ilogc = ceiling(log10(pt))
        los = (ilogc-lo)*ns + 1
-       his = los + ns
+       his = los + ns - 1
 
        velp(1:ns,1:2) = velCalc(cmplx(px,py,DP),s(:,ilogc),los,his,dom,c,e,bg)
        VInit(1:2) = invlap(pt,tee(ilogc),velp(:,1:2),sol%INVLT)
@@ -83,7 +84,7 @@ contains
        ! trapazoid rule 1/3-step (corrector)
        ilogc = ceiling(log10(pt + dt/3.0))
        los = (ilogc-lo)*ns + 1
-       his = los + ns
+       his = los + ns - 1
 
        velp(1:ns,1:2) = velCalc(cmplx(FwdEuler(1),FwdEuler(2),DP),&
             & s(:,ilogc),los,his,dom,c,e,bg)
@@ -109,7 +110,7 @@ contains
        ! full step Adams-Bashforth predictor
        ilogc = ceiling(log10(pt + dt/2.0))
        los = (ilogc-lo)*ns + 1
-       his = los + ns
+       his = los + ns - 1
 
        velp(1:ns,1:2) = velCalc(cmplx(halfAB(1),halfAB(2),DP), &
             & s(:,ilogc),los,his,dom,c,e,bg)
@@ -125,7 +126,7 @@ contains
        ! full step Simpson's rule corrector
        ilogc = ceiling(log10(pt + dt))
        los = (ilogc-lo)*ns + 1
-       his = los + ns
+       his = los + ns - 1
 
        velp(1:ns,1:2) = velCalc(cmplx(halfAB(1),halfAB(2),DP), &
             & s(:,ilogc),los,his,dom,c,e,bg)
@@ -198,6 +199,7 @@ contains
           end if
        end if
     end do rkm
+    p%numt = count - 1
   end subroutine rungekuttamerson
 
   !$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
@@ -247,7 +249,7 @@ contains
     write(*,'(A,ES11.5,A,I0)') 'step size=',dt,' number steps needed=',numdt
 
     rk: do i = 1,numdt   
-       if (mod(i,100) == 0) write(*,'(A,ES12.6E2)') 't=',pt
+       if (mod(i,20) == 0) write(*,'(I0,A,ES12.6E2)') i,' t=',pt
 
        ! see if particle will reach end this step
        if (pt + dt >= tf) then
@@ -259,39 +261,39 @@ contains
        ! forward Euler 1/2-step  (predictor)
        ilogc = ceiling(log10(pt))
        los = (ilogc-lo)*ns + 1
-       his = los + ns
+       his = los + ns - 1
 
        velp(1:ns,1:2) = velCalc(cmplx(px,py,DP),s(:,ilogc),los,his,dom,c,e,bg)
-       vInit(1:2) = invlap(pt,tee(ilogc), velp(:,1:2) ,sol%INVLT)
+       vInit(1:2) = invlap(pt, tee(ilogc), velp(:,1:2), sol%INVLT)
 
        FwdEuler(1:2) = [px,py] + dt/2.0*VInit(1:2)
 
        ! backward Euler 1/2-step (corrector)
        ilogc = ceiling(log10(pt + dt/2.0))
        los = (ilogc-lo)*ns + 1
-       his = los + ns
+       his = los + ns - 1
 
        velp(1:ns,1:2) = velCalc(cmplx(FwdEuler(1),FwdEuler(2),DP), &
             & s(:,ilogc),los,his,dom,c,e,bg)
-       vBkwdEuler(1:2) = invlap(pt + dt/2.0,tee(ilogc),velp(:,1:2) ,sol%INVLT)
+       vBkwdEuler(1:2) = invlap(pt + dt/2.0, tee(ilogc), velp(:,1:2), sol%INVLT)
 
        BkwdEuler(1:2) = [px,py] + dt/2.0*vBkwdEuler(1:2)
 
        ! midpoint rule full-step predictor
        ilogc = ceiling(log10(pt + dt))
        los = (ilogc-lo)*ns + 1
-       his = los + ns
+       his = los + ns - 1
       
        velp(1:ns,1:2) = velCalc(cmplx(BkwdEuler(1),BkwdEuler(2),DP), &
             & s(:,ilogc),los,his,dom,c,e,bg)
-       vMidpt(1:2) = invlap(pt + dt,tee(ilogc),velp(:,1:2),sol%INVLT)
+       vMidpt(1:2) = invlap(pt + dt, tee(ilogc), velp(:,1:2), sol%INVLT)
 
        Midpt(1:2) = [px,py] + dt*vMidpt(1:2)
 
        ! Simpson's rule full-step corrector
        velp(1:ns,1:2) = velCalc(cmplx(Midpt(1),Midpt(2),DP), &
             & s(:,ilogc),los,his,dom,c,e,bg)
-       vSimp(1:2) = invlap(pt + dt,tee(ilogc),velp(:,1:2),sol%INVLT)
+       vSimp(1:2) = invlap(pt + dt, tee(ilogc), velp(:,1:2), sol%INVLT)
 
        Simp(1:2) = [px,py] + dt/6.0* &
             & (vinit(1:2) + 2.0*vBkwdEuler(1:2) + 2.0*vMidpt(1:2) + vSimp(1:2))
@@ -312,6 +314,7 @@ contains
           exit rk             
        end if      
     end do rk
+    p%numt = i-1
   end subroutine rungekutta
 
   !$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
@@ -358,7 +361,7 @@ contains
     write(*,'(A)')    '****************************************'
 
     fe: do i = 1,numdt   
-       if( mod(i,500) ==0 ) write(*,'(A,ES12.6E2)') 't=',pt
+       if( mod(i,100) ==0 ) write(*,'(I0,A,ES12.6E2)') i,' t=',pt
 
        ! see if particle will reach end this step
        if (pt + dt >= tf) then
@@ -371,13 +374,15 @@ contains
        ilogc = ceiling(log10(pt))
 
        los = (ilogc-lo)*ns + 1
-       his = los + ns
+       his = los + ns - 1
 
        velp(1:ns,1:2) = velCalc(cmplx(px,py,DP),s(:,ilogc),los,his,dom,c,e,bg)
        vel(1:2) = invlap(pt,tee(ilogc),velp(:,1:2),sol%INVLT)
 
        px = px + dt*vel(1)
        py = py + dt*vel(2)
+
+!!       print *, i,pt,px,py,vel
 
        pt = pt + dt
 
@@ -389,11 +394,14 @@ contains
 
        partEnd = sinkCheck(px,py,c,e)
 
+
        if (partEnd) then
           write(*,'(A,I0,A,ES12.6E2)') 'particle ',p%id,' entered a sink at t=',pt
           exit fe
        end if
     end do fe
+    p%numt = i - 1
+          
   end subroutine fwdEuler
 
   !###########################################################################

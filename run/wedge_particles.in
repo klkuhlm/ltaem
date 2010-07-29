@@ -1,5 +1,11 @@
-2  10          :: #particles, streakSkip
-1.0D-4 1.0D-4  :: RKM tolerance
-1.0D-2 1.0D-2  :: RKM max step length
-1.0D-2 1.0D-2  :: dt step size
-0.0  0.2       :: starting x
+4  -999          :: #particles, streakSkip
+1.0D-2 1.0D-2 1.0D-2 1.0D-2  :: RKM tolerance
+0.02 0.02 0.02 0.02  :: RKM max step length
+0.005 0.005 0.005 0.005  :: RKM min dt step size
+2.0 0.5 0.5 1.0  :: initial dt step size
+-0.3 -0.2 -0.1 0.0      :: starting x
+0.1   0.125  0.15 0.2      :: starting y
+1.01 1.01 1.01  1.01  :: starting time
+999.0  999.0  999.0  999.0  :: ending time
+1 1 1 1         :: integration scheme
+F F F F        :: beginning inside an element?

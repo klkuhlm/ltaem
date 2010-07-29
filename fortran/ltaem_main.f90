@@ -252,6 +252,7 @@ program ltaem_main
      ! re-shape matrix s into a vector
      tmpfname = 'calc_part_    .debug'
 
+     !$OMP PARALLEL DO PRIVATE(j) SHARED(part)
      do j = 1, sol%nPart
 
 #ifdef DEBUG
@@ -275,6 +276,7 @@ program ltaem_main
 #endif
 
      end do
+     !$OMP END PARALLEL DO
   
   !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   elseif(sol%contour) then ! contour output (x,y locations outer product of x,y vectors)
