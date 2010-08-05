@@ -40,11 +40,11 @@ OBJSUNSAT=$(EXTERNAL) constants.o $(KKLOW) unsat_type_definitions.o $(KKHIGHUNSA
 #### gfortran #################
 F90=gfortran-4.6
 DFLAGS=-O0 -Wall -Wextra -fbacktrace -g
-DFLAGS+=-frange-check -fcheck=all -finit-real=snan -finit-integer=-99999 -fbacktrace #-fwhole-file
-DFLAGS+=-cpp -DDEBUG 
+DFLAGS+=-frange-check -fcheck=all -finit-real=snan -finit-integer=-99999 -fbacktrace 
+DFLAGS+=-cpp #-DDEBUG 
 #DFLAGS+=-fdump-rtl-expand
-PFLAGS=-O3 -march=native -cpp -fwhole-file  -fopenmp
-LINKFLAG=-$(PFLAGS)
+PFLAGS=-O3 -march=native -cpp -fwhole-file -fopenmp
+LINKFLAG=$(PFLAGS)
 ###################################
 
 # switch between performance or debugging flags

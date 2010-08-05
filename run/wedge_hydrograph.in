@@ -204,7 +204,7 @@ True False False  3  wedge_hydrograph.dat  dump.out  wedge.elem  wedge.geom    :
 8.70359e+01
 9.32930e+01
 1.00000e+02
-1.0D-6  1.0D-8  40  :: alpha, tolerance, M
+1.0D-6  1.0D-8  20  :: alpha, tolerance, M
 2  wedge_circles.in     :: number of circular elements, circular elements input file
 4  wedge_ellipses.in    :: number of elliptical elements, elliptical elements input file
 wedge_particles.in     :: particle inputs file

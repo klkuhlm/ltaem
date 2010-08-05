@@ -15,6 +15,7 @@ program ltaem_main
   use calc_routines, only : headCalc, velCalc
   use geometry, only : distanceAngleCalcs
   use ellipse_mathieu_init, only : ellipse_init
+
 #ifndef DEBUG
   use omp_lib, only : omp_get_thread_num
 #endif
@@ -37,7 +38,7 @@ program ltaem_main
   integer, allocatable :: nt(:), run(:)    ! #-times-each-log-cycle, 0,1,2,3...
   integer, allocatable :: parnumdt(:)      ! number of dt expected for each particle
   integer, allocatable :: idxmat(:,:)  ! matrix of indices for parallelization
-  real(DP), allocatable :: logt(:), tee(:) ! log10-time(numt), T-in-deHoog(num-log-cycles)
+  real(DP), allocatable :: logt(:), tmax(:) ! log10-time(numt), Tmax-for-deHoog(num-log-cycles)
   complex(DP), allocatable :: s(:,:)       ! laplace-parameter(2*M-1,num-log-cycles)
   complex(DP) :: calcZ      ! calc-point-complex-coordinates
   character(6) :: elType    ! element-type {CIRCLE,ELLIPS}
@@ -88,14 +89,14 @@ program ltaem_main
         imaxlogt = ceiling(maxval(log10(part(:)%tf)))
 
         allocate(s(2*sol%m+1,iminlogt:imaxlogt), nt(iminlogt:imaxlogt), &
-             & tee(iminlogt:imaxlogt))
+             & tmax(iminlogt:imaxlogt))
 
         nt(iminlogt:imaxlogt) = 1
 
         do ilogt = iminlogt, imaxlogt
-           ! 0.99 is "most" of a log-cycle
-           tee(ilogt) = min(10.0**(ilogt + 0.99), maxval(part(:)%tf))*2.0
-           s(:,ilogt) = pvalues(tee(ilogt),sol%INVLT)
+           ! 0.999 is "most" of a log-cycle
+           tmax(ilogt) = min(10.0**(ilogt + 0.999), maxval(part(:)%tf))*2.0
+           s(:,ilogt) = pvalues(tmax(ilogt),sol%INVLT)
         end do
 
         ! to make it possible for particles / contours to share code...
@@ -113,15 +114,15 @@ program ltaem_main
         imaxlogt = ceiling(maxval(logt(:)))
 
         allocate(s(2*sol%m+1,iminlogt:imaxlogt-1), nt(iminlogt:imaxlogt-1), &
-             & tee(iminlogt:imaxlogt-1), stat=ierr)
-        if (ierr /= 0) stop 'ltaem_main.f90 error allocating: s,nt,tee'
+             & tmax(iminlogt:imaxlogt-1), stat=ierr)
+        if (ierr /= 0) stop 'ltaem_main.f90 error allocating: s,nt,tmax'
 
         do ilogt = iminlogt, imaxlogt-1
            ! number of times falling in this logcycle
            nt(ilogt) = count(logt >= real(ilogt,DP) .and. logt < real(ilogt+1,DP))
            ! T=2*max time in this logcycle
-           tee(ilogt) = maxval(sol%t(lo:lo+nt(ilogt)-1))*2.0 
-           s(:,ilogt) = pvalues(tee(ilogt),sol%INVLT)
+           tmax(ilogt) = maxval(sol%t(lo:lo+nt(ilogt)-1))*2.0
+           s(:,ilogt) = pvalues(tmax(ilogt),sol%INVLT)
            lo = lo + nt(ilogt)
         end do
         deallocate(logt,run, stat=ierr)
@@ -169,7 +170,7 @@ program ltaem_main
         write(77,*) iminlogt,imaxlogt,nc,ne
         write(77,*) nt(:)
         write(77,*) s(:,:)
-        write(77,*) tee(:)
+        write(77,*) tmax(:)
         do i = 1,nc
            write(77,*) 'CIRCLE',i,shape(c(i)%coeff)
            write(77,*) c(i)%coeff(:,:)
@@ -196,13 +197,13 @@ program ltaem_main
         read(77,*) !! TODO not doing anything with input file, but I should
         read(77,*) iminlogt,imaxlogt,nc,ne ! scalars
         allocate(s(2*sol%m+1,iminlogt:imaxlogt-1), nt(iminlogt:imaxlogt-1), &
-             & tee(iminlogt:imaxlogt-1),stat=ierr)
-        if (ierr /= 0) stop 'ltaem_main.f90 error allocating: s,nt,tee'
+             & tmax(iminlogt:imaxlogt-1),stat=ierr)
+        if (ierr /= 0) stop 'ltaem_main.f90 error allocating: s,nt,tmax'
         read(77,*) nt(:)
         read(77,*) s(:,:)
         sol%totalnP = product(shape(s))
         tnp = sol%totalnP
-        read(77,*) tee(:)
+        read(77,*) tmax(:)
         do i = 1,nc
            read(77,*) elType,j,crow,ccol
            if (elType == 'CIRCLE' .and. i == j) then
@@ -264,11 +265,11 @@ program ltaem_main
 
         select case (part(j)%int)
         case (1)
-           call rungekuttamerson(s,tee,c,e,bg,sol,dom,part(j),lbound(tee,dim=1))
+           call rungekuttamerson(s,tmax,c,e,bg,sol,dom,part(j),lbound(tmax,dim=1))
         case (2)
-                 call rungekutta(s,tee,c,e,bg,sol,dom,part(j),lbound(tee,dim=1))
+                 call rungekutta(s,tmax,c,e,bg,sol,dom,part(j),lbound(tmax,dim=1))
         case (4)
-                   call fwdEuler(s,tee,c,e,bg,sol,dom,part(j),lbound(tee,dim=1))
+                   call fwdEuler(s,tmax,c,e,bg,sol,dom,part(j),lbound(tmax,dim=1))
         case default
            write(*,'(A,I0,1X,I0)') 'invalid integration code', j, part(j)%int
         end select
@@ -298,7 +299,7 @@ program ltaem_main
 #ifdef DEBUG
         write (*,'(A,ES13.5)') 'x: ',sol%x(j)
 #else
-        write (*,'(A,ES13.5,A,I0)') 'x: ',sol%x(j), '  thr=',OMP_get_thread_num()
+        write (*,'(A,ES13.5,A,I0)') 'x: ',sol%x(j), '  thr=',1!!OMP_get_thread_num()
 #endif
         do i = 1,sol%ny
 
@@ -320,8 +321,8 @@ program ltaem_main
               lop = (ilogt - iminlogt)*size(s,dim=1) + 1
               hip = lop + size(s,dim=1) - 1
 
-              sol%h(j,i,lot:hit) =     invlap(sol%t(lot:hit), tee(ilogt), hp(lop:hip), sol%INVLT)
-              sol%v(j,i,lot:hit,1:2) = invlap(sol%t(lot:hit), tee(ilogt), vp(lop:hip,1:2), sol%INVLT)
+              sol%h(j,i,lot:hit) =     invlap(sol%t(lot:hit), tmax(ilogt), hp(lop:hip), sol%INVLT)
+              sol%v(j,i,lot:hit,1:2) = invlap(sol%t(lot:hit), tmax(ilogt), vp(lop:hip,1:2), sol%INVLT)
            end do
         end do
      end do
@@ -354,8 +355,8 @@ program ltaem_main
            hip = lop + size(s,1) - 1
 
            ! don't need second dimension of results matricies
-           sol%h(i,1,lot:hit) =   invlap(sol%t(lot:hit),tee(ilogt),hp(lop:hip),sol%INVLT)
-           sol%v(i,1,lot:hit,1:2) = invlap(sol%t(lot:hit),tee(ilogt),vp(lop:hip,1:2),sol%INVLT)
+           sol%h(i,1,lot:hit) =     invlap(sol%t(lot:hit),tmax(ilogt),hp(lop:hip),sol%INVLT)
+           sol%v(i,1,lot:hit,1:2) = invlap(sol%t(lot:hit),tmax(ilogt),vp(lop:hip,1:2),sol%INVLT)
         end do
      end do
   end if
@@ -363,12 +364,6 @@ program ltaem_main
   !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   ! cleanup memory and write output to file
   call writeResults(sol,part)
-
-  deallocate(sol%h,hp,sol%v,vp, stat=ierr)
-  if (ierr /= 0) print *, 'WARNING: problem deallocating: sol%{h,p,v,vp} at end of program'
-
-  deallocate(c,e,part,s,tee,nt, stat=ierr)
-  if (ierr /= 0) print *, 'WARNING: problem deallocating: c,e,part,s,tee,logt,nt at end of program'
 
 end program ltaem_main
 
