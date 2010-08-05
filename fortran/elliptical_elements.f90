@@ -448,6 +448,7 @@ contains
   function ellipse_calc(p,e,lo,hi,Rgp,Pgp,inside) result(H)
     use constants, only : DP
     use type_definitions, only : ellipse
+    use time_mod, only : time
     use mathieu_functions, only : Ke,Ko, Ie,Io, ce,se
 
     complex(DP), dimension(:), intent(in) :: p
@@ -506,11 +507,18 @@ contains
     bb(1:np,1:N-1) = e%coeff(lo:hi,n0+N:n0+2*N-2)
     H(1:np) = sum(RMRgp(1:np,0:N-1,0)/RMR0(1:np,0:N-1,0)*aa(1:np,0:N-1)*AM(1:np,0:N-1,0), 2) + &
             & sum(RMRgp(1:np,1:N-1,1)/RMR0(1:np,1:N-1,1)*bb(1:np,1:N-1)*AM(1:np,1:N-1,1), 2)
+
+    if (e%ibnd /= 0) then
+       ! TODO: add in area source term for matching too
+       H = H*time(p,e%time,.false.)
+    end if
+
   end function ellipse_calc
 
   function ellipse_deriv(p,e,lo,hi,Rgp,Pgp,inside) result(dH)
     use constants, only : DP
     use type_definitions, only : ellipse
+    use time_mod, only : time
     use mathieu_functions, only : Ke,Ko, Ie,Io, ce,se, dKe,dKo, dIe,dIo, dce,dse
 
     complex(DP), dimension(:), intent(in) :: p
@@ -580,6 +588,12 @@ contains
                & sum(dRMRgp(1:np,1:N-1,1)/RMR0(1:np,1:N-1,1)*bb(1:np,1:N-1)*AM(1:np,1:N-1,1), 2)
     dH(1:np,2) = sum(RMRgp(1:np,0:N-1,0)/RMR0(1:np,0:N-1,0)*aa(1:np,0:N-1)*dAM(1:np,0:N-1,0), 2) + &
                & sum(RMRgp(1:np,1:N-1,1)/RMR0(1:np,1:N-1,1)*bb(1:np,1:N-1)*dAM(1:np,1:N-1,1), 2)
+
+    if (e%ibnd /= 0) then
+       ! TODO: add in area source term for matching too
+       dH = dH * spread(time(p,e%time,.false.),dim=2,ncopies=2)
+    end if
+
   end function ellipse_deriv
 
 end module elliptical_elements
