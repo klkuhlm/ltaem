@@ -891,7 +891,7 @@ contains
        open(unit=20, file=s%outfname, status='replace', action='write')
        write (20,'(A)') '# ltaem particle tracking output'
        do i = 1, size(p,dim=1) 
-          write (20,'(A,I0)') '# particle: ',i
+!!$          write (20,'(A,I0)') '# particle: ',i
           write (20,'(A)')   &
           & '#     time              x                    y                  velx                 vely '
           do k=1,p(i)%numt

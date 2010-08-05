@@ -38,7 +38,7 @@ contains
        call cbesk(z=z(j), fnu=0.0_DP, kode=1, n=num, cy=tmp(0:num-1), nz=numzero, ierr=ierr)
        ! either 0 or 3 are acceptable return codes
        if (.not.(ierr == 0 .or. ierr == 3)) then
-          write(*,'(A,3(1X,I0))') 'besk_vectz error',numzero,ierr,j
+          write(*,*) 'besk_vectz error ',numzero,ierr,j,num,'z(j)=',z(j),'z',z
           stop 222
        end if
        K(j,0:num-1) = tmp(0:num-1)

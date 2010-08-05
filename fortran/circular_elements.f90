@@ -337,9 +337,9 @@ contains
                    r%LHS(1:M,loN:hiN) = -(el%r*p/el%parent%T)*r%LHS(1:M,loN:hiN)
                    
                    ! radial flux effects of element
-                   r%LHS(1:M,loN:hiN) = r%LHS + (2.0 + el%r**2*el%dskin*p/el%parent%T)* &
+                   r%LHS(1:M,loN:hiN) = (r%LHS + (2.0 + el%r**2*el%dskin*p/el%parent%T)* &
                         & (dPot_dX*spread(cos(el%Pcm),2,2*N-1) + &
-                        &  dPot_dY*spread(sin(el%Pcm),2,2*N-1))
+                        &  dPot_dY*spread(sin(el%Pcm),2,2*N-1)))
                 else
                    ! other element is a 'normal' circular element without wellbore storage
                    r%LHS(loM:hiM,loN:hiN) = dPot_dX*spread(cos(el%Pcm),2,2*N-1) + &
@@ -378,7 +378,7 @@ contains
              factor = 1.0_DP
           end if
           
-          r%RHS(loM:hiM) = factor*well(c,p)*r%LHS(loM:hiM,1)
+          r%RHS(loM:hiM) = time(p,c%time,.false.)*factor*well(c,p)*r%LHS(loM:hiM,1)
        end if
        
        if (el%ibnd == 0) then
@@ -435,6 +435,7 @@ contains
   function circle_calc(p,c,lo,hi,Rgp,Pgp,inside) result(H)
     use constants, only : DP
     use kappa_mod, only : kappa
+    use time_mod, only : time
     use type_definitions, only : circle
     use bessel_functions, only : bK, bI
 
@@ -489,11 +490,16 @@ contains
          & ( aa(1:np,0:N-1)*spread(cos(vr(0:N-1)*Pgp),1,np) + &
          &   bb(1:np,0:N-1)*spread(sin(vr(0:N-1)*Pgp),1,np) ),dim=2)
 
+    if (c%ibnd == 2) then
+       H = H*time(p,c%time,.false.)
+    end if
+
   end function circle_calc
 
   function circle_deriv(p,c,lo,hi,Rgp,Pgp,inside) result(dH)
     use constants, only : DP
     use kappa_mod, only : kappa
+    use time_mod, only : time
     use type_definitions, only : circle
     use bessel_functions, only : bK, bI, dbk, dbi
 
@@ -548,6 +554,11 @@ contains
     dH(1:np,2) = sum(BRgp(1:np,0:N-1)/BR0(1:np,0:N-1)*spread(vr(0:N-1),1,np)* &  
          & ( bb(1:np,0:N-1)*spread(cos(vr(0:N-1)*Pgp),1,np) - &
          &   aa(1:np,0:N-1)*spread(sin(vr(0:N-1)*Pgp),1,np) ),dim=2)    
+
+    if (c%ibnd == 2) then
+       dH = dH*spread(time(p,c%time,.false.),dim=2,ncopies=2)
+    end if
+
   end function circle_deriv
 end module circular_elements
 

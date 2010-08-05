@@ -8,7 +8,7 @@ else:
     print 'pass base filename as argument'
     exit
 
-particle = False
+particle = True
 
 t = np.atleast_1d(np.loadtxt(basefn+'_t.dat'))
 nt = t.shape[0]
@@ -53,10 +53,12 @@ if particle:
     fh.close()
     del particles[-1]
 
+sc = [10,50]
+
 for val in range(nt):
     plt.figure(1)
     plt.subplot(121)
-    plt.contour(X,Y,h[:,:,val],10)
+    plt.contour(X,Y,h[:,:,val],20)
     plt.axis('image')
     plt.xlabel('X')
     plt.ylabel('Y')
@@ -68,12 +70,12 @@ for val in range(nt):
         print 'len',len(particles)
         for part in particles:
             p = np.array(part[:][:-2])
-            plt.plot(p[:,1],p[:,2],'k-',lw=0.5)
+            mask = (p[:,0] < t[val])
+            plt.plot(p[mask,1],p[mask,2],'k-',lw=0.5)
     
     plt.subplot(122)
     plt.contourf(X,Y,np.log10(np.abs(v[:,:,0,val]+v[:,:,1,val]*1j)),20)
-##    plt.contour(X,Y,h[:,:,val],levels=[0])
-    plt.quiver(X[::4,::4],Y[::4,::4],v[::4,::4,0,val],v[::4,::4,1,val],scale=1000)
+    plt.quiver(X[::4,::4],Y[::4,::4],v[::4,::4,0,val],v[::4,::4,1,val],scale=sc[val])
 
     
     plt.axis('image')

@@ -115,7 +115,7 @@ contains
     if (present(CUTOFF)) then
        mat%CUTOFF = CUTOFF
     else
-       mat%CUTOFF = 1.0D-12
+       mat%CUTOFF = 1.0D-10
     endif
 
 #ifdef DEBUG

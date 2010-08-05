@@ -29,13 +29,14 @@ program ltaem_main
   type(solution) :: sol
   type(particle), allocatable :: part(:)
   integer :: i, j, ierr
-  integer :: tnp, idx   ! total-number-p, index-for-p
+  integer :: tnp  ! total-number-p
   integer :: nc, ne     ! #-circles, #-ellipses
   integer :: crow, ccol ! coeff-#-row, coeff-#-col
   integer :: ilogt, iminlogt, imaxlogt     ! indexes related to log10 time
   integer :: lot, hit, lop, hip, lo        ! local hi and lo indices for each log cycle
   integer, allocatable :: nt(:), run(:)    ! #-times-each-log-cycle, 0,1,2,3...
   integer, allocatable :: parnumdt(:)      ! number of dt expected for each particle
+  integer, allocatable :: idxmat(:,:)  ! matrix of indices for parallelization
   real(DP), allocatable :: logt(:), tee(:) ! log10-time(numt), T-in-deHoog(num-log-cycles)
   complex(DP), allocatable :: s(:,:)       ! laplace-parameter(2*M-1,num-log-cycles)
   complex(DP) :: calcZ      ! calc-point-complex-coordinates
@@ -141,14 +142,15 @@ program ltaem_main
         call ellipse_init(e,bg,s)
      end if
 
-     idx = 0 ! initialize index
+     allocate(idxmat(size(s,dim=1),lbound(s,dim=2):ubound(s,dim=2)))
+     idxmat = reshape([(j,j=1,tnp)],shape(s))
+
      do ilogt = iminlogt,imaxlogt-1
-        write(*,'(A,I0,A)') 'log t= 10^(',ilogt,')'
+        write(*,'(A,I0,A)') 'log t= 10^(',ilogt,')' 
         if (nt(ilogt) > 0) then
            do j = 1,2*sol%m+1
-              idx = idx+1
               write(*,'(I0,1X,2(A,ES10.3),A)') j, '(',real(s(j,ilogt)),',',aimag(s(j,ilogt)),')'
-              call matrix_solution(c,e,dom,sol,s(j,ilogt),idx)
+              call matrix_solution(c,e,dom,sol,s(j,ilogt),idxmat(j,ilogt))
            end do
         end if
      end do
@@ -293,7 +295,11 @@ program ltaem_main
 
      !$OMP PARALLEL DO PRIVATE(i,j,calcZ,hp,vp,ilogt,lot,hit,lop,hip) SHARED(sol)
      do j = 1,sol%nx
-        write (*,*) 'x: ',sol%x(j)! , OMP_get_thread_num()
+#ifdef DEBUG
+        write (*,'(A,ES13.5)') 'x: ',sol%x(j)
+#else
+        write (*,'(A,ES13.5,A,I0)') 'x: ',sol%x(j), '  thr=',OMP_get_thread_num()
+#endif
         do i = 1,sol%ny
 
            calcZ = cmplx(sol%x(j),sol%y(i),DP)
@@ -329,7 +335,6 @@ program ltaem_main
   else ! hydrograph output (x,y locations are in pairs; e.g. inner product)
 
      write(*,'(A)') 'compute solution for plotting hydrograph'
-
      allocate(sol%h(sol%nx,1,sol%nt), hp(tnp), &
           &   sol%v(sol%nx,1,sol%nt,2), vp(tnp,2), stat=ierr)
      if (ierr /= 0) stop 'ltaem_main.f90 error allocating hydrograph: sol%h,hp,sol%v,vp'
@@ -337,9 +342,9 @@ program ltaem_main
      do i = 1,sol%nx
         write(*,'(A,2(1X,ES14.7E1))') 'location:',sol%x(i),sol%y(i)
 
-        calcZ = cmplx(sol%x(j),sol%y(i),DP)
+        calcZ = cmplx(sol%x(i),sol%y(i),DP)
         hp(1:tnp) =  headCalc(calcZ,reshape(s,[tnp]),1,tnp,dom,c,e,bg)
-        vp(1:tnp,:) = velCalc(calcZ,reshape(s,[tnp]),1,tnp,dom,c,e,bg)
+        vp(1:tnp,1:2) = velCalc(calcZ,reshape(s,[tnp]),1,tnp,dom,c,e,bg)
         
         do ilogt = iminlogt,imaxlogt-1
            lot = 1 + sum(nt(iminlogt:ilogt-1))
@@ -350,7 +355,7 @@ program ltaem_main
 
            ! don't need second dimension of results matricies
            sol%h(i,1,lot:hit) =   invlap(sol%t(lot:hit),tee(ilogt),hp(lop:hip),sol%INVLT)
-           sol%v(i,1,lot:hit,:) = invlap(sol%t(lot:hit),tee(ilogt),vp(lop:hip,:),sol%INVLT)
+           sol%v(i,1,lot:hit,1:2) = invlap(sol%t(lot:hit),tee(ilogt),vp(lop:hip,1:2),sol%INVLT)
         end do
      end do
   end if
