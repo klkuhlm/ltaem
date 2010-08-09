@@ -22,11 +22,11 @@ contains
   !! -- only one log-cycle of time should be passed at once --
   !! (no error checking done in this regard)
   !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-  function deHoog_invLap_vect(t,tmax,fp,lap) result(ft)
+  function deHoog_invLap_vect(t,tee,fp,lap) result(ft)
     use constants, only : DP, PI
     use type_definitions, only : INVLT
 
-    real(DP), intent(in) :: tmax              ! scaling factor (now just tmax, rather than Tee=2*tmax)
+    real(DP), intent(in) :: tee              ! scaling factor (now just tmax, rather than Tee=2*tmax)
     real(DP), intent(in), dimension(:) :: t   ! vector of times
     type(INVLT), intent(in) :: lap            ! structure of inputs
     complex(DP), intent(in), dimension(0:2*lap%M) :: fp
@@ -47,7 +47,7 @@ contains
     if(maxval(abs(fp)) > tiny(1.0_DP) .and. all(fp == fp)) then
 
        ! Re(p) -- this is the de Hoog parameter c
-       gamma = lap%alpha - log(lap%tol)/tmax
+       gamma = lap%alpha - log(lap%tol)/tee
 
        ! initialize Q-D table 
        e(0:2*M,0) = cmplx(0.0,0.0,DP)
@@ -80,7 +80,7 @@ contains
        B(-1:0,1:nt) = 1.0
 
        ! base of the power series
-       z(1:nt) = exp(cmplx(0.0,2.0,DP)*PI*t(:)/tmax)
+       z(1:nt) = exp(cmplx(0.0,2.0,DP)*PI*t(:)/tee)
 
        ! coefficients of Pade approximation
        ! using recurrence for all but last term
@@ -99,7 +99,7 @@ contains
 
        ! diagonal Pade approximation
        ! F=A/B represents accelerated trapezoid rule
-       ft(1:nt) =  2.0*exp(gamma*t(:))/tmax * real(A(2*M,:)/B(2*M,:))
+       ft(1:nt) =  2.0*exp(gamma*t(:))/tee * real(A(2*M,:)/B(2*M,:))
 
     else  !! entire f(p) vector is zero
        ft = 0.0
@@ -108,55 +108,55 @@ contains
     end if
   end function deHoog_invLap_vect
 
-  function deHoog_invLap_scalt(t,tmax,fp,lap) result(ft)
+  function deHoog_invLap_scalt(t,tee,fp,lap) result(ft)
     use constants, only : DP
     use type_definitions, only : INVLT
-    real(DP), intent(in) ::  t, tmax 
+    real(DP), intent(in) ::  t, tee 
     type(INVLT), intent(in) :: lap
     complex(DP), intent(in), dimension(0:2*lap%M) :: fp
     real(DP) :: ft ! output
     
-    ft = sum(deHoog_invLap_vect([t],tmax,fp,lap))
+    ft = sum(deHoog_invLap_vect([t],tee,fp,lap))
   end function deHoog_invLap_scalt
 
-  function deHoog_invLap_vel(t,tmax,fp,lap) result(ft)
+  function deHoog_invLap_vel(t,tee,fp,lap) result(ft)
     ! for use with velocity results, where second dimension is 2 (x,y)
     use constants, only : DP
     use type_definitions, only : INVLT
     real(DP), dimension(:), intent(in) :: t
-    real(DP), intent(in) ::  tmax
+    real(DP), intent(in) ::  tee
     complex(DP), intent(in), dimension(:,:) :: fp
     type(INVLT), intent(in) :: lap
     real(DP), dimension(size(t),2) :: ft ! output
 
-    ft(:,1) = deHoog_invLap_vect(t,tmax,fp(:,1),lap) ! x vel
-    ft(:,2) = deHoog_invLap_vect(t,tmax,fp(:,2),lap) ! y vel
+    ft(:,1) = deHoog_invLap_vect(t,tee,fp(:,1),lap) ! x vel
+    ft(:,2) = deHoog_invLap_vect(t,tee,fp(:,2),lap) ! y vel
   end function deHoog_invLap_vel
 
-  function deHoog_invLap_vel_scalt(t,tmax,fp,lap) result(ft)
+  function deHoog_invLap_vel_scalt(t,tee,fp,lap) result(ft)
     ! for use with velocity results, where second dimension is 2 (x,y)
     use constants, only : DP
     use type_definitions, only : INVLT
     real(DP), intent(in) :: t
-    real(DP), intent(in) ::  tmax
+    real(DP), intent(in) ::  tee
     complex(DP), intent(in), dimension(:,:) :: fp
     type(INVLT), intent(in) :: lap
     real(DP), dimension(2) :: ft ! output
 
-    ft(1) = sum(deHoog_invLap_vect([t],tmax,fp(:,1),lap)) ! x vel
-    ft(2) = sum(deHoog_invLap_vect([t],tmax,fp(:,2),lap)) ! y vel
+    ft(1) = sum(deHoog_invLap_vect([t],tee,fp(:,1),lap)) ! x vel
+    ft(2) = sum(deHoog_invLap_vect([t],tee,fp(:,2),lap)) ! y vel
   end function deHoog_invLap_vel_scalt
   
-  function deHoog_pvalues(tmax,lap) result(p)
+  function deHoog_pvalues(tee,lap) result(p)
     use constants, only : DP, PI
     use type_definitions, only : INVLT
     type(INVLT), intent(in) :: lap
-    real(DP), intent(in) :: tmax
+    real(DP), intent(in) :: tee
     complex(DP), dimension(2*lap%M+1) :: p
     integer :: i
 
     forall (i=0:2*lap%M)
-       p(i+1) = cmplx(lap%alpha - log(lap%tol)/tmax, 2.0*PI*i/tmax, DP)
+       p(i+1) = cmplx(lap%alpha - log(lap%tol)/tee, 2.0*PI*i/tee, DP)
     end forall
   end function deHoog_pvalues
 end module inverse_Laplace_Transform

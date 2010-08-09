@@ -38,12 +38,14 @@ program ltaem_main
   integer, allocatable :: nt(:), run(:)    ! #-times-each-log-cycle, 0,1,2,3...
   integer, allocatable :: parnumdt(:)      ! number of dt expected for each particle
   integer, allocatable :: idxmat(:,:)  ! matrix of indices for parallelization
-  real(DP), allocatable :: logt(:), tmax(:) ! log10-time(numt), Tmax-for-deHoog(num-log-cycles)
+  real(DP), allocatable :: logt(:), tee(:) ! log10-time(numt), Tmax-for-deHoog(num-log-cycles)
   complex(DP), allocatable :: s(:,:)       ! laplace-parameter(2*M-1,num-log-cycles)
   complex(DP) :: calcZ      ! calc-point-complex-coordinates
   character(6) :: elType    ! element-type {CIRCLE,ELLIPS}
   character(20) :: tmpfname
   complex(DP), allocatable :: hp(:),vp(:,:)
+
+  real(DP), parameter :: tmax_mult = 2.0_DP
 
   intrinsic :: get_command_argument
 
@@ -58,10 +60,10 @@ program ltaem_main
   nc = size(c,dim=1)
   ne = size(e,dim=1)
 
-  ! nudge times on 'edge' of logcycle down a tiny bit to increase accuracy
-  where (abs(nint(sol%t(:)) - sol%t(:)) < epsilon(sol%t(:)))
-     sol%t(:) = sol%t(:) - epsilon(sol%t(:))
-  end where
+  ! is the last value right on a log-cycle boundary?
+  if (abs(sol%t(sol%nt) - 10.0**nint(log10(sol%t(sol%nt)))) < 0.001) then
+     sol%t(sol%nt) = sol%t(sol%nt) - epsilon(sol%t(sol%nt))
+  end if
   
   allocate(run(1:2*sol%m+1), stat=ierr)
   if (ierr /= 0) stop 'ltaem_main.f90 error allocating: run'
@@ -89,14 +91,14 @@ program ltaem_main
         imaxlogt = ceiling(maxval(log10(part(:)%tf)))
 
         allocate(s(2*sol%m+1,iminlogt:imaxlogt), nt(iminlogt:imaxlogt), &
-             & tmax(iminlogt:imaxlogt))
+             & tee(iminlogt:imaxlogt))
 
         nt(iminlogt:imaxlogt) = 1
 
         do ilogt = iminlogt, imaxlogt
            ! 0.999 is "most" of a log-cycle
-           tmax(ilogt) = min(10.0**(ilogt + 0.999), maxval(part(:)%tf))*2.0
-           s(:,ilogt) = pvalues(tmax(ilogt),sol%INVLT)
+           tee(ilogt) = min(10.0**(ilogt + 0.999), maxval(part(:)%tf))*tmax_
+           s(:,ilogt) = pvalues(tee(ilogt),sol%INVLT)
         end do
 
         ! to make it possible for particles / contours to share code...
@@ -114,15 +116,15 @@ program ltaem_main
         imaxlogt = ceiling(maxval(logt(:)))
 
         allocate(s(2*sol%m+1,iminlogt:imaxlogt-1), nt(iminlogt:imaxlogt-1), &
-             & tmax(iminlogt:imaxlogt-1), stat=ierr)
-        if (ierr /= 0) stop 'ltaem_main.f90 error allocating: s,nt,tmax'
+             & tee(iminlogt:imaxlogt-1), stat=ierr)
+        if (ierr /= 0) stop 'ltaem_main.f90 error allocating: s,nt,tee'
 
         do ilogt = iminlogt, imaxlogt-1
            ! number of times falling in this logcycle
            nt(ilogt) = count(logt >= real(ilogt,DP) .and. logt < real(ilogt+1,DP))
            ! T=2*max time in this logcycle
-           tmax(ilogt) = maxval(sol%t(lo:lo+nt(ilogt)-1))*2.0
-           s(:,ilogt) = pvalues(tmax(ilogt),sol%INVLT)
+           tee(ilogt) = maxval(sol%t(lo:lo+nt(ilogt)-1))*2.0
+           s(:,ilogt) = pvalues(tee(ilogt),sol%INVLT)
            lo = lo + nt(ilogt)
         end do
         deallocate(logt,run, stat=ierr)
@@ -170,7 +172,7 @@ program ltaem_main
         write(77,*) iminlogt,imaxlogt,nc,ne
         write(77,*) nt(:)
         write(77,*) s(:,:)
-        write(77,*) tmax(:)
+        write(77,*) tee(:)
         do i = 1,nc
            write(77,*) 'CIRCLE',i,shape(c(i)%coeff)
            write(77,*) c(i)%coeff(:,:)
@@ -197,13 +199,13 @@ program ltaem_main
         read(77,*) !! TODO not doing anything with input file, but I should
         read(77,*) iminlogt,imaxlogt,nc,ne ! scalars
         allocate(s(2*sol%m+1,iminlogt:imaxlogt-1), nt(iminlogt:imaxlogt-1), &
-             & tmax(iminlogt:imaxlogt-1),stat=ierr)
-        if (ierr /= 0) stop 'ltaem_main.f90 error allocating: s,nt,tmax'
+             & tee(iminlogt:imaxlogt-1),stat=ierr)
+        if (ierr /= 0) stop 'ltaem_main.f90 error allocating: s,nt,tee'
         read(77,*) nt(:)
         read(77,*) s(:,:)
         sol%totalnP = product(shape(s))
         tnp = sol%totalnP
-        read(77,*) tmax(:)
+        read(77,*) tee(:)
         do i = 1,nc
            read(77,*) elType,j,crow,ccol
            if (elType == 'CIRCLE' .and. i == j) then
@@ -265,11 +267,11 @@ program ltaem_main
 
         select case (part(j)%int)
         case (1)
-           call rungekuttamerson(s,tmax,c,e,bg,sol,dom,part(j),lbound(tmax,dim=1))
+           call rungekuttamerson(s,tee,c,e,bg,sol,dom,part(j),lbound(tee,dim=1))
         case (2)
-                 call rungekutta(s,tmax,c,e,bg,sol,dom,part(j),lbound(tmax,dim=1))
+                 call rungekutta(s,tee,c,e,bg,sol,dom,part(j),lbound(tee,dim=1))
         case (4)
-                   call fwdEuler(s,tmax,c,e,bg,sol,dom,part(j),lbound(tmax,dim=1))
+                   call fwdEuler(s,tee,c,e,bg,sol,dom,part(j),lbound(tee,dim=1))
         case default
            write(*,'(A,I0,1X,I0)') 'invalid integration code', j, part(j)%int
         end select
@@ -321,8 +323,8 @@ program ltaem_main
               lop = (ilogt - iminlogt)*size(s,dim=1) + 1
               hip = lop + size(s,dim=1) - 1
 
-              sol%h(j,i,lot:hit) =     invlap(sol%t(lot:hit), tmax(ilogt), hp(lop:hip), sol%INVLT)
-              sol%v(j,i,lot:hit,1:2) = invlap(sol%t(lot:hit), tmax(ilogt), vp(lop:hip,1:2), sol%INVLT)
+              sol%h(j,i,lot:hit) =     invlap(sol%t(lot:hit), tee(ilogt), hp(lop:hip), sol%INVLT)
+              sol%v(j,i,lot:hit,1:2) = invlap(sol%t(lot:hit), tee(ilogt), vp(lop:hip,1:2), sol%INVLT)
            end do
         end do
      end do
@@ -344,10 +346,11 @@ program ltaem_main
         write(*,'(A,2(1X,ES14.7E1))') 'location:',sol%x(i),sol%y(i)
 
         calcZ = cmplx(sol%x(i),sol%y(i),DP)
-        hp(1:tnp) =  headCalc(calcZ,reshape(s,[tnp]),1,tnp,dom,c,e,bg)
+        hp(1:tnp) =    headCalc(calcZ,reshape(s,[tnp]),1,tnp,dom,c,e,bg)
         vp(1:tnp,1:2) = velCalc(calcZ,reshape(s,[tnp]),1,tnp,dom,c,e,bg)
         
         do ilogt = iminlogt,imaxlogt-1
+           print *, 'hydrograph ilogt',ilogt,'numt',nt(ilogt)
            lot = 1 + sum(nt(iminlogt:ilogt-1))
            hit = sum(nt(iminlogt:ilogt))
 
@@ -355,8 +358,8 @@ program ltaem_main
            hip = lop + size(s,1) - 1
 
            ! don't need second dimension of results matricies
-           sol%h(i,1,lot:hit) =     invlap(sol%t(lot:hit),tmax(ilogt),hp(lop:hip),sol%INVLT)
-           sol%v(i,1,lot:hit,1:2) = invlap(sol%t(lot:hit),tmax(ilogt),vp(lop:hip,1:2),sol%INVLT)
+           sol%h(i,1,lot:hit) =     invlap(sol%t(lot:hit),tee(ilogt),hp(lop:hip),sol%INVLT)
+           sol%v(i,1,lot:hit,1:2) = invlap(sol%t(lot:hit),tee(ilogt),vp(lop:hip,1:2),sol%INVLT)
         end do
      end do
   end if
