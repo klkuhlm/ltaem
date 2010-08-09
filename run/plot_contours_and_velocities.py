@@ -53,7 +53,7 @@ if particle:
     fh.close()
     del particles[-1]
 
-sc = [10,50]
+sc = [1000,1000,1000]
 
 for val in range(nt):
     plt.figure(1)

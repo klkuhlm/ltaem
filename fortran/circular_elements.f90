@@ -123,6 +123,8 @@ contains
           ! effects of other elements on this one show up in off-diagonals
           r%LHS(1:M,1) = storwell(c,p)*r%LHS(1:M,1)
           r%RHS(1:M) = time(p,c%time,.false.)*c%bdryQ/(PI*c%r*c%parent%T)
+       else
+          continue ! nothing to do, matrix is zero-sized
        end if
     end select
   end function circle_match_self
@@ -378,7 +380,7 @@ contains
              factor = 1.0_DP
           end if
           
-          r%RHS(loM:hiM) = time(p,c%time,.false.)*factor*well(c,p)*r%LHS(loM:hiM,1)
+          r%RHS(loM:hiM) = factor*well(c,p)*r%LHS(loM:hiM,1)
        end if
        
        if (el%ibnd == 0) then
@@ -404,12 +406,13 @@ contains
     use bessel_functions, only : bK
     type(circle), intent(in) :: c
     complex(DP), intent(in) :: p
-    complex(DP) :: a0
+    complex(DP) :: a0, kap
     complex(DP), dimension(0:1) ::Kn
     
-    Kn(0:1) = bK(kappa(p,c%parent)*c%r,2)
+    kap = kappa(p,c%parent)
+    Kn(0:1) = bK(kap*c%r,2)
     ! TODO: should this have a factor of "b" in the denominator?
-    a0 = Kn(0)*time(p,c%time,.false.)*c%bdryQ/(2.0*PI*c%r*Kn(1))
+    a0 = Kn(0)*time(p,c%time,.false.)*c%bdryQ/(2.0*PI*c%r*Kn(1)*kap)
   end function well
   
   function storwell(c,p) result(a0)
@@ -428,6 +431,7 @@ contains
     kap = kappa(p,c%parent)    
     Kn(0:1) = bK(kap*c%r,2)
     ! TODO : should this have a factor of "b" in the denominator?
+    ! TODO : off by a factor of 1/kappa?
     a0 = -Kn(0)*((2.0 + c%r**2*c%dskin*p/c%parent%T)/(2.0*PI*c%r) + &
                & (Kn(0)*c%r*p)/(2.0*PI*c%r*kap*Kn(1)*c%parent%T))    
   end function storwell
@@ -490,10 +494,10 @@ contains
          & ( aa(1:np,0:N-1)*spread(cos(vr(0:N-1)*Pgp),1,np) + &
          &   bb(1:np,0:N-1)*spread(sin(vr(0:N-1)*Pgp),1,np) ),dim=2)
 
-    if (c%ibnd /= 0) then
-       ! TODO: add in area source term for matching too
-       H = H*time(p,c%time,.false.)
-    end if
+!!$    if (c%ibnd /= 0) then
+!!$       ! TODO: add in area source term for matching too
+!!$       H = H*time(p,c%time,.false.)
+!!$    end if
 
   end function circle_calc
 
@@ -556,10 +560,10 @@ contains
          & ( bb(1:np,0:N-1)*spread(cos(vr(0:N-1)*Pgp),1,np) - &
          &   aa(1:np,0:N-1)*spread(sin(vr(0:N-1)*Pgp),1,np) ),dim=2)    
 
-    if (c%ibnd /= 0) then
-       ! TODO: add in area source term for matching too
-       dH = dH*spread(time(p,c%time,.false.),dim=2,ncopies=2)
-    end if
+!!$    if (c%ibnd /= 0) then
+!!$       ! TODO: add in area source term for matching too
+!!$       dH = dH*spread(time(p,c%time,.false.),dim=2,ncopies=2)
+!!$    end if
 
   end function circle_deriv
 end module circular_elements

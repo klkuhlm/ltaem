@@ -164,8 +164,10 @@ contains
           print '(A,2(1X,I0))', 'LHS shape:',shape(res(rr,cc)%LHS)
           print '(A,2(1X,I0))', 'RHS shape:',shape(res(rr,cc)%RHS)
 #endif
+          
           A(row(rr,0):row(rr,2),col(cc,0):col(cc,2)) = res(rr,cc)%LHS
           b(row(rr,0):row(rr,2)) = b(row(rr,0):row(rr,2)) + res(rr,cc)%RHS
+          
        end do
     end do
 

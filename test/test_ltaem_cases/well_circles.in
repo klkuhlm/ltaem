@@ -11,8 +11,8 @@ F  :: storin?
 1.0D0    :: porosity
 0.0D0    :: area source strength
 -2.5D-1   :: boundary source strength
-001  0.0D0  0.0D0  :: area time flag, tpar1, tpar2
-001  0.0D0  0.0D0  :: boundary time flag, tpar1, tpar2
+001  0.0D0  -999.  :: area time flag, tpar1, tpar2
+001  0.025  -999.  :: boundary time flag, tpar1, tpar2
 0  :: leaky type flag
 1.0D0 :: K2
 1.0D0 :: Ss2

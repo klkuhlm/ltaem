@@ -44,11 +44,11 @@ DFLAGS+=-frange-check -fcheck=all -finit-real=snan -finit-integer=-99999 -fbackt
 DFLAGS+=-cpp #-DDEBUG 
 #DFLAGS+=-fdump-rtl-expand
 PFLAGS=-O3 -march=native -cpp -fwhole-file -fopenmp
-LINKFLAG=$(DFLAGS)
+LINKFLAG=$(PFLAGS)
 ###################################
 
 # switch between performance or debugging flags
-FLAGS=$(DFLAGS)
+FLAGS=$(PFLAGS)
 
 # the link step
 main: $(OBJS) $(MAIN)

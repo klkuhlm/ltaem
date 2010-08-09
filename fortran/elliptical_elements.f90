@@ -508,10 +508,10 @@ contains
     H(1:np) = sum(RMRgp(1:np,0:N-1,0)/RMR0(1:np,0:N-1,0)*aa(1:np,0:N-1)*AM(1:np,0:N-1,0), 2) + &
             & sum(RMRgp(1:np,1:N-1,1)/RMR0(1:np,1:N-1,1)*bb(1:np,1:N-1)*AM(1:np,1:N-1,1), 2)
 
-    if (e%ibnd /= 0) then
-       ! TODO: add in area source term for matching too
-       H = H*time(p,e%time,.false.)
-    end if
+!!$    if (e%ibnd /= 0) then
+!!$       ! TODO: add in area source term for matching too
+!!$       H = H*time(p,e%time,.false.)
+!!$    end if
 
   end function ellipse_calc
 
@@ -589,10 +589,10 @@ contains
     dH(1:np,2) = sum(RMRgp(1:np,0:N-1,0)/RMR0(1:np,0:N-1,0)*aa(1:np,0:N-1)*dAM(1:np,0:N-1,0), 2) + &
                & sum(RMRgp(1:np,1:N-1,1)/RMR0(1:np,1:N-1,1)*bb(1:np,1:N-1)*dAM(1:np,1:N-1,1), 2)
 
-    if (e%ibnd /= 0) then
-       ! TODO: add in area source term for matching too
-       dH = dH * spread(time(p,e%time,.false.),dim=2,ncopies=2)
-    end if
+!!$    if (e%ibnd /= 0) then
+!!$       ! TODO: add in area source term for matching too
+!!$       dH = dH * spread(time(p,e%time,.false.),dim=2,ncopies=2)
+!!$    end if
 
   end function ellipse_deriv
 

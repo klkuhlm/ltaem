@@ -79,7 +79,7 @@ program ltaem_main
   if (sol%calc) then
      if (sol%particle) then   ! particle tracking
         
-        ! need to do something better here about particles starting at t=0?
+        ! TODO need to do something better here about particles starting at t=0?
         do i=1, sol%nPart
            if (part(i)%ti < 1.0D-5) then
               part(i)%ti = 1.0D-5
