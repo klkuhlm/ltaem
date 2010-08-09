@@ -26,7 +26,7 @@ contains
     use constants, only : DP, PI
     use type_definitions, only : INVLT
 
-    real(DP), intent(in) :: tee              ! scaling factor (now just tmax, rather than Tee=2*tmax)
+    real(DP), intent(in) :: tee              ! scaling factor (previously T=2*tmax, but potentially adjustable)
     real(DP), intent(in), dimension(:) :: t   ! vector of times
     type(INVLT), intent(in) :: lap            ! structure of inputs
     complex(DP), intent(in), dimension(0:2*lap%M) :: fp
@@ -47,7 +47,7 @@ contains
     if(maxval(abs(fp)) > tiny(1.0_DP) .and. all(fp == fp)) then
 
        ! Re(p) -- this is the de Hoog parameter c
-       gamma = lap%alpha - log(lap%tol)/tee
+       gamma = lap%alpha - log(lap%tol)/(2.0*tee)
 
        ! initialize Q-D table 
        e(0:2*M,0) = cmplx(0.0,0.0,DP)
@@ -80,7 +80,7 @@ contains
        B(-1:0,1:nt) = 1.0
 
        ! base of the power series
-       z(1:nt) = exp(cmplx(0.0,2.0,DP)*PI*t(:)/tee)
+       z(1:nt) = exp(cmplx(0.0,1.0,DP)*PI*t(:)/tee)
 
        ! coefficients of Pade approximation
        ! using recurrence for all but last term
@@ -99,7 +99,7 @@ contains
 
        ! diagonal Pade approximation
        ! F=A/B represents accelerated trapezoid rule
-       ft(1:nt) =  2.0*exp(gamma*t(:))/tee * real(A(2*M,:)/B(2*M,:))
+       ft(1:nt) =  exp(gamma*t(:))/tee * real(A(2*M,:)/B(2*M,:))
 
     else  !! entire f(p) vector is zero
        ft = 0.0
@@ -156,7 +156,7 @@ contains
     integer :: i
 
     forall (i=0:2*lap%M)
-       p(i+1) = cmplx(lap%alpha - log(lap%tol)/tee, 2.0*PI*i/tee, DP)
+       p(i+1) = cmplx(lap%alpha - log(lap%tol)/(2.0*tee), PI*i/tee, DP)
     end forall
   end function deHoog_pvalues
 end module inverse_Laplace_Transform

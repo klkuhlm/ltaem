@@ -45,7 +45,7 @@ program ltaem_main
   character(20) :: tmpfname
   complex(DP), allocatable :: hp(:),vp(:,:)
 
-  real(DP), parameter :: tmax_mult = 2.0_DP
+  real(DP), parameter :: tmax_mult = 2.0_DP  ! traditionally 2.0, but 4.0 could work...
 
   intrinsic :: get_command_argument
 
@@ -97,7 +97,7 @@ program ltaem_main
 
         do ilogt = iminlogt, imaxlogt
            ! 0.999 is "most" of a log-cycle
-           tee(ilogt) = min(10.0**(ilogt + 0.999), maxval(part(:)%tf))*tmax_
+           tee(ilogt) = min(10.0**(ilogt + 0.999), maxval(part(:)%tf))*tmax_mult
            s(:,ilogt) = pvalues(tee(ilogt),sol%INVLT)
         end do
 
