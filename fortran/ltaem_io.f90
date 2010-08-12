@@ -136,7 +136,7 @@ contains
        write(fmt(1)(2:5),'(I4.4)') sol%nx
        write(16,fmt(1)) sol%x(:), '  ||    x Vector'
        write(fmt(1)(2:5),'(I4.4)') sol%ny
-       write(16,fmt(1)) sol%y(:), '  ||    y Vector'
+b       write(16,fmt(1)) sol%y(:), '  ||    y Vector'
        write(fmt(1)(2:5),'(I4.4)') sol%nt
        write(16,fmt(1)) sol%t(:), '  ||    t Vector'
     endif
@@ -836,23 +836,20 @@ contains
        !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     case (11)
 
-       ! ** gnuplot hydrograph-friendly output **
+       ! ** gnuplot-friendly hydrograph output **
        ! column of time values at a location through time
        ! locations separated by blank lines (grid no velocity)
        open(unit=20, file=s%outfname, status='replace', action='write')
        write (20,'(A)') '# ltaem hydrograph output'
-       do i = 1, s%ny
-          do j = 1, s%nx
-             write (20,'(2(A,'//xfmt//'))') ' # location: x=',s%x(j),' y=',s%y(i)
-             write (20,'(A)')   '#     time              head&
-                  &                  velx                vely'
-             do k = 1, s%nt
-                write (20,'(1X,'//tfmt//',3(1X,'//hfmt//'))') &
-                     & s%t(k),s%h(j,i,k),s%v(j,i,k,1:2)
-             end do
-             write (20,'(/)')
+       do j = 1, s%nx
+          write (20,'(2(A,'//xfmt//'))') ' # location: x=',s%x(j),' y=',s%y(j)
+          write (20,'(A)')   '#     time              head'
+          do k = 1, s%nt
+             write (20,'(1X,'//tfmt//',1(1X,'//hfmt//'))') &
+                  & s%t(k),s%h(j,1,k)
           end do
-       end do       
+          write (20,'(/)')
+       end do
        write(20,*) '# EOF'
        close(20)
 

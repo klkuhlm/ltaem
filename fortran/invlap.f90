@@ -103,8 +103,8 @@ contains
 
     else  !! entire f(p) vector is zero
        ft = 0.0
-       write(*,*) 'f(t) not computed: t=',t, &
-            & ' because max|fp|=', maxval(abs(fp)), ' any(NaN) ? =>',any(fp/=fp)
+!!       write(*,*) 'f(t) not computed: t=',t, &
+!!            & ' because max|fp|=', maxval(abs(fp)), ' any(NaN) ? =>',any(fp/=fp)
     end if
   end function deHoog_invLap_vect
 
