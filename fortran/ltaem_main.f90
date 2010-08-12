@@ -45,7 +45,7 @@ program ltaem_main
   character(20) :: tmpfname
   complex(DP), allocatable :: hp(:),vp(:,:)
 
-  real(DP), parameter :: tmax_mult = 2.0_DP  ! traditionally 2.0, but 4.0 could work...
+  real(DP), parameter :: TMAX_MULT = 2.0_DP  ! traditionally 2.0, but 4.0 could work...
 
   intrinsic :: get_command_argument
 
@@ -97,7 +97,7 @@ program ltaem_main
 
         do ilogt = iminlogt, imaxlogt
            ! 0.999 is "most" of a log-cycle
-           tee(ilogt) = min(10.0**(ilogt + 0.999), maxval(part(:)%tf))*tmax_mult
+           tee(ilogt) = min(10.0**(ilogt + 0.999), maxval(part(:)%tf))*TMAX_MULT
            s(:,ilogt) = pvalues(tee(ilogt),sol%INVLT)
         end do
 
@@ -113,7 +113,7 @@ program ltaem_main
         lo = 1
         logt(:) = log10(sol%t(:))
         iminlogt =   floor(minval(logt(:)))
-        imaxlogt = ceiling(maxval(logt(:)))
+        imaxlogt = ceiling(maxval(logt(:)) + epsilon(1.0))
 
         allocate(s(2*sol%m+1,iminlogt:imaxlogt-1), nt(iminlogt:imaxlogt-1), &
              & tee(iminlogt:imaxlogt-1), stat=ierr)
@@ -123,7 +123,7 @@ program ltaem_main
            ! number of times falling in this logcycle
            nt(ilogt) = count(logt >= real(ilogt,DP) .and. logt < real(ilogt+1,DP))
            ! T=2*max time in this logcycle
-           tee(ilogt) = maxval(sol%t(lo:lo+nt(ilogt)-1))*2.0
+           tee(ilogt) = maxval(sol%t(lo:lo+nt(ilogt)-1))*TMAX_MULT
            s(:,ilogt) = pvalues(tee(ilogt),sol%INVLT)
            lo = lo + nt(ilogt)
         end do
@@ -350,7 +350,6 @@ program ltaem_main
         vp(1:tnp,1:2) = velCalc(calcZ,reshape(s,[tnp]),1,tnp,dom,c,e,bg)
         
         do ilogt = iminlogt,imaxlogt-1
-           print *, 'hydrograph ilogt',ilogt,'numt',nt(ilogt)
            lot = 1 + sum(nt(iminlogt:ilogt-1))
            hit = sum(nt(iminlogt:ilogt))
 

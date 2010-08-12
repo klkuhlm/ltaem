@@ -136,7 +136,7 @@ contains
        write(fmt(1)(2:5),'(I4.4)') sol%nx
        write(16,fmt(1)) sol%x(:), '  ||    x Vector'
        write(fmt(1)(2:5),'(I4.4)') sol%ny
-b       write(16,fmt(1)) sol%y(:), '  ||    y Vector'
+       write(16,fmt(1)) sol%y(:), '  ||    y Vector'
        write(fmt(1)(2:5),'(I4.4)') sol%nt
        write(16,fmt(1)) sol%t(:), '  ||    t Vector'
     endif
