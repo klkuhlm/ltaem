@@ -186,12 +186,17 @@ contains
        if (ierr /= 0) then
           write(*,'(A,I0,2(A,ES10.3))') 'ZGELS error: ',ierr,' p:',real(p),'+i',aimag(p)
           stop 
+       else
+#ifdef DEBUG
+          print *, 'ZEGLS successful'
+#endif
        end if
     end if
     
     ! put result into local coeff variables
     do i=1,nc
-       ! circles -- ensure container for results is allocated
+       print *, 'circle',i
+       ! Circles -- ensure container for results is allocated
        if (.not. allocated(c(i)%coeff)) then
           ! solution for each value of p, saved as a 2D matrix
           allocate(c(i)%coeff(sol%totalnP,col(i,1)), stat=ierr)

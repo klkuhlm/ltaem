@@ -164,6 +164,9 @@ module type_definitions
      logical :: particle = .false.
      integer :: nPart = -999
 
+     ! dump matching results to file for restart?
+     logical :: skipDump = .false.
+
      ! total number of laplace parameters
      integer :: totalnP = -999
 

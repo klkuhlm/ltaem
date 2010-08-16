@@ -45,7 +45,7 @@ OBJS=$(EXTERNAL) constants.o $(KKLOW) type_definitions.o $(KKHIGH)
 F90=gfortran-4.6
 DFLAGS=-O0 -Wall -Wextra -fbacktrace -g
 DFLAGS+=-frange-check -fcheck=all -finit-real=snan -finit-integer=-99999 -fbacktrace 
-DFLAGS+=-cpp #-DDEBUG 
+DFLAGS+=-cpp -DDEBUG 
 DFLAGS+=-fdump-rtl-expand
 PFLAGS=-O3 -march=native -cpp -fwhole-file
 LINKFLAG=$(PFLAGS) -fopenmp
@@ -65,7 +65,7 @@ main: $(OBJS) $(MAIN)
 
 # the openmp stuff is all in the main driver routine
 ltaem_main.o : ltaem_main.f90
-	$(F90) -c $(FLAGS) -fopenmp -o $@ $<
+	$(F90) -c $(FLAGS)  -o $@ $< -fopenmp
 
 # this external library tends to produce spurious errors about implicit type conversions
 cbessel.o : ./external/cbessel.f90

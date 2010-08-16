@@ -161,30 +161,32 @@ program ltaem_main
      ! only write output if there is at least one matching element
      if(any(e(:)%match) .or. any(c(:)%match)) then
 
-        !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         ! save coefficient matrices to file
-        open(unit=77, file=sol%coefffname, status='replace', action='write', iostat=ierr)
-        if (ierr /= 0) then
-           print *, 'error writing intermediate coefficient matrix to file',sol%coefffname
-           stop 000
-        end if
-        write(77,*) trim(sol%infname)//'.echo' ! file with all the input parameters
-        write(77,*) iminlogt,imaxlogt,nc,ne
-        write(77,*) nt(:)
-        write(77,*) s(:,:)
-        write(77,*) tee(:)
-        do i = 1,nc
-           write(77,*) 'CIRCLE',i,shape(c(i)%coeff)
-           write(77,*) c(i)%coeff(:,:)
-        end do
-        do i = 1,ne
-           write(77,*) 'ELLIPS',i,shape(e(i)%coeff)
-           write(77,*) e(i)%coeff(:,:)
-        end do
-        close(77)
-        write(*,'(A)') '  <matching finished>  '
-     end if
 
+        if (.not. sol%skipdump) then
+           open(unit=77, file=sol%coefffname, status='replace', action='write', iostat=ierr)
+           if (ierr /= 0) then
+              print *, 'error writing intermediate coefficient matrix to file',sol%coefffname
+              stop 000
+           end if
+           write(77,*) trim(sol%infname)//'.echo' ! file with all the input parameters
+           write(77,*) iminlogt,imaxlogt,nc,ne
+           write(77,*) nt(:)
+           write(77,*) s(:,:)
+           write(77,*) tee(:)
+           do i = 1,nc
+              write(77,*) 'CIRCLE',i,shape(c(i)%coeff)
+              write(77,*) c(i)%coeff(:,:)
+           end do
+           do i = 1,ne
+              write(77,*) 'ELLIPS',i,shape(e(i)%coeff)
+              write(77,*) e(i)%coeff(:,:)
+           end do
+           close(77)
+           write(*,'(A)') '  <matching finished>  '
+        end if
+     end if
   else ! do not re-calculate coefficients (this only makes sense if num matching elements > 0)
 
      if(any(e(:)%match) .or. any(c(:)%match)) then

@@ -49,6 +49,15 @@ contains
     read(15,*,iostat=ierr) sol%calc, sol%particle, sol%contour, sol%output, &
          & sol%outFname, sol%coeffFName, sol%elemHfName, sol%geomfName
     if (ierr /= 0) stop 'error on line 1 of input file'
+
+    ! if sol%output > 100, then don't dump matching results to file
+    if (sol%output > 100) then
+       sol%skipdump = .true.
+       sol%output = sol%output - 100
+    else
+       sol%skipdump = .false.
+    end if
+
     ! types:: 3*logical, integer, 4*string
     ! some simple debugging of problem-type / output-type combinations
     if (sol%output < 1 .or. (sol%output > 5 .and. sol%output /= 10 &
