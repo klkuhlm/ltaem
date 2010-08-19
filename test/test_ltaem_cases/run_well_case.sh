@@ -1,6 +1,6 @@
 #!/bin/bash
 set -e  # terminate on failed step
-export OMP_NUM_THREADS=2
+export OMP_NUM_THREADS=6
 
 exe=../../run/ltaem
 
