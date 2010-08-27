@@ -303,7 +303,7 @@ program ltaem_main
 #ifdef DEBUG
         write (*,'(A,ES13.5)') 'x: ',sol%x(j)
 #else
-        write (*,'(A,ES13.5,A,I0)') 'x: ',sol%x(j), '  thr=',OMP_get_thread_num()
+        write (*,'(A,ES13.5,A,I0)') 'x: ',sol%x(j) !!,'  thr=',OMP_get_thread_num()
 #endif
         do i = 1,sol%ny
 

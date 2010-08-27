@@ -1,13 +1,18 @@
+# $Id: Makefile,v 1.1 2007/03/15 00:16:09 kris Exp kris $
 EXTERNAL=cbessel.o
 KKLOW=utility.o bessel_functions.o mathieu_functions2.o
 
 ##Work MacPro##############################
-LAPACKLIB=/Users/klkuhlm/src/lapack-3.2.1/lapack_MAC.a
-BLASLIB=/Users/klkuhlm/src/lapack-3.2.1/blas_MAC.a
+#LAPACKLIB=/Users/klkuhlm/src/lapack-3.2.1/lapack_MAC.a
+#BLASLIB=/Users/klkuhlm/src/lapack-3.2.1/blas_MAC.a
 
 ##home linux desktop ##########
 #LAPACKLIB=/home/kris/src/lapack-3.2.1/lapack_LINUX.a
 #BLASLIB=/home/kris/src/lapack-3.2.1/blas_LINUX.a
+
+##work linux desktop ##########
+LAPACKLIB=/home/klkuhlm/src/lapack-3.2.2/lapack_LINUX.a
+BLASLIB=/home/klkuhlm/src/lapack-3.2.2/blas_LINUX.a
 
 ##Work cygwin laptop #####
 #LAPACKLIB=/home/klkuhlm/src/lapack-3.2.2/lapack_CYGWIN.a
@@ -21,50 +26,50 @@ BLASLIB=/Users/klkuhlm/src/lapack-3.2.1/blas_MAC.a
 # main-program related
 ####################################
 KKHIGH=kappa.o time.o ltaem_io.o invlap.o ellipse_mathieu_init.o circular_elements.o elliptical_elements.o calc_routines.o element_geometry.o solution.o particle_integration.o
+
 MAIN=ltaem_main.o
+
 TARG=ltaem
 OBJS=$(EXTERNAL) constants.o $(KKLOW) type_definitions.o $(KKHIGH)
 
 ############ ifort 11.1 ##########
-##F90=ifort
-###DFLAGS=-O0 -g -traceback -cpp -DDEBUG -warn all -check bounds -check pointers -check uninit -check format -check output_conversion
-##DFLAGS=-O0 -g -traceback -cpp -DDEBUG -warn all -check all
-##PFLAGS=-O0 -cpp
-##LINKFLAG=-O0
+F90=ifort
+OMP=-openmp
+DFLAGS=-O0 -g -traceback -warn all -check bounds -check pointers -check uninit -check format -check output_conversion
+#DFLAGS=-O0 -g -traceback -warn all -check all
+DFLAGS+=-cpp #-DDEBUG
+PFLAGS=-cpp -xHOST -O3 -ipo
+LINKFLAG=$(DFLAGS) #$(OMP)
 #####################################
 
-#### gfortran #################
-F90=gfortran-4.6
-DFLAGS=-O0 -Wall -Wextra -fbacktrace -g
-DFLAGS+=-frange-check -fcheck=all -finit-real=snan -finit-integer=-99999 -fbacktrace 
-DFLAGS+=-cpp #-DDEBUG 
-#DFLAGS+=-fdump-rtl-expand
-PFLAGS=-O3 -march=native -cpp -fwhole-file
-LINKFLAG=$(PFLAGS) -fopenmp
-###################################
+###### gfortran #################
+##F90=gfortran-4.6
+##OMP=-fopenmp
+##DFLAGS=-O0 -Wall -Wextra -fbacktrace -g
+##DFLAGS+=-frange-check -fcheck=all -finit-real=snan -finit-integer=-99999 -fbacktrace 
+##DFLAGS+=-cpp -DDEBUG 
+##DFLAGS+=-fdump-rtl-expand
+##PFLAGS=-O3 -march=native -cpp -fwhole-file
+##LINKFLAG=$(PFLAGS) $(OMP)
+#####################################
 
 # switch between performance or debugging flags
-FLAGS=$(PFLAGS)
+FLAGS=$(DFLAGS)
 
 # the link step
 main: $(OBJS) $(MAIN)
 	$(F90) $(LINKFLAG) -o $(TARG) $(OBJS) $(MAIN) $(LAPACKLIB) $(BLASLIB)
 	install $(TARG) ../run/
 
-# the openmp stuff is all in the main driver routine
-ltaem_main.o : ltaem_main.f90
-	$(F90) -c $(PFLAGS)  -o $@ $< -fopenmp
-
 # this external library tends to produce spurious errors about implicit type conversions
 cbessel.o : ./external/cbessel.f90
-	$(F90) -c $(FLAGS) -o $@ $<
-
-%.o: %.f
 	$(F90) -c $(FLAGS) -o $@ $<
 
 %.o: %.f90
 	$(F90) -c $(FLAGS) -o $@ $<
 
+%.o: %.f
+	$(F90) -c $(FLAGS) -o $@ $<
 clean:
 	rm -f *.o *.mod $(TARG) $(TARGUNSAT)
 
@@ -88,6 +93,4 @@ calc_routines.o calc_routines.mod : type_definitions.mod constants.mod circular_
 element_geometry.o geometry.mod : constants.mod type_definitions.mod file_ops.mod utility.mod element_geometry.f90
 ltaem_main.o : constants.mod type_definitions.mod file_ops.mod inverse_laplace_transform.mod solution_mod.mod calc_routines.mod geometry.mod ellipse_mathieu_init.mod ltaem_main.f90
 particle_integration.o particle_integrate.mod : constants.mod inverse_laplace_transform.mod type_definitions.mod calc_routines.mod
-
-
 

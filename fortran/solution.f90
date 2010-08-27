@@ -195,7 +195,9 @@ contains
     
     ! put result into local coeff variables
     do i=1,nc
+#ifdef DEBUG       
        print *, 'circle',i
+#endif
        ! Circles -- ensure container for results is allocated
        if (.not. allocated(c(i)%coeff)) then
           ! solution for each value of p, saved as a 2D matrix
