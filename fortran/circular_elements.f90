@@ -494,10 +494,7 @@ contains
          & ( aa(1:np,0:N-1)*spread(cos(vr(0:N-1)*Pgp),1,np) + &
          &   bb(1:np,0:N-1)*spread(sin(vr(0:N-1)*Pgp),1,np) ),dim=2)
 
-!!$    if (c%ibnd /= 0) then
 !!$       ! TODO: add in area source term for matching too
-!!$       H = H*time(p,c%time,.false.)
-!!$    end if
 
   end function circle_calc
 
@@ -560,10 +557,7 @@ contains
          & ( bb(1:np,0:N-1)*spread(cos(vr(0:N-1)*Pgp),1,np) - &
          &   aa(1:np,0:N-1)*spread(sin(vr(0:N-1)*Pgp),1,np) ),dim=2)    
 
-!!$    if (c%ibnd /= 0) then
 !!$       ! TODO: add in area source term for matching too
-!!$       dH = dH*spread(time(p,c%time,.false.),dim=2,ncopies=2)
-!!$    end if
 
   end function circle_deriv
 end module circular_elements
