@@ -16,7 +16,7 @@ program ltaem_main
   use geometry, only : distanceAngleCalcs
   use ellipse_mathieu_init, only : ellipse_init
 
-#ifndef DEBUG
+#ifdef OMP
   use omp_lib, only : omp_get_thread_num
 #endif
 
@@ -300,10 +300,10 @@ program ltaem_main
 
      !$OMP PARALLEL DO PRIVATE(i,j,calcZ,hp,vp,ilogt,lot,hit,lop,hip) SHARED(sol)
      do j = 1,sol%nx
-#ifdef DEBUG
-        write (*,'(A,ES13.5)') 'x: ',sol%x(j)
+#ifdef OMP
+        write (*,'(A,ES13.5,A,I0)') 'x: ',sol%x(j),'  thr=',OMP_get_thread_num()
 #else
-        write (*,'(A,ES13.5,A,I0)') 'x: ',sol%x(j) !!,'  thr=',OMP_get_thread_num()
+        write (*,'(A,ES13.5)') 'x: ',sol%x(j) 
 #endif
         do i = 1,sol%ny
 

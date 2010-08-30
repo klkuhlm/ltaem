@@ -11,8 +11,10 @@ KKLOW=utility.o bessel_functions.o mathieu_functions2.o
 #BLASLIB=/home/kris/src/lapack-3.2.1/blas_LINUX.a
 
 ##work linux desktop ##########
-LAPACKLIB=/home/klkuhlm/src/lapack-3.2.2/lapack_LINUX.a
-BLASLIB=/home/klkuhlm/src/lapack-3.2.2/blas_LINUX.a
+LAPACKLIB=/home/klkuhlm/src/lapack-3.2.2/lapack_LINUX_INTEL.a
+BLASLIB=/home/klkuhlm/src/lapack-3.2.2/blas_LINUX_INTEL.a
+LAPACKLIB=/home/klkuhlm/src/lapack-3.2.2/lapack_LINUX_GFORT.a
+BLASLIB=/home/klkuhlm/src/lapack-3.2.2/blas_LINUX_GFORT.a
 
 ##Work cygwin laptop #####
 #LAPACKLIB=/home/klkuhlm/src/lapack-3.2.2/lapack_CYGWIN.a
@@ -32,26 +34,28 @@ MAIN=ltaem_main.o
 TARG=ltaem
 OBJS=$(EXTERNAL) constants.o $(KKLOW) type_definitions.o $(KKHIGH)
 
-############ ifort 11.1 ##########
-F90=ifort
-OMP=-openmp
-DFLAGS=-O0 -g -traceback -warn all -check bounds -check pointers -check uninit -check format -check output_conversion
-#DFLAGS=-O0 -g -traceback -warn all -check all
-DFLAGS+=-cpp #-DDEBUG
-PFLAGS=-cpp -xHOST -O3 -ipo
-LINKFLAG=$(DFLAGS) #$(OMP)
-#####################################
+############## ifort 11.1 ##########
+##F90=ifort
+##OMP=-openmp -DOMP
+##CPP=-cpp
+##DFLAGS=-O0 -g -traceback -warn all -check bounds -check pointers -check uninit -check format -check output_conversion
+###DFLAGS=-O0 -g -traceback -warn all -check all
+##DFLAGS+=$(CPP) #-DDEBUG
+##PFLAGS=$(CPP) $(OMP) -xHOST -O3 -ipo
+##LINKFLAG=$(DFLAGS) $(OMP)
+#######################################
 
-###### gfortran #################
-##F90=gfortran-4.6
-##OMP=-fopenmp
-##DFLAGS=-O0 -Wall -Wextra -fbacktrace -g
-##DFLAGS+=-frange-check -fcheck=all -finit-real=snan -finit-integer=-99999 -fbacktrace 
-##DFLAGS+=-cpp -DDEBUG 
+#### gfortran #################
+F90=gfortran-4.6
+OMP=-fopenmp -DOMP
+CPP=-cpp
+DFLAGS=-O0 -Wall -Wextra -fbacktrace -g
+DFLAGS+=-frange-check -fcheck=all -finit-real=snan -finit-integer=-99999
+DFLAGS+=$(CPP) #-DDEBUG 
 ##DFLAGS+=-fdump-rtl-expand
-##PFLAGS=-O3 -march=native -cpp -fwhole-file
-##LINKFLAG=$(PFLAGS) $(OMP)
-#####################################
+PFLAGS=-O3 -march=native $(CPP) $(OMP) -fwhole-file
+LINKFLAG=$(PFLAGS) $(OMP)
+###################################
 
 # switch between performance or debugging flags
 FLAGS=$(DFLAGS)
