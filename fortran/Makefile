@@ -11,8 +11,8 @@ KKLOW=utility.o bessel_functions.o mathieu_functions2.o
 #BLASLIB=/home/kris/src/lapack-3.2.1/blas_LINUX.a
 
 ##work linux desktop ##########
-LAPACKLIB=/home/klkuhlm/src/lapack-3.2.2/lapack_LINUX_INTEL.a
-BLASLIB=/home/klkuhlm/src/lapack-3.2.2/blas_LINUX_INTEL.a
+#LAPACKLIB=/home/klkuhlm/src/lapack-3.2.2/lapack_LINUX_INTEL.a
+#BLASLIB=/home/klkuhlm/src/lapack-3.2.2/blas_LINUX_INTEL.a
 LAPACKLIB=/home/klkuhlm/src/lapack-3.2.2/lapack_LINUX_GFORT.a
 BLASLIB=/home/klkuhlm/src/lapack-3.2.2/blas_LINUX_GFORT.a
 
@@ -54,7 +54,7 @@ DFLAGS+=-frange-check -fcheck=all -finit-real=snan -finit-integer=-99999
 DFLAGS+=$(CPP) #-DDEBUG 
 ##DFLAGS+=-fdump-rtl-expand
 PFLAGS=-O3 -march=native $(CPP) $(OMP) -fwhole-file
-LINKFLAG=$(PFLAGS) $(OMP)
+LINKFLAG=$(DFLAGS) $(OMP)
 ###################################
 
 # switch between performance or debugging flags
