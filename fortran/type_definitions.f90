@@ -60,7 +60,7 @@ module type_definitions
      ! 1= case I, no-drawdown condition at top of aquifer
      ! 2= case II, no-flow condition at top of aquifer
      ! 3= aquitard thickness -> infinity (no bc)
-     integer :: leakFlag  = -1
+     integer :: leakFlag  = -999
      real(DP) :: aquitardK = -999., aquitardSs = -999., aquitardb = -999.
 
      ! unconfined-related (flag, specific yield, and vertical K)
@@ -137,14 +137,11 @@ module type_definitions
   type, extends(matching) :: circle
      ! Circular Inclusion related parameters
      ! well is special case of circle
-
-     ! no special circle-only parameters
   end type circle
 
   type, extends(matching) :: ellipse
      ! Elliptical Inclusion related parameters
      ! line is special case of ellipse
-
   end type ellipse
 
   type :: INVLT
@@ -180,8 +177,8 @@ module type_definitions
      logical :: calc = .false.
      
      ! input/output filenames
-     character(lenFN) :: outfname='unset', infname='unset', &
-          & coefffname='unset', elemHfName='unset', geomFname='unset'
+     character(lenFN) :: outfname='unset', infname='unset'
+     character(lenFN) :: coefffname='unset', elemHfName='unset', geomFname='unset'
      
      ! output index (1= Gnuplot map (x,y,z triplets; times separated by blank lines);
      !               2= Matlab map (matrix output separate files);
@@ -268,7 +265,6 @@ contains
     else
        write(*,*) '* nothing to print * row:',row,'col:',col
     end if
-
   end subroutine print_match_result
-  
+
 end module type_definitions

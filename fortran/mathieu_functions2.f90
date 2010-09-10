@@ -6,7 +6,7 @@ module mathieu_functions
      integer :: M = -999,  buffer = -999
      real(DP) :: CUTOFF = -999.
      complex(DP) :: q = (-999.,-999.)
-     complex(DP), allocatable :: mcn(:),A(:,:,:), B(:,:,:)  ! 4*M; 1:M, 0:M-1, 0:1
+     complex(DP), allocatable :: mcn(:), A(:,:,:), B(:,:,:)  ! 4*M; 1:M, 0:M-1, 0:1
   end type mathieu
 
   private  !! only interfaces, mathieu_init, and debugging routine are publicly callable
@@ -14,6 +14,8 @@ module mathieu_functions
 #ifdef DEBUG
   public :: print_mathieu_type
 #endif
+
+  ! TODO: swap order of dimensions in all functions (eliminate transpose in high-level code)
 
   interface ce   ! even first kind angular MF
      module procedure ce_scalar_nz, ce_scalar_n, ce_scalar_z, ce_vect_nz
@@ -77,7 +79,7 @@ contains
 
     ! resulting structure defined at top of containing module
     type(mathieu) :: mat
-    integer :: i, j, M, ierr
+    integer :: i, j, M
     real(DP) :: dg
 
     ! just one matrix of recursion coefficients (used 4 times)
@@ -102,9 +104,7 @@ contains
     end if
     M = mat%M
 
-    allocate(v(0:M),vi(0:M),stat=ierr)
-    if (ierr /= 0) stop 'error allocating v,vi'
-
+    allocate(v(0:M),vi(0:M))
     v = real([(j,j=0,M)],DP)
     where(mod([(j,j=0,M)],2)==0)
        vi = 1.0_DP
@@ -130,15 +130,7 @@ contains
     
     ! A/B 3rd dimension: 0(even) or 1(odd) cases of the second dimension
 
-    allocate(coeff(M,M), rwork(33*M), w(M), mat%mcn(4*M), mat%A(1:M,0:M-1,0:1), mat%B(1:M,0:M-1,0:1), stat=ierr)    
-    if (ierr /= 0) then
-       stop 'error allocating mcn,A,B,coeff,rwork,w'
-#ifdef DEBUG
-    else
-       print '(A,I0)', 'ZGEEV irwork:',size(rwork,dim=1)
-#endif
-    end if
-    
+    allocate(coeff(M,M), rwork(33*M), w(M), mat%mcn(4*M), mat%A(1:M,0:M-1,0:1), mat%B(1:M,0:M-1,0:1))      
 
     di = 1 ! dummy integer for lapack
     dc(1) = 0.0 ! dummy complex for lapack
@@ -160,8 +152,7 @@ contains
     Coeff(2,1) = 2.0_DP*q
 
     lwork = 2*M+1
-    allocate(work(lwork),stat=ierr) 
-    if (ierr /= 0) stop 'mathieu_functions2.f90 error allocating work '
+    allocate(work(lwork)) 
 
     call zgeev('N','V',M,Coeff,M,mat%mcn(1:m),dc,di,mat%A(1:m,0:m-1,0),M,&
          & work,lwork,rwork,info)
@@ -244,8 +235,7 @@ contains
     
     mat%B(:,:,1) = mat%B(:,:,1)/spread(w,1,m)
 
-    deallocate(coeff,rwork,w,work,stat=ierr)
-    if (ierr /= 0) stop 'mathieu_functions2.f90 error deallocating memory: coeff,rwork,w,work'
+    deallocate(coeff,rwork,w,work)
 
     ! perform some heuristic checking of max allowable order
     dg = sum(abs(diag(mat%A(:,:,0),0)))/m ! average size of diagonal element
