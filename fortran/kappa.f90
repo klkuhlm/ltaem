@@ -18,17 +18,12 @@ contains
     type(element), intent(in) :: el ! circle, ellipse, or background
     complex(DP), dimension(size(p)) :: q
 
-    integer :: np, ierr
+    integer :: np
     complex(DP), allocatable ::  kap2(:), exp2z(:)
-
-!!$#ifdef DEBUG
-!!$    print *, 'kappa el:',el%id,' leakFlag',el%leakFlag,' unconfinedFlag',el%unconfinedFlag
-!!$#endif
 
     np = size(p)
     if (el%leakFlag /= 0) then
-       allocate(kap2(np),exp2z(np),stat=ierr)
-       if (ierr /= 0) stop 'kappa_pVect error allocating: kap2,exp2z'
+       allocate(kap2(np),exp2z(np))
        kap2(1:np) = sqrt(p(:)*el%aquitardSs/el%aquitardK)
        exp2z(1:np) = exp(-2.0*kap2(:)*el%aquitardb)
     end if
@@ -66,11 +61,8 @@ contains
     !! sources are only additive under the square root
     q = sqrt(q)
 
-    if (el%leakFlag /= 0) then
-       deallocate(kap2,exp2z,stat=ierr)
-       if (ierr /= 0) stop 'kappa_pVect error deallocating: kap2,exp2z'
-    end if
-    
+    if (el%leakFlag /= 0) deallocate(kap2,exp2z)
+   
   end function kappa_pVect
   
   !! scalar version useful in matching

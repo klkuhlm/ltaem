@@ -65,8 +65,7 @@ program ltaem_main
      sol%t(sol%nt) = sol%t(sol%nt) - epsilon(sol%t(sol%nt))
   end if
   
-  allocate(run(1:2*sol%m+1), stat=ierr)
-  if (ierr /= 0) stop 'ltaem_main.f90 error allocating: run'
+  allocate(run(1:2*sol%m+1))
   forall(i=0:2*sol%m) run(i+1)=i
 
   ! compute element geometry from input
@@ -107,8 +106,7 @@ program ltaem_main
         
      !^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
      else   ! contour maps / hydrographs
-        allocate(logt(1:sol%nt), stat=ierr)
-        if (ierr /= 0) stop 'ltaem_main.f90 error allocating: logt'
+        allocate(logt(1:sol%nt))
         
         lo = 1
         logt(:) = log10(sol%t(:))
@@ -116,8 +114,7 @@ program ltaem_main
         imaxlogt = ceiling(maxval(logt(:)) + epsilon(1.0))
 
         allocate(s(2*sol%m+1,iminlogt:imaxlogt-1), nt(iminlogt:imaxlogt-1), &
-             & tee(iminlogt:imaxlogt-1), stat=ierr)
-        if (ierr /= 0) stop 'ltaem_main.f90 error allocating: s,nt,tee'
+             & tee(iminlogt:imaxlogt-1))
 
         do ilogt = iminlogt, imaxlogt-1
            ! number of times falling in this logcycle
@@ -127,8 +124,7 @@ program ltaem_main
            s(:,ilogt) = pvalues(tee(ilogt),sol%INVLT)
            lo = lo + nt(ilogt)
         end do
-        deallocate(logt,run, stat=ierr)
-        if (ierr /= 0) stop 'ltaem_main.f90 error deallocating: logt,run'
+        deallocate(logt,run)
      end if
 
      sol%totalnP = product(shape(s)) ! total number of Laplace parameters across all times
@@ -201,8 +197,7 @@ program ltaem_main
         read(77,*) !! TODO not doing anything with input file, but I should
         read(77,*) iminlogt,imaxlogt,nc,ne ! scalars
         allocate(s(2*sol%m+1,iminlogt:imaxlogt-1), nt(iminlogt:imaxlogt-1), &
-             & tee(iminlogt:imaxlogt-1),stat=ierr)
-        if (ierr /= 0) stop 'ltaem_main.f90 error allocating: s,nt,tee'
+             & tee(iminlogt:imaxlogt-1))
         read(77,*) nt(:)
         read(77,*) s(:,:)
         sol%totalnP = product(shape(s))
@@ -211,8 +206,7 @@ program ltaem_main
         do i = 1,nc
            read(77,*) elType,j,crow,ccol
            if (elType == 'CIRCLE' .and. i == j) then
-              allocate(c(i)%coeff(crow,ccol), stat=ierr)
-              if (ierr /= 0) stop 'ltaem_main.f90 error allocating c(i)%coeff'
+              allocate(c(i)%coeff(crow,ccol))
            else
               stop 'error reading in CIRCLE matching results'
            end if
@@ -221,8 +215,7 @@ program ltaem_main
         do i = 1,ne
            read(77,*) elType,j,crow,ccol
            if (elType == 'ELLIPS' .and. i == j) then
-              allocate(e(i)%coeff(crow,ccol), stat=ierr)
-              if (ierr /= 0) stop 'ltaem_main.f90 error allocating e(i)%coeff'
+              allocate(e(i)%coeff(crow,ccol))
            else
               stop 'error reading in ELLIPS matching results'
            end if
@@ -290,8 +283,7 @@ program ltaem_main
 
      write(*,'(A)') 'compute solution for plotting contours'
      allocate(sol%h(sol%nx,sol%ny,sol%nt),   hp(tnP), &
-          &   sol%v(sol%nx,sol%ny,sol%nt,2), vp(tnP,2), stat=ierr)
-     if (ierr /= 0) stop 'ltaem_main.f90 error allocating contour: sol%h,hp,sol%v,vp'
+          &   sol%v(sol%nx,sol%ny,sol%nt,2), vp(tnP,2))
 
 #ifdef DEBUG
      open(unit=303,file='calcloc.debug',status='replace',action='write')
@@ -341,8 +333,7 @@ program ltaem_main
 
      write(*,'(A)') 'compute solution for plotting hydrograph'
      allocate(sol%h(sol%nx,1,sol%nt), hp(tnp), &
-          &   sol%v(sol%nx,1,sol%nt,2), vp(tnp,2), stat=ierr)
-     if (ierr /= 0) stop 'ltaem_main.f90 error allocating hydrograph: sol%h,hp,sol%v,vp'
+          &   sol%v(sol%nx,1,sol%nt,2), vp(tnp,2))
      
      do i = 1,sol%nx
         write(*,'(A,2(1X,ES14.7E1))') 'location:',sol%x(i),sol%y(i)

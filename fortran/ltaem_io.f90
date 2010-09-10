@@ -129,8 +129,7 @@ contains
              & sol%nx, sol%ny, sol%nt
        stop
     end if
-    allocate(sol%x(sol%nx), sol%y(sol%ny), sol%t(sol%nt), stat=ierr)
-    if (ierr /= 0) stop 'ltaem_io.f90 error allocating: sol%x,sol%y,sol%t'
+    allocate(sol%x(sol%nx), sol%y(sol%ny), sol%t(sol%nt))
     read(15,*,iostat=ierr) sol%x(:)
     if (ierr /= 0) stop 'error on line 5 (sol%x(:)) of input file'
     read(15,*,iostat=ierr) sol%y(:)
@@ -175,8 +174,7 @@ contains
           write(16,'(A)') trim(circleFname)//' opened for reading circular data'
        end if
 
-       allocate(c(nc), stat=ierr)
-       if (ierr /= 0) stop 'ltaem_io.f90 error allocating c()'
+       allocate(c(nc))
        read(22,*) c(:)%n
        if (any(c%n < 1)) then
           print *, 'c%N must not be < 1',c%N
@@ -231,15 +229,13 @@ contains
           read(22,'(I3)', advance='no') c(j)%AreaTime 
           if (c(j)%AreaTime > -1) then
              ! functional time behavior
-             allocate(c(j)%ATPar(2),stat=ierr)
-             if (ierr /= 0) stop 'ltaem_io.f90 error allocating c%(j)%ATPAR(2)'
+             allocate(c(j)%ATPar(2))
              read(22,*) c(j)%ATPar(:)
              write(16,'(I0,2(1X,ES12.5),A,I0)') c(j)%AreaTime,c(j)%ATPar(:),&
                   &'  ||  Area time behavior, par1, par2 for circle ',j
           else
              ! piecewise-constant time behavior 
-             allocate(c(j)%ATPar(-2*c(j)%AreaTime+1),stat=ierr)
-             if (ierr /= 0) stop 'ltaem_io.f90 error allocating c%(j)%ATPAR(:)'
+             allocate(c(j)%ATPar(-2*c(j)%AreaTime+1))
              read(22,*) c(j)%ATPar(:)
              lfmt = '(I0,1X,    (ES12.5,1X),A,    (ES12.5,1X),A,I0)'
              write(lfmt(8:11),'(I4.4)')  size(c(j)%ATPar(:-c(j)%AreaTime+1),1)
@@ -252,14 +248,12 @@ contains
        do j=1,size(c,dim=1)
           read(22,'(I3)', advance='no') c(j)%BdryTime
           if (c(j)%BdryTime > -1) then
-             allocate(c(j)%BTPar(2),stat=ierr)
-             if (ierr /= 0) stop 'ltaem_io.f90 error allocating c%(j)%BTPAR(2)'
+             allocate(c(j)%BTPar(2))
              read(22,*) c(j)%BTPar(:)
              write(16,'(I0,2(1X,ES12.5),A,I0)') c(j)%BdryTime,c(j)%BTPar(:),&
                   &'  ||  Bdry time behavior, par1, par2 for circle ',j
           else
-             allocate(c(j)%BTPar(-2*c(j)%BdryTime+1),stat=ierr)
-             if (ierr /= 0) stop 'ltaem_io.f90 error allocating c%(j)%BTPAR(:)'
+             allocate(c(j)%BTPar(-2*c(j)%BdryTime+1))
              read(22,*) c(j)%BTPar(:)
              write(lfmt(8:11),'(I4.4)')  size(c(j)%BTPar(:-c(j)%BdryTime+1),1)
              write(lfmt(26:29),'(I4.4)') size(c(j)%BTPar(-c(j)%BdryTime+2:),1)
@@ -368,8 +362,7 @@ contains
        
     else
        ! no circular elements
-       allocate(c(0),stat=ierr)
-       if (ierr /= 0) stop 'error allocating c(0)'
+       allocate(c(0))
     end if
 
     ! elliptical (includes line sources/sinks)
@@ -384,8 +377,7 @@ contains
           write(16,'(A)') trim(ellipseFname)//' opened for reading elliptical data'
        end if
 
-       allocate(e(ne),stat=ierr)
-       if (ierr /= 0) stop 'ltaem_io.f90 error allocating e()'
+       allocate(e(ne))
        read(33,*) e(:)%n
        if (any(e%n < 1)) then
           print *, 'e%N must not be < 1',e%N
@@ -460,14 +452,12 @@ contains
        do j=1,size(e,dim=1)
           read(33,'(I3)', advance='no') e(j)%AreaTime 
           if (e(j)%AreaTime > -1) then
-             allocate(e(j)%ATPar(2),stat=ierr)
-             if (ierr /= 0) stop 'ltaem_io.f90 error allocating e%(j)%ATPAR(2)'
+             allocate(e(j)%ATPar(2))
              read(33,*) e(j)%ATPar(:)
              write(16,'(I0,2(1X,ES12.5),A,I0)') e(j)%AreaTime,e(j)%ATPar(:),&
                   &'  ||  Area time behavior, par1, par2 for ellipse ',j
           else
-             allocate(e(j)%ATPar(-2*e(j)%AreaTime+1),stat=ierr)
-             if (ierr /= 0) stop 'ltaem_io.f90 error allocating e%(j)%ATPAR(:)'
+             allocate(e(j)%ATPar(-2*e(j)%AreaTime+1))
              read(33,*) e(j)%ATPar(:)
              write(lfmt(8:11),'(I3.3)')  size(e(j)%ATPar(:-e(j)%AreaTime+1),1)
              write(lfmt(26:29),'(I3.3)') size(e(j)%ATPar(-e(j)%AreaTime+2:),1)
@@ -479,14 +469,12 @@ contains
        do j=1,size(e,dim=1)
           read(33,'(I3)', advance='no') e(j)%BdryTime
           if (e(j)%BdryTime > -1) then
-             allocate(e(j)%BTPar(2),stat=ierr)
-             if (ierr /= 0) stop 'ltaem_io.f90 error allocating e%(j)%BTPAR(2)'
+             allocate(e(j)%BTPar(2))
              read(33,*) e(j)%BTPar(:)
              write(16,'(I0,2(1X,ES12.5),A,I0)') e(j)%BdryTime,e(j)%BTPar(:),&
                   &'  ||  Bdry time behavior, par1, par2 for ellipse ',j
           else
-             allocate(e(j)%BTPar(-2*e(j)%BdryTime+1),stat=ierr)
-             if (ierr /= 0) stop 'ltaem_io.f90 error allocating e%(j)%BTPAR(:)'
+             allocate(e(j)%BTPar(-2*e(j)%BdryTime+1))
              read(33,*) e(j)%BTPar(:)
              write(lfmt(8:11),'(I3.3)')  size(e(j)%BTPar(:-e(j)%BdryTime+1),1)
              write(lfmt(26:29),'(I3.3)') size(e(j)%BTPar(-e(j)%BdryTime+2:),1)
@@ -589,8 +577,7 @@ contains
        write(16,fmt(3)) e(:)%b,'  ||    ellipse aquifer thickness'
        write(16,fmt(3)) e(:)%dskin,'  ||    ellipse boundary dimensionless skin factor'
     else
-       allocate(e(0),stat=ierr)
-       if (ierr /= 0) stop 'ltaem_io.f90 error allocating e(0)'
+       allocate(e(0))
     end if
     
     ntot = sum(dom%num) ! total number of circular and elliptical elements
@@ -633,8 +620,7 @@ contains
        end if
 
        read(44,*) sol%nPart,  sol%streakSkip
-       allocate(p(sol%nPart),stat=ierr)
-       if (ierr /= 0) stop 'ltaem_io.f90 error allocating p()'
+       allocate(p(sol%nPart))
 
        read(44,*) p(:)%tol   ! error tolerance for rkm
        if (any(p%tol < epsilon(1.0D0))) then
@@ -701,8 +687,7 @@ contains
        write(16,fmt(2)) p(:)%InclIn, '  ||    particle begins inside CH/CF incl?'
     else
        ! no particles
-       allocate(p(0),stat=ierr)
-       if (ierr /= 0) stop 'ltaem_io.f90 error allocating: p(0)'
+       allocate(p(0))
     endif
     close(15)
     close(16)

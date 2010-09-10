@@ -27,7 +27,7 @@ contains
     type(match_result) :: r
     type(element), pointer :: f => null()  ! shortcut for parent of element 
 
-    integer :: j, N, M, loM, hiM, ierr, nrows, ncols
+    integer :: j, N, M, loM, hiM, nrows, ncols
     ! mod. radial Mathieu function (K{e,o} or I{e,o})
     complex(DP), allocatable :: RMn(:,:), dRMn(:,:)
     complex(DP), dimension(1:e%M, 0:e%N-1, 0:1) :: cemat
@@ -57,9 +57,7 @@ contains
        hiM = M
     end if
 
-    allocate(r%LHS(nrows,ncols), r%RHS(nrows), stat=ierr)
-    if (ierr /= 0) stop 'elliptical_elements.f90:ellipse_match_self()&
-         & error allocating: r%LHS, r%RHS'
+    allocate(r%LHS(nrows,ncols), r%RHS(nrows))
 
     if (e%ibnd /= 2) then
        f => e%parent
@@ -87,8 +85,7 @@ contains
 
        ! matching or specified flux
        if (e%ibnd == 0 .or. e%ibnd == +1 .or. e%ibnd == 2) then
-          allocate(RMn(0:N-1,0:1),dRMn(0:N-1,0:1), stat=ierr)
-          if (ierr /= 0) stop 'elliptical_elemen ts.f90 error allocating: RMn, dRMn'
+          allocate(RMn(0:N-1,0:1),dRMn(0:N-1,0:1))
 
           ! radial functions last dimension is even/odd
           RMn(0:N-1,0) =   Ke(f%mat(i), vi(0:N-1), e%r) ! even fn
@@ -112,8 +109,7 @@ contains
              r%LHS(loM:hiM,2*N:3*N-1) = -spread(dRMn(0:N-1,0)/RMn(0:N-1,0), 1,M)*cemat(:,0:N-1,1) ! c_n flux
              r%LHS(loM:hiM,3*N:4*N-2) = -spread(dRMn(1:N-1,1)/RMn(1:N-1,1), 1,M)*semat(:,1:N-1,1) ! d_n flux
           end if
-          deallocate(RMn,dRMn,stat=ierr)
-          if (ierr /= 0) stop 'elliptical_elements.f90 error deallocating: RMn,dRMn'
+          deallocate(RMn,dRMn)
        end if
 
        ! setup RHS
@@ -147,7 +143,7 @@ contains
     integer, intent(in) :: idx
     type(match_result) :: r 
 
-    integer :: j, s, t, N, M, loN, hiN, loM, hiM, ierr, nrows, ncols
+    integer :: j, s, t, N, M, loN, hiN, loM, hiM, nrows, ncols
     complex(DP), allocatable :: cemat(:,:), semat(:,:), dcemat(:,:), dsemat(:,:) 
     integer, dimension(0:e%N-1) :: vi
     complex(DP), allocatable :: RMn(:,:,:), dRMn(:,:,:), RMn0(:,:)
@@ -183,9 +179,8 @@ contains
        ! line sources (ibound==2) are later re-allocated to zero size LHS
     end if
 
-    allocate(r%LHS(nrows,ncols), r%RHS(nrows), stat=ierr)
-    if (ierr /= 0) stop 'elliptical_elements.f90:ellipse_match_other() error allocating&
-         &r%LHS, r%RHS'
+    allocate(r%LHS(nrows,ncols), r%RHS(nrows))
+
     r%LHS = 0.0
     r%RHS = 0.0
 
@@ -194,9 +189,7 @@ contains
 
        if (dom%inclBg(s,t) .or. dom%InclIn(s,t)) then
 
-          allocate(RMn(M,0:N-1,0:1), RMn0(0:N-1,0:1), cemat(M,0:N-1), semat(M,N-1), stat=ierr)
-          if (ierr /= 0) stop 'elliptical_elements.f90:ellipse_match_other() error allocating:&
-               &RMn, RMn0, cemat, semat'
+          allocate(RMn(M,0:N-1,0:1), RMn0(0:N-1,0:1), cemat(M,0:N-1), semat(M,N-1))
 
           ! setup LHS 
           ! for matching or specified total head target elements
@@ -265,9 +258,7 @@ contains
           ! for matching, specified total flux, or specified elemental flux target element
           if (el%ibnd == 0 .or. el%ibnd == +1 .or. el%ibnd == +2) then
              allocate(dRMn(M,0:N-1,0:1), dcemat(M,0:N-1), dsemat(M,N-1), &
-                  & dPot_dR(M,2*N-1), dPot_dP(M,2*N-1), dPot_dX(M,2*N-1),dPot_dY(M,2*N-1), stat=ierr)
-             if (ierr /= 0) stop 'elliptical_elements.f90 error allocating:&
-                  & dRMn, dcemat, dsemat, dPot_dR, dPot_dP, dPot_dX, dPot_dY'
+                  & dPot_dR(M,2*N-1), dPot_dP(M,2*N-1), dPot_dX(M,2*N-1),dPot_dY(M,2*N-1))
 
              ! flux effects of source ellpise on target element
              if (dom%inclBg(s,t)) then
@@ -338,8 +329,7 @@ contains
              dPot_dP(1:M,N+1:2*N-1) = RMn(:,1:N-1,1)/spread(RMn0(1:N-1,1),1,M)*dsemat(:,1:N-1)
 
              ! project these from elliptical onto Cartesian coordinates
-             allocate(hsq(size(e%G(t)%Rgm),2*N-1), stat=ierr)
-             if (ierr /= 0) stop 'elliptical_elements.f90 error allocating: hsq'
+             allocate(hsq(size(e%G(t)%Rgm),2*N-1))
 
              ! squared metric factor -- less a common f
              hsq = spread(e%f/2.0*(cosh(2.0*e%G(t)%Rgm) - cos(2.0*e%G(t)%Pgm)),2,2*N-1) 
@@ -351,8 +341,7 @@ contains
              ! rotate to compensate for potentially arbitrary source ellipse
              call rotate_vel_mat(dPot_dX,dPot_dY,e%theta)
 
-             deallocate(hsq,stat=ierr)
-             if (ierr /= 0) stop 'elliptical_elements.f90 error deallocating: hsq'
+             deallocate(hsq)
 
              ! project from Cartesian to "radial" coordinate of target element
              if (el%id <= dom%num(1)) then
@@ -383,30 +372,16 @@ contains
                      & dPot_dY*spread(el%f*cosh(el%r)*sin(el%Pcm(:)),2,2*N-1)
 
              end if
-             deallocate(dRMn,dcemat,dsemat,dPot_dR,dPot_dP,dPot_dX,dPot_dY,stat=ierr)
-             if (ierr /= 0) stop 'elliptical_elements.f90, error deallocating:&
-                  & dRMn, dcemat, dsemat, dPot_dR, dPot_dP, dPot_dX, dPot_dY'
-             
+             deallocate(dRMn,dcemat,dsemat,dPot_dR,dPot_dP,dPot_dX,dPot_dY)            
           end if
-          deallocate(RMn,RMn0,cemat,semat,stat=ierr)
-          if (ierr /= 0) stop 'elliptical_elements.f90:elliptical_match_other(), &
-                  &error deallocating: RMn, RMn0, cemat, semat'
+          deallocate(RMn,RMn0,cemat,semat)
           
           if (e%ibnd == 2) then
              ! sum line source effects and move to RHS, re-setting LHS to 0 unknowns
              ! only uses even-order even coefficients (~1/4 of 2N-1)
              r%RHS(1:hiM) = -sum(spread(line(e,p,idx),1,hiM)*r%LHS(1:hiM,1:N:2))
-             deallocate(r%LHS,stat=ierr)
-
-             if (ierr /= 0) then
-                stop 'elliptical_elements.f90 error deallocating: r%LHS'
-             end if
-             
-             allocate(r%LHS(hiM,0),stat=ierr)
-             if (ierr /= 0) then
-                stop 'elliptical_elements.f90 error re-allocating: r%LHS'
-             end if
-             
+             deallocate(r%LHS)            
+             allocate(r%LHS(hiM,0))
           end if
        end if
     end if

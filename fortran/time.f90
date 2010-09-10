@@ -23,7 +23,7 @@ contains
     logical, intent(in) :: area
     complex(DP), dimension(size(p,1)) :: mult
 
-    integer :: n, np, flag, ierr
+    integer :: n, np, flag
     real(DP), allocatable :: ti(:), q(:), par(:)
     real(DP) :: tf
     
@@ -32,19 +32,13 @@ contains
     ! consolidate area and boundary time functions
     if (area) then
        flag = t%areaTime
-       allocate(par(size(t%ATPar,dim=1)),stat=ierr)
-       if (ierr /= 0) stop 'time.f90 error alocating: ATPar => par'
+       allocate(par(size(t%ATPar,dim=1)))
        par(:) = t%AtPar(:)
     else
        flag = t%BdryTime
-       allocate(par(size(t%BTPar,dim=1)),stat=ierr)
-       if (ierr /= 0) stop 'time.f90 error alocating: BTPar => par'
+       allocate(par(size(t%BTPar,dim=1)))
        par(:) = t%BTPar(:)
     end if
-
-!!$#ifdef DEBUG
-!!$    print *, 'time: area?',area,' flag',flag
-!!$#endif
 
     select case(flag)
     case(1)
@@ -84,8 +78,7 @@ contains
     case(:-1)
        !! arbitrary piecewise constant pumping rate with n steps, from ti(1) to tf
        n = -flag
-       allocate(ti(n),Q(0:n),stat=ierr)
-       if (ierr /= 0) stop 'time.f90 error allocating: ti, Q'
+       allocate(ti(n),Q(0:n))
 
        ! unpack initial times, pumping rates and final time
        ti(1:n) = par(1:n)
@@ -97,16 +90,14 @@ contains
             & exp(-outer(ti(1:n),p(1:np))),dim=1) - &
             & sum(Q(1:n) - Q(0:n-1))*exp(-tf*p(:)))/p(:)
 
-       deallocate(ti,Q,stat=ierr)
-       if (ierr /= 0) stop 'time.f90 error deallocating: ti, Q'
+       deallocate(ti,Q)
 
     case default
        write(*,'(A,I0)') 'Time_pvect: error in case for time behavior ',flag
        stop
     end select
 
-    deallocate(par,stat=ierr)
-    if (ierr /= 0) stop 'time.f90 error deallocating: par'
+    deallocate(par)
 
   end function Time_pvect
 

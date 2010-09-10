@@ -23,7 +23,7 @@ contains
     type(solution), intent(in) :: sol
     type(matching), pointer :: other => null()
 
-    integer :: i, j, ne, nc, ntot, par, M, ierr
+    integer :: i, j, ne, nc, ntot, par, M
     complex(DP), allocatable :: z(:)
 #ifdef DEBUG
     integer :: k
@@ -33,16 +33,13 @@ contains
     ne = dom%num(2)
     ntot = sum(dom%num)
 
-    allocate(dom%InclIn(0:ntot,ntot), dom%InclUp(ntot), dom%InclBg(ntot,ntot),stat=ierr)
-    if (ierr /= 0) stop 'error allocating hierarchy matrices, dom%InclIn, dom%inclUp, dom%InclBg'
-
+    allocate(dom%InclIn(0:ntot,ntot), dom%InclUp(ntot), dom%InclBg(ntot,ntot))
     bg%id = 0
 
     ! vector of eqi-spaced locations on perimeter of circle and ellipse
     ! each element can have a different number of matching locations
     do i=1,nc
-       allocate(c(i)%Pcm(c(i)%M),stat=ierr)
-       if (ierr /= 0) stop 'error allocating angular matching location vector, c(i)%Pcm(1:M)'
+       allocate(c(i)%Pcm(c(i)%M))
        forall(j = 1:c(i)%M)
           c(i)%Pcm(j) = -PI + 2.0*PI/c(i)%M*real(j-1,DP)
        end forall
@@ -50,8 +47,7 @@ contains
        c(i)%id = i ! global ID
     end do
     do i=1,ne
-       allocate(e(i)%Pcm(e(i)%M),stat=ierr)
-       if (ierr /= 0) stop 'error allocating angular matching location vector, e(i)%Pcm(1:M)'
+       allocate(e(i)%Pcm(e(i)%M))
        forall (j = 1:e(i)%M)
           e(i)%Pcm(j) = -PI + 2.0*PI/e(i)%M*real(j-1,DP)
        end forall
@@ -104,8 +100,7 @@ contains
     ! circular element self-geometry
     do i = 1,nc
        M = c(i)%M
-       allocate(c(i)%Zcm(M), c(i)%Zom(M), c(i)%G(ntot), stat=ierr)
-       if (ierr /= 0) stop 'error allocating geometry matrices c(i)%{Zcm,Zom},c(i)%G(ntot)'
+       allocate(c(i)%Zcm(M), c(i)%Zom(M), c(i)%G(ntot))
 
        ! x,y components from center of element to points on circumference
        if (M > 1) then
@@ -131,8 +126,7 @@ contains
     ! elliptical element self-geometry
     do i = 1,ne
        M = e(i)%M
-       allocate(e(i)%Zcm(M), e(i)%Zom(M), e(i)%G(ntot), z(M), stat=ierr)
-       if (ierr /= 0) stop 'error allocating geometry matrices e(i)%{Zcm,Zom},e(i)%G(ntot), z'
+       allocate(e(i)%Zcm(M), e(i)%Zom(M), e(i)%G(ntot), z(M))
 
        ! local elliptical coordinates (r is eta)
        z(1:M) = e(i)%f*ccosh(cmplx(e(i)%r,e(i)%Pcm(1:M),DP))
@@ -146,8 +140,7 @@ contains
           ! when only one matching location move to center of line between foci
           e(i)%Zcm(1) = cmplx(0.0,0.0,DP)
        end if
-       deallocate(z,stat=ierr)
-       if (ierr /= 0) stop 'element_geometry.f90 error deallocating memory, z1'
+       deallocate(z)
 
        ! x,y from Cartesian origin to point on circumference of element
        e(i)%Zom(1:M) = e(i)%Zcm(:) + cmplx(e(i)%x,e(i)%y,DP)
@@ -181,8 +174,7 @@ contains
              end if
              M = other%M    
 
-             allocate(c(i)%G(j)%Zgm(M), c(i)%G(j)%Rgm(M), c(i)%G(j)%Pgm(M),stat=ierr)
-             if (ierr /= 0) stop 'error allocating geometry arrays c(i)%G(j)%{Zgm,Rgm,Pgm}'
+             allocate(c(i)%G(j)%Zgm(M), c(i)%G(j)%Rgm(M), c(i)%G(j)%Pgm(M))
 
              c(i)%G(j)%Zgm(1:M) = other%Zom(1:M) - cmplx(c(i)%x,c(i)%y,DP)
              c(i)%G(j)%Rgm(1:M) = abs(c(i)%G(j)%Zgm(1:M)) ! r
@@ -211,16 +203,14 @@ contains
              end if
              M = other%M    
 
-             allocate(e(i)%G(j)%Zgm(M),e(i)%G(j)%Rgm(M),e(i)%G(j)%Pgm(M),z(M),stat=ierr)
-             if (ierr /= 0) stop 'error allocating geometry arrays e(i)%G(j)%{Zgm,Rgm,Pgm}'
+             allocate(e(i)%G(j)%Zgm(M),e(i)%G(j)%Rgm(M),e(i)%G(j)%Pgm(M),z(M))
 
              e(i)%G(j)%Zgm(1:M) = other%Zom(1:M) - cmplx(e(i)%x,e(i)%y,DP)
              z(1:M) = cacosh( e(i)%G(j)%Zgm(1:M)*exp(-EYE*e(i)%theta)/e(i)%f )
              e(i)%G(j)%Rgm(1:M) =  real(z(1:M)) ! eta
              e(i)%G(j)%Pgm(1:M) = aimag(z(1:M)) ! psi
 
-             deallocate(z,stat=ierr)
-             if (ierr /= 0) stop 'element_geometry.f90 error deallocating memory, z'
+             deallocate(z)
              other => null()
 
 #ifdef DEBUG

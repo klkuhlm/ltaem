@@ -25,7 +25,7 @@ contains
     complex(DP), intent(in) :: p
     type(match_result) :: r
 
-    integer :: j, N, M, loM, hiM, ierr, nrows, ncols
+    integer :: j, N, M, loM, hiM, nrows, ncols
     complex(DP), allocatable :: Bn(:), dBn(:) ! mod. bessel function (K or I)
     complex(DP) :: kap
     real(DP) :: cmat(1:c%M,0:c%N-1), smat(1:c%M,1:c%N-1)
@@ -61,9 +61,7 @@ contains
        hiM = M
     end if
 
-    allocate(r%LHS(nrows,ncols), r%RHS(nrows), stat=ierr)
-    if (ierr /= 0) stop 'circular_elements.f90:circle_match_self() error &
-         &allocating: r%LHS, r%RHS'
+    allocate(r%LHS(nrows,ncols), r%RHS(nrows))
 
     cmat(1:M,0:N-1) = cos(outer(c%Pcm(:),vi(0:N-1)))
     smat(1:M,1:N-1) = sin(outer(c%Pcm(:),vi(1:N-1)))
@@ -82,8 +80,7 @@ contains
     
     ! matching or specified total flux
     if (c%ibnd == 0 .or. c%ibnd == +1 .or. (c%ibnd == 2 .and. c%storIn)) then
-       allocate(Bn(0:N-1), dBn(0:N-1), stat=ierr)
-       if (ierr /= 0) stop 'circular_elements.f90 error allocating: Bn,dBn'
+       allocate(Bn(0:N-1), dBn(0:N-1))
        kap = kappa(p,c%parent) 
        call dBK(kap*c%r,N,Bn(0:N-1),dBn(0:N-1))
        dBn(0:N-1) = kap*dBn(0:N-1)
@@ -99,8 +96,7 @@ contains
           r%LHS(loM:hiM,2*N:3*N-1) = -spread(dBn(0:N-1)/Bn(0:N-1),1,M)*cmat(:,0:N-1) ! c_n flux
           r%LHS(loM:hiM,3*N:4*N-2) = -spread(dBn(1:N-1)/Bn(1:N-1),1,M)*smat(:,1:N-1) ! d_n flux
        end if
-       deallocate(Bn,dBn, stat=ierr)
-       if (ierr /= 0) stop 'circular_elements.f90 error deallocating: Bn,dBn'
+       deallocate(Bn,dBn)
     end if
     
     ! setup RHS
@@ -144,7 +140,7 @@ contains
     complex(DP), intent(in) :: p
     type(match_result) :: r
 
-    integer :: j, src, targ, N, M, loM, hiM, loN, hiN, ierr, nrows, ncols
+    integer :: j, src, targ, N, M, loM, hiM, loN, hiN, nrows, ncols
     real(DP) :: K, factor
     real(DP), allocatable :: cmat(:,:), smat(:,:)
     real(DP), dimension(0:c%N-1) :: vi
@@ -191,18 +187,14 @@ contains
        ncols = 2*N-1
     end if
     
-    allocate(r%LHS(nrows,ncols), r%RHS(nrows), stat=ierr)
-    if (ierr /= 0) stop 'circular_elements.f90:circle_match_other() error allocating:&
-            &r%LHS, r%RHS'
+    allocate(r%LHS(nrows,ncols), r%RHS(nrows))
     r%LHS = 0.0
     r%RHS = 0.0
 
     if (nrows > 0) then
        if (dom%inclBg(src,targ) .or. dom%InclIn(src,targ)) then
 
-          allocate(Bn(M,0:N-1),Bn0(0:N-1),cmat(M,0:N-1),smat(M,N-1), stat=ierr)
-          if (ierr /= 0) stop 'circular_elements.f90:circle_match_other() error allocating:&
-               &Bn, Bn0, cmat, smat'
+          allocate(Bn(M,0:N-1),Bn0(0:N-1),cmat(M,0:N-1),smat(M,N-1))
 
           cmat(1:M,0:N-1) = cos(outer(c%G(targ)%Pgm(:), vi(0:N-1)))
           smat(1:M,1:N-1) = sin(outer(c%G(targ)%Pgm(:), vi(1:N-1)))
@@ -269,9 +261,7 @@ contains
           ! for matching, specified total flux, or well with wellbore storage target element
           if (el%ibnd == 0 .or. el%ibnd == +1 .or. (el%ibnd == +2 .and. el%storIn)) then
              allocate(dBn(M,0:N-1), dPot_dR(M,2*N-1), dPot_dP(M,2*N-1), &
-                  & dPot_dX(M,2*N-1), dPot_dY(M,2*N-1), stat=ierr)
-             if (ierr /= 0) stop 'circular_elements.f90 error allocating:&
-                  & dBn, dPot_dR, dPot_dP, dPot_dX, dPot_dY'
+                  & dPot_dX(M,2*N-1), dPot_dY(M,2*N-1))
 
              ! flux effects of source circle on target element
              if (dom%inclBg(src,targ)) then
@@ -355,15 +345,9 @@ contains
                 r%LHS(loM:hiM,loN:hiN) = dPot_dX*spread(el%f*sinh(el%r)*cos(el%Pcm(:)),2,2*N-1) + &
                                        & dPot_dY*spread(el%f*cosh(el%r)*sin(el%Pcm(:)),2,2*N-1)
              end if
-
-             deallocate(dBn, dPot_dR, dPot_dP, dPot_dX, dPot_dY, stat=ierr)
-             if (ierr /= 0) stop 'circular_elements.f90 error deallocating:&
-                     & dBn, dPot_dR, dPot_dP, dPot_dX, dPot_dY'
-
+             deallocate(dBn, dPot_dR, dPot_dP, dPot_dX, dPot_dY)
           end if
-          deallocate(Bn,Bn0,cmat,smat, stat=ierr)
-          if (ierr /= 0) stop 'circular_elements.f90 error deallocating: Bn,Bn0,cmat,smat'
-
+          deallocate(Bn,Bn0,cmat,smat)
        end if
     endif
 
@@ -389,10 +373,8 @@ contains
           hiM = M
        end if
        
-       deallocate(r%LHS,stat=ierr)
-       if (ierr /= 0) stop 'circular_elements:circle_match_self() error deallocating r%LHS'
-       allocate(r%LHS(nrows,0),stat=ierr)
-       if (ierr /= 0) stop 'circular_elements:circle_match_self() error re-allocating r%LHS'
+       deallocate(r%LHS)
+       allocate(r%LHS(nrows,0))
     end if
 
   end function circle_match_other
@@ -433,7 +415,7 @@ contains
     ! TODO : should this have a factor of "b" in the denominator?
     ! TODO : off by a factor of 1/kappa?
     a0 = -Kn(0)*((2.0 + c%r**2*c%dskin*p/c%parent%T)/(2.0*PI*c%r) + &
-               & (Kn(0)*c%r*p)/(2.0*PI*c%r*kap*Kn(1)*c%parent%T))    
+               & (Kn(0)*c%r*p)/(2.0*PI*c%r*kap*Kn(1)*c%parent%T))
   end function storwell
 
   function circle_calc(p,c,lo,hi,Rgp,Pgp,inside) result(H)

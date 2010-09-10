@@ -57,8 +57,7 @@ contains
     nc = size(c,dim=1)
     ne = size(e,dim=1)
     ntot = nc + ne
-    allocate(res(ntot,ntot), row(ntot,0:2), col(ntot,0:2), stat=ierr)
-    if (ierr /= 0) stop 'solution.f90 error allocating: res,row,col'
+    allocate(res(ntot,ntot), row(ntot,0:2), col(ntot,0:2))
 
     ! accumulate result into matrices of structures
     do i=1,nc
@@ -128,20 +127,11 @@ contains
     bigM = sum(row(:,1)) ! total number rows/cols
     bigN = sum(col(:,1))
 
-    allocate(A(bigM,bigN), b(bigM), stat=ierr)
-    if (ierr /= 0) stop 'solution.f90 error allocating: A,b'
+    allocate(A(bigM,bigN), b(bigM))
     b = 0.0
 
     if (any(c%match) .or. any(e%match)) then
-       allocate(work(33*bigN),stat=ierr)
-       if (ierr /= 0) then
-          stop 'solution.f90 error allocating: work'
-#ifdef DEBUG
-       else
-          print '(A,I0)', 'ZGELS iwork=',size(work,dim=1)
-#endif
-       end if
-       
+       allocate(work(33*bigN))       
     end if
 
     forall (i=1:ntot)
@@ -171,8 +161,7 @@ contains
        end do
     end do
 
-    deallocate(res,stat=ierr)
-    if (ierr /= 0) stop 'solution.f90: error deallocating res'
+    deallocate(res)
 
     if (any(c%match) .or. any(e%match)) then
        ! use LAPACK routine to solve least-squares via Q-R decomposition
@@ -201,8 +190,7 @@ contains
        ! Circles -- ensure container for results is allocated
        if (.not. allocated(c(i)%coeff)) then
           ! solution for each value of p, saved as a 2D matrix
-          allocate(c(i)%coeff(sol%totalnP,col(i,1)), stat=ierr)
-          if (ierr /= 0) stop 'solution.f90: error allocating c(i)%coeff'
+          allocate(c(i)%coeff(sol%totalnP,col(i,1)))
        end if
 
        if (.not. (c(i)%ibnd == 2 .and. (.not. c(i)%storin))) then
@@ -212,10 +200,8 @@ contains
           ! a specified-flux point source (known strength, and zero unknowns)
           if (size(c(i)%coeff,dim=2) == 0) then
              ! fix size of coefficient container
-             deallocate(c(i)%coeff, stat=ierr)
-             if (ierr /= 0) stop 'solution.f90: error deallocating c(i)%coeff'
-             allocate(c(i)%coeff(sol%totalnP,1), stat=ierr)
-             if (ierr /= 0) stop 'solution.f90: error re-allocating c(i)%coeff'
+             deallocate(c(i)%coeff)
+             allocate(c(i)%coeff(sol%totalnP,1))
           end if
           ! get a0 coefficient from well routine
           c(i)%coeff(idx,1) = well(c(i),p)
@@ -225,8 +211,7 @@ contains
     do i=1,ne
        ! ellipses
        if (.not. allocated(e(i)%coeff)) then
-          allocate(e(i)%coeff(sol%totalnp,col(nc+i,1)), stat=ierr)
-          if (ierr /= 0) stop 'solution.f90: error allocating e(i)%coeff'
+          allocate(e(i)%coeff(sol%totalnp,col(nc+i,1)))
        end if
        if (.not. e(i)%ibnd == 2) then
           ! coefficients from least-squares solution above
@@ -234,11 +219,9 @@ contains
        else
           if (size(e(i)%coeff,dim=2) == 0) then
              ! fix size of coefficient container
-             deallocate(e(i)%coeff, stat=ierr)
-             if (ierr /= 0) stop 'solution.f90: error deallocating e(i)%coeff'
+             deallocate(e(i)%coeff)
              ! allocate space for all the even (a_n) coefficients
-             allocate(e(i)%coeff(sol%totalnP,2*e(i)%N-1), stat=ierr)
-             if (ierr /= 0) stop 'solution.f90: error re-allocating e(i)%coeff'
+             allocate(e(i)%coeff(sol%totalnP,2*e(i)%N-1))
           end if
           ! get coefficients from line routine (only even-order, even coeff used)
           e(i)%coeff(idx,:) = 0.0 
@@ -256,8 +239,7 @@ contains
 #endif
        end if
     end do
-    deallocate(A,b,row,col,stat=ierr)
-    if (ierr /= 0) stop 'solution.f90: error deallocating A,B,row,col'
+    deallocate(A,b,row,col)
 
   end subroutine matrix_solution
 
