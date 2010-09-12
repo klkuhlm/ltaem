@@ -22,6 +22,7 @@ contains
     type(element), target, intent(inout) :: bg
     type(solution), intent(in) :: sol
     type(matching), pointer :: other => null()
+!!$    type(matching), pointer, dimension(:) :: g
 
     integer :: i, j, ne, nc, ntot, par, M
     complex(DP), allocatable :: z(:)
@@ -36,8 +37,14 @@ contains
     allocate(dom%InclIn(0:ntot,ntot), dom%InclUp(ntot), dom%InclBg(ntot,ntot))
     bg%id = 0
 
+!!$    ! g is a vector of circles and ellipses
+!!$    allocate(g(nc+ne))
+!!$    g(1:nc) => c(1:nc)
+!!$    g(nc+1:nc+ne) => e(1:ne)
+
     ! vector of eqi-spaced locations on perimeter of circle and ellipse
     ! each element can have a different number of matching locations
+    ! starting at -PI (-x axis) continuing around the circle CCW.
     do i=1,nc
        allocate(c(i)%Pcm(c(i)%M))
        forall(j = 1:c(i)%M)
@@ -60,7 +67,6 @@ contains
     ! setup pointers to parent elements
     bg%parent => null()  ! background has no parent
     do i=1,nc
-       print *, 'geom circle parent ptrs: i=',i
        par = dom%InclUp(i) 
        if (par==0) then
           ! circle has background as parent
