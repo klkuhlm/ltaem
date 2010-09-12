@@ -63,7 +63,7 @@ program ltaem_main
   ne = size(e,dim=1)
 
   ! is the last value right on a log-cycle boundary?
-  if (abs(sol%t(sol%nt) - 10.0**nint(log10(sol%t(sol%nt)))) < 0.001) then
+  if (abs(sol%t(sol%nt) - 10.0**nint(log10(sol%t(sol%nt)))) < epsilon(sol%t(sol%nt))) then
      sol%t(sol%nt) = sol%t(sol%nt) - epsilon(sol%t(sol%nt))
   end if
   

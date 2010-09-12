@@ -9,11 +9,11 @@ module geometry
 contains
 
   ! ##################################################
-  ! initializes / calculates geometry - all global variables
+  ! initializes / calculates geometry
   subroutine DistanceAngleCalcs(c,e,bg,dom,sol)
     use constants, only: DP, PI, EYE
     use type_definitions, only : domain, circle, ellipse, element, solution, matching
-    use file_ops, only : writeGeometry
+    use file_ops, only : writeGeometry, readElementHierarchy
     use utility, only : ccosh, cacosh
 
     type(domain), intent(inout) :: dom
@@ -55,7 +55,7 @@ contains
        e(i)%id = i+nc ! global ID
     end do
 
-    call ElementHierarchy(dom,sol)
+    call ReadElementHierarchy(dom,sol)
 
     ! setup pointers to parent elements
     bg%parent => null()  ! background has no parent
@@ -240,60 +240,6 @@ contains
     ! create listing of points on circumference of circles for plotting
     call writeGeometry(c,e,sol)    
   end subroutine DistanceAngleCalcs
-
-  !##################################################
-  subroutine ElementHierarchy(dom,sol)
-    use constants, only : DP
-    use type_definitions, only : domain, solution
-
-    type(domain), intent(inout) :: dom
-    type(solution), intent(in) :: sol
-    integer :: nc,ne,ntot, line, ierr
-    character(4) :: chint
-    
-    nc = dom%num(1)
-    ne = dom%num(2)
-    ntot = sum(dom%num)
-
-    ! TODO later I will write code to do this automatically
-    open(unit=75, file=sol%elemhfname, status='old', action='read', iostat=ierr)
-    if (ierr /= 0) then
-       write(*,'(A)') 'ElementHierarchy: ERROR opening file '//sol%elemHFName// &
-            & ' for reading element hierarchy'
-    end if
-    open(unit=57, file=trim(sol%elemhfname)//'.echo', status='replace', action='write', iostat=ierr)
-    if (ierr /= 0) then
-       write(*,'(A)') 'ElementHierarcy: ERROR opening file '//trim(sol%elemHfName)// &
-            &'.echo for writing element hierarchy'
-    else
-       ! add a file variable to set Emacs to auto-revert mode
-       write(57,'(A)') '-*-auto-revert-*-'  
-    end if
-
-    write(chint,'(I4.4)') ntot
-    do line = 0,ntot
-       read(75,*) dom%InclIn(line,1:ntot)
-    end do
-    do line = 0,ntot
-       write(57,'('//chint//'(L1,1X),2(A,I0),A)')  &
-            & dom%InclIn(line,1:ntot),'InclIn(',line,',1:',ntot,')'
-    end do
-
-    read(75,*) dom%InclUp(1:ntot)
-    write(57,'('//chint//'(I0,1X),A,I0,A)') &
-         & dom%InclUp(1:ntot),'InclUp(1:',ntot,')'
-
-    do line = 1,ntot
-       read(75,*) dom%InclBg(line,1:ntot)
-    end do    
-    close(75)
-
-    do line = 1,ntot
-       write(57,'('//chint//'(L1,1X),2(A,I0),A)') &
-            & dom%InclBg(line,1:ntot), 'InclBg(',line,',1:',ntot,')'
-    end do
-    close(57)
-  end subroutine ElementHierarchy
 
 end module  geometry
 
