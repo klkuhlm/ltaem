@@ -18,6 +18,10 @@ module utility
      module procedure outerprod_r, outerprod_d, outerprod_z, outerprod_dz, outerprod_zd
   end interface
   
+  interface outerdiff
+     module procedure outerdiff_r
+  end interface outerdiff
+  
 contains
 
   ! ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -57,6 +61,14 @@ contains
     c = spread(da,dim=2,ncopies=size(cb))*spread(cb,dim=1,ncopies=size(da))
   end function outerprod_zd
 
+  ! ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ 
+  pure function outerdiff_r(da,db) result(dc) 
+    use constants, only : DP
+    real(DP), intent(in), dimension(:) :: da, db
+    real(DP), dimension(size(da),size(db)) :: dc
+    c = spread(da,dim=2,ncopies=size(da))-spread(db,dim=1,ncopies=size(db))
+  end function outerdiff_r
+  
   ! ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  
   pure elemental function ccosh(z) result(f)
     use constants, only : DP

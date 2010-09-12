@@ -247,5 +247,100 @@ contains
     call writeGeometry(c,e,sol)    
   end subroutine DistanceAngleCalcs
 
+  !##################################################
+  subroutine ComputeElementHierarchy(dom,sol)
+    use constants, only : DP, EYE
+    use type_definitions, only : domain, solution
+    use utility, only : outerdiff, cacosh
+
+    type(domain), intent(inout) :: dom
+    type(solution), intent(in) :: sol
+    integer :: nc,ne,ntot, line, ierr
+
+    real(DP), allocatable(:,:) :: Rcg, Eeg
+    complex(DP), allocatable(:,:) :: Z
+    logical, allocatable(:,:) :: nondiag, upper
+    
+    nc = dom%num(1)
+    ne = dom%num(2)
+    ntot = sum(dom%num)
+
+    if (ntot > 1) then
+
+       allocate(nondiag(ntot,ntot), upper(ntot,ntot), Rcg(nc,ntot), Eeg(ne,ntot))
+       ! logical mask for non-diagonal elements
+       nondiag = .true. 
+       forall(i=1:ntot) nondiag(i,i) = .false.
+
+       ! logical mask for upper triangular (not including diag) elements
+       upper = .false. 
+       forall(i=1:ntot, j=1:ntot, j>i)  upper(i,j) = .true.
+
+       dom%InclIn = .false. !! dom%InclIn(0:ntot,1:ntot) logical
+       dom%InclUp = huge(1) !! dom%InclUp(1:ntot)        integer
+       dom%InclBg = .false. !! dom%InclBg(1:ntot,1:ntot) logical
+
+       ! ## step 1 ####################
+       ! determine what circular element each circular + elliptical element falls inside 
+       ! possibly multiple elements, if multiply nested.  Determine if elements intersect.
+
+       ! check centers of elements (rows = circles, columns = all elements)
+       if (nc > 0) then
+          Rcg(1:nc,1:nc) =      sqrt(outerdiff(c%x,c%x)**2 + outerdiff(c%y,c%y)**2)
+          Rcg(1:nc,nc+1:ntot) = sqrt(outerdiff(c%x,e%x)**2 + outerdiff(c%y,e%y)**2)
+          
+          ! nondiag handles zero distance-to-self case
+          where (Rcg(1:nc,1:ntot) < spread(c%r,2,ntot) .and. nondiag)
+             dom%InclIn(1:nc,1:ntot) = .true.
+          end where
+
+          ! check circle-on-circle intersection
+
+          ! check circle-on-ellipse interesction
+
+       end if
+       
+       ! ## step 2 ####################
+       ! determine what elliptical element each circ + ellip element falls inside ...
+
+       ! check centers of elements (rows = ellipses, columns = all elements)
+       if (ne > 0) then
+          allocate(Z(ne,ntot))
+          Z(1:ne,1:nc) = spread(cmplx(c%x,c%y,DP),1,ne) - spread(cmplx(e%x,e%y,DP),2,nc)
+          Eeg(1:ne,1:nc) = real(cacosh(Z(1:ne,1:nc)*spread(exp(-EYE*e%theta)/e%f,2,nc) ))
+
+          Z(1:ne,nc+1:ntot) = spread(cmplx(e%x,e%y,DP),1,ne) - spread(cmplx(e%x,e%y,DP),2,ne)
+          Eeg(1:ne,nc+1:ntot) = real(cacosh(Z(1:ne,nc+1:ntot)*spread(exp(-EYE*e%theta)/e%f,2,ne) ))
+          deallocate(Z)
+
+          where (Eeg(1:ne,1:ntot) < spread(e%r,2,ntot) .and. nondiag)
+             dom%InclIn(nc+1:ntot,1:ntot) = .true.
+          end where
+
+          ! check ellipse-on-circle intersection
+
+          ! check ellipse-on-ellipse interesction
+
+       end if
+
+       ! if an element is not inside any other elements, it must be in the background
+       where (.not. any(dom%InclIn(1:ntot,1:ntot),dim=1))
+          dom%InclIn(0,1:ntot) = .true.
+       end where
+       
+          
+       
+
+
+       ! ## step 4 ####################
+       ! handle multiply-nested cases
+
+    else
+       ! special case of only one element, no matching -- it is in background
+       dom%InclIn(0:1,1) = [.true.,.false.]
+       dom%InclUp(1,1) = 0
+       dom%InclBg(1,1) = .false.       
+    end if
+  end subroutine ComputeElementHierarchy
 end module  geometry
 
