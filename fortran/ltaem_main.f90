@@ -30,25 +30,27 @@ program ltaem_main
   type(solution) :: sol
   type(particle), allocatable :: part(:)
   integer :: i, j, ierr
-  integer :: tnp  ! total-number-p
-  integer :: nc, ne     ! #-circles, #-ellipses
-  integer :: crow, ccol ! coeff-#-row, coeff-#-col
-  integer :: ilogt, iminlogt, imaxlogt     ! indexes related to log10 time
-  integer :: lot, hit, lop, hip, lo        ! local hi and lo indices for each log cycle
-  integer, allocatable :: nt(:), run(:)    ! #-times-each-log-cycle, 0,1,2,3...
-  integer, allocatable :: parnumdt(:)      ! number of dt expected for each particle
-  integer, allocatable :: idxmat(:,:)  ! matrix of indices for parallelization
-  real(DP), allocatable :: logt(:), tee(:) ! log10-time(numt), Tmax-for-deHoog(num-log-cycles)
-  complex(DP), allocatable :: s(:,:)       ! laplace-parameter(2*M-1,num-log-cycles)
-  complex(DP) :: calcZ      ! calc-point-complex-coordinates
-  character(6) :: elType    ! element-type {CIRCLE,ELLIPS}
+  integer :: tnp                              ! total-number-p (product of dimensions)
+  integer :: nc, ne                           ! #-circles, #-ellipses
+  integer :: crow, ccol                       ! coeff-#-row, coeff-#-col
+  integer :: ilogt, iminlogt, imaxlogt        ! indexes related to log10 time
+  integer :: lot, hit, lop, hip, lo           ! local hi and lo indices for each log cycle
+  integer, allocatable :: nt(:), run(:)       ! #-times-each-log-cycle; index-vector 0,1,2,3...
+  integer, allocatable :: parnumdt(:)         ! number of dt expected for each particle
+  integer, allocatable :: idxmat(:,:)         ! matrix of indices for parallelization
+  real(DP), allocatable :: logt(:), tee(:)    ! log10-time(numt), Tmax-for-deHoog(num-log-cycles)
+  complex(DP), allocatable :: s(:,:)          ! laplace-parameter(2*M-1,num-log-cycles)
+  complex(DP) :: calcZ                        ! calc-point-complex-coordinates
+  character(6) :: elType                      ! element-type {CIRCLE,ELLIPS}
+  complex(DP), allocatable :: hp(:), vp(:,:)  ! Laplace-space head and velocity vectors
+
+#ifdef DEBUG
   character(20) :: tmpfname
-  complex(DP), allocatable :: hp(:),vp(:,:)
+#endif
 
   real(DP), parameter :: TMAX_MULT = 2.0_DP  ! traditionally 2.0, but 4.0 could work...
 
   intrinsic :: get_command_argument
-
   call get_command_argument(1,sol%inFName)
   if (len_trim(sol%infname) == 0) then
      write(*,'(A)') 'no command-line filename supplied, using default input file: input.in'
@@ -158,7 +160,7 @@ program ltaem_main
      if(any(e(:)%match) .or. any(c(:)%match)) then
 
         !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        ! save coefficient matrices to file
+        ! save coefficient matrices to file (if sol%output < 100)
 
         if (.not. sol%skipdump) then
            open(unit=77, file=sol%coefffname, status='replace', action='write', iostat=ierr)
@@ -248,9 +250,11 @@ program ltaem_main
         part(i)%id = i
      end do
 
+#ifdef DEBUG
      ! cycle over particles, integrating each
      ! re-shape matrix s into a vector
      tmpfname = 'calc_part_    .debug'
+#endif
 
      !$OMP PARALLEL DO PRIVATE(j) SHARED(part)
      do j = 1, sol%nPart

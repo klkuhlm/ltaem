@@ -25,7 +25,8 @@ contains
     character(4) :: chint
     character(20), dimension(3) :: fmt
     character(46) :: lfmt = '(I0,1X,    (ES12.5,1X),A,    (ES12.5,1X),A,I0)'
-    character(lenFN+5) :: echofname, circleFname, ellipseFname, particleFname
+    character(lenFN+5) :: echofname
+    character(lenFN) :: circleFname, ellipseFname, particleFname
     integer :: ierr,j,ntot,nC,nE  ! #elements, #circles, #ellipses
 
     open(unit=15, file=trim(sol%infname), status='old', action='read', iostat=ierr)
@@ -40,17 +41,16 @@ contains
        write(*,'(2A)') 'READINPUT: error opening echo file ',echofname
        stop 101
     else
-       ! add a file variable to set Emacs to auto-revert mode
+       ! add a file variable at top of file to set Emacs to auto-revert mode
        write(16,'(A)') '-*-auto-revert-*-'
     endif   
-
 
     ! solution-specific and background aquifer parameters
     read(15,*,iostat=ierr) sol%calc, sol%particle, sol%contour, sol%output, &
          & sol%outFname, sol%coeffFName, sol%elemHfName, sol%geomfName
     if (ierr /= 0) stop 'error on line 1 of input file'
 
-    ! if sol%output > 100, then don't dump matching results to file
+    ! if sol%output > 100, then don't dump matching results to file for restart (a minor speedup)
     if (sol%output > 100) then
        sol%skipdump = .true.
        sol%output = sol%output - 100
@@ -62,26 +62,26 @@ contains
     ! some simple debugging of problem-type / output-type combinations
     if (sol%output < 1 .or. (sol%output > 5 .and. sol%output /= 10 &
          & .and. sol%output /= 11)) then
-       print *, 'input file (line 1) sol%output must be in {1,2,3,4,5,10,11} ',sol%output
-       stop
+       write(*,*) 'input file (line 1) sol%output must be in {1,2,3,4,5,10,11} ',sol%output
+       stop 200
     end if
     if ((sol%output < 4 .or. sol%output > 5) .and. sol%particle) then
-       print *, 'input file (line 1) if sol%particle==.True., sol%output should &
+       write(*,*) 'input file (line 1) if sol%particle==.True., sol%output should &
             &be in {4,5}',sol%output,sol%particle
-       stop
+       stop 201 
     elseif (.not. sol%particle .and. (sol%output == 4 .or. sol%output == 5)) then
-       print *, 'input file (line 1) sol%output should only be in {4,5} if &
+       write(*,*) 'input file (line 1) sol%output should only be in {4,5} if &
             &sol%particle==.True.',sol%output,sol%particle
-       stop
+       stop 202
     end if
     if ((sol%output == 3 .or. sol%output == 11) .and. sol%contour) then
-       print *, 'input file (line 1) sol%output should not be in {3,11} when contour &
+       write(*,*) 'input file (line 1) sol%output should not be in {3,11} when contour &
             &output is selected',sol%output,sol%contour
-       stop
+       stop 203
     elseif ((sol%output /= 3 .and. sol%output /= 11) .and. .not. sol%contour) then
-       print *, 'input file (line 1) sol%output should be in {3,11} when hydrograph &
+       write(*,*) 'input file (line 1) sol%output should be in {3,11} when hydrograph &
             &(non-contour) output is selected',sol%output,sol%contour
-       stop
+       stop 204
     end if
 
 
@@ -90,23 +90,23 @@ contains
     if (ierr /= 0) stop 'error on line 2 of input file'
     ! reals checked here, bg%ms checked in ellipse section, leakflag checked elsewhere
     if (any([bg%por,bg%k,bg%ss] < epsilon(0.0))) then
-       print *, 'input file (line 2) bg%por, bg%k, bg%ss &
+       write(*,*) 'input file (line 2) bg%por, bg%k, bg%ss &
             &must all be > 0.0 :',bg%por,bg%k,bg%ss
-       stop
+       stop 205
     end if
     if (any([bg%aquitardK,bg%aquitardSs,bg%aquitardb] < epsilon(0.0))) then
-       print *, 'input file (line 2) bg%aquitardK, bg%aquitardSs, bg%aquitardb &
+       write(*,*) 'input file (line 2) bg%aquitardK, bg%aquitardSs, bg%aquitardb &
             &must all be > 0.0 :',bg%aquitardK,bg%aquitardSs,bg%aquitardb 
-       stop
+       stop 206
     end if
 
 
     read(15,*,iostat=ierr) bg%Sy, bg%kz, bg%unconfinedFlag, bg%b
     if (ierr /= 0) stop 'error on line 3 of input file'
     if (any([bg%Sy, bg%kz,bg%b] < epsilon(0.0))) then
-       print *, 'input file (line 3) bg%Sy, bg%kz, bg%b must all be > 0.0 :', &
+       write(*,*) 'input file (line 3) bg%Sy, bg%kz, bg%b must all be > 0.0 :', &
             & bg%Sy,bg%kz,bg%b
-       stop
+       stop 207
     end if
 
     ! echo input from first 3 lines to file
@@ -125,9 +125,9 @@ contains
     read(15,*,iostat=ierr) sol%nx, sol%ny, sol%nt
     if (ierr /= 0) stop 'error on line 4 of input file'
     if (any([sol%nx,sol%ny,sol%nt] < 1)) then
-       print *, 'input file (line 4) sol%nx, sol%ny, sol%nt must be > 0:',&
+       write(*,*) 'input file (line 4) sol%nx, sol%ny, sol%nt must be > 0:',&
              & sol%nx, sol%ny, sol%nt
-       stop
+       stop 208
     end if
     allocate(sol%x(sol%nx), sol%y(sol%ny), sol%t(sol%nt))
     read(15,*,iostat=ierr) sol%x(:)
@@ -153,8 +153,8 @@ contains
     read(15,*,iostat=ierr) sol%alpha, sol%tol, sol%m
     if (ierr /= 0) stop 'error on line 7 of input file'
     if (sol%M < 1) then
-       print *, 'input file (line 7) sol%M must be > 0: ',sol%M
-       stop
+       write(*,*) 'input file (line 7) sol%M must be > 0: ',sol%M
+       stop 209
     end if
     if (sol%tol < epsilon(sol%tol)) then
        sol%tol = epsilon(sol%tol)
@@ -169,7 +169,7 @@ contains
        open(unit=22, file=trim(circleFname), status='old', action='read',iostat=ierr)
        if (ierr /= 0) then
           write(*,'(2A)') 'READINPUT: error opening circular data file for reading ',trim(circleFname)
-          stop
+          stop 210
        else
           write(16,'(A)') trim(circleFname)//' opened for reading circular data'
        end if
@@ -177,20 +177,20 @@ contains
        allocate(c(nc))
        read(22,*) c(:)%n
        if (any(c%n < 1)) then
-          print *, 'c%N must not be < 1',c%N
-          stop
+          write(*,*) 'c%N must not be < 1',c%N
+          stop 211
        end if
 
        read(22,*) c(:)%m
        if (any(c%M < 1)) then
-          print *, 'c%M must not be < 1',c%M
-          stop
+          write(*,*) 'c%M must not be < 1',c%M
+          stop 212
        end if
 
        read(22,*) c(:)%ibnd
        if (any(c%ibnd < -1 .or. c%ibnd > 2)) then
-          print *, 'c%ibnd must be in {-1,0,1,2}',c%ibnd
-          stop
+          write(*,*) 'c%ibnd must be in {-1,0,1,2}',c%ibnd
+          stop 213
        end if
           
        read(22,*) c(:)%CalcIn ! calculate inside this element?
@@ -198,8 +198,8 @@ contains
 
        read(22,*) c(:)%r
        if (any(c%r < epsilon(0.0))) then
-          print *, 'c%r must be > 0.0',c%r
-          stop
+          write(*,*) 'c%r must be > 0.0',c%r
+          stop 214
        end if
 
        read(22,*) c(:)%x ! any real number is ok
@@ -207,20 +207,20 @@ contains
 
        read(22,*) c(:)%k
        if (any(c%k < epsilon(0.0))) then
-          print *, 'c%K must be > 0.0',c%k
-          stop
+          write(*,*) 'c%K must be > 0.0',c%k
+          stop 215
        end if      
 
        read(22,*) c(:)%Ss
        if (any(c%ss < epsilon(0.0))) then
-          print *, 'c%Ss must be > 0.0',c%Ss
-          stop
+          write(*,*) 'c%Ss must be > 0.0',c%Ss
+          stop 216
        end if      
 
        read(22,*) c(:)%por
        if (any(c%por < epsilon(0.0))) then
-          print *, 'c%por must be > 0.0',c%por
-          stop
+          write(*,*) 'c%por must be > 0.0',c%por
+          stop 217
        end if      
 
        read(22,*) c(:)%areaQ ! area source strength (flux)
@@ -265,45 +265,45 @@ contains
        read(22,*) c(:)%leakFlag  ! checking handled elsewhere
        read(22,*) c(:)%aquitardK
        if (any(c%aquitardK < epsilon(0.0))) then
-          print *, 'c%aquitardK must be > 0.0',c%aquitardk
-          stop
+          write(*,*) 'c%aquitardK must be > 0.0',c%aquitardk
+          stop 218
        end if      
 
        read(22,*) c(:)%aquitardSs
        if (any(c%aquitardSS < epsilon(0.0))) then
-          print *, 'c%aquitardSs must be > 0.0',c%aquitardSs
-          stop
+          write(*,*) 'c%aquitardSs must be > 0.0',c%aquitardSs
+          stop 219
        end if      
 
        read(22,*) c(:)%aquitardb  !aquitard thickness
        if (any(c%aquitardB < epsilon(0.0))) then
-          print *, 'c%aquitardB must be > 0.0',c%aquitardB
-          stop
+          write(*,*) 'c%aquitardB must be > 0.0',c%aquitardB
+          stop 220
        end if      
 
        read(22,*) c(:)%unconfinedFlag ! checking handled elsewhere
        read(22,*) c(:)%Sy
        if (any(c%sy < epsilon(0.0))) then
-          print *, 'c%Sy must be > 0.0',c%sy
-          stop
+          write(*,*) 'c%Sy must be > 0.0',c%sy
+          stop 221
        end if      
 
        read(22,*) c(:)%Kz
        if (any(c%kz < epsilon(0.0))) then
-          print *, 'c%Kz must be > 0.0',c%kz
-          stop
+          write(*,*) 'c%Kz must be > 0.0',c%kz
+          stop 222
        end if      
 
        read(22,*) c(:)%b  ! aquifer thickness
        if (any(c%b < epsilon(0.0))) then
-          print *, 'c%B must be > 0.0',c%b
-          stop
+          write(*,*) 'c%B must be > 0.0',c%b
+          stop 223
        end if      
 
        read(22,*) c(:)%dskin ! dimensionless skin
        if (any(c%dskin < epsilon(0.0))) then
-          print *, 'c%Dskin must be > 0.0',c%dskin
-          stop
+          write(*,*) 'c%Dskin must be > 0.0',c%dskin
+          stop 224
        end if            
 
        close(22)
@@ -315,7 +315,7 @@ contains
        end where
        
        if(any(c%match .and. c%storin)) then
-          print *, 'WARNING: wellbore (free-water) storage only handled yet for ibnd==2'
+          write(*,*) 'WARNING: wellbore (free-water) storage only handled yet for ibnd==2'
           where(c%match .and. c%storin)
              c%storin = .false.
           end where
@@ -326,30 +326,30 @@ contains
        fmt(2) = '('//chint//'(L1,1X),A)     ' ! logical 
        fmt(3) = '('//chint//'(ES13.5,1X),A) ' ! real
 
-       write(16,'(I0,A)') dom%num(1), '  ||   number of circular elements (including wells)'
-       write(16,fmt(1)) c(:)%n,'  ||   number of circular free parameter (Fourier coeffs)'
-       write(16,fmt(1)) c(:)%m,'  ||   number of circular matching locations'
-       write(16,fmt(1)) c(:)%ibnd, '  ||    circle ibnd array'
-       write(16,fmt(2)) c(:)%match, '  ||    circle matching array'
-       write(16,fmt(2)) c(:)%calcin, '  ||    calculate inside this circle?'
-       write(16,fmt(2)) c(:)%storin, '  ||    calculate free-water storage effects of circle?'
-       write(16,fmt(3)) c(:)%r, '  ||    circle radius'
-       write(16,fmt(3)) c(:)%x, '  ||    circle center x'
-       write(16,fmt(3)) c(:)%y, '  ||    circle center y'
-       write(16,fmt(3)) c(:)%k, '  ||    circle aquifer k'
-       write(16,fmt(3)) c(:)%ss, '  ||    circle aquifer Ss'
-       write(16,fmt(3)) c(:)%por, '  ||    circle aquifer porosity'
-       write(16,fmt(3)) c(:)%areaQ, '  ||    circle area rch rate'
-       write(16,fmt(3)) c(:)%bdryQ, '  ||    circle boundry rch rate or head'
-       write(16,fmt(2)) c(:)%leakFlag, '  ||     circle leaky type'
-       write(16,fmt(3)) c(:)%aquitardK, '  ||     circle leaky aquitard K'
-       write(16,fmt(3)) c(:)%aquitardSs, '  ||     circle leaky aquitard Ss'
-       write(16,fmt(3)) c(:)%aquitardb, '  ||     circle leaky aquitard thickness'
+       write(16,'(I0,A)') dom%num(1),        '  ||   number of circular elements (including wells)'
+       write(16,fmt(1)) c(:)%n,              '  ||   number of circular free parameter (Fourier coeffs)'
+       write(16,fmt(1)) c(:)%m,              '  ||   number of circular matching locations'
+       write(16,fmt(1)) c(:)%ibnd,           '  ||    circle ibnd array'
+       write(16,fmt(2)) c(:)%match,          '  ||    circle matching array'
+       write(16,fmt(2)) c(:)%calcin,         '  ||    calculate inside this circle?'
+       write(16,fmt(2)) c(:)%storin,         '  ||    calculate free-water storage effects of circle?'
+       write(16,fmt(3)) c(:)%r,              '  ||    circle radius'
+       write(16,fmt(3)) c(:)%x,              '  ||    circle center x'
+       write(16,fmt(3)) c(:)%y,              '  ||    circle center y'
+       write(16,fmt(3)) c(:)%k,              '  ||    circle aquifer k'
+       write(16,fmt(3)) c(:)%ss,             '  ||    circle aquifer Ss'
+       write(16,fmt(3)) c(:)%por,            '  ||    circle aquifer porosity'
+       write(16,fmt(3)) c(:)%areaQ,          '  ||    circle area rch rate'
+       write(16,fmt(3)) c(:)%bdryQ,          '  ||    circle boundry rch rate or head'
+       write(16,fmt(2)) c(:)%leakFlag,       '  ||     circle leaky type'
+       write(16,fmt(3)) c(:)%aquitardK,      '  ||     circle leaky aquitard K'
+       write(16,fmt(3)) c(:)%aquitardSs,     '  ||     circle leaky aquitard Ss'
+       write(16,fmt(3)) c(:)%aquitardb,      '  ||     circle leaky aquitard thickness'
        write(16,fmt(2)) c(:)%unconfinedFlag, '  ||     circle unconfined flag'
-       write(16,fmt(3)) c(:)%Sy, '  ||     circle aquifer specific yield'
-       write(16,fmt(3)) c(:)%Kz, '  ||     circle aquifer vertical K'
-       write(16,fmt(3)) c(:)%b,'  ||    circle aquifer thickness'
-       write(16,fmt(3)) c(:)%dskin,'  ||    circle boundary dimensionless skin factor'
+       write(16,fmt(3)) c(:)%Sy,             '  ||     circle aquifer specific yield'
+       write(16,fmt(3)) c(:)%Kz,             '  ||     circle aquifer vertical K'
+       write(16,fmt(3)) c(:)%b,              '  ||    circle aquifer thickness'
+       write(16,fmt(3)) c(:)%dskin,          '  ||    circle boundary dimensionless skin factor'
 
 
        ! minor checking / correcting
@@ -372,7 +372,7 @@ contains
        open(unit=33, file=trim(ellipseFname), status='old', action='read',iostat=ierr)
        if (ierr /= 0) then
           write(*,'(2A)') 'READINPUT: error opening elliptical data file for reading ',trim(ellipseFname)
-          stop
+          stop 225
        else
           write(16,'(A)') trim(ellipseFname)//' opened for reading elliptical data'
        end if
@@ -380,28 +380,28 @@ contains
        allocate(e(ne))
        read(33,*) e(:)%n
        if (any(e%n < 1)) then
-          print *, 'e%N must not be < 1',e%N
-          stop
+          write(*,*) 'e%N must not be < 1',e%N
+          stop 226
        end if
 
        read(33,*) e(:)%m
        if (any(e%m < 1)) then
-          print *, 'e%M must not be < 1',e%M
-          stop
+          write(*,*) 'e%M must not be < 1',e%M
+          stop 227
        end if
 
        read(33,*) e(:)%ms ! bg%ms read above
        ! checked more carefully in Mathieu function library
        if (any(e%ms < e%n) .or. any(bg%ms < e%n)) then  
-          print *, 'e%ms must not be < e%n + buffer: e%N',e%N,'e%MS',e%ms
-          print *, 'bg%ms must not be < e%n + buffer: bg%MS',bg%ms
-          stop
+          write(*,*) 'e%ms must not be < e%n + buffer: e%N',e%N,'e%MS',e%ms
+          write(*,*) 'bg%ms must not be < e%n + buffer: bg%MS',bg%ms
+          stop 228
        end if
 
        read(33,*) e(:)%ibnd
        if (any(e%ibnd < -1 .or. e%ibnd > 2)) then
-          print *, 'e%ibnd must be in {-1,0,1,2}',e%ibnd
-          stop
+          write(*,*) 'e%ibnd must be in {-1,0,1,2}',e%ibnd
+          stop 229
        end if
 
        read(33,*) e(:)%CalcIn
@@ -409,8 +409,8 @@ contains
        
        read(33,*) e(:)%r   ! eta
        if (any(e%r < 0.0)) then
-          print *, 'e%r must be >= 0.0',e%r
-          stop
+          write(*,*) 'e%r must be >= 0.0',e%r
+          stop 230
        end if
 
        read(33,*) e(:)%x
@@ -418,32 +418,32 @@ contains
 
        read(33,*) e(:)%f
        if (any(e%f < epsilon(0.0))) then
-          print *, 'e%f must be > 0.0',e%f
-          stop
+          write(*,*) 'e%f must be > 0.0',e%f
+          stop 231
        end if
 
        read(33,*) e(:)%theta      
        if (any(e%theta < -PI) .or. any(e%theta > PI)) then
-          print *, 'e%theta must be -pi <= theta <= PI',e%theta
-          stop
+          write(*,*) 'e%theta must be -pi <= theta <= PI',e%theta
+          stop 232
        end if
 
        read(33,*) e(:)%k
        if (any(e%k < epsilon(0.0))) then
-          print *, 'e%k must be > 0.0',e%k
-          stop
+          write(*,*) 'e%k must be > 0.0',e%k
+          stop 233
        end if
 
        read(33,*) e(:)%Ss
        if (any(e%Ss < epsilon(0.0))) then
-          print *, 'e%Ss must be > 0.0',e%Ss
-          stop
+          write(*,*) 'e%Ss must be > 0.0',e%Ss
+          stop 234
        end if
 
        read(33,*) e(:)%por
        if (any(e%por < epsilon(0.0))) then
-          print *, 'e%por must be > 0.0',e%por
-          stop
+          write(*,*) 'e%por must be > 0.0',e%por
+          stop 235
        end if
 
        read(33,*) e(:)%areaQ
@@ -488,46 +488,46 @@ contains
 
        read(33,*) e(:)%aquitardK
        if (any(e%aquitardK < epsilon(0.0))) then
-          print *, 'e%aquitardK must be > 0.0',e%aquitardK
-          stop
+          write(*,*) 'e%aquitardK must be > 0.0',e%aquitardK
+          stop 236
        end if
 
        read(33,*) e(:)%aquitardSs
        if (any(e%aquitardSs < epsilon(0.0))) then
-          print *, 'e%aquitardSs must be > 0.0',e%aquitardSs
-          stop
+          write(*,*) 'e%aquitardSs must be > 0.0',e%aquitardSs
+          stop 237
        end if
 
        read(33,*) e(:)%aquitardb  
        if (any(e%aquitardb < epsilon(0.0))) then
-          print *, 'e%aquitardb must be > 0.0',e%aquitardb
-          stop
+          write(*,*) 'e%aquitardb must be > 0.0',e%aquitardb
+          stop 238
        end if
 
        read(33,*) e(:)%unconfinedFlag
 
        read(33,*) e(:)%Sy
        if (any(e%Sy < epsilon(0.0))) then
-          print *, 'e%Sy must be > 0.0',e%Sy
-          stop
+          write(*,*) 'e%Sy must be > 0.0',e%Sy
+          stop 239
        end if
 
        read(33,*) e(:)%Kz
        if (any(e%Kz < epsilon(0.0))) then
-          print *, 'e%Kz must be > 0.0',e%Kz
-          stop
+          write(*,*) 'e%Kz must be > 0.0',e%Kz
+          stop 240
        end if
 
        read(33,*) e(:)%b
        if (any(e%b < epsilon(0.0))) then
-          print *, 'e%b must be > 0.0',e%b
-          stop
+          write(*,*) 'e%b must be > 0.0',e%b
+          stop 241
        end if
 
        read(33,*) e(:)%dskin
        if (any(e%dskin < epsilon(0.0))) then
-          print *, 'e%dskin must be > 0.0',e%dskin
-          stop
+          write(*,*) 'e%dskin must be > 0.0',e%dskin
+          stop 242
        end if
        
        close(33)
@@ -539,7 +539,7 @@ contains
        end where
 
        if(any(e%storin)) then
-          print *, 'WARNING: wellbore (free-water) storage not handled for ellipses yet'
+          write(*,*) 'WARNING: wellbore (free-water) storage not handled for ellipses yet'
           e%storin = .false.
        end if
 
@@ -548,34 +548,34 @@ contains
        fmt(2) = '('//chint//'(L1,1X),A)     ' ! logical 
        fmt(3) = '('//chint//'(ES13.5,1X),A) ' ! real
 
-       write(16,'(I0,A)') dom%num(2), '  ||   number of elliptical elements (including lines)'
-       write(16,fmt(1)) e(:)%n,'  ||   number of elliptical free parameter (Fourier coeffs)'
-       write(16,fmt(1)) e(:)%m,'  ||   number of ellipse matching locations'
-       write(16,fmt(1)) e(:)%ms,'  ||   size of "infinite" Mathieu matrices'
-       write(16,fmt(1)) e(:)%ibnd, '  ||    ellipse ibnd array'
-       write(16,fmt(2)) e(:)%match, '  ||    ellipse matching array'
-       write(16,fmt(2)) e(:)%calcin, '  ||    calculate inside this ellipse?'
-       ! free-water storage for ellipses not handled yet
-       write(16,fmt(2)) e(:)%storin, '  ||    calculate free-water storage for this ellipse?' 
-       write(16,fmt(3)) e(:)%r, '  ||    ellipse radius (eta)'
-       write(16,fmt(3)) e(:)%x, '  ||    ellipse center x'
-       write(16,fmt(3)) e(:)%y, '  ||    ellipse center y'
-       write(16,fmt(3)) e(:)%f, '  ||    ellipse semi-focal length'
-       write(16,fmt(3)) e(:)%theta, '  ||    ellipse angle rotation with +x axis'
-       write(16,fmt(3)) e(:)%k, '  ||    ellipse aquifer k'
-       write(16,fmt(3)) e(:)%ss, '  ||    ellipse aquifer Ss'
-       write(16,fmt(3)) e(:)%por, '  ||    ellipse aquifer porosity'
-       write(16,fmt(3)) e(:)%areaQ, '  ||     ellipse area rch rate'
-       write(16,fmt(3)) e(:)%bdryQ, '  ||     ellipse boundary rch rate or head'
-       write(16,fmt(2)) e(:)%leakFlag, '  ||     ellipse leaky type'
-       write(16,fmt(3)) e(:)%aquitardK, '  ||     ellipse leaky aquitard K'
-       write(16,fmt(3)) e(:)%aquitardSs, '  ||     ellipse leaky aquitard Ss'
-       write(16,fmt(3)) e(:)%aquitardb, '  ||     ellipse leaky aquitard thickness'
+       write(16,'(I0,A)') dom%num(2),        '  ||   number of elliptical elements (including lines)'
+       write(16,fmt(1)) e(:)%n,              '  ||   number of elliptical free parameter (Fourier coeffs)'
+       write(16,fmt(1)) e(:)%m,              '  ||   number of ellipse matching locations'
+       write(16,fmt(1)) e(:)%ms,             '  ||   size of "infinite" Mathieu matrices'
+       write(16,fmt(1)) e(:)%ibnd,           '  ||    ellipse ibnd array'
+       write(16,fmt(2)) e(:)%match,          '  ||    ellipse matching array'
+       write(16,fmt(2)) e(:)%calcin,         '  ||    calculate inside this ellipse?'
+       ! TODO free-water storage for ellipses not handled yet
+       write(16,fmt(2)) e(:)%storin,         '  ||    calculate free-water storage for this ellipse?' 
+       write(16,fmt(3)) e(:)%r,              '  ||    ellipse radius (eta)'
+       write(16,fmt(3)) e(:)%x,              '  ||    ellipse center x'
+       write(16,fmt(3)) e(:)%y,              '  ||    ellipse center y'
+       write(16,fmt(3)) e(:)%f,              '  ||    ellipse semi-focal length'
+       write(16,fmt(3)) e(:)%theta,          '  ||    ellipse angle rotation with +x axis'
+       write(16,fmt(3)) e(:)%k,              '  ||    ellipse aquifer k' 
+       write(16,fmt(3)) e(:)%ss,             '  ||    ellipse aquifer Ss'
+       write(16,fmt(3)) e(:)%por,            '  ||    ellipse aquifer porosity'
+       write(16,fmt(3)) e(:)%areaQ,          '  ||     ellipse area rch rate'
+       write(16,fmt(3)) e(:)%bdryQ,          '  ||     ellipse boundary rch rate or head'
+       write(16,fmt(2)) e(:)%leakFlag,       '  ||     ellipse leaky type'
+       write(16,fmt(3)) e(:)%aquitardK,      '  ||     ellipse leaky aquitard K'
+       write(16,fmt(3)) e(:)%aquitardSs,     '  ||     ellipse leaky aquitard Ss'
+       write(16,fmt(3)) e(:)%aquitardb,      '  ||     ellipse leaky aquitard thickness'
        write(16,fmt(2)) e(:)%unconfinedFlag, '  ||     ellipse unconfined flag'
-       write(16,fmt(3)) e(:)%Sy, '  ||     ellipse aquifer specific yield'
-       write(16,fmt(3)) e(:)%Kz, '  ||     ellipse aquifer vertical K'
-       write(16,fmt(3)) e(:)%b,'  ||    ellipse aquifer thickness'
-       write(16,fmt(3)) e(:)%dskin,'  ||    ellipse boundary dimensionless skin factor'
+       write(16,fmt(3)) e(:)%Sy,             '  ||     ellipse aquifer specific yield'
+       write(16,fmt(3)) e(:)%Kz,             '  ||     ellipse aquifer vertical K'
+       write(16,fmt(3)) e(:)%b,              '  ||    ellipse aquifer thickness'
+       write(16,fmt(3)) e(:)%dskin,          '  ||    ellipse boundary dimensionless skin factor'
     else
        allocate(e(0))
     end if
@@ -599,14 +599,14 @@ contains
 
     if (dom%num(1) > 0) then
        write(16,fmt(2)) c(:)%alpha,'  ||    circle hydraulic diffusivity'
-       write(16,fmt(2)) c(:)%T,'  ||    circle transmissivity'
+       write(16,fmt(2)) c(:)%T,    '  ||    circle transmissivity'
     end if
     if (dom%num(2) > 0) then
        write(16,fmt(3)) e(:)%alpha,'  ||    ellipse hydraulic diffusivity'
-       write(16,fmt(3)) e(:)%T,'  ||    ellipse transmissivity'
+       write(16,fmt(3)) e(:)%T,    '  ||    ellipse transmissivity'
     end if
     write(16,'(ES11.5,A)') bg%alpha,'  ||    background hydraulic diffusivity'
-    write(16,'(ES11.5,A)') bg%T,'  ||    background transmissivity'
+    write(16,'(ES11.5,A)') bg%T,    '  ||    background transmissivity'
 
     ! particles
     if (sol%particle) then
@@ -614,7 +614,7 @@ contains
        open(unit=44, file=particleFname, status='old', action='read',iostat=ierr)
        if (ierr /= 0) then
           write(*,'(2A)') 'READINPUT: error opening particle data file for reading ',particleFname
-          stop
+          stop 243
        else
           write(16,'(A)') trim(particleFname)//' opened for reading particle data'
        end if
@@ -624,26 +624,26 @@ contains
 
        read(44,*) p(:)%tol   ! error tolerance for rkm
        if (any(p%tol < epsilon(1.0D0))) then
-          print *, 'p%tol must be > 0.0',p%tol
-          stop
+          write(*,*) 'p%tol must be > 0.0',p%tol
+          stop 244
        end if      
 
        read(44,*) p(:)%maxL  ! max step length for rkm
        if (any(p%maxL < epsilon(1.0))) then
-          print *, 'p%maxL must be > 0.0',p%maxL
-          stop
+          write(*,*) 'p%maxL must be > 0.0',p%maxL
+          stop 245
        end if      
 
        read(44,*) p(:)%mindt  ! min step size for rkm
        if (any(p%mindt < epsilon(1.0))) then
-          print *, 'p%mindt must be > 0.0',p%mindt
-          stop
+          write(*,*) 'p%mindt must be > 0.0',p%mindt
+          stop 246
        end if
        
        read(44,*) p(:)%dt    ! time step (initial timestep for rkm)
        if (any(p%dt < epsilon(1.0))) then
-          print *, 'p%dt must be > 0.0',p%dt
-          stop
+          write(*,*) 'p%dt must be > 0.0',p%dt
+          stop 247
        end if
 
        read(44,*) p(:)%x
@@ -651,20 +651,20 @@ contains
 
        read(44,*) p(:)%ti ! particle start time
        if (any(p%ti < epsilon(1.0))) then
-          print *, 'p%ti must be > 0.0',p%ti
-          stop
+          write(*,*) 'p%ti must be > 0.0',p%ti
+          stop 248
        end if
 
        read(44,*) p(:)%tf
        if (any(p%tf < p%ti)) then
-          print *, 'p%tf must be > p%ti  ti:',p%ti,' tf:',p%tf
-          stop
+          write(*,*) 'p%tf must be > p%ti  ti:',p%ti,' tf:',p%tf
+          stop 249
        end if
 
        read(44,*) p(:)%int
        if (any(p%int < 1 .or. p%int == 3 .or. p%int > 4)) then
-          print *, 'p%int must be {1,2,4}',p%int
-          stop
+          write(*,*) 'p%int must be {1,2,4}',p%int
+          stop 250
        end if
        
        read(44,*) p(:)%InclIn
@@ -675,15 +675,15 @@ contains
        fmt(2) = '('//chint//'(L1,1X),A)     ' ! logical
        fmt(3) = '('//chint//'(ES13.5,1X),A) ' ! real
 
-       write(16,fmt(3)) p(:)%tol,'  ||    particle solution tolerances (RKM only)'
-       write(16,fmt(3)) p(:)%dt,'  ||    particle time step (RKM initial step)'
-       write(16,fmt(3)) p(:)%maxL,'  ||   particle max step length (RKM only)'
-       write(16,fmt(3)) p(:)%mindt,'  ||   particle min time step size (RKM only)'
-       write(16,fmt(3)) p(:)%x, '  ||    particle initial x'
-       write(16,fmt(3)) p(:)%y, '  ||    particle initial y'
-       write(16,fmt(3)) p(:)%ti, '  ||    particle initial t'
-       write(16,fmt(3)) p(:)%tf, '  ||    particle maximum t'
-       write(16,fmt(1)) p(:)%int, '  ||    particle integration method'
+       write(16,fmt(3)) p(:)%tol,    '  ||    particle solution tolerances (RKM only)'
+       write(16,fmt(3)) p(:)%dt,     '  ||    particle time step (RKM initial step)'
+       write(16,fmt(3)) p(:)%maxL,   '  ||   particle max step length (RKM only)'
+       write(16,fmt(3)) p(:)%mindt,  '  ||   particle min time step size (RKM only)'
+       write(16,fmt(3)) p(:)%x,      '  ||    particle initial x'
+       write(16,fmt(3)) p(:)%y,      '  ||    particle initial y'
+       write(16,fmt(3)) p(:)%ti,     '  ||    particle initial t'
+       write(16,fmt(3)) p(:)%tf,     '  ||    particle maximum t'
+       write(16,fmt(1)) p(:)%int,    '  ||    particle integration method'
        write(16,fmt(2)) p(:)%InclIn, '  ||    particle begins inside CH/CF incl?'
     else
        ! no particles
@@ -702,10 +702,11 @@ contains
     type(particle), dimension(:), intent(in) :: p
 
     character(4), dimension(2) :: chint
+    integer :: i, j, k, nt
+
     ! adjust the formats of time, location, and results here
     character(6) :: tfmt = 'ES13.5', xfmt = 'ES12.4'
     character(9) :: hfmt = 'ES22.14e3'
-    integer :: i, j, k, nt
 
     select case (s%output)
     case (1) 
@@ -933,7 +934,7 @@ contains
 
     case default
        write(*,'(A,I0)')  'invalid output code ',s%output
-       stop 
+       stop 300
     end select
   end subroutine writeResults  
 
