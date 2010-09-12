@@ -67,20 +67,20 @@ contains
     end if
     if ((sol%output < 4 .or. sol%output > 5) .and. sol%particle) then
        write(*,*) 'input file (line 1) if sol%particle==.True., sol%output should &
-            &be in {4,5}',sol%output,sol%particle
+            &be in {4,5} ',sol%output,' :: ',sol%particle
        stop 201 
     elseif (.not. sol%particle .and. (sol%output == 4 .or. sol%output == 5)) then
        write(*,*) 'input file (line 1) sol%output should only be in {4,5} if &
-            &sol%particle==.True.',sol%output,sol%particle
+            &sol%particle==.True. ',sol%output,', ',sol%particle
        stop 202
     end if
     if ((sol%output == 3 .or. sol%output == 11) .and. sol%contour) then
        write(*,*) 'input file (line 1) sol%output should not be in {3,11} when contour &
-            &output is selected',sol%output,sol%contour
+            &output is selected ',sol%output,', ',sol%contour
        stop 203
     elseif ((sol%output /= 3 .and. sol%output /= 11) .and. .not. sol%contour) then
        write(*,*) 'input file (line 1) sol%output should be in {3,11} when hydrograph &
-            &(non-contour) output is selected',sol%output,sol%contour
+            &(non-contour) output is selected ',sol%output,', ',sol%contour
        stop 204
     end if
 
@@ -91,12 +91,12 @@ contains
     ! reals checked here, bg%ms checked in ellipse section, leakflag checked elsewhere
     if (any([bg%por,bg%k,bg%ss] < epsilon(0.0))) then
        write(*,*) 'input file (line 2) bg%por, bg%k, bg%ss &
-            &must all be > 0.0 :',bg%por,bg%k,bg%ss
+            &must all be > 0.0 ',bg%por,', ',bg%k,', ',bg%ss
        stop 205
     end if
     if (any([bg%aquitardK,bg%aquitardSs,bg%aquitardb] < epsilon(0.0))) then
        write(*,*) 'input file (line 2) bg%aquitardK, bg%aquitardSs, bg%aquitardb &
-            &must all be > 0.0 :',bg%aquitardK,bg%aquitardSs,bg%aquitardb 
+            &must all be > 0.0 ',bg%aquitardK,', ',bg%aquitardSs,', ',bg%aquitardb 
        stop 206
     end if
 
@@ -104,8 +104,8 @@ contains
     read(15,*,iostat=ierr) bg%Sy, bg%kz, bg%unconfinedFlag, bg%b
     if (ierr /= 0) stop 'error on line 3 of input file'
     if (any([bg%Sy, bg%kz,bg%b] < epsilon(0.0))) then
-       write(*,*) 'input file (line 3) bg%Sy, bg%kz, bg%b must all be > 0.0 :', &
-            & bg%Sy,bg%kz,bg%b
+       write(*,*) 'input file (line 3) bg%Sy, bg%kz, bg%b must all be > 0.0 ', &
+            & bg%Sy,', ',bg%kz,', ',bg%b
        stop 207
     end if
 
@@ -125,8 +125,8 @@ contains
     read(15,*,iostat=ierr) sol%nx, sol%ny, sol%nt
     if (ierr /= 0) stop 'error on line 4 of input file'
     if (any([sol%nx,sol%ny,sol%nt] < 1)) then
-       write(*,*) 'input file (line 4) sol%nx, sol%ny, sol%nt must be > 0:',&
-             & sol%nx, sol%ny, sol%nt
+       write(*,*) 'input file (line 4) sol%nx, sol%ny, sol%nt must be > 0 ',&
+             & sol%nx,', ',sol%ny,', ',sol%nt
        stop 208
     end if
     allocate(sol%x(sol%nx), sol%y(sol%ny), sol%t(sol%nt))
@@ -153,7 +153,7 @@ contains
     read(15,*,iostat=ierr) sol%alpha, sol%tol, sol%m
     if (ierr /= 0) stop 'error on line 7 of input file'
     if (sol%M < 1) then
-       write(*,*) 'input file (line 7) sol%M must be > 0: ',sol%M
+       write(*,*) 'input file (line 7) sol%M must be > 0 ',sol%M
        stop 209
     end if
     if (sol%tol < epsilon(sol%tol)) then
@@ -177,19 +177,19 @@ contains
        allocate(c(nc))
        read(22,*) c(:)%n
        if (any(c%n < 1)) then
-          write(*,*) 'c%N must not be < 1',c%N
+          write(*,*) 'c%N must not be < 1 ',c%N
           stop 211
        end if
 
        read(22,*) c(:)%m
        if (any(c%M < 1)) then
-          write(*,*) 'c%M must not be < 1',c%M
+          write(*,*) 'c%M must not be < 1 ',c%M
           stop 212
        end if
 
        read(22,*) c(:)%ibnd
        if (any(c%ibnd < -1 .or. c%ibnd > 2)) then
-          write(*,*) 'c%ibnd must be in {-1,0,1,2}',c%ibnd
+          write(*,*) 'c%ibnd must be in {-1,0,1,2} ',c%ibnd
           stop 213
        end if
           
@@ -198,7 +198,7 @@ contains
 
        read(22,*) c(:)%r
        if (any(c%r < epsilon(0.0))) then
-          write(*,*) 'c%r must be > 0.0',c%r
+          write(*,*) 'c%r must be > 0.0 ',c%r
           stop 214
        end if
 
@@ -207,19 +207,19 @@ contains
 
        read(22,*) c(:)%k
        if (any(c%k < epsilon(0.0))) then
-          write(*,*) 'c%K must be > 0.0',c%k
+          write(*,*) 'c%K must be > 0.0 ',c%k
           stop 215
        end if      
 
        read(22,*) c(:)%Ss
        if (any(c%ss < epsilon(0.0))) then
-          write(*,*) 'c%Ss must be > 0.0',c%Ss
+          write(*,*) 'c%Ss must be > 0.0 ',c%Ss
           stop 216
        end if      
 
        read(22,*) c(:)%por
        if (any(c%por < epsilon(0.0))) then
-          write(*,*) 'c%por must be > 0.0',c%por
+          write(*,*) 'c%por must be > 0.0 ',c%por
           stop 217
        end if      
 
@@ -265,44 +265,44 @@ contains
        read(22,*) c(:)%leakFlag  ! checking handled elsewhere
        read(22,*) c(:)%aquitardK
        if (any(c%aquitardK < epsilon(0.0))) then
-          write(*,*) 'c%aquitardK must be > 0.0',c%aquitardk
+          write(*,*) 'c%aquitardK must be > 0.0 ',c%aquitardk
           stop 218
        end if      
 
        read(22,*) c(:)%aquitardSs
        if (any(c%aquitardSS < epsilon(0.0))) then
-          write(*,*) 'c%aquitardSs must be > 0.0',c%aquitardSs
+          write(*,*) 'c%aquitardSs must be > 0.0 ',c%aquitardSs
           stop 219
        end if      
 
        read(22,*) c(:)%aquitardb  !aquitard thickness
        if (any(c%aquitardB < epsilon(0.0))) then
-          write(*,*) 'c%aquitardB must be > 0.0',c%aquitardB
+          write(*,*) 'c%aquitardB must be > 0.0 ',c%aquitardB
           stop 220
        end if      
 
        read(22,*) c(:)%unconfinedFlag ! checking handled elsewhere
        read(22,*) c(:)%Sy
        if (any(c%sy < epsilon(0.0))) then
-          write(*,*) 'c%Sy must be > 0.0',c%sy
+          write(*,*) 'c%Sy must be > 0.0 ',c%sy
           stop 221
        end if      
 
        read(22,*) c(:)%Kz
        if (any(c%kz < epsilon(0.0))) then
-          write(*,*) 'c%Kz must be > 0.0',c%kz
+          write(*,*) 'c%Kz must be > 0.0 ',c%kz
           stop 222
        end if      
 
        read(22,*) c(:)%b  ! aquifer thickness
        if (any(c%b < epsilon(0.0))) then
-          write(*,*) 'c%B must be > 0.0',c%b
+          write(*,*) 'c%B must be > 0.0 ',c%b
           stop 223
        end if      
 
        read(22,*) c(:)%dskin ! dimensionless skin
        if (any(c%dskin < epsilon(0.0))) then
-          write(*,*) 'c%Dskin must be > 0.0',c%dskin
+          write(*,*) 'c%Dskin must be > 0.0 ',c%dskin
           stop 224
        end if            
 
@@ -380,27 +380,27 @@ contains
        allocate(e(ne))
        read(33,*) e(:)%n
        if (any(e%n < 1)) then
-          write(*,*) 'e%N must not be < 1',e%N
+          write(*,*) 'e%N must not be < 1 ',e%N
           stop 226
        end if
 
        read(33,*) e(:)%m
        if (any(e%m < 1)) then
-          write(*,*) 'e%M must not be < 1',e%M
+          write(*,*) 'e%M must not be < 1 ',e%M
           stop 227
        end if
 
        read(33,*) e(:)%ms ! bg%ms read above
        ! checked more carefully in Mathieu function library
        if (any(e%ms < e%n) .or. any(bg%ms < e%n)) then  
-          write(*,*) 'e%ms must not be < e%n + buffer: e%N',e%N,'e%MS',e%ms
-          write(*,*) 'bg%ms must not be < e%n + buffer: bg%MS',bg%ms
+          write(*,*) 'e%ms must not be < e%n + buffer: e%N ',e%N,'e%MS',e%ms
+          write(*,*) 'bg%ms must not be < e%n + buffer: bg%MS ',bg%ms
           stop 228
        end if
 
        read(33,*) e(:)%ibnd
        if (any(e%ibnd < -1 .or. e%ibnd > 2)) then
-          write(*,*) 'e%ibnd must be in {-1,0,1,2}',e%ibnd
+          write(*,*) 'e%ibnd must be in {-1,0,1,2} ',e%ibnd
           stop 229
        end if
 
@@ -409,7 +409,7 @@ contains
        
        read(33,*) e(:)%r   ! eta
        if (any(e%r < 0.0)) then
-          write(*,*) 'e%r must be >= 0.0',e%r
+          write(*,*) 'e%r must be >= 0.0 ',e%r
           stop 230
        end if
 
@@ -418,31 +418,31 @@ contains
 
        read(33,*) e(:)%f
        if (any(e%f < epsilon(0.0))) then
-          write(*,*) 'e%f must be > 0.0',e%f
+          write(*,*) 'e%f must be > 0.0 ',e%f
           stop 231
        end if
 
        read(33,*) e(:)%theta      
        if (any(e%theta < -PI) .or. any(e%theta > PI)) then
-          write(*,*) 'e%theta must be -pi <= theta <= PI',e%theta
+          write(*,*) 'e%theta must be -pi <= theta <= PI ',e%theta
           stop 232
        end if
 
        read(33,*) e(:)%k
        if (any(e%k < epsilon(0.0))) then
-          write(*,*) 'e%k must be > 0.0',e%k
+          write(*,*) 'e%k must be > 0.0 ',e%k
           stop 233
        end if
 
        read(33,*) e(:)%Ss
        if (any(e%Ss < epsilon(0.0))) then
-          write(*,*) 'e%Ss must be > 0.0',e%Ss
+          write(*,*) 'e%Ss must be > 0.0 ',e%Ss
           stop 234
        end if
 
        read(33,*) e(:)%por
        if (any(e%por < epsilon(0.0))) then
-          write(*,*) 'e%por must be > 0.0',e%por
+          write(*,*) 'e%por must be > 0.0 ',e%por
           stop 235
        end if
 
@@ -488,19 +488,19 @@ contains
 
        read(33,*) e(:)%aquitardK
        if (any(e%aquitardK < epsilon(0.0))) then
-          write(*,*) 'e%aquitardK must be > 0.0',e%aquitardK
+          write(*,*) 'e%aquitardK must be > 0.0 ',e%aquitardK
           stop 236
        end if
 
        read(33,*) e(:)%aquitardSs
        if (any(e%aquitardSs < epsilon(0.0))) then
-          write(*,*) 'e%aquitardSs must be > 0.0',e%aquitardSs
+          write(*,*) 'e%aquitardSs must be > 0.0 ',e%aquitardSs
           stop 237
        end if
 
        read(33,*) e(:)%aquitardb  
        if (any(e%aquitardb < epsilon(0.0))) then
-          write(*,*) 'e%aquitardb must be > 0.0',e%aquitardb
+          write(*,*) 'e%aquitardb must be > 0.0 ',e%aquitardb
           stop 238
        end if
 
@@ -508,25 +508,25 @@ contains
 
        read(33,*) e(:)%Sy
        if (any(e%Sy < epsilon(0.0))) then
-          write(*,*) 'e%Sy must be > 0.0',e%Sy
+          write(*,*) 'e%Sy must be > 0.0 ',e%Sy
           stop 239
        end if
 
        read(33,*) e(:)%Kz
        if (any(e%Kz < epsilon(0.0))) then
-          write(*,*) 'e%Kz must be > 0.0',e%Kz
+          write(*,*) 'e%Kz must be > 0.0 ',e%Kz
           stop 240
        end if
 
        read(33,*) e(:)%b
        if (any(e%b < epsilon(0.0))) then
-          write(*,*) 'e%b must be > 0.0',e%b
+          write(*,*) 'e%b must be > 0.0 ',e%b
           stop 241
        end if
 
        read(33,*) e(:)%dskin
        if (any(e%dskin < epsilon(0.0))) then
-          write(*,*) 'e%dskin must be > 0.0',e%dskin
+          write(*,*) 'e%dskin must be > 0.0 ',e%dskin
           stop 242
        end if
        
@@ -624,25 +624,25 @@ contains
 
        read(44,*) p(:)%tol   ! error tolerance for rkm
        if (any(p%tol < epsilon(1.0D0))) then
-          write(*,*) 'p%tol must be > 0.0',p%tol
+          write(*,*) 'p%tol must be > 0.0 ',p%tol
           stop 244
        end if      
 
        read(44,*) p(:)%maxL  ! max step length for rkm
        if (any(p%maxL < epsilon(1.0))) then
-          write(*,*) 'p%maxL must be > 0.0',p%maxL
+          write(*,*) 'p%maxL must be > 0.0 ',p%maxL
           stop 245
        end if      
 
        read(44,*) p(:)%mindt  ! min step size for rkm
        if (any(p%mindt < epsilon(1.0))) then
-          write(*,*) 'p%mindt must be > 0.0',p%mindt
+          write(*,*) 'p%mindt must be > 0.0 ',p%mindt
           stop 246
        end if
        
        read(44,*) p(:)%dt    ! time step (initial timestep for rkm)
        if (any(p%dt < epsilon(1.0))) then
-          write(*,*) 'p%dt must be > 0.0',p%dt
+          write(*,*) 'p%dt must be > 0.0 ',p%dt
           stop 247
        end if
 
@@ -651,7 +651,7 @@ contains
 
        read(44,*) p(:)%ti ! particle start time
        if (any(p%ti < epsilon(1.0))) then
-          write(*,*) 'p%ti must be > 0.0',p%ti
+          write(*,*) 'p%ti must be > 0.0 ',p%ti
           stop 248
        end if
 
@@ -663,7 +663,7 @@ contains
 
        read(44,*) p(:)%int
        if (any(p%int < 1 .or. p%int == 3 .or. p%int > 4)) then
-          write(*,*) 'p%int must be {1,2,4}',p%int
+          write(*,*) 'p%int must be {1,2,4} ',p%int
           stop 250
        end if
        
