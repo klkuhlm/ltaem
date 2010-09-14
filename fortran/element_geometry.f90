@@ -22,7 +22,6 @@ contains
     type(element), target, intent(inout) :: bg
     type(solution), intent(in) :: sol
     type(matching), pointer :: other => null()
-!!$    type(matching), pointer, dimension(:) :: g
 
     integer :: i, j, ne, nc, ntot, par, M
     complex(DP), allocatable :: z(:)
@@ -36,11 +35,6 @@ contains
 
     allocate(dom%InclIn(0:ntot,ntot), dom%InclUp(ntot), dom%InclBg(ntot,ntot))
     bg%id = 0
-
-!!$    ! g is a vector of circles and ellipses
-!!$    allocate(g(nc+ne))
-!!$    g(1:nc) => c(1:nc)
-!!$    g(nc+1:nc+ne) => e(1:ne)
 
     ! vector of eqi-spaced locations on perimeter of circle and ellipse
     ! each element can have a different number of matching locations
@@ -248,19 +242,22 @@ contains
   end subroutine DistanceAngleCalcs
 
   !##################################################
-  subroutine ComputeElementHierarchy(dom,sol)
+  subroutine ComputeElementHierarchy(dom,c,e,sol)
     use constants, only : DP, EYE
-    use type_definitions, only : domain, solution
-    use utility, only : outerdiff, cacosh
+    use type_definitions, only : domain, solution, circle, ellipse
+    use utility, only : cacosh
 
     type(domain), intent(inout) :: dom
     type(solution), intent(in) :: sol
+    type(circle),  dimension(:), intent(in) :: c
+    type(ellipse), dimension(:), intent(in) :: e
     integer :: nc,ne,ntot, line, ierr
 
-    real(DP), allocatable(:,:) :: Rcg, Eeg
-    complex(DP), allocatable(:,:) :: Z
-    logical, allocatable(:,:) :: nondiag, upper
-    
+    real(DP), allocatable :: Rcg(:,:), Eeg(:,:)
+    complex(DP), allocatable :: Z(:,:)
+    logical, allocatable :: nondiag(:,:), upper(:,:)
+    integer :: i, j
+
     nc = dom%num(1)
     ne = dom%num(2)
     ntot = sum(dom%num)
@@ -286,8 +283,10 @@ contains
 
        ! check centers of elements (rows = circles, columns = all elements)
        if (nc > 0) then
-          Rcg(1:nc,1:nc) =      sqrt(outerdiff(c%x,c%x)**2 + outerdiff(c%y,c%y)**2)
-          Rcg(1:nc,nc+1:ntot) = sqrt(outerdiff(c%x,e%x)**2 + outerdiff(c%y,e%y)**2)
+          Rcg(1:nc,1:nc) = sqrt((spread(c%x,2,nc) - spread(c%x,1,nc))**2 + &
+                              & (spread(c%y,2,nc) - spread(c%y,1,nc)**2))
+          Rcg(1:nc,nc+1:ntot) = sqrt((spread(c%x,2,ne) - spread(e%x,1,nc))**2 + &
+                                  &  (spread(c%y,2,ne) - spread(e%y,1,nc))**2)
           
           ! nondiag handles zero distance-to-self case
           where (Rcg(1:nc,1:ntot) < spread(c%r,2,ntot) .and. nondiag)
@@ -307,10 +306,10 @@ contains
        if (ne > 0) then
           allocate(Z(ne,ntot))
           Z(1:ne,1:nc) = spread(cmplx(c%x,c%y,DP),1,ne) - spread(cmplx(e%x,e%y,DP),2,nc)
-          Eeg(1:ne,1:nc) = real(cacosh(Z(1:ne,1:nc)*spread(exp(-EYE*e%theta)/e%f,2,nc) ))
+          Eeg(1:ne,1:nc) = real(cacosh(Z(1:ne,1:nc)*spread(exp(-EYE*e%theta)/e%f,2,nc)))
 
           Z(1:ne,nc+1:ntot) = spread(cmplx(e%x,e%y,DP),1,ne) - spread(cmplx(e%x,e%y,DP),2,ne)
-          Eeg(1:ne,nc+1:ntot) = real(cacosh(Z(1:ne,nc+1:ntot)*spread(exp(-EYE*e%theta)/e%f,2,ne) ))
+          Eeg(1:ne,nc+1:ntot) = real(cacosh(Z(1:ne,nc+1:ntot)*spread(exp(-EYE*e%theta)/e%f,2,ne)))
           deallocate(Z)
 
           where (Eeg(1:ne,1:ntot) < spread(e%r,2,ntot) .and. nondiag)
@@ -338,7 +337,7 @@ contains
     else
        ! special case of only one element, no matching -- it is in background
        dom%InclIn(0:1,1) = [.true.,.false.]
-       dom%InclUp(1,1) = 0
+       dom%InclUp(1) = 0
        dom%InclBg(1,1) = .false.       
     end if
   end subroutine ComputeElementHierarchy
