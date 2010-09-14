@@ -77,6 +77,8 @@ contains
     integer, optional, intent(in) :: MM
     real(DP), optional, intent(in) :: cutoff
 
+    ! TODO: some of the norm-calcs and -manipulations should be done with BLAS-1 or BLAS-2
+
     ! resulting structure defined at top of containing module
     type(mathieu) :: mat
     integer :: i, j, M
