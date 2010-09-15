@@ -168,6 +168,7 @@ contains
   end function ynot
 
   function rotate_vel(v,theta) result(w)
+    ! TODO: use BLAS1 or BLAS2 here 
     use constants, only : DP
     complex(DP), dimension(:,:), intent(in) :: v
     real(DP), intent(in) :: theta
@@ -190,6 +191,7 @@ contains
   end function rotate_vel
 
   subroutine rotate_vel_mat(u,v,theta)
+    ! TODO: use BLAS1 or BLAS2 here
     use constants, only : DP
     complex(DP), dimension(:,:), intent(inout) :: u,v
     real(DP), intent(in) :: theta

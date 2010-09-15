@@ -56,8 +56,6 @@ contains
        e(i)%id = i+nc ! global ID
     end do
 
-    call ReadElementHierarchy(dom,sol)
-
     ! setup pointers to parent elements
     bg%parent => null()  ! background has no parent
     do i=1,nc
@@ -166,7 +164,7 @@ contains
     do i = 1,nc
        ! this element a circle
        do j = 1,ntot
-          if (dom%InclBg(j,i) .or. dom%InclIn(j,i) .or. dom%InclIn(i,j)) then
+          if (i /= j) then
              if (j <= nc) then
                 other => c(j)%matching    ! other element a circle             
              else
@@ -179,7 +177,7 @@ contains
              c(i)%G(j)%Zgm(1:M) = other%Zom(1:M) - cmplx(c(i)%x,c(i)%y,DP)
              c(i)%G(j)%Rgm(1:M) = abs(c(i)%G(j)%Zgm(1:M)) ! r
              c(i)%G(j)%Pgm(1:M) = atan2(aimag(c(i)%G(j)%Zgm(1:M)), &
-                                       & real(c(i)%G(j)%Zgm(1:M))) ! theta
+                                    & real(c(i)%G(j)%Zgm(1:M))) ! theta
              other => null()
 
 #ifdef DEBUG
@@ -195,7 +193,7 @@ contains
     do i = 1,ne
        ! this element an ellipse
        do j = 1,ntot
-          if (dom%InclBg(j,i+nc) .or. dom%InclIn(j,i+nc) .or. dom%InclIn(i+nc,j)) then
+          if (i+nc /= j) then
              if (j <= nc) then
                 other => c(j)%matching    ! other element a circle
              else
@@ -203,13 +201,13 @@ contains
              end if
              M = other%M    
 
-             allocate(e(i)%G(j)%Zgm(M),e(i)%G(j)%Rgm(M),e(i)%G(j)%Pgm(M),z(M))
+             allocate(e(i)%G(j)%Zgm(M), e(i)%G(j)%Rgm(M), e(i)%G(j)%Pgm(M), z(M))
 
              e(i)%G(j)%Zgm(1:M) = other%Zom(1:M) - cmplx(e(i)%x,e(i)%y,DP)
              z(1:M) = cacosh( e(i)%G(j)%Zgm(1:M)*exp(-EYE*e(i)%theta)/e(i)%f )
              e(i)%G(j)%Rgm(1:M) =  real(z(1:M)) ! eta
              e(i)%G(j)%Pgm(1:M) = aimag(z(1:M)) ! psi
-
+             
              deallocate(z)
              other => null()
 
@@ -219,19 +217,20 @@ contains
                 write(202,*) e(i)%x,e(i)%y,real(e(i)%G(j)%Zgm(k)),aimag(e(i)%G(j)%Zgm(k))
              end do
              write(202,'(/)')
-
+          
              write(202,*) '# src:',i+nc,' tgt:',j, '*converted from elliptcial coords*'
              do k=1,M
                 write(202,*) e(i)%x,e(i)%y, &
-                      & real(exp(EYE*e(i)%theta)*e(i)%f*ccosh(cmplx(e(i)%G(j)%Rgm(k),e(i)%G(j)%Pgm(k),DP))),&
+                     & real(exp(EYE*e(i)%theta)*e(i)%f*ccosh(cmplx(e(i)%G(j)%Rgm(k),e(i)%G(j)%Pgm(k),DP))),&
                      & aimag(exp(EYE*e(i)%theta)*e(i)%f*ccosh(cmplx(e(i)%G(j)%Rgm(k),e(i)%G(j)%Pgm(k),DP)))
              end do
              write(202,'(/)')
 #endif
-
           end if
        end do
     end do
+    
+    call ReadElementHierarchy(dom,sol)
 
 #ifdef DEBUG
     close(202)
@@ -256,7 +255,7 @@ contains
     real(DP), allocatable :: Rcg(:,:), Eeg(:,:)
     complex(DP), allocatable :: Z(:,:)
     logical, allocatable :: nondiag(:,:), upper(:,:)
-    integer :: i, j
+    integer :: i, j, M
 
     nc = dom%num(1)
     ne = dom%num(2)
@@ -264,7 +263,7 @@ contains
 
     if (ntot > 1) then
 
-       allocate(nondiag(ntot,ntot), upper(ntot,ntot), Rcg(nc,ntot), Eeg(ne,ntot))
+       allocate(nondiag(ntot,ntot), upper(ntot,ntot))
        ! logical mask for non-diagonal elements
        nondiag = .true. 
        forall(i=1:ntot) nondiag(i,i) = .false.
@@ -283,20 +282,44 @@ contains
 
        ! check centers of elements (rows = circles, columns = all elements)
        if (nc > 0) then
-          Rcg(1:nc,1:nc) = sqrt((spread(c%x,2,nc) - spread(c%x,1,nc))**2 + &
-                              & (spread(c%y,2,nc) - spread(c%y,1,nc)**2))
-          Rcg(1:nc,nc+1:ntot) = sqrt((spread(c%x,2,ne) - spread(e%x,1,nc))**2 + &
-                                  &  (spread(c%y,2,ne) - spread(e%y,1,nc))**2)
+          allocate(Rcg(nc,ntot))
+          Rcg(1:nc,1:nc) =      abs(spread(cmplx(c%x,c%y,DP),1,nc) - spread(cmplx(c%x,c%y,DP),2,nc))
+          Rcg(1:nc,nc+1:ntot) = abs(spread(cmplx(e%x,e%y,DP),1,nc) - spread(cmplx(c%x,c%y,DP),2,nc))
           
           ! nondiag handles zero distance-to-self case
           where (Rcg(1:nc,1:ntot) < spread(c%r,2,ntot) .and. nondiag)
              dom%InclIn(1:nc,1:ntot) = .true.
           end where
 
+          deallocate(Rcg)
+          
           ! check circle-on-circle intersection
+          do i = 1, nc
+             do j = 1, nc
+                if (i /= j) then
+                   ! all points on circumferencce must be either inside or outside
+                   if (any(abs(c(i)%G(j)%Rgm(:) - c(i)%r) < epsilon(1.0)) .or. &
+                        & (any(c(i)%G(j)%Rgm(:) < c(i)%r) .and. &
+                        &  any(c(i)%G(j)%Rgm(:) > c(i)%r))) then
+                      write(*,*) 'INTERSECTING CIRCLES: ',i,j
+                      stop 400
+                   end if
+                end if
+             end do
+          end do
 
           ! check circle-on-ellipse interesction
-
+          do i = 1, nc
+             do j = 1, ne
+                if (any(abs(c(i)%G(nc+j)%Rgm(:) - c(i)%r) < epsilon(1.0)) .or. &
+                     & (any(c(i)%G(nc+j)%Rgm(:) < c(i)%r) .and. &
+                     &  any(c(i)%G(nc+j)%Rgm(:) > c(i)%r))) then
+                   write(*,*) 'INTERSECTING CIRCLE & ELLIPSE: ',i,j
+                   stop 401
+                end if
+             end do
+          end do
+          deallocate(Rgm)
        end if
        
        ! ## step 2 ####################
@@ -304,7 +327,7 @@ contains
 
        ! check centers of elements (rows = ellipses, columns = all elements)
        if (ne > 0) then
-          allocate(Z(ne,ntot))
+          allocate(Eeg(ne,ntot),Z(ne,ntot))
           Z(1:ne,1:nc) = spread(cmplx(c%x,c%y,DP),1,ne) - spread(cmplx(e%x,e%y,DP),2,nc)
           Eeg(1:ne,1:nc) = real(cacosh(Z(1:ne,1:nc)*spread(exp(-EYE*e%theta)/e%f,2,nc)))
 
@@ -315,10 +338,33 @@ contains
           where (Eeg(1:ne,1:ntot) < spread(e%r,2,ntot) .and. nondiag)
              dom%InclIn(nc+1:ntot,1:ntot) = .true.
           end where
+          deallocate(Eeg)
 
           ! check ellipse-on-circle intersection
+          do i = 1, ne
+             do j = 1, nc
+                if (any(abs(e(i)%G(j)%Rgm(:) - e(i)%r) < epsilon(1.0)) .or. &
+                     & (any(e(i)%G(j)%Rgm(:) < e(i)%r) .and. &
+                     &  any(e(i)%G(j)%Rgm(:) > e(i)%r))) then
+                   write(*,*) 'INTERSECTING ELLIPSE & CIRCLE: ',i,j
+                   stop 402
+                end if
+             end do
+          end do
 
           ! check ellipse-on-ellipse interesction
+          do i = 1, ne
+             do j = 1, ne
+                if (i /= j) then
+                   if (any(abs(e(i)%G(nc+j)%Rgm(:) - e(i)%r) < epsilon(1.0)) .or. &
+                        & (any(e(i)%G(nc+j)%Rgm(:) < e(i)%r) .and. &
+                        &  any(e(i)%G(nc+j)%Rgm(:) > e(i)%r))) then
+                      write(*,*) 'INTERSECTING ELLIPSES: ',i,j
+                      stop 403
+                   end if
+                end if
+             end do
+          end do
 
        end if
 
@@ -326,13 +372,12 @@ contains
        where (.not. any(dom%InclIn(1:ntot,1:ntot),dim=1))
           dom%InclIn(0,1:ntot) = .true.
        end where
-       
-          
-       
-
 
        ! ## step 4 ####################
        ! handle multiply-nested cases
+
+       ! ## step 5 ###################
+       ! determine 'up' and 'bg' relationships from 'in'
 
     else
        ! special case of only one element, no matching -- it is in background
