@@ -241,21 +241,20 @@ contains
   end subroutine DistanceAngleCalcs
 
   !##################################################
-  subroutine ComputeElementHierarchy(dom,c,e,sol)
+  subroutine ComputeElementHierarchy(dom,c,e)
     use constants, only : DP, EYE
     use type_definitions, only : domain, solution, circle, ellipse
     use utility, only : cacosh
 
     type(domain), intent(inout) :: dom
-    type(solution), intent(in) :: sol
     type(circle),  dimension(:), intent(in) :: c
     type(ellipse), dimension(:), intent(in) :: e
-    integer :: nc,ne,ntot, line, ierr
+    integer :: nc, ne, ntot
 
     real(DP), allocatable :: Rcg(:,:), Eeg(:,:)
     complex(DP), allocatable :: Z(:,:)
     logical, allocatable :: nondiag(:,:), upper(:,:)
-    integer :: i, j, M
+    integer :: i, j
 
     nc = dom%num(1)
     ne = dom%num(2)
@@ -319,7 +318,7 @@ contains
                 end if
              end do
           end do
-          deallocate(Rgm)
+          deallocate(Rcg)
        end if
        
        ! ## step 2 ####################
