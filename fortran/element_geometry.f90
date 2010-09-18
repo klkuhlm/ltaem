@@ -253,9 +253,9 @@ contains
 
     real(DP), allocatable :: Rcg(:,:), Eeg(:,:), R(:)
     complex(DP), allocatable :: Z(:,:)
-    logical, allocatable :: nondiag(:,:), upper(:,:)
-    integer, allocatable :: iv(:), nest(:)
-    integer :: i, j
+    logical, allocatable :: nondiag(:,:)
+    integer, allocatable :: iv(:), nest(:), val(:)
+    integer :: i, j, n, parent
 
     nc = dom%num(1)
     ne = dom%num(2)
@@ -263,14 +263,10 @@ contains
 
     if (ntot > 1) then
 
-       allocate(nondiag(ntot,ntot), upper(ntot,ntot))
+       allocate(nondiag(ntot,ntot))
        ! logical mask for non-diagonal elements
        nondiag = .true. 
        forall(i=1:ntot) nondiag(i,i) = .false.
-
-       ! logical mask for upper triangular (not including diag) elements
-       upper = .false. 
-       forall(i=1:ntot, j=1:ntot, j>i)  upper(i,j) = .true.
 
        dom%InclIn = .false. !! dom%InclIn(0:ntot,1:ntot) logical
        dom%InclUp = huge(1) !! dom%InclUp(1:ntot)        integer
@@ -377,43 +373,83 @@ contains
               
        ! #1# remove bigger elements from inside 
        ! smaller elements, for the case they are concentric
-       allocate(R(1:ntot), nest(1:ntot))
+       allocate(R(ntot), nest(ntot))
        R(1:nc) = c(1:nc)%r
        R(nc+1:ntot) = e(1:ne)%r  ! TODO : double-check that circ/ellip can be compared validly  
 
-       forall (i=1:ntot, j=1:ntot, i/=j, &
-            & dom%InclIn(i,j).and.dom%InclIn(j,i), R(i)>R(j))
+       forall (i=1:ntot, j=1:ntot, i/=j .and. dom%InclIn(i,j).and.dom%InclIn(j,i) .and. R(i)>R(j))
           dom%InclIn(i,j) = .false.
        end forall
+
+       deallocate(R)
 
        ! number of True values in each column 
        nest(1:ntot) = count(dom%InclIn(1:ntot,1:ntot),dim=1)  
 
-       ! #2# if an element is not inside any other elements
-       !  (whole column is false) it must be in the background
-       where (all(.not. dom%InclIn(1:ntot,:),dim=1))
-          ! zero row indicating element is inside element zero
-          dom%InclIn(0,1:ntot) = .true.
+       ! if a column has no T entries, it is in background (level 1 of tree)
+       where (nest(1:ntot) == 0)
+          dom%InclIn(0,1:ntot) = .true. 
           dom%InclUp(1:ntot) = 0  
        end where
 
-       ! #3# if an element is only listed as being inside one element
-       ! (one element in column is true), it is simple to determine parent
-       iv = [(i,i=1,ntot)]
-       do i=1,ntot
-          if (count(dom%InclIn(1:ntot,i)) == 1) then
-             ! only one true in that column; use it to mask sum of an integer vector
-             dom%InclUp(i) = sum(iv,mask=dom%InclIn(1:ntot,i))
+       ! if a column has one T entry, it is inside a background element (level 2 of tree)
+       if (any(nest == 1)) then
+          allocate(iv(ntot))
+          iv = [(i,i=1,ntot)]
+
+          do i = 1,ntot
+             if (nest(i) == 1) then
+                ! pack returns vector of one value, use sum to scalarize
+                dom%InclUp(i) = sum(pack(iv, mask=dom%InclIn(1:ntot,i)))
+             end if
+          end do
+       
+          do n = 2,maxval(nest)
+             do i = 1,ntot
+                if (nest(i) == n) then
+                   allocate(val(n))
+                   val(1:n) = pack(iv, mask=dom%inclIn(1:ntot,i))
+
+                   ! of these multiple potential parents, choose one
+                   ! that has the highest number of T values in its column
+                   ! set rest of the column to F
+
+                   dom%InclIn(1:ntot,i) = .false.
+                   ! use sum() to scalarize results of maxloc()
+                   parent = val(sum(maxloc(nest(val(1:n))))) 
+                   deallocate(val)
+
+                   dom%InclIn(parent,i) = .true.
+                   dom%InclUp(i) = parent
+                end if
+             end do
+          end do
+       end if
+       
+       deallocate(nest)
+       allocate(nest(0:ntot))
+
+       ! elements in same row of InclIn are in the background together
+       nest(0:ntot) = count(dom%InclIn(0:ntot,1:ntot),dim=2)
+
+       ! set InclBg array up
+       do i=0,ntot
+          n = nest(i)
+          if (n > 1) then
+             allocate(val(n))
+             val(1:n) = pack(iv, mask=dom%InclIn(i,1:ntot))
+             do j=1,n
+                dom%InclBg(val(1:n),val(j)) = .true.
+             end do
+             deallocate(val)
           end if
        end do
        
-       ! #4# handle wells listed as being inside multiple elements
-       do i=1,ntot
-          nest = 
-          if ( > 1) then
-             nest = 
-
-
+       ! an element isn't in its own background (by convention)
+       forall (i=1:ntot)
+          dom%InclBg(i,i) = .false.
+       end forall
+              
     else
        ! special case of only one element, no matching -- it is in background
        dom%InclIn(0:1,1) = [.true.,.false.]
