@@ -437,10 +437,6 @@ contains
     integer :: n0, np, i, N
     complex(DP), dimension(size(p,1)) :: kap
 
-!!$#ifdef DEBUG
-!!$    print *, 'circle_calc: C:',c%id,' lo:',lo,' hi:',hi,' Rgp:',Rgp,' Pgp:',Pgp,' inside:',inside
-!!$#endif
-
     N = c%N
     np = size(p,1)
     vr(0:N-1) = real([(i,i=0,N-1)],DP)
@@ -498,10 +494,6 @@ contains
     complex(DP), dimension(size(p,1),0:c%N-1) :: aa,bb,BRgp,BR0,dBRgp
     integer :: n0, np, i, N
     complex(DP), dimension(size(p,1)) :: kap
-
-!!$#ifdef DEBUG
-!!$    print *, 'circle_deriv: c:',c%id,' lo:',lo,' hi:',hi,' Rgp:',Rgp,' Pgp:',Pgp,' inside:',inside
-!!$#endif
 
     N = c%N
     np = size(p,1)

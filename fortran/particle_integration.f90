@@ -5,7 +5,7 @@ module particle_integrate
 
 contains
 
-  subroutine rungekuttamerson(s,tee,c,e,bg,sol,dom,p,lo)
+  subroutine rungeKuttaMerson(s,tee,c,e,bg,sol,dom,p,lo)
     use constants, only : DP
     use inverse_laplace_transform, only : invlap => deHoog_invlap
     use type_definitions, only : circle, ellipse, element, solution, particle, domain
@@ -30,9 +30,7 @@ contains
     real(DP) :: error, pt, px, py, dt, tf, L
     real(DP), parameter :: SAFETY = 0.9
 
-    ! &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
     !  TODO not using porosity correctly ?
-    ! &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 
     ns = size(s,dim=1)
     pt = p%ti
@@ -52,20 +50,8 @@ contains
     write(*,'(A)')    '*******************************' 
 
     ! Runge-Kutta-Merson 4th-order adaptive integration scheme
-#ifdef DEBUG
-    write(77,'(A)') '#        pt            px          py          dt       ilogc     xV_0    &
-         &    yV_0        x_1         y_1      ilogc     xV_1        yV_1        x_2         y_2 &
-         &           xV_2        yV_2       x_3          y_3      ilogc     xV_3        yV_3   &
-         &     x_4         y_4      ilogc     xV_4        yV_4        x_5        y_5           &
-         &error        L '
-#endif
-
     rkm: do 
        if (partEnd .or. pt + dt >= tf) exit rkm
-
-#ifdef DEBUG       
-       write(77,'(ES18.10,3(ES11.3E2,1X))',advance='no') pt,px,py,dt
-#endif
 
        ! forward Euler 1/3-step  (predictor)
        ilogc = ceiling(log10(pt))
@@ -76,10 +62,6 @@ contains
        VInit(1:2) = invlap(pt,tee(ilogc),velp(:,1:2),sol%INVLT)
 
        FwdEuler(1:2) = [px,py] + dt/3.0*VInit(1:2)
-
-#ifdef DEBUG       
-       write(77,'(3X,I0,1X,4(ES11.3E2,1X))',advance='no') ilogc,VInit,fwdeuler
-#endif
 
        ! trapazoid rule 1/3-step (corrector)
        ilogc = ceiling(log10(pt + dt/3.0))
@@ -92,20 +74,12 @@ contains
 
        Trap(1:2) = [px,py] + dt/6.0*(VInit(1:2) + VTrap(1:2))
 
-#ifdef DEBUG
-       write(77,'(3X,I0,1X,4(ES11.3E2,1X))',advance='no') ilogc,VTrap,trap
-#endif
-
        ! Adams-Bashforth 1/2-step predictor 
        velp(1:ns,1:2) = velCalc(cmplx(Trap(1),Trap(2),DP),&
             & s(:,ilogc),los,his,dom,c,e,bg)
        VAB3(1:2) = invlap(pt+dt/3.0,tee(ilogc),velp(:,1:2),sol%INVLT)
 
        halfAB(1:2) = [px,py] + dt/8.0*(VInit(1:2) + 3.0*VAB3(1:2))
-
-#ifdef DEBUG      
-       write(77,'(3X,4(ES11.3E2,1X))',advance='no') VAB3,halfAB
-#endif
 
        ! full step Adams-Bashforth predictor
        ilogc = ceiling(log10(pt + dt/2.0))
@@ -119,10 +93,6 @@ contains
        fullAB(1:2) = [px,py] + dt/2.0* &
             & (VInit(1:2) - 3.0*VAB3(1:2) + 4.0*VAB2(1:2))
 
-#ifdef DEBUG
-       write(77,'(3X,I0,1X,4(ES11.3E2,1X))',advance='no') ilogc,VAB2,fullAB
-#endif
-
        ! full step Simpson's rule corrector
        ilogc = ceiling(log10(pt + dt))
        los = (ilogc-lo)*ns + 1
@@ -134,19 +104,11 @@ contains
 
        Simp(1:2) = [px,py] + dt/6.0*(VInit + 4.0*vAB2 + vSF)
 
-#ifdef DEBUG
-       write(77,'(3X,I0,1X,4(ES11.3E2,1X))',advance='no') ilogc,VSF,Simp
-#endif
-
        ! relative error
        error = maxval(abs((Simp - fullAB)/Simp))
 
        ! magnitude of total step taken
        L = sqrt((Simp(1) - px)**2 + (Simp(2) - py)**2)
-
-#ifdef DEBUG
-       write(77,'(3X,2(ES11.3E2,1X))') error,L
-#endif
 
        ! only advance to next step if error level is acceptable
        ! _and_ resulting step is less than prescribed limit 
@@ -221,11 +183,12 @@ contains
     type(element), intent(in) :: bg
 
     integer :: i, numdt, ilogc, ns, los, his
-    logical :: partEnd
     real(DP) :: pt, px, py, dt, tf
     complex(DP), dimension(1:size(s,dim=1),2) :: velp
     real(DP), dimension(2) :: FwdEuler,BkwdEuler,MidPt,Simp
     real(DP), dimension(2) :: vInit,vBkwdEuler,vMidpt,vSimp
+
+    ! TODO not using porosity correctly?
 
     ns = size(s,dim=1)
     pt = p%ti
@@ -308,8 +271,7 @@ contains
        p%r(i-1,4) = vSimp(1)
        p%r(i-1,5) = vSimp(2)
        
-       partEnd = sinkCheck(px,py,c,e)
-       if (partEnd) then
+       if (sinkCheck(px,py,c,e)) then
           write(*,'(A,I0,A,ES12.6E2)') 'particle ',p%id,' entered a sink at t=',pt
           exit rk             
        end if      
@@ -337,9 +299,10 @@ contains
 
     complex(DP), dimension(1:size(s,1),2) :: velp
     integer :: i, numdt, ilogc, los, his, ns
-    logical :: partEnd
     real(DP) :: pt, px, py, dt, tf
     real(DP), dimension(2) :: vel
+
+    ! TODO not using porosity correctly?
 
     ns = size(s,dim=1)
     pt = p%ti
@@ -381,9 +344,6 @@ contains
 
        px = px + dt*vel(1)
        py = py + dt*vel(2)
-
-!!       print *, i,pt,px,py,vel
-
        pt = pt + dt
 
        p%r(i,1) = pt
@@ -392,10 +352,7 @@ contains
        p%r(i-1,4) = vel(1)
        p%r(i-1,5) = vel(2)
 
-       partEnd = sinkCheck(px,py,c,e)
-
-
-       if (partEnd) then
+       if (sinkCheck(px,py,c,e)) then
           write(*,'(A,I0,A,ES12.6E2)') 'particle ',p%id,' entered a sink at t=',pt
           exit fe
        end if
@@ -447,26 +404,6 @@ contains
     end if
     
     ! TODO add check for flowing into ibnd==2 ellipse (line sink)
-
-!!$    ! did the particle enter/leave a constant head/flux inclusion?            
-!!$    do i = 1,CInum     
-!!$       if (CIibnd(i) /= 0) then ! not a matching inclusion
-!!$          ri = sqrt((px - CIx(i))**2 + (py - CIy(i))**2)
-!!$
-!!$          ! particle started outside a CH/CF inclusion
-!!$          if (.not. PARInclIn(num)) then
-!!$             if (ri <= CIr(i)) then ! it is now inside a CH/CF inclusion
-!!$                partEnd = .true.
-!!$             end if
-!!$
-!!$          ! particle started inside a CH/CF inclusion
-!!$          else 
-!!$             if (ri >= CIr(i)) then ! it is now outside a CH/CF inclusion
-!!$                partEnd = .true. 
-!!$             end if
-!!$          end if
-!!$       end if
-!!$    end do
 
     ! TODO handle flowing into a constant head/flux element (from inside or
     ! TODO from outside, circles or ellipses

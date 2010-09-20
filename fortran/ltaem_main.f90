@@ -1,5 +1,5 @@
-! this is the driver routine for LT-AEM programs
-! this can compute a time-domain solution either on a grid of locations and times,
+! this is the driver routine for LT-AEM programs, which 
+! can compute a time-domain solution either on a grid of locations and times,
 ! at a single point through time (i.e., hydrograph), or at a particle location through
 ! space and time.  The solution depends on the given properties of circular and 
 ! elliptical elements.  Wells or points are treated as special case circles, and lines are
@@ -266,9 +266,9 @@ program ltaem_main
 
         select case (part(j)%int)
         case (1)
-           call rungekuttamerson(s,tee,c,e,bg,sol,dom,part(j),lbound(tee,dim=1))
+           call rungeKuttaMerson(s,tee,c,e,bg,sol,dom,part(j),lbound(tee,dim=1))
         case (2)
-                 call rungekutta(s,tee,c,e,bg,sol,dom,part(j),lbound(tee,dim=1))
+                 call rungeKutta(s,tee,c,e,bg,sol,dom,part(j),lbound(tee,dim=1))
         case (4)
                    call fwdEuler(s,tee,c,e,bg,sol,dom,part(j),lbound(tee,dim=1))
         case default
