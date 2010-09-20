@@ -443,7 +443,6 @@ contains
              allocate(val(n))
              val(1:n) = pack(iv, mask=dom%InclIn(i,1:ntot))
              
-             print *, 'i:',i,'n:',n,'val:',val
              do j=1,n
                 dom%InclBg(val(1:n),val(j)) = .true.
              end do
