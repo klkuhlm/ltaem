@@ -1000,7 +1000,6 @@ contains
     ne = dom%num(2)
     ntot = sum(dom%num)
 
-    ! TODO later I will write code to do this automatically
     open(unit=75, file=sol%elemhfname, status='old', action='read', iostat=ierr)
     if (ierr /= 0) then
        write(*,'(A)') 'ElementHierarchy: ERROR opening file '//sol%elemHFName// &

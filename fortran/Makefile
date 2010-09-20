@@ -7,12 +7,12 @@ KKLOW=utility.o bessel_functions.o mathieu_functions2.o
 #BLASLIB=/Users/klkuhlm/src/lapack-3.2.1/blas_MAC.a
 
 ##home linux desktop ##########
-#LAPACKLIB=/home/kris/src/lapack-3.2.1/lapack_LINUX.a
-#BLASLIB=/home/kris/src/lapack-3.2.1/blas_LINUX.a
+LAPACKLIB=/home/kris/src/lapack-3.2.1/lapack_LINUX.a
+BLASLIB=/home/kris/src/lapack-3.2.1/blas_LINUX.a
 
 ##work linux desktop ##########
-LAPACKLIB=/home/klkuhlm/src/lapack-3.2.2/lapack_LINUX_GFORT.a
-BLASLIB=/home/klkuhlm/src/lapack-3.2.2/blas_LINUX_GFORT.a
+#LAPACKLIB=/home/klkuhlm/src/lapack-3.2.2/lapack_LINUX_GFORT.a
+#BLASLIB=/home/klkuhlm/src/lapack-3.2.2/blas_LINUX_GFORT.a
 #LAPACKLIB=/opt/intel/mkl/10.0.3.020/lib/em64t/libmkl_lapack.a
 
 ##Work cygwin laptop #####
