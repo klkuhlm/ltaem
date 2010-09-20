@@ -168,43 +168,50 @@ contains
   end function ynot
 
   function rotate_vel(v,theta) result(w)
-    ! TODO: use BLAS1 or BLAS2 here 
     use constants, only : DP
+    interface
+       ! Level-1 BLAS routine for real rotation of complex vector
+       ! rotation is in opposite sense, so use -theta below
+       subroutine ZDROT(N,CX,INCX,CY,INCY,C,S)
+         integer, intent(in) :: n,incx,incy
+         real(8), intent(in) :: c,s
+         complex(8), dimension(n), intent(inout) :: cx,cy
+       end subroutine ZDROT
+    end interface
+
     complex(DP), dimension(:,:), intent(in) :: v
     real(DP), intent(in) :: theta
-
     complex(DP), dimension(size(v,dim=1),2) :: w
-    real(DP), dimension(2,2) :: rot 
-    integer :: i
 
-    ! can't use complex math (i.e., exp(-i theta)) because "x" and "y"
-    ! components are themselves complex here
-    rot(1,1) = cos(theta)
-    rot(2,1) = sin(theta)
-    rot(2,2) = rot(1,1)
-    rot(1,2) = -rot(2,1)
-    
-    forall (i = 1:size(v,dim=1))
-       w(i,1:2) = matmul(rot(1:2,1:2),v(i,1:2))
-    end forall
+    w = v
+    call zdrot(size(v,dim=1),w(:,1),1,w(:,2),1,cos(-theta),sin(-theta))
     
   end function rotate_vel
 
   subroutine rotate_vel_mat(u,v,theta)
-    ! TODO: use BLAS1 or BLAS2 here
     use constants, only : DP
-    complex(DP), dimension(:,:), intent(inout) :: u,v
-    real(DP), intent(in) :: theta
-    complex(DP), dimension(size(u,dim=2),2) :: yin, yout
-    integer :: i
+    interface
+       subroutine ZDROT(N,CX,INCX,CY,INCY,C,S)
+         integer, intent(in) :: n,incx,incy
+         real(8), intent(in) :: c,s
+         complex(8), dimension(n), intent(inout) :: cx,cy
+       end subroutine ZDROT
+    end interface
 
-    do i = 1,size(u,dim=1)
-       yin(:,1) = u(i,:)
-       yin(:,2) = v(i,:)
-       yout(:,1:2) = rotate_vel(yin,theta)
-       u(i,:) = yout(:,1)
-       v(i,:) = yout(:,2)
-    end do
+    complex(DP), dimension(:,:), intent(inout) :: u,v
+    complex(DP), dimension(product(shape(u))) :: uu,vv
+    real(DP), intent(in) :: theta
+    integer :: n,m,nel
+
+    n = size(u,dim=1)
+    m = size(u,dim=2)
+    nel = n*m
+
+    uu = reshape(u,[nel])
+    vv = reshape(v,[nel])
+    call zdrot(nel,uu,1,vv,1,cos(-theta),sin(-theta))
+    u = reshape(uu,[n,m])
+    v = reshape(vv,[n,m])
     
   end subroutine rotate_vel_mat
 
