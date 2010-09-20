@@ -108,7 +108,7 @@ contains
        error = maxval(abs((Simp - fullAB)/Simp))
 
        ! magnitude of total step taken
-       L = sqrt((Simp(1) - px)**2 + (Simp(2) - py)**2)
+       L = abs(cmplx(Simp(1),Simp(2),DP) - cmplx(px,py,DP))
 
        ! only advance to next step if error level is acceptable
        ! _and_ resulting step is less than prescribed limit 
@@ -399,7 +399,8 @@ contains
     partEnd = .false.
 
     ! did the particle enter an ibnd==2 circle (well)?
-    if (any(c%ibnd == 2) .and. any(sqrt((px-c%x)**2 + (py-c%y)**2) < c%r)) then
+    
+    if (any(c%ibnd == 2) .and. any(abs(cmplx(px,py,DP) - cmplx(c%x,c%y,DP)) < c%r)) then
        partEnd = .true.
     end if
     
