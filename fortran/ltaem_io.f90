@@ -4,7 +4,7 @@ module file_ops
   implicit none  
   
   private
-  public :: readInput, writeResults, writeGeometry, readElementHierarchy
+  public :: readInput, writeResults, writeGeometry
 
 contains
 

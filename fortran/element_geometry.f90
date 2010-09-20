@@ -13,7 +13,7 @@ contains
   subroutine DistanceAngleCalcs(c,e,bg,dom,sol)
     use constants, only: DP, PI, EYE
     use type_definitions, only : domain, circle, ellipse, element, solution, matching
-    use file_ops, only : writeGeometry, readElementHierarchy
+    use file_ops, only : writeGeometry
     use utility, only : ccosh, cacosh
 
     type(domain), intent(inout) :: dom
