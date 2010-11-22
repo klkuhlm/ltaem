@@ -67,7 +67,7 @@ for val in range(nt):
         e = np.array(el[:][:-2])
         plt.plot(e[:,0],e[:,1],'r-',lw=1)
     if particle:
-        print 'len',len(particles)
+        print 'len # particles:',len(particles)
         for part in particles:
             p = np.array(part[:][:-2])
             mask = (p[:,0] < t[val])

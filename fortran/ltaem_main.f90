@@ -150,7 +150,7 @@ program ltaem_main
         write(*,'(A,I0,A)') 'log t= 10^(',ilogt,')' 
         if (nt(ilogt) > 0) then
            do j = 1,2*sol%m+1
-              write(*,'(I0,1X,2(A,ES10.3),A)') j, '(',real(s(j,ilogt)),',',aimag(s(j,ilogt)),')'
+              write(*,'(I3,1X,2(A,ES10.3),A)') j, '(',real(s(j,ilogt)),',',aimag(s(j,ilogt)),')'
               call matrix_solution(c,e,dom,sol,s(j,ilogt),idxmat(j,ilogt))
            end do
         end if

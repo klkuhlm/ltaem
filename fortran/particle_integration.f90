@@ -399,7 +399,6 @@ contains
     partEnd = .false.
 
     ! did the particle enter an ibnd==2 circle (well)?
-    
     if (any(c%ibnd == 2) .and. any(abs(cmplx(px,py,DP) - cmplx(c%x,c%y,DP)) < c%r)) then
        partEnd = .true.
     end if

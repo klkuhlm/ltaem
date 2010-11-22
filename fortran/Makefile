@@ -52,12 +52,12 @@ DFLAGS=-O0 -Wall -Wextra -fbacktrace -g
 DFLAGS+=-frange-check -fcheck=all -finit-real=snan -finit-integer=-99999
 DFLAGS+=$(CPP) #-DDEBUG 
 ##DFLAGS+=-fdump-rtl-expand
-PFLAGS=-O3 -march=native $(CPP) -fwhole-file #  $(OMP)
-LINKFLAG=$(DFLAGS) $(OMP)
+PFLAGS=-O2 -march=native $(CPP) -fwhole-file  $(OMP)
+LINKFLAG=$(PFLAGS) $(OMP)
 ###################################
 
 # switch between performance or debugging flags
-FLAGS=$(DFLAGS)
+FLAGS=$(PFLAGS)
 
 # the link step
 main: $(OBJS) $(MAIN)
@@ -74,7 +74,7 @@ cbessel.o : ./external/cbessel.f90
 %.o: %.f
 	$(F90) -c $(FLAGS) -o $@ $<
 clean:
-	rm -f *.o *.mod $(TARG) $(TARGUNSAT)
+	rm -f *.o *.mod $(TARG)
 
 # dependency listing 
 # "provides" : "depends on"

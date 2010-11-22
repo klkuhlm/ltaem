@@ -1,15 +1,15 @@
-T  T  T  T  T  T :: InclIn(0:ntot,1:ntot)
-F  F  F  F  F  F
-F  F  F  F  F  F
-F  F  F  F  F  F
-F  F  F  F  F  F
-F  F  F  F  F  F
-F  F  F  F  F  F
-0  0  0  0  0  0 :: InclUp(1:ntot)
-F  T  T  T  T  T :: InclBg(1:ntot,1:ntot)
-T  F  T  T  T  T
-T  T  F  T  T  T
-T  T  T  F  T  T
-T  T  T  T  F  T
-T  T  T  T  T  F
-
+-*-auto-revert-*-
+T T T T T T InclIn(0,1:6)
+F F F F F F InclIn(1,1:6)
+F F F F F F InclIn(2,1:6)
+F F F F F F InclIn(3,1:6)
+F F F F F F InclIn(4,1:6)
+F F F F F F InclIn(5,1:6)
+F F F F F F InclIn(6,1:6)
+0 0 0 0 0 0 InclUp(1:6)
+F T T T T T InclBg(1,1:6)
+T F T T T T InclBg(2,1:6)
+T T F T T T InclBg(3,1:6)
+T T T F T T InclBg(4,1:6)
+T T T T F T InclBg(5,1:6)
+T T T T T F InclBg(6,1:6)
