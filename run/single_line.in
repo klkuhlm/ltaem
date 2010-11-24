@@ -1,4 +1,4 @@
-True  False  True  1  single_well_contour.xyz  dump.out  single_well.elem  single_well.geom    ::  re-compute coefficients?, particle?, contour?, output flag, outputFN, coeffFN (output), elementHierarchy (input), geometryFN (output)
+True  False  True  1  single_line_contour.xyz  dump.out  single_well.elem  single_well.geom    ::  re-compute coefficients?, particle?, contour?, output flag, outputFN, coeffFN (output), elementHierarchy (input), geometryFN (output)
 2.0D-1  2.0D0  1.0D-4   0  1.0D0  1.0D-4  1.0D0  20  ::  por, k, Ss, leakFlag, K2, Ss2, b2, ellipse MS
 1.5D-1  2.0D0  False  1.0  :: Sy, Kz, unconfined?, b
 40  40  1  :: nx, ny, nt
@@ -9,4 +9,3 @@ True  False  True  1  single_well_contour.xyz  dump.out  single_well.elem  singl
 0  file_not_used      :: number of circular elements, circular elements input file
 1  single_line_ellipses.in      :: number of elliptical elements, elliptical elements input file
 file_not_used     :: particle inputs file
-
