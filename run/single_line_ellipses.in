@@ -1,6 +1,6 @@
 10 :: N
 22 :: M
-40  :: ms
+24  :: ms
 2  :: ibnd
 false :: calcin?
 false :: storin?
