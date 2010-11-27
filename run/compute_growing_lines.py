@@ -9,7 +9,7 @@ nf = 12
 nrows = 40
 ncols = 40
 
-fvec = np.logspace(-2,10,nf) # semi-focal length
+fvec = np.logspace(0,6,nf) # semi-focal length
 theta = np.pi/4.0
 
 # want one corner of line to stay in same place as line grows
@@ -81,7 +81,11 @@ file_not_used     :: particle inputs file
    (stdout,stderr) = subprocess.Popen(['./ltaem','single_line.in'],
                                       stdout=PIPE,stderr=PIPE).communicate()
 
-   print j,f,x,y
+   fout = open('screen_%3.3i_%.3e.dbg' % (j,f),'w')
+   fout.write(stdout)
+   fout.close()
+
+   print j,f,x
 
    if 'gnuplot contour map style output' in stdout:
       if j == 0:

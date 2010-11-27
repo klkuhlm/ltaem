@@ -86,24 +86,29 @@ contains
 
 
     read(15,*,iostat=ierr) bg%por, bg%k, bg%ss, bg%leakFlag, &
-         & bg%aquitardK, bg%aquitardSs, bg%aquitardb, bg%ms
-    if (ierr /= 0) stop 'error on line 2 of input file'
+         & bg%aquitardK, bg%aquitardSs, bg%aquitardb, bg%ms, bg%cutoff
+    if (ierr /= 0) then
+       !! re-read line without cutoff value (added recently)
+       backspace(15) ! rewind file one record
+       read(15,*,iostat=ierr) bg%por, bg%k, bg%ss, bg%leakFlag, &
+            & bg%aquitardK, bg%aquitardSs, bg%aquitardb, bg%ms
+    end if
+    
     ! reals checked here, bg%ms checked in ellipse section, leakflag checked elsewhere
-    if (any([bg%por,bg%k,bg%ss] < epsilon(0.0))) then
+    if (any([bg%por,bg%k,bg%ss] < spacing(0.0))) then
        write(*,*) 'input file (line 2) bg%por, bg%k, bg%ss &
             &must all be > 0.0 ',bg%por,', ',bg%k,', ',bg%ss
        stop 205
     end if
-    if (any([bg%aquitardK,bg%aquitardSs,bg%aquitardb] < epsilon(0.0))) then
+    if (any([bg%aquitardK,bg%aquitardSs,bg%aquitardb] < spacing(0.0))) then
        write(*,*) 'input file (line 2) bg%aquitardK, bg%aquitardSs, bg%aquitardb &
             &must all be > 0.0 ',bg%aquitardK,', ',bg%aquitardSs,', ',bg%aquitardb 
        stop 206
     end if
 
-
     read(15,*,iostat=ierr) bg%Sy, bg%kz, bg%unconfinedFlag, bg%b
     if (ierr /= 0) stop 'error on line 3 of input file'
-    if (any([bg%Sy, bg%kz,bg%b] < epsilon(0.0))) then
+    if (any([bg%Sy, bg%kz,bg%b] < spacing(0.0))) then
        write(*,*) 'input file (line 3) bg%Sy, bg%kz, bg%b must all be > 0.0 ', &
             & bg%Sy,', ',bg%kz,', ',bg%b
        stop 207
@@ -114,9 +119,9 @@ contains
          & trim(sol%outFname), trim(sol%coeffFName), trim(sol%elemHfName), &
          & trim(sol%geomFname),'  ||    re-calculate coefficients?, particle?, &
          & contour?, output, out/coeff/hierarchy/geometry file names'
-    write(16,'(3(ES11.5,1X),1L,3(1X,ES11.5),1X,I0,A)') bg%por, bg%k, bg%ss, &
-         & bg%leakFlag, bg%aquitardK, bg%aquitardSs, bg%aquitardb, bg%ms, & 
-         & '  ||    por, k, Ss, leaky flag, K2, Ss2, b2, ellipse MS'
+    write(16,'(3(ES11.5,1X),1L,3(1X,ES11.5),1X,I0,ES11.4,A)') bg%por, bg%k, bg%ss, &
+         & bg%leakFlag, bg%aquitardK, bg%aquitardSs, bg%aquitardb, bg%ms, bg%cutoff, & 
+         & '  ||    por, k, Ss, leaky flag, K2, Ss2, b2, ellipse MS, ellipse cutoff'
     write(16,'(2(ES11.5,1X),1L,1X,ES11.5,A)') bg%Sy, bg%kz, bg%unconfinedFlag, &
          & bg%b, '  || Sy, Kz, unconfined?, BGb'
     
@@ -197,7 +202,7 @@ contains
        read(22,*) c(:)%StorIn ! account for free-water storage effects inside element?
 
        read(22,*) c(:)%r
-       if (any(c%r < epsilon(0.0))) then
+       if (any(c%r < spacing(0.0))) then
           write(*,*) 'c%r must be > 0.0 ',c%r
           stop 214
        end if
@@ -206,19 +211,19 @@ contains
        read(22,*) c(:)%y
 
        read(22,*) c(:)%k
-       if (any(c%k < epsilon(0.0))) then
+       if (any(c%k < spacing(0.0))) then
           write(*,*) 'c%K must be > 0.0 ',c%k
           stop 215
        end if      
 
        read(22,*) c(:)%Ss
-       if (any(c%ss < epsilon(0.0))) then
+       if (any(c%ss < spacing(0.0))) then
           write(*,*) 'c%Ss must be > 0.0 ',c%Ss
           stop 216
        end if      
 
        read(22,*) c(:)%por
-       if (any(c%por < epsilon(0.0))) then
+       if (any(c%por < spacing(0.0))) then
           write(*,*) 'c%por must be > 0.0 ',c%por
           stop 217
        end if      
@@ -264,44 +269,44 @@ contains
        end do
        read(22,*) c(:)%leakFlag  ! checking handled elsewhere
        read(22,*) c(:)%aquitardK
-       if (any(c%aquitardK < epsilon(0.0))) then
+       if (any(c%aquitardK < spacing(0.0))) then
           write(*,*) 'c%aquitardK must be > 0.0 ',c%aquitardk
           stop 218
        end if      
 
        read(22,*) c(:)%aquitardSs
-       if (any(c%aquitardSS < epsilon(0.0))) then
+       if (any(c%aquitardSS < spacing(0.0))) then
           write(*,*) 'c%aquitardSs must be > 0.0 ',c%aquitardSs
           stop 219
        end if      
 
        read(22,*) c(:)%aquitardb  !aquitard thickness
-       if (any(c%aquitardB < epsilon(0.0))) then
+       if (any(c%aquitardB < spacing(0.0))) then
           write(*,*) 'c%aquitardB must be > 0.0 ',c%aquitardB
           stop 220
        end if      
 
        read(22,*) c(:)%unconfinedFlag ! checking handled elsewhere
        read(22,*) c(:)%Sy
-       if (any(c%sy < epsilon(0.0))) then
+       if (any(c%sy < spacing(0.0))) then
           write(*,*) 'c%Sy must be > 0.0 ',c%sy
           stop 221
        end if      
 
        read(22,*) c(:)%Kz
-       if (any(c%kz < epsilon(0.0))) then
+       if (any(c%kz < spacing(0.0))) then
           write(*,*) 'c%Kz must be > 0.0 ',c%kz
           stop 222
        end if      
 
        read(22,*) c(:)%b  ! aquifer thickness
-       if (any(c%b < epsilon(0.0))) then
+       if (any(c%b < spacing(0.0))) then
           write(*,*) 'c%B must be > 0.0 ',c%b
           stop 223
        end if      
 
        read(22,*) c(:)%dskin ! dimensionless skin
-       if (any(c%dskin < epsilon(0.0))) then
+       if (any(c%dskin < spacing(0.0))) then
           write(*,*) 'c%Dskin must be > 0.0 ',c%dskin
           stop 224
        end if            
@@ -417,7 +422,7 @@ contains
        read(33,*) e(:)%y
 
        read(33,*) e(:)%f
-       if (any(e%f < epsilon(0.0))) then
+       if (any(e%f < spacing(0.0))) then
           write(*,*) 'e%f must be > 0.0 ',e%f
           stop 231
        end if
@@ -429,19 +434,19 @@ contains
        end if
 
        read(33,*) e(:)%k
-       if (any(e%k < epsilon(0.0))) then
+       if (any(e%k < spacing(0.0))) then
           write(*,*) 'e%k must be > 0.0 ',e%k
           stop 233
        end if
 
        read(33,*) e(:)%Ss
-       if (any(e%Ss < epsilon(0.0))) then
+       if (any(e%Ss < spacing(0.0))) then
           write(*,*) 'e%Ss must be > 0.0 ',e%Ss
           stop 234
        end if
 
        read(33,*) e(:)%por
-       if (any(e%por < epsilon(0.0))) then
+       if (any(e%por < spacing(0.0))) then
           write(*,*) 'e%por must be > 0.0 ',e%por
           stop 235
        end if
@@ -487,19 +492,19 @@ contains
        read(33,*) e(:)%leakFlag  ! checking handled elsewhere
 
        read(33,*) e(:)%aquitardK
-       if (any(e%aquitardK < epsilon(0.0))) then
+       if (any(e%aquitardK < spacing(0.0))) then
           write(*,*) 'e%aquitardK must be > 0.0 ',e%aquitardK
           stop 236
        end if
 
        read(33,*) e(:)%aquitardSs
-       if (any(e%aquitardSs < epsilon(0.0))) then
+       if (any(e%aquitardSs < spacing(0.0))) then
           write(*,*) 'e%aquitardSs must be > 0.0 ',e%aquitardSs
           stop 237
        end if
 
        read(33,*) e(:)%aquitardb  
-       if (any(e%aquitardb < epsilon(0.0))) then
+       if (any(e%aquitardb < spacing(0.0))) then
           write(*,*) 'e%aquitardb must be > 0.0 ',e%aquitardb
           stop 238
        end if
@@ -507,25 +512,25 @@ contains
        read(33,*) e(:)%unconfinedFlag
 
        read(33,*) e(:)%Sy
-       if (any(e%Sy < epsilon(0.0))) then
+       if (any(e%Sy < spacing(0.0))) then
           write(*,*) 'e%Sy must be > 0.0 ',e%Sy
           stop 239
        end if
 
        read(33,*) e(:)%Kz
-       if (any(e%Kz < epsilon(0.0))) then
+       if (any(e%Kz < spacing(0.0))) then
           write(*,*) 'e%Kz must be > 0.0 ',e%Kz
           stop 240
        end if
 
        read(33,*) e(:)%b
-       if (any(e%b < epsilon(0.0))) then
+       if (any(e%b < spacing(0.0))) then
           write(*,*) 'e%b must be > 0.0 ',e%b
           stop 241
        end if
 
        read(33,*) e(:)%dskin
-       if (any(e%dskin < epsilon(0.0))) then
+       if (any(e%dskin < spacing(0.0))) then
           write(*,*) 'e%dskin must be > 0.0 ',e%dskin
           stop 242
        end if

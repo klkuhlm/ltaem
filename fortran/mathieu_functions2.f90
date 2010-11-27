@@ -459,7 +459,7 @@ contains
     call BesselI_val(v1,m+2,I1(0:m+1,:))
     call BesselI_val(v2,m+2,I2(0:m+1,:))
 
-     Io(EV,:) = sum(spread(spread(vi,2,nje)*mf%B(:,j(EV),0),3,nz)* &
+    Io(EV,:) = sum(spread(spread(vi,2,nje)*mf%B(:,j(EV),0),3,nz)* &
          & spread(I1(0:m-1,:)*I2(2:m+1,:) - I1(2:m+1,:)*I2(0:m-1,:),2,nje),dim=1)/ &
          & spread(mf%B(1,j(EV),0),2,nz)
 

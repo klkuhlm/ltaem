@@ -141,6 +141,13 @@ program ltaem_main
      if (ne > 0) then
         write(*,'(A)') 'Computing Mathieu coefficients ...'
         call ellipse_init(e,bg,s)
+
+        ! added for debugging max q size
+        print *, 'background q:'
+        do j=1,size(bg%mat,1)
+           write(*,'(2(A,ES10.3),A)') '(',real(bg%mat(j)%q),&
+                & ',',aimag(bg%mat(j)%q),')'
+        end do
      end if
 
      allocate(idxmat(size(s,dim=1),lbound(s,dim=2):ubound(s,dim=2)))

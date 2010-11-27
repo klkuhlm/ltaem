@@ -81,6 +81,7 @@ module type_definitions
      ! structure containing matrices of mathieu function parameters
      type(mathieu), allocatable :: mat(:)
      integer :: ms = -999 ! not used in circle
+     real(DP) :: cutoff = -999.  ! also not used in circles
 
   end type element
     

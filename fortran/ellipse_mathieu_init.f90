@@ -28,7 +28,11 @@ contains
 
     ! initialize for each value of p
     do i = 1, tnp
-       bg%mat(i) = mathieu_init(kap(i),MM=bg%ms)
+       if (bg%cutoff < 0.0) then
+          bg%mat(i) = mathieu_init(kap(i),MM=bg%ms)
+       else  ! only include if read from file (default = -999.)
+          bg%mat(i) = mathieu_init(kap(i),MM=bg%ms,CUTOFF=bg%cutoff)
+       end if       
     end do
 
     ! allocate/initialize each element for each value of p
