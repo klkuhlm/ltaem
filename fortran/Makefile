@@ -57,7 +57,7 @@ LINKFLAG=$(PFLAGS) $(OMP)
 ###################################
 
 # switch between performance or debugging flags
-FLAGS=$(PFLAGS)
+FLAGS=$(DFLAGS)
 
 # the link step
 main: $(OBJS) $(MAIN)
