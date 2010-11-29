@@ -5,11 +5,11 @@ import matplotlib.pyplot as plt
 
 PIPE = subprocess.PIPE
 
-nk = 10
+nk = 18
 nrows = 40
 ncols = 40
 
-kvec = np.logspace(-8,0,nk)[::-1] # permeability (large to small)
+kvec = np.logspace(-10,0,nk)[::-1] # permeability (large to small)
 theta = np.pi/4.0
 
 # want one corner of line to stay in same place as line grows
@@ -32,12 +32,12 @@ out = np.zeros((nrows,ncols,nk,3),np.float64)
 N = 10
 ##cutoff = 1.0E-6
 
-for cutoff in np.logspace(-8,-4,5):
+for cutoff in np.logspace(-9,-3,3):
    for j,(x,y,k) in enumerate(zip(xc,yc,kvec)):
       passed = False
    
       # start small, increase matrix size until stop failing for a given cutoff
-      for ms in range(16,85,4):
+      for ms in range(10,140,2):
          
          if not passed:
             fel = open('single_line_ellipses.in','w')
@@ -89,9 +89,9 @@ file_not_used     :: particle inputs file
             (stdout,stderr) = subprocess.Popen(['./ltaem','single_line.in'],
                                             stdout=PIPE,stderr=PIPE).communicate()
    
-            fout = open('screen_j%3.3i_ms%3.3i_k%.2f.dbg' % (j,ms,np.log10(k)),'w')
-            fout.write(stdout)
-            fout.close()
+#            fout = open('screen_j%3.3i_ms%3.3i_k%.2f.dbg' % (j,ms,np.log10(k)),'w')
+#            fout.write(stdout)
+#            fout.close()
    
             if ('not large enough to meet tolerance' in stdout):
                # error occurs in initialization routine

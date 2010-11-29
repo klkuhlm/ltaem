@@ -7,17 +7,13 @@ KKLOW=utility.o bessel_functions.o mathieu_functions2.o
 #BLASLIB=/Users/klkuhlm/src/lapack-3.2.1/blas_MAC.a
 
 ##home linux desktop ##########
-LAPACKLIB=/home/kris/src/lapack-3.3.0/lapack_LINUX.a
-BLASLIB=/home/kris/src/lapack-3.3.0/blas_LINUX.a
+#LAPACKLIB=/home/kris/src/lapack-3.3.0/lapack_LINUX.a
+#BLASLIB=/home/kris/src/lapack-3.3.0/blas_LINUX.a
 
 ##work linux desktop ##########
-#LAPACKLIB=/home/klkuhlm/src/lapack-3.2.2/lapack_LINUX_GFORT.a
-#BLASLIB=/home/klkuhlm/src/lapack-3.2.2/blas_LINUX_GFORT.a
+LAPACKLIB=/home/klkuhlm/src/lapack-3.3.0/lapack_LINUX.a
+BLASLIB=/home/klkuhlm/src/lapack-3.3.0/blas_LINUX.a
 #LAPACKLIB=/opt/intel/mkl/10.0.3.020/lib/em64t/libmkl_lapack.a
-
-##Work cygwin laptop #####
-#LAPACKLIB=/home/klkuhlm/src/lapack-3.2.2/lapack_CYGWIN.a
-#BLASLIB=/home/klkuhlm/src/lapack-3.2.2/blas_CYGWIN.a
 
 ### for intel compiler
 ##################################
@@ -45,19 +41,19 @@ OBJS=$(EXTERNAL) constants.o $(KKLOW) type_definitions.o $(KKHIGH)
 #######################################
 
 #### gfortran #################
-F90=gfortran-4.5
+F90=gfortran-4.6
 OMP=-fopenmp -DOMP
 CPP=-cpp
 DFLAGS=-O0 -Wall -Wextra -fbacktrace -g
 DFLAGS+=-frange-check -fcheck=all -finit-real=snan -finit-integer=-99999
 DFLAGS+=$(CPP) #-DDEBUG 
 ##DFLAGS+=-fdump-rtl-expand
-PFLAGS=-O2 -march=native $(CPP) -fwhole-file  $(OMP)
+PFLAGS=-O3 -march=native $(CPP) -fwhole-file  $(OMP)
 LINKFLAG=$(PFLAGS) $(OMP)
 ###################################
 
 # switch between performance or debugging flags
-FLAGS=$(DFLAGS)
+FLAGS=$(PFLAGS)
 
 # the link step
 main: $(OBJS) $(MAIN)
