@@ -32,7 +32,7 @@ program ltaem_main
   integer :: tnp                              ! total-number-p (product of dimensions)
   integer :: nc, ne                           ! #-circles, #-ellipses
   integer :: crow, ccol                       ! coeff-#-row, coeff-#-col
-  integer :: ilogt, minlt, maxlt        ! indexes related to log10 time
+  integer :: lt, minlt, maxlt        ! indexes related to log10 time
   integer :: lot, hit, lop, hip, lo           ! local hi and lo indices for each log cycle
   integer, allocatable :: nt(:)               ! #-times-each-log-cycle
   integer, allocatable :: parnumdt(:)         ! number of dt expected for each particle
@@ -84,9 +84,9 @@ program ltaem_main
 
         nt(minlt:maxlt) = 1
 
-        forall(ilogt = minlt:maxlt)
-           tee(ilogt) = min(10.0**(ilogt + MOST_LOGT), maxval(part(:)%tf))*TMAX_MULT
-           s(:,ilogt) = pvalues(tee(ilogt),sol%INVLT)
+        forall(lt = minlt:maxlt)
+           tee(lt) = min(10.0**(lt + MOST_LOGT), maxval(part(:)%tf))*TMAX_MULT
+           s(:,lt) = pvalues(tee(lt),sol%INVLT)
         end forall
 
         ! to make it possible for particles / contours to share code...
@@ -105,13 +105,13 @@ program ltaem_main
         allocate(s(2*sol%m+1,minlt:maxlt-1), nt(minlt:maxlt-1), &
              & tee(minlt:maxlt-1))
 
-        do ilogt = minlt, maxlt-1
+        do lt = minlt, maxlt-1
            ! number of times falling in this logcycle
-           nt(ilogt) = count(logt >= real(ilogt,DP) .and. logt < real(ilogt+1,DP))
+           nt(lt) = count(logt >= real(lt,DP) .and. logt < real(lt+1,DP))
            ! T=2*max time in this logcycle
-           tee(ilogt) = maxval(sol%t(lo:lo+nt(ilogt)-1))*TMAX_MULT
-           s(:,ilogt) = pvalues(tee(ilogt),sol%INVLT)
-           lo = lo + nt(ilogt)
+           tee(lt) = maxval(sol%t(lo:lo+nt(lt)-1))*TMAX_MULT
+           s(:,lt) = pvalues(tee(lt),sol%INVLT)
+           lo = lo + nt(lt)
         end do
         deallocate(logt)
      end if
@@ -144,12 +144,12 @@ program ltaem_main
      allocate(idxmat(size(s,dim=1),lbound(s,dim=2):ubound(s,dim=2)))
      idxmat = reshape([(j,j=1,tnp)],shape(s))
 
-     do ilogt = minlt,maxlt-1
-        write(*,'(A,I0,A)') 'log t= 10^(',ilogt,')' 
-        if (nt(ilogt) > 0) then
+     do lt = minlt,maxlt-1
+        write(*,'(A,I0,A)') 'log t= 10^(',lt,')' 
+        if (nt(lt) > 0) then
            do j = 1,2*sol%m+1
-              write(*,'(I3,1X,2(A,ES10.3),A)') j, '(',real(s(j,ilogt)),',',aimag(s(j,ilogt)),')'
-              call matrix_solution(c,e,dom,sol,s(j,ilogt),idxmat(j,ilogt))
+              write(*,'(I3,1X,2(A,ES10.3),A)') j, '(',real(s(j,lt)),',',aimag(s(j,lt)),')'
+              call matrix_solution(c,e,dom,sol,s(j,lt),idxmat(j,lt))
            end do
         end if
      end do
@@ -297,7 +297,7 @@ program ltaem_main
      open(unit=404,file='calcloc.vdebug',status='replace',action='write')
 #endif
 
-     !$OMP PARALLEL DO PRIVATE(i,j,calcZ,hp,vp,ilogt,lot,hit,lop,hip) SHARED(sol)
+     !$OMP PARALLEL DO PRIVATE(i,j,calcZ,hp,vp,lt,lot,hit,lop,hip) SHARED(sol)
      do j = 1,sol%nx
 #ifdef OMP
         write (*,'(A,ES13.5,A,I0)') 'x: ',sol%x(j),'  thr=',OMP_get_thread_num()
@@ -313,18 +313,18 @@ program ltaem_main
            vp(1:tnp,1:2) = velCalc(calcZ,reshape(s,[tnp]),1,tnp,dom,c,e,bg)
 
            !! invert solutions one log-cycle of t at a time
-           do ilogt = minlt,maxlt-1
+           do lt = minlt,maxlt-1
               
               !! group of times in current log cycle
-              lot = 1 + sum(nt(minlt:ilogt-1))
-              hit = sum(nt(minlt:ilogt))
+              lot = 1 + sum(nt(minlt:lt-1))
+              hit = sum(nt(minlt:lt))
               
               !! group of Laplace parameters corresponding to this logcycle
-              lop = (ilogt - minlt)*size(s,dim=1) + 1
+              lop = (lt - minlt)*size(s,dim=1) + 1
               hip = lop + size(s,dim=1) - 1
 
-              sol%h(j,i,lot:hit) =     invlap(sol%t(lot:hit), tee(ilogt), hp(lop:hip), sol%INVLT)
-              sol%v(j,i,lot:hit,1:2) = invlap(sol%t(lot:hit), tee(ilogt), vp(lop:hip,1:2), sol%INVLT)
+              sol%h(j,i,lot:hit) =     invlap(sol%t(lot:hit), tee(lt), hp(lop:hip), sol%INVLT)
+              sol%v(j,i,lot:hit,1:2) = invlap(sol%t(lot:hit), tee(lt), vp(lop:hip,1:2), sol%INVLT)
            end do
         end do
      end do
@@ -348,16 +348,16 @@ program ltaem_main
         hp(1:tnp) =    headCalc(calcZ,reshape(s,[tnp]),1,tnp,dom,c,e,bg)
         vp(1:tnp,1:2) = velCalc(calcZ,reshape(s,[tnp]),1,tnp,dom,c,e,bg)
         
-        do ilogt = minlt,maxlt-1
-           lot = 1 + sum(nt(minlt:ilogt-1))
-           hit = sum(nt(minlt:ilogt))
+        do lt = minlt,maxlt-1
+           lot = 1 + sum(nt(minlt:lt-1))
+           hit = sum(nt(minlt:lt))
 
-           lop = (ilogt - minlt)*size(s,1) + 1
+           lop = (lt - minlt)*size(s,1) + 1
            hip = lop + size(s,1) - 1
 
            ! don't need second dimension of results matricies
-           sol%h(i,1,lot:hit) =     invlap(sol%t(lot:hit),tee(ilogt),hp(lop:hip),sol%INVLT)
-           sol%v(i,1,lot:hit,1:2) = invlap(sol%t(lot:hit),tee(ilogt),vp(lop:hip,1:2),sol%INVLT)
+           sol%h(i,1,lot:hit) =     invlap(sol%t(lot:hit),tee(lt),hp(lop:hip),sol%INVLT)
+           sol%v(i,1,lot:hit,1:2) = invlap(sol%t(lot:hit),tee(lt),vp(lop:hip,1:2),sol%INVLT)
         end do
      end do
   end if
