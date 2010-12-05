@@ -25,7 +25,7 @@ contains
 
     complex(DP), intent(in) :: Z  ! location for calculation (complex coordinates)
     complex(DP), dimension(:), intent(in) :: p  ! vector of Laplace parameters
-    integer, intent(in) :: lo,hi  ! lower and upper bounds of p relative to overall s
+    integer, intent(in) :: lo,hi  ! lo,hi bounds of p relative to overall s
     type(domain), intent(in) :: dom
     type(circle),  target, dimension(:), intent(in) :: c
     type(ellipse), target, dimension(:), intent(in) :: e
@@ -160,7 +160,7 @@ contains
 
     complex(DP), intent(in) :: Z
     complex(DP), dimension(:), intent(in) :: p
-    integer, intent(in) :: lo,hi  ! lower and upper bounds of p relative to overall s
+    integer, intent(in) :: lo,hi  ! lo,hi bounds of p relative to overall s
     type(domain), intent(in) :: dom
     type(circle),  target, dimension(:), intent(in) :: c
     type(ellipse), target, dimension(:), intent(in) :: e
@@ -170,7 +170,7 @@ contains
     real(DP) :: hsq
     real(DP), dimension(sum(dom%num)) :: Rgp, Pgp
     type(element), pointer :: elin => null()
-    integer :: in, oth 
+    integer :: in, oth
     integer :: np, nc, ne, ntot, j
 
     call check_np(p,lo,hi)

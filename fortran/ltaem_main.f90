@@ -32,7 +32,7 @@ program ltaem_main
   integer :: tnp                              ! total-number-p (product of dimensions)
   integer :: nc, ne                           ! #-circles, #-ellipses
   integer :: crow, ccol                       ! coeff-#-row, coeff-#-col
-  integer :: ilogt, iminlogt, imaxlogt        ! indexes related to log10 time
+  integer :: ilogt, minlt, maxlt        ! indexes related to log10 time
   integer :: lot, hit, lop, hip, lo           ! local hi and lo indices for each log cycle
   integer, allocatable :: nt(:)               ! #-times-each-log-cycle
   integer, allocatable :: parnumdt(:)         ! number of dt expected for each particle
@@ -42,7 +42,7 @@ program ltaem_main
   complex(DP) :: calcZ                        ! calc-point-complex-coordinates
   character(6) :: elType                      ! element-type {CIRCLE,ELLIPS}
   complex(DP), allocatable :: hp(:), vp(:,:)  ! Laplace-space head and velocity vectors
-
+  
   ! some constants that shouldn't really need to be adjusted too often
   real(DP), parameter :: EARLIEST_PARTICLE = 1.0E-5, MOST_LOGT = 0.999
   real(DP), parameter :: TMAX_MULT = 2.0_DP  ! traditionally 2.0, but 4.0 could work (Mark Bakker)...
@@ -77,21 +77,20 @@ program ltaem_main
            part(:)%ti = EARLIEST_PARTICLE
         end where
         
-        iminlogt = floor(  minval(log10(part(:)%ti)))
-        imaxlogt = ceiling(maxval(log10(part(:)%tf)))
+        minlt = floor(  minval(log10(part(:)%ti)))
+        maxlt = ceiling(maxval(log10(part(:)%tf)))
+        
+        allocate(s(2*sol%m+1,minlt:maxlt), nt(minlt:maxlt), tee(minlt:maxlt))
 
-        allocate(s(2*sol%m+1,iminlogt:imaxlogt), nt(iminlogt:imaxlogt), &
-             & tee(iminlogt:imaxlogt))
+        nt(minlt:maxlt) = 1
 
-        nt(iminlogt:imaxlogt) = 1
-
-        forall(ilogt = iminlogt:imaxlogt)
+        forall(ilogt = minlt:maxlt)
            tee(ilogt) = min(10.0**(ilogt + MOST_LOGT), maxval(part(:)%tf))*TMAX_MULT
            s(:,ilogt) = pvalues(tee(ilogt),sol%INVLT)
         end forall
 
         ! to make it possible for particles / contours to share code...
-        imaxlogt = imaxlogt + 1
+        maxlt = maxlt + 1
         
      !^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
      else   ! contour maps / hydrographs
@@ -99,14 +98,14 @@ program ltaem_main
         
         lo = 1
         logt(:) = log10(sol%t(:))
-        iminlogt =   floor(minval(logt(:)))
+        minlt =   floor(minval(logt(:)))
         ! add epsilon to ensure is bumped up to next log cycle if on fence
-        imaxlogt = ceiling(maxval(logt(:)) + epsilon(1.0))
+        maxlt = ceiling(maxval(logt(:)) + epsilon(1.0))
 
-        allocate(s(2*sol%m+1,iminlogt:imaxlogt-1), nt(iminlogt:imaxlogt-1), &
-             & tee(iminlogt:imaxlogt-1))
+        allocate(s(2*sol%m+1,minlt:maxlt-1), nt(minlt:maxlt-1), &
+             & tee(minlt:maxlt-1))
 
-        do ilogt = iminlogt, imaxlogt-1
+        do ilogt = minlt, maxlt-1
            ! number of times falling in this logcycle
            nt(ilogt) = count(logt >= real(ilogt,DP) .and. logt < real(ilogt+1,DP))
            ! T=2*max time in this logcycle
@@ -145,7 +144,7 @@ program ltaem_main
      allocate(idxmat(size(s,dim=1),lbound(s,dim=2):ubound(s,dim=2)))
      idxmat = reshape([(j,j=1,tnp)],shape(s))
 
-     do ilogt = iminlogt,imaxlogt-1
+     do ilogt = minlt,maxlt-1
         write(*,'(A,I0,A)') 'log t= 10^(',ilogt,')' 
         if (nt(ilogt) > 0) then
            do j = 1,2*sol%m+1
@@ -168,7 +167,7 @@ program ltaem_main
                    & ' continuing without saving results'
            else
               write(77,'(A)') trim(sol%infname)//'.echo' ! file with all the input parameters
-              write(77,'(4(I0,1X))') iminlogt,imaxlogt,nc,ne
+              write(77,'(4(I0,1X))') minlt,maxlt,nc,ne
               write(77,*) nt(:)
               write(77,*) s(:,:)
               write(77,*) tee(:)
@@ -197,9 +196,9 @@ program ltaem_main
         end if
 
         read(77,*) !! TODO not doing anything with input file, but should I check inputs are same?
-        read(77,*) iminlogt,imaxlogt,nc,ne ! scalars
-        allocate(s(2*sol%m+1,iminlogt:imaxlogt-1), nt(iminlogt:imaxlogt-1), &
-             & tee(iminlogt:imaxlogt-1))
+        read(77,*) minlt,maxlt,nc,ne ! scalars
+        allocate(s(2*sol%m+1,minlt:maxlt-1), nt(minlt:maxlt-1), &
+             & tee(minlt:maxlt-1))
         read(77,*) nt(:)
         read(77,*) s(:,:)
         sol%totalnP = product(shape(s))
@@ -314,14 +313,14 @@ program ltaem_main
            vp(1:tnp,1:2) = velCalc(calcZ,reshape(s,[tnp]),1,tnp,dom,c,e,bg)
 
            !! invert solutions one log-cycle of t at a time
-           do ilogt = iminlogt,imaxlogt-1
+           do ilogt = minlt,maxlt-1
               
               !! group of times in current log cycle
-              lot = 1 + sum(nt(iminlogt:ilogt-1))
-              hit = sum(nt(iminlogt:ilogt))
+              lot = 1 + sum(nt(minlt:ilogt-1))
+              hit = sum(nt(minlt:ilogt))
               
               !! group of Laplace parameters corresponding to this logcycle
-              lop = (ilogt - iminlogt)*size(s,dim=1) + 1
+              lop = (ilogt - minlt)*size(s,dim=1) + 1
               hip = lop + size(s,dim=1) - 1
 
               sol%h(j,i,lot:hit) =     invlap(sol%t(lot:hit), tee(ilogt), hp(lop:hip), sol%INVLT)
@@ -349,11 +348,11 @@ program ltaem_main
         hp(1:tnp) =    headCalc(calcZ,reshape(s,[tnp]),1,tnp,dom,c,e,bg)
         vp(1:tnp,1:2) = velCalc(calcZ,reshape(s,[tnp]),1,tnp,dom,c,e,bg)
         
-        do ilogt = iminlogt,imaxlogt-1
-           lot = 1 + sum(nt(iminlogt:ilogt-1))
-           hit = sum(nt(iminlogt:ilogt))
+        do ilogt = minlt,maxlt-1
+           lot = 1 + sum(nt(minlt:ilogt-1))
+           hit = sum(nt(minlt:ilogt))
 
-           lop = (ilogt - iminlogt)*size(s,1) + 1
+           lop = (ilogt - minlt)*size(s,1) + 1
            hip = lop + size(s,1) - 1
 
            ! don't need second dimension of results matricies
