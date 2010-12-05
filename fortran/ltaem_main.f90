@@ -121,8 +121,7 @@ program ltaem_main
      tnp = sol%totalnP
 
 #ifdef DEBUG     
-     print *, 'shape(s)',shape(s),' tnp',tnp
-     print *, 's',s
+     write(*,'(A,3(I0,1X))') 'shape(s)',shape(s),' tnp',tnp
 #endif
 
      ! calculate coefficients for each value of Laplace parameter
@@ -133,12 +132,14 @@ program ltaem_main
         write(*,'(A)') 'Computing Mathieu coefficients ...'
         call ellipse_init(e,bg,s)
 
+#ifdef DEBUG
         ! added for debugging max q size
-        print *, 'background q:'
+        write(*,'(A)') 'background q:'
         do j=1,size(bg%mat,1)
-           write(*,'(2(A,ES10.3),A)') '(',real(bg%mat(j)%q),&
-                & ',',aimag(bg%mat(j)%q),')'
+           write(*,'(2(A,ES10.3),A,I0)') '(',real(bg%mat(j)%q),&
+                & ',',aimag(bg%mat(j)%q),') ',bg%mat(j)%M
         end do
+#endif
      end if
 
      allocate(idxmat(size(s,dim=1),lbound(s,dim=2):ubound(s,dim=2)))
@@ -163,23 +164,24 @@ program ltaem_main
         if (.not. sol%skipdump) then
            open(unit=77, file=sol%coefffname, status='replace', action='write', iostat=ierr)
            if (ierr /= 0) then
-              print *, 'error writing intermediate coefficient matrix to file',sol%coefffname
-              stop 000
+              write(*,'(2A)') 'WARNING: error opening intermediate save file ',trim(sol%coefffname), &
+                   & ' continuing without saving results'
+           else
+              write(77,'(A)') trim(sol%infname)//'.echo' ! file with all the input parameters
+              write(77,'(4(I0,1X))') iminlogt,imaxlogt,nc,ne
+              write(77,*) nt(:)
+              write(77,*) s(:,:)
+              write(77,*) tee(:)
+              do i = 1,nc
+                 write(77,'(A,3(I0,1X))') 'CIRCLE ',i,shape(c(i)%coeff)
+                 write(77,*) c(i)%coeff(:,:)
+              end do
+              do i = 1,ne
+                 write(77,'(A,3(I0,1X))') 'ELLIPS ',i,shape(e(i)%coeff)
+                 write(77,*) e(i)%coeff(:,:)
+              end do
+              close(77)
            end if
-           write(77,*) trim(sol%infname)//'.echo' ! file with all the input parameters
-           write(77,*) iminlogt,imaxlogt,nc,ne
-           write(77,*) nt(:)
-           write(77,*) s(:,:)
-           write(77,*) tee(:)
-           do i = 1,nc
-              write(77,*) 'CIRCLE',i,shape(c(i)%coeff)
-              write(77,*) c(i)%coeff(:,:)
-           end do
-           do i = 1,ne
-              write(77,*) 'ELLIPS',i,shape(e(i)%coeff)
-              write(77,*) e(i)%coeff(:,:)
-           end do
-           close(77)
            write(*,'(A)') '  <matching finished>  '
         end if
      end if
@@ -189,12 +191,12 @@ program ltaem_main
         open(unit=77, file=sol%coefffname, status='old', action='read', iostat=ierr)
         if (ierr /= 0) then
            ! go back and recalc if no restart file
-           write(*,'(A)') 'error opening restart file, recalculating...'
+           write(*,'(A)') 'ERROR: cannot opening restart file, recalculating...'
            sol%calc = .true.
            goto 111
         end if
 
-        read(77,*) !! TODO not doing anything with input file, but I should
+        read(77,*) !! TODO not doing anything with input file, but should I check inputs are same?
         read(77,*) iminlogt,imaxlogt,nc,ne ! scalars
         allocate(s(2*sol%m+1,iminlogt:imaxlogt-1), nt(iminlogt:imaxlogt-1), &
              & tee(iminlogt:imaxlogt-1))
@@ -208,7 +210,9 @@ program ltaem_main
            if (elType == 'CIRCLE' .and. i == j) then
               allocate(c(i)%coeff(crow,ccol))
            else
-              stop 'error reading in CIRCLE matching results'
+              write(*,'(A)') 'ERROR reading in CIRCLE matching results, recalculating...'
+              sol%calc = .true.
+              goto 111
            end if
            read(77,*) c(i)%coeff(:,:)
         end do
@@ -217,18 +221,20 @@ program ltaem_main
            if (elType == 'ELLIPS' .and. i == j) then
               allocate(e(i)%coeff(crow,ccol))
            else
-              stop 'error reading in ELLIPS matching results'
+              write(*,'(A)') 'ERROR reading in ELLIPS matching results, recalculating...'
+              sol%calc = .true.
+              goto 111
            end if
            read(77,*) e(i)%coeff(:,:)
         end do
 
         ! re-initialize Mathieu function matrices
         if (ne > 0) then
-           write(*,'(A)') 'computing Mathieu coefficients ...'
+           write(*,'(A)') 're-computing Mathieu coefficients ...'
            call ellipse_init(e,bg,s)
         end if
 
-        write(*,'(A)') 'matching results successfully read from file'
+        write(*,'(A)') ' <matching results successfully re-read from file> '
      end if
 
   end if
@@ -239,6 +245,7 @@ program ltaem_main
      write(*,'(A)') 'compute solution for tracking particles'
      allocate(parnumdt(sol%nPart))
 
+     ! assuming constant time steps, determine max # steps required
      parnumdt(:) = ceiling((part(:)%tf - part(:)%ti)/part(:)%dt)
 
      do i = 1,sol%nPart
@@ -269,9 +276,8 @@ program ltaem_main
                  call rungeKutta(s,tee,c,e,bg,sol,dom,part(j),lbound(tee,dim=1))
         case (4)
                    call fwdEuler(s,tee,c,e,bg,sol,dom,part(j),lbound(tee,dim=1))
-        case default
-           write(*,'(A,I0,1X,I0)') 'invalid integration code', j, part(j)%int
         end select
+        ! invalid integration code checked in ltaem-io routine
 
 #ifdef DEBUG
         close(77)

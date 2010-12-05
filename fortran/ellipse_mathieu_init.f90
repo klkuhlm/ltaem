@@ -72,7 +72,7 @@ contains
 
     C = (8.46 +   0.444*n)/(1.0_DP + 0.085*n)
     D = (0.240 + 0.0214*n)/(1.0_DP + 0.059*n)
-    dim = int(n + 3.0_DP + C*q**D)
+    dim = int(n + 3.0_DP + C*abs(q)**D)
 
   end function shirts
 end module ellipse_mathieu_init
