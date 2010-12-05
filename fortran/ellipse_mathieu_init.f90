@@ -59,11 +59,11 @@ contains
     end do
   end subroutine ellipse_init
   
-  function shirts(n,q) result(dim)
+  elemental function shirts(n,q) result(dim)
     use constants, only : DP
     integer, intent(in) :: n
-    complex(DP), intent(in), dimension(:) :: q
-    integer, dimension(size(q)) :: dim
+    complex(DP), intent(in) :: q
+    integer :: dim
     real(DP) :: C,D
     
     ! estimate required matrix size, based on rational approximation due to 
@@ -72,7 +72,7 @@ contains
 
     C = (8.46 +   0.444*n)/(1.0 + 0.085*n)
     D = (0.240 + 0.0214*n)/(1.0 + 0.059*n)
-    dim(:) = int(n + 3.0 + C*q(:)**D)
+    dim = int(n + 3.0 + C*q**D)
 
   end function shirts
 end module ellipse_mathieu_init
