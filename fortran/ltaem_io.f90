@@ -27,7 +27,7 @@ contains
     character(46) :: lfmt = '(I0,1X,    (ES12.5,1X),A,    (ES12.5,1X),A,I0)'
     character(lenFN+5) :: echofname
     character(lenFN) :: circleFname, ellipseFname, particleFname
-    integer :: ierr,j,ntot,nC,nE  ! #elements, #circles, #ellipses
+    integer :: ierr, j, ntot, nC, nE  ! #elements, #circles, #ellipses
 
     open(unit=15, file=trim(sol%infname), status='old', action='read', iostat=ierr)
     if (ierr /= 0) then
@@ -50,7 +50,7 @@ contains
          & sol%outFname, sol%coeffFName, sol%elemHfName, sol%geomfName
     if (ierr /= 0) stop 'error on line 1 of input file'
 
-    ! if sol%output > 100, then don't dump matching results to file for restart (a minor speedup)
+    ! if sol%output > 100, then don't dump matching results to file for restart (a minor speedup?)
     if (sol%output > 100) then
        sol%skipdump = .true.
        sol%output = sol%output - 100

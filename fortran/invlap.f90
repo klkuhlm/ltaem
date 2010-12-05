@@ -147,7 +147,7 @@ contains
     ft(2) = sum(deHoog_invLap_vect([t],tee,fp(:,2),lap)) ! y vel
   end function deHoog_invLap_vel_scalt
   
-  function deHoog_pvalues(tee,lap) result(p)
+  pure function deHoog_pvalues(tee,lap) result(p)
     use constants, only : DP, PI
     use type_definitions, only : INVLT
     type(INVLT), intent(in) :: lap

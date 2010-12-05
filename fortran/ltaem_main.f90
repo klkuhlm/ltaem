@@ -17,12 +17,11 @@ program ltaem_main
   use ellipse_mathieu_init, only : ellipse_init
 
 #ifdef OMP
+  ! for parallel execution using OpenMP
   use omp_lib, only : omp_get_thread_num
 #endif
 
   implicit none
-
-  ! types or "structs" that organize variables
   type(domain)  :: dom
   type(element) :: bg
   type(circle),  allocatable :: c(:)
@@ -35,7 +34,7 @@ program ltaem_main
   integer :: crow, ccol                       ! coeff-#-row, coeff-#-col
   integer :: ilogt, iminlogt, imaxlogt        ! indexes related to log10 time
   integer :: lot, hit, lop, hip, lo           ! local hi and lo indices for each log cycle
-  integer, allocatable :: nt(:), run(:)       ! #-times-each-log-cycle; index-vector 0,1,2,3...
+  integer, allocatable :: nt(:)               ! #-times-each-log-cycle
   integer, allocatable :: parnumdt(:)         ! number of dt expected for each particle
   integer, allocatable :: idxmat(:,:)         ! matrix of indices for parallelization
   real(DP), allocatable :: logt(:), tee(:)    ! log10-time(numt), Tmax-for-deHoog(num-log-cycles)
@@ -43,12 +42,16 @@ program ltaem_main
   complex(DP) :: calcZ                        ! calc-point-complex-coordinates
   character(6) :: elType                      ! element-type {CIRCLE,ELLIPS}
   complex(DP), allocatable :: hp(:), vp(:,:)  ! Laplace-space head and velocity vectors
+  real(DP) :: lastT
+
+  ! some constants that shouldn't really need to be adjusted too often
+  real(DP), parameter :: EARLIEST_PARTICLE = 1.0E-5, MOST_LOGT = 0.999
+  real(DP), parameter :: TMAX_MULT = 2.0_DP  ! traditionally 2.0, but 4.0 could work (Mark Bakker)...
 
 #ifdef DEBUG
   character(20) :: tmpfname
 #endif
 
-  real(DP), parameter :: TMAX_MULT = 2.0_DP  ! traditionally 2.0, but 4.0 could work...
 
   intrinsic :: get_command_argument
   call get_command_argument(1,sol%inFName)
@@ -62,14 +65,12 @@ program ltaem_main
   nc = size(c,dim=1)
   ne = size(e,dim=1)
 
-  ! is the last value right on a log-cycle boundary?
-  if (abs(sol%t(sol%nt) - 10.0**nint(log10(sol%t(sol%nt)))) < epsilon(sol%t(sol%nt))) then
-     sol%t(sol%nt) = sol%t(sol%nt) - epsilon(sol%t(sol%nt))
+  ! is the last value exactly on a log-cycle boundary?
+  lastT = sol%t(sol%nt)
+  if (abs(lastT - 10.0**nint(log10(lastT))) < epsilon(lastT)) then
+     sol%t(sol%nt) = lastT - epsilon(lastT)
   end if
   
-  allocate(run(1:2*sol%m+1))
-  forall(i=0:2*sol%m) run(i+1)=i
-
   ! compute element geometry from input
   ! read in element heirarchy data from file
   call DistanceAngleCalcs(c,e,bg,dom,sol)
@@ -80,13 +81,9 @@ program ltaem_main
   if (sol%calc) then
      if (sol%particle) then   ! particle tracking
         
-        ! TODO need to do something better here about particles starting at t=0?
-        do i=1, sol%nPart
-           if (part(i)%ti < 1.0D-5) then
-              part(i)%ti = 1.0D-5
-              write(*,'(A,I0,A)') '^^^^ start time for particle ',i,' reset to 1.0E-5 ^^^^'
-           end if
-        end do
+        where (part(:)%ti < EARLIEST_PARTICLE)
+           part(:)%ti = EARLIEST_PARTICLE
+        end where
         
         iminlogt = floor(  minval(log10(part(:)%ti)))
         imaxlogt = ceiling(maxval(log10(part(:)%tf)))
@@ -96,15 +93,13 @@ program ltaem_main
 
         nt(iminlogt:imaxlogt) = 1
 
-        do ilogt = iminlogt, imaxlogt
-           ! 0.999 is "most" of a log-cycle
-           tee(ilogt) = min(10.0**(ilogt + 0.999), maxval(part(:)%tf))*TMAX_MULT
+        forall(ilogt = iminlogt:imaxlogt)
+           tee(ilogt) = min(10.0**(ilogt + MOST_LOGT), maxval(part(:)%tf))*TMAX_MULT
            s(:,ilogt) = pvalues(tee(ilogt),sol%INVLT)
-        end do
+        end forall
 
         ! to make it possible for particles / contours to share code...
         imaxlogt = imaxlogt + 1
-        deallocate(run)
         
      !^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
      else   ! contour maps / hydrographs
@@ -126,7 +121,7 @@ program ltaem_main
            s(:,ilogt) = pvalues(tee(ilogt),sol%INVLT)
            lo = lo + nt(ilogt)
         end do
-        deallocate(logt,run)
+        deallocate(logt)
      end if
 
      sol%totalnP = product(shape(s)) ! total number of Laplace parameters across all times

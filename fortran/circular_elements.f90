@@ -120,7 +120,7 @@ contains
           r%LHS(1:M,1) = storwell(c,p)*r%LHS(1:M,1)
           r%RHS(1:M) = time(p,c%time,.false.)*c%bdryQ/(PI*c%r*c%parent%T)
        else
-          continue ! nothing to do, matrix is zero-sized
+          continue ! no wellbore storage; nothing to do, since matrix is zero-sized
        end if
     end select
   end function circle_match_self

@@ -101,7 +101,7 @@ contains
     if (present(MM)) then
        mat%M = MM
     else
-       ! useful? default
+       ! implement rational approximation due to Randall Shirts
        mat%M = max(16,ceiling(2.0*abs(q)))
     end if
     M = mat%M
@@ -177,7 +177,7 @@ contains
     Coeff(1,1) = 1.0_DP + q
     
     forall(i=1:m-1) Coeff(i+1,i+1) = cmplx((2*i+1)**2, 0, DP)
-    forall(i=1:m, j=1:m, j==i+1 .or. j==i-1) Coeff(i,j) = q    
+    forall(i=1:m, j=1:m, j==i+1 .or. j==i-1) Coeff(i,j) = q
     
     call zgeev('N','V',M,Coeff,M,mat%mcn(m+1:2*m),dc,di,mat%A(1:m,0:m-1,1),M, &
          & work,lwork,rwork,info)
@@ -201,7 +201,7 @@ contains
     Coeff(:,:) = 0.0
 
     forall(i=1:m) Coeff(i,i) = cmplx((2*i)**2, 0, DP)
-    forall(i=1:m, j=1:m, j==i+1 .or. j==i-1) Coeff(i,j) = q 
+    forall(i=1:m, j=1:m, j==i+1 .or. j==i-1) Coeff(i,j) = q
 
     call zgeev('N','V',M,Coeff,M,mat%mcn(2*m+1:3*m),dc,di,mat%B(1:m,0:m-1,0),M,&
          &work,lwork,rwork,info)
@@ -223,8 +223,8 @@ contains
     Coeff(:,:) = 0.0
     Coeff(1,1) = 1.0_DP - q
 
-    forall(i=1:m-1) Coeff(i+1,i+1) = cmplx((2*i+1)**2, 0, DP)   
-    forall(i=1:m, j=1:m, j==i+1 .or. j==i-1) Coeff(i,j) = q 
+    forall(i=1:m-1) Coeff(i+1,i+1) = cmplx((2*i+1)**2, 0, DP)
+    forall(i=1:m, j=1:m, j==i+1 .or. j==i-1) Coeff(i,j) = q
 
     call zgeev('N','V',M,Coeff,M,mat%mcn(3*m+1:4*m),dc,di,mat%B(1:m,0:m-1,1),M,&
          &work,lwork,rwork,info)
@@ -1120,7 +1120,7 @@ contains
     v2 = sqrtq*exp( z)
 
     ! indexing vectors based on even/odd-ness of n
-    forall (j=1:size(n)) nn(j) = j       
+    forall (j=1:size(n)) nn(j) = j
     EV = pack(nn,mod(n,2)==0)
     OD = pack(nn,mod(n,2)==1)
   end subroutine radfcnsetup
@@ -1190,10 +1190,9 @@ contains
              write(*,*) "CBESI: input error, z=",arg(1:min(ubound(arg,1),5))," n=",n
              stop "CBESI: input error"
           case(2)
-             write(*,*) "CBESI: overflow, z or order too &
-                  &large for unscaled output, z=",arg(1:min(ubound(arg,1),5))," n=",n
-             stop "CBESI: overflow, z or order too large &
-                  &for unscaled output"
+             write(*,*) "CBESI: overflow, z or order too" //&
+                  &"large for unscaled output, z=",arg(1:min(ubound(arg,1),5))," n=",n
+             stop "CBESI: overflow, z or order too large for unscaled output"
           case(3)
              fmt = '(A, (ES11.3E3,1X,ES11.3E3,3X),I0)'
              write(fmt(4:4),'(I1)') min(ubound(arg,1),5)   
@@ -1251,8 +1250,8 @@ contains
              write(*,*) "CBESK: input error, z=",arg(1:min(ubound(arg,1),5))," n=",n
              stop "CBESK: input error"
           case(2)
-             write(*,*) "CBESK: overflow, z too small or order &
-                  &too large for unscaled output, z=",arg(1:min(ubound(arg,1),5))," n=",n
+             write(*,*) "CBESK: overflow, z too small or order " // &
+                  &"too large for unscaled output, z=",arg(1:min(ubound(arg,1),5))," n=",n
              stop "CBESK: overflow, z too small or order too &
                   &large for unscaled output"
           case(3)
@@ -1260,8 +1259,8 @@ contains
 !!$             write(fmt(4:4),'(I1)') min(ubound(arg,1),5)
 !!$             write(*,fmt) "CBESK: loss of precision, z=",arg(1:min(ubound(arg,1),5)),numzero
           case(4)
-             write(*,*) "CBESK: overflow, z too small or order &
-                  &too large, z=",arg(1:min(ubound(arg,1),5))," n=",n
+             write(*,*) "CBESK: overflow, z too small or order " //&
+                  &"too large, z=",arg(1:min(ubound(arg,1),5))," n=",n
              stop "CBESK: overflow, z too small or order too large"
           case(5)
              stop "CBESK: algorithm termination not met"

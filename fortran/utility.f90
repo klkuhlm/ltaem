@@ -163,7 +163,7 @@ contains
 
     ! semi-major/minor length a:=f*cosh/sinh(psi)
     y = LN2/LNPIOV2
-    P = 4.0_DP*((f*cosh(eta))**y + (f*sinh(eta))**y)**(1.0_DP/y)
+    P = 4.0_DP*((f*cosh(eta))**y + (f*sinh(eta))**y)**(1.0/y)
 
   end function ynot
 
