@@ -101,8 +101,9 @@ contains
     if (present(MM)) then
        mat%M = MM
     else
-       
-       mat%M = max(16,ceiling(2.0*abs(q)))
+       ! assuming this will be computed more intelligenly elsewhere
+       ! e.g., using Shirts' 1993 rational approximation
+       mat%M = 16
     end if
     M = mat%M
 
@@ -132,7 +133,8 @@ contains
     
     ! A/B 3rd dimension: 0(even) or 1(odd) cases of the second dimension
 
-    allocate(coeff(M,M), rwork(33*M), w(M), mat%mcn(4*M), mat%A(1:M,0:M-1,0:1), mat%B(1:M,0:M-1,0:1))      
+    allocate(coeff(M,M), rwork(33*M), w(M), mat%mcn(4*M), &
+         & mat%A(1:M,0:M-1,0:1), mat%B(1:M,0:M-1,0:1))
 
     di = 1 ! dummy integer for lapack
     dc(1) = 0.0 ! dummy complex for lapack
@@ -1175,7 +1177,10 @@ contains
     integer, intent(in) :: n
     complex(DP), intent(out), dimension(0:n-1,size(arg)) :: I
     integer :: numzero, ierr, j
+
+#ifdef DEBUG
     character(33) :: fmt
+#endif
 
     ! scaling for I BF:: cy = I_fnu(z)*exp(-abs(x))
     ! where z = x + iy
@@ -1193,10 +1198,12 @@ contains
              write(*,*) "CBESI: overflow, z or order too" //&
                   &"large for unscaled output, z=",arg(1:min(ubound(arg,1),5))," n=",n
              stop "CBESI: overflow, z or order too large for unscaled output"
+#ifdef DEBUG
           case(3)
              fmt = '(A, (ES11.3E3,1X,ES11.3E3,3X),I0)'
              write(fmt(4:4),'(I1)') min(ubound(arg,1),5)   
              write(*,fmt) "CBESI: loss of precision, z=",arg(1:min(ubound(arg,1),5)),numzero
+#endif
           case(4)
              write(*,*) "CBESI: overflow, z or order too &
                   &large, z=",arg(1:min(ubound(arg,1),5))," n=",n
@@ -1237,10 +1244,12 @@ contains
     integer, intent(in) :: n
     complex(DP), intent(out), dimension(0:n-1,size(arg)) :: K
     integer :: numzero, ierr, j
-!!$    character(33) :: fmt
+
+#ifdef DEBUG
+    character(33) :: fmt
+#endif
 
     ! scaling for K BF :: cy = K_fnu(z)*exp(z)
-
     do j=1,size(arg)
        call cbesk(z=arg(j), fnu=0.0_DP, kode=2, n=n, cy=K(0:n-1,j), nz=numzero, ierr=ierr)
 
@@ -1254,10 +1263,12 @@ contains
                   &"too large for unscaled output, z=",arg(1:min(ubound(arg,1),5))," n=",n
              stop "CBESK: overflow, z too small or order too &
                   &large for unscaled output"
+#ifdef DEBUG             
           case(3)
-!!$             fmt = '(A, (ES11.3E3,1X,ES11.3E3,3X),I0)'
-!!$             write(fmt(4:4),'(I1)') min(ubound(arg,1),5)
-!!$             write(*,fmt) "CBESK: loss of precision, z=",arg(1:min(ubound(arg,1),5)),numzero
+             fmt = '(A, (ES11.3E3,1X,ES11.3E3,3X),I0)'
+             write(fmt(4:4),'(I1)') min(ubound(arg,1),5)
+             write(*,fmt) "CBESK: loss of precision, z=",arg(1:min(ubound(arg,1),5)),numzero
+#endif
           case(4)
              write(*,*) "CBESK: overflow, z too small or order " //&
                   &"too large, z=",arg(1:min(ubound(arg,1),5))," n=",n
