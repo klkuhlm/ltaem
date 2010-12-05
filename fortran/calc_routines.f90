@@ -50,7 +50,7 @@ contains
     call CalcLocation(Z,c,e,dom,Rgp,Pgp,in) 
    
 #ifdef DEBUG
-    if (any(Rgp < epsilon(0.0) .or. Pgp < -PI .or. Pgp > PI)) then
+    if (any(Rgp < spacing(0.0) .or. Pgp < -PI .or. Pgp > PI)) then
        print *, 'headCalc error in results returned from calcLocation Rgp:',Rgp,' Pgp:',Pgp
        stop
     end if
@@ -183,7 +183,7 @@ contains
     call CalcLocation(Z,c,e,dom,Rgp,Pgp,in) 
 
 #ifdef DEBUG
-    if (any(Rgp < epsilon(0.0) .or. Pgp < -PI .or. Pgp > PI)) then
+    if (any(Rgp < spacing(0.0) .or. Pgp < -PI .or. Pgp > PI)) then
        print *, 'velCalc error in results returned from calcLocation Rgp:',Rgp,' Pgp:',Pgp
        stop
     end if

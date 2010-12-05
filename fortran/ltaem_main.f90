@@ -309,8 +309,7 @@ program ltaem_main
 
            calcZ = cmplx(sol%x(j),sol%y(i),DP)
 
-           !! compute f(p) for all values of p
-           !! not just one log cycle of time -- at this location 
+           !! compute f(p) for all values of p at this location 
            hp(1:tnp) =    headCalc(calcZ,reshape(s,[tnp]),1,tnp,dom,c,e,bg)
            vp(1:tnp,1:2) = velCalc(calcZ,reshape(s,[tnp]),1,tnp,dom,c,e,bg)
 

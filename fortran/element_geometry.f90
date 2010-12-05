@@ -303,7 +303,7 @@ contains
              do j = 1, nc
                 if (i /= j) then
                    ! all points on circumferencce must be either inside or outside
-                   if (any(abs(c(i)%G(j)%Rgm(:) - c(i)%r) < epsilon(1.0)) .or. &
+                   if (any(abs(c(i)%G(j)%Rgm(:) - c(i)%r) < spacing(1.0)) .or. &
                         & (any(c(i)%G(j)%Rgm(:) < c(i)%r) .and. &
                         &  any(c(i)%G(j)%Rgm(:) > c(i)%r))) then
                       write(*,*) 'INTERSECTING CIRCLES: ',i,j
@@ -316,7 +316,7 @@ contains
           ! check circle-on-ellipse interesction
           do i = 1, nc
              do j = 1, ne
-                if (any(abs(c(i)%G(nc+j)%Rgm(:) - c(i)%r) < epsilon(1.0)) .or. &
+                if (any(abs(c(i)%G(nc+j)%Rgm(:) - c(i)%r) < spacing(1.0)) .or. &
                      & (any(c(i)%G(nc+j)%Rgm(:) < c(i)%r) .and. &
                      &  any(c(i)%G(nc+j)%Rgm(:) > c(i)%r))) then
                    write(*,*) 'INTERSECTING CIRCLE & ELLIPSE: ',i,j
@@ -350,7 +350,7 @@ contains
           ! check ellipse-on-circle intersection
           do i = 1, ne
              do j = 1, nc
-                if (any(abs(e(i)%G(j)%Rgm(:) - e(i)%r) < epsilon(1.0)) .or. &
+                if (any(abs(e(i)%G(j)%Rgm(:) - e(i)%r) < spacing(1.0)) .or. &
                      & (any(e(i)%G(j)%Rgm(:) < e(i)%r) .and. &
                      &  any(e(i)%G(j)%Rgm(:) > e(i)%r))) then
                    write(*,*) 'INTERSECTING ELLIPSE & CIRCLE: ',i,j
@@ -363,7 +363,7 @@ contains
           do i = 1, ne
              do j = 1, ne
                 if (i /= j) then
-                   if (any(abs(e(i)%G(nc+j)%Rgm(:) - e(i)%r) < epsilon(1.0)) .or. &
+                   if (any(abs(e(i)%G(nc+j)%Rgm(:) - e(i)%r) < spacing(1.0)) .or. &
                         & (any(e(i)%G(nc+j)%Rgm(:) < e(i)%r) .and. &
                         &  any(e(i)%G(nc+j)%Rgm(:) > e(i)%r))) then
                       write(*,*) 'INTERSECTING ELLIPSES: ',i,j

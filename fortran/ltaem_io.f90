@@ -161,7 +161,7 @@ contains
        write(*,*) 'input file (line 7) sol%M must be > 0 ',sol%M
        stop 209
     end if
-    if (sol%tol < epsilon(sol%tol)) then
+    if (sol%tol < epsilon(sol%tol)) then ! epsilon(1) ~ 1.0E-8
        sol%tol = epsilon(sol%tol)
        write(*,'(A,ES11.5)') 'WARNING: increased INVLAP solution tolerance to ',sol%tol 
     end if
@@ -623,25 +623,25 @@ contains
        allocate(p(sol%nPart))
 
        read(44,*) p(:)%tol   ! error tolerance for rkm
-       if (any(p%tol < epsilon(1.0D0))) then
+       if (any(p%tol < spacing(1.0D0))) then
           write(*,*) 'p%tol must be > 0.0 ',p%tol
           stop 244
        end if      
 
        read(44,*) p(:)%maxL  ! max step length for rkm
-       if (any(p%maxL < epsilon(1.0))) then
+       if (any(p%maxL < spacing(1.0))) then
           write(*,*) 'p%maxL must be > 0.0 ',p%maxL
           stop 245
        end if      
 
        read(44,*) p(:)%mindt  ! min step size for rkm
-       if (any(p%mindt < epsilon(1.0))) then
+       if (any(p%mindt < spacing(1.0))) then
           write(*,*) 'p%mindt must be > 0.0 ',p%mindt
           stop 246
        end if
        
        read(44,*) p(:)%dt    ! time step (initial timestep for rkm)
-       if (any(p%dt < epsilon(1.0))) then
+       if (any(p%dt < spacing(1.0))) then
           write(*,*) 'p%dt must be > 0.0 ',p%dt
           stop 247
        end if
@@ -650,7 +650,7 @@ contains
        read(44,*) p(:)%y
 
        read(44,*) p(:)%ti ! particle start time
-       if (any(p%ti < epsilon(1.0))) then
+       if (any(p%ti < spacing(1.0))) then
           write(*,*) 'p%ti must be > 0.0 ',p%ti
           stop 248
        end if
