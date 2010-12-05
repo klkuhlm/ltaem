@@ -396,12 +396,7 @@ contains
        end if
 
        read(33,*) e(:)%ms ! bg%ms read above
-       ! checked more carefully in Mathieu function library
-       if (any(e%ms < e%n) .or. any(bg%ms < e%n)) then  
-          write(*,*) 'e%ms must not be < e%n + buffer: e%N ',e%N,'e%MS',e%ms
-          write(*,*) 'bg%ms must not be < e%n + buffer: bg%MS ',bg%ms
-          stop 228
-       end if
+       ! these are computed now, so checking this here doesn't mean as much as it did.
 
        read(33,*) e(:)%ibnd
        if (any(e%ibnd < -1 .or. e%ibnd > 2)) then

@@ -32,7 +32,7 @@ contains
 
     ! TODO: make a decision about matrix size here and
     ! either bail out if too large, or potentially use an 
-    ! asymptotic expansion ()
+    ! asymptotic expansion
 
     do i = 1, tnp
        if (bg%cutoff < 0.0) then
@@ -70,9 +70,9 @@ contains
     ! Shirts, R.B., 1993. "The Computation of Eigenvalues and Solutions of Mathieu's
     ! Differential Equation for Noninteger Order", ACM TOMS 19(3) pp377-390.
 
-    C = (8.46 +   0.444*n)/(1.0 + 0.085*n)
-    D = (0.240 + 0.0214*n)/(1.0 + 0.059*n)
-    dim = int(n + 3.0 + C*q**D)
+    C = (8.46 +   0.444*n)/(1.0_DP + 0.085*n)
+    D = (0.240 + 0.0214*n)/(1.0_DP + 0.059*n)
+    dim = int(n + 3.0_DP + C*q**D)
 
   end function shirts
 end module ellipse_mathieu_init
