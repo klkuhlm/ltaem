@@ -101,7 +101,7 @@ contains
     if (present(MM)) then
        mat%M = MM
     else
-       ! implement rational approximation due to Randall Shirts
+       
        mat%M = max(16,ceiling(2.0*abs(q)))
     end if
     M = mat%M

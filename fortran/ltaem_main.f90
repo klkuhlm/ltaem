@@ -42,7 +42,6 @@ program ltaem_main
   complex(DP) :: calcZ                        ! calc-point-complex-coordinates
   character(6) :: elType                      ! element-type {CIRCLE,ELLIPS}
   complex(DP), allocatable :: hp(:), vp(:,:)  ! Laplace-space head and velocity vectors
-  real(DP) :: lastT
 
   ! some constants that shouldn't really need to be adjusted too often
   real(DP), parameter :: EARLIEST_PARTICLE = 1.0E-5, MOST_LOGT = 0.999
@@ -51,7 +50,6 @@ program ltaem_main
 #ifdef DEBUG
   character(20) :: tmpfname
 #endif
-
 
   intrinsic :: get_command_argument
   call get_command_argument(1,sol%inFName)
@@ -64,12 +62,6 @@ program ltaem_main
   call readInput(sol,dom,bg,c,e,part)
   nc = size(c,dim=1)
   ne = size(e,dim=1)
-
-  ! is the last value exactly on a log-cycle boundary?
-  lastT = sol%t(sol%nt)
-  if (abs(lastT - 10.0**nint(log10(lastT))) < epsilon(lastT)) then
-     sol%t(sol%nt) = lastT - epsilon(lastT)
-  end if
   
   ! compute element geometry from input
   ! read in element heirarchy data from file
@@ -108,6 +100,7 @@ program ltaem_main
         lo = 1
         logt(:) = log10(sol%t(:))
         iminlogt =   floor(minval(logt(:)))
+        ! add epsilon to ensure is bumped up to next log cycle if on fence
         imaxlogt = ceiling(maxval(logt(:)) + epsilon(1.0))
 
         allocate(s(2*sol%m+1,iminlogt:imaxlogt-1), nt(iminlogt:imaxlogt-1), &
@@ -124,10 +117,13 @@ program ltaem_main
         deallocate(logt)
      end if
 
-     sol%totalnP = product(shape(s)) ! total number of Laplace parameters across all times
+     sol%totalnP = size(s) ! total number of Laplace parameters across all times
      tnp = sol%totalnP
 
+#ifdef DEBUG     
      print *, 'shape(s)',shape(s),' tnp',tnp
+     print *, 's',s
+#endif
 
      ! calculate coefficients for each value of Laplace parameter
      ! ** common between particle tracking and contours/hydrographs **
