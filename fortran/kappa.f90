@@ -10,7 +10,7 @@ module kappa_mod
 
 contains
 
-  function kappa_pVect(p,el) result(q)
+  pure function kappa_pVect(p,el) result(q)
     use constants, only : DP
     use type_definitions, only : element
 
@@ -24,10 +24,13 @@ contains
     np = size(p)
     if (el%leakFlag /= 0) then
        allocate(kap2(np),exp2z(np))
+       !$OMP WORKSHARE
        kap2(1:np) = sqrt(p(:)*el%aquitardSs/el%aquitardK)
        exp2z(1:np) = exp(-2.0*kap2(:)*el%aquitardb)
+       !$OMP END WORKSHARE
     end if
     
+    !$OMP WORKSHARE
     !! leaky-ness
     !! ##############################
     select case(el%leakFlag)
@@ -45,9 +48,8 @@ contains
     case(3)
        !! aquitard thickness -> infinity
        q(1:np) = p(:)/el%alpha + kap2(:)*el%aquitardK/(el%b*el%K)
-    case default
-       stop 'ERROR: incorrect value for leakFlag parameter -> (1,2,3)'
     end select
+    !$OMP END WORKSHARE
 
     !! unconfined-ness (if confined do nothing)
     !! ##############################
@@ -55,7 +57,9 @@ contains
 
        ! results of integrating Neuman 1972 unconfined solution from 0 -> b in z
        ! Kz parameter is integrated away?
+       !$OMP WORKSHARE
        q(1:np) = q(:) + el%Sy*p(:)/(el%b*el%K)
+       !$OMP END WORKSHARE
     end if
     
     !! sources are only additive under the square root

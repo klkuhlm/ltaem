@@ -95,7 +95,9 @@ contains
     rnum = real(num - 1,DP)
     range = abs(hi - lo) 
     sgn = sign(1.0_DP,hi-lo) ! if lo > high, count backwards
+    !$OMP WORKSHARE
     forall (i=0:num-1) v(i+1) = lo + sgn*real(i,DP)*range/rnum
+    !$OMP END WORKSHARE
   end function linspace
 
   ! ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -131,10 +133,14 @@ contains
      integer :: i
      if (n >= 0) then
         ! diagonal in lower triangle (+) or main diag (0)
+        !$OMP WORKSHARE
         forall (i=1:size(A,dim=1)-n) d(i) = A(i+n,i)
+        !$OMP END WORKSHARE
      else
         ! diagonal in upper triangle (-)
+        !$OMP WORKSHARE
         forall (i=1:size(A,dim=1)+n) d(i) = A(i,i-n)
+        !$OMP END WORKSHARE
      end if
    end function diagonal_z
    
@@ -146,10 +152,14 @@ contains
      integer :: i
      if (n >= 0) then
         ! diagonal in lower triangle (+) or main diag (0)
+        !$OMP WORKSHARE
         forall (i=1:size(A,dim=1)-n) d(i) = A(i+n,i)
+        !$OMP END WORKSHARE
      else
         ! diagonal in upper triangle (-)
+        !$OMP WORKSHARE
         forall (i=1:size(A,dim=1)+n) d(i) = A(i,i-n)
+        !$OMP END WORKSHARE
      end if
    end function diagonal_d
 

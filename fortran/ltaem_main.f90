@@ -84,10 +84,12 @@ program ltaem_main
 
         nt(minlt:maxlt) = 1
 
+        !$OMP WORKSHARE
         forall(lt = minlt:maxlt)
            tee(lt) = min(10.0**(lt + MOST_LOGT), maxval(part(:)%tf))*TMAX_MULT
            s(:,lt) = pvalues(tee(lt),sol%INVLT)
         end forall
+        !$OMP END WORKSHARE
 
         ! to make it possible for particles / contours to share code...
         maxlt = maxlt + 1
@@ -102,8 +104,7 @@ program ltaem_main
         ! add epsilon to ensure is bumped up to next log cycle if on fence
         maxlt = ceiling(maxval(logt(:)) + epsilon(1.0))
 
-        allocate(s(2*sol%m+1,minlt:maxlt-1), nt(minlt:maxlt-1), &
-             & tee(minlt:maxlt-1))
+        allocate(s(2*sol%m+1,minlt:maxlt-1), nt(minlt:maxlt-1), tee(minlt:maxlt-1))
 
         do lt = minlt, maxlt-1
            ! number of times falling in this logcycle
@@ -148,7 +149,8 @@ program ltaem_main
         write(*,'(A,I0,A)') 'log t= 10^(',lt,')' 
         if (nt(lt) > 0) then
            do j = 1,2*sol%m+1
-              write(*,'(I3,1X,2(A,ES10.3),A)') j, '(',real(s(j,lt)),',',aimag(s(j,lt)),')'
+              write(*,'(I3,1X,2(A,ES10.3),A)') j, '(',&
+                   & real(s(j,lt)),',',aimag(s(j,lt)),')'              
               call matrix_solution(c,e,dom,sol,s(j,lt),idxmat(j,lt))
            end do
         end if
@@ -197,8 +199,7 @@ program ltaem_main
 
         read(77,*) !! TODO not doing anything with input file, but should I check inputs are same?
         read(77,*) minlt,maxlt,nc,ne ! scalars
-        allocate(s(2*sol%m+1,minlt:maxlt-1), nt(minlt:maxlt-1), &
-             & tee(minlt:maxlt-1))
+        allocate(s(2*sol%m+1,minlt:maxlt-1), nt(minlt:maxlt-1), tee(minlt:maxlt-1))
         read(77,*) nt(:)
         read(77,*) s(:,:)
         sol%totalnP = product(shape(s))
@@ -338,8 +339,7 @@ program ltaem_main
   else ! hydrograph output (x,y locations are in pairs; e.g. inner product)
 
      write(*,'(A)') 'compute solution for plotting hydrograph'
-     allocate(sol%h(sol%nx,1,sol%nt), hp(tnp), &
-          &   sol%v(sol%nx,1,sol%nt,2), vp(tnp,2))
+     allocate(sol%h(sol%nx,1,sol%nt), hp(tnp), sol%v(sol%nx,1,sol%nt,2), vp(tnp,2))
      
      do i = 1,sol%nx
         write(*,'(A,2(1X,ES14.7E1))') 'location:',sol%x(i),sol%y(i)

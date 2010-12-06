@@ -41,17 +41,21 @@ contains
     ! starting at -PI (-x axis) continuing around the circle CCW.
     do i=1,nc
        allocate(c(i)%Pcm(c(i)%M))
+       !$OMP WORKSHARE
        forall(j = 1:c(i)%M)
           c(i)%Pcm(j) = -PI + 2.0*PI/c(i)%M*real(j-1,DP)
        end forall
+       !$OMP END WORKSHARE
        
        c(i)%id = i ! global ID
     end do
     do i=1,ne
        allocate(e(i)%Pcm(e(i)%M))
+       !$OMP WORKSHARE
        forall (j = 1:e(i)%M)
           e(i)%Pcm(j) = -PI + 2.0*PI/e(i)%M*real(j-1,DP)
        end forall
+       !$OMP END WORKSHARE
        
        e(i)%id = i+nc ! global ID
     end do
@@ -269,7 +273,9 @@ contains
        allocate(nondiag(ntot,ntot))
        ! logical mask for non-diagonal elements
        nondiag = .true. 
+       !$OMP WORKSHARE
        forall(i=1:ntot) nondiag(i,i) = .false.
+       !$OMP END WORKSHARE
 
        dom%InclIn = .false. !! dom%InclIn(0:ntot,1:ntot) logical
        dom%InclUp = huge(1) !! dom%InclUp(1:ntot)        integer
@@ -384,9 +390,11 @@ contains
        R(1:nc) = c(1:nc)%r
        R(nc+1:ntot) = e(1:ne)%r  ! TODO : double-check that circ/ellip can be compared validly  
 
+       !$OMP WORKSHARE
        forall (i=1:ntot, j=1:ntot, i/=j .and. dom%InclIn(i,j).and.dom%InclIn(j,i) .and. R(i)>R(j))
           dom%InclIn(i,j) = .false.
        end forall
+       !$OMP END WORKSHARE
 
        deallocate(R)
 
@@ -451,9 +459,11 @@ contains
        end do
        
        ! an element isn't in its own background (by convention)
+       !$OMP WORKSHARE
        forall (i=1:ntot)
           dom%InclBg(i,i) = .false.
        end forall
+       !$OMP END WORKSHARE
 
        deallocate(nest,iv)
 

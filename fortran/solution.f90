@@ -13,12 +13,12 @@ contains
     use constants, only : DP
     use type_definitions, only : circle, solution, ellipse, domain, match_result
     use circular_elements, only : circle_match, well
-    use elliptical_elements, only : ellipse_match ! line() is repeated below to accommodate gfortran bug
+    use elliptical_elements, only : ellipse_match !!, line is repeated below to accommodate gfortran bug
 #ifdef DEBUG
     use type_definitions, only : print_match_result
 #endif
 
-    interface  !! solve over-determined system via least-squares
+    interface  !! solve over-determined system via least-squares in LAPACK
        subroutine ZGELS(TRANSA, M, N, NRHS, A, LDA, B, LDB, WORK, &
             & LDWORK, INFO)
          integer, intent(in) :: M, N, NRHS, LDA, LDB, LDWORK
@@ -47,7 +47,7 @@ contains
     integer :: nc, ne, ntot, i, j, bigM, bigN, rr,cc, ierr
 
     ! only needed for LAPACK routine
-    ! size(work) should be ~ 33xbigN? (32-bit linux)
+    ! size(work) should be ~ 33xbigN? (32- & 64-bit linux)
     complex(DP), allocatable :: WORK(:)
 
 #ifdef DEBUG
@@ -134,12 +134,14 @@ contains
        allocate(work(33*bigN))       
     end if
 
+    !$OMP WORKSHARE
     forall (i=1:ntot)
        row(i,0) = 1 + sum(row(1:i-1,1))  ! lower bound
        row(i,2) = sum(row(1:i,1))        ! upper bound
        col(i,0) = 1 + sum(col(1:i-1,1))
        col(i,2) = sum(col(1:i,1))
     end forall
+    !$OMP END WORKSHARE
 
 #ifdef DEBUG
     print '(A,I0,1X,I0)','shape(res): ',shape(res)
@@ -181,7 +183,7 @@ contains
 #endif
        end if
     end if
-    
+
     ! put result into local coeff variables
     do i=1,nc
 #ifdef DEBUG       

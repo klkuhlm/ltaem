@@ -384,7 +384,6 @@ contains
     where (Rgp(nc+1:ntot) < e%r .and. e%ibnd == 2)
        Rgp(nc+1:ntot) = e%r
     end where
-
   end subroutine  calcLocation
 
   subroutine check_np(p,lo,hi)

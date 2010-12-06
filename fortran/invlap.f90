@@ -69,10 +69,12 @@ contains
 
        ! build up continued fraction coefficients
        d(0) = fp(0)/2.0 ! half first term
+       !$OMP WORKSHARE
        forall(r = 1:M)
           d(2*r-1) = -q(0,r) ! even terms
           d(2*r)   = -e(0,r) ! odd terms
        end forall
+       !$OMP END WORKSHARE
 
        ! seed A and B vectors for recurrence
        A(-1,1:nt) = 0.0
@@ -155,8 +157,10 @@ contains
     complex(DP), dimension(2*lap%M+1) :: p
     integer :: i
 
+    !$OMP WORKSHARE
     forall (i=0:2*lap%M)
        p(i+1) = cmplx(lap%alpha - log(lap%tol)/(2.0*tee), PI*i/tee, DP)
     end forall
+    !$OMP END WORKSHARE
   end function deHoog_pvalues
 end module inverse_Laplace_Transform

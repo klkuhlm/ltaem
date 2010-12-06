@@ -12,7 +12,7 @@ contains
 
   ! ##################################################
   ! general time behavior function, for all elements
-   function Time_pvect(p,t,area) result(mult)
+   pure function Time_pvect(p,t,area) result(mult)
     use constants, only: DP
     use type_definitions, only : time
     use utility, only : outer
@@ -40,6 +40,7 @@ contains
        par(:) = t%BTPar(:)
     end if
 
+    !$OMP WORKSHARE
     select case(flag)
     case(1)
        ! step on at time=par1
@@ -91,18 +92,14 @@ contains
             & sum(Q(1:n) - Q(0:n-1))*exp(-tf*p(:)))/p(:)
 
        deallocate(ti,Q)
-
-    case default
-       write(*,'(A,I0)') 'Time_pvect: error in case for time behavior ',flag
-       stop
     end select
-
+    !$OMP END WORKSHARE
     deallocate(par)
 
   end function Time_pvect
 
   ! wrapper to allow calling time routine with scalar p
-  function Time_pscal(p,t,area) result(mult)
+  pure function Time_pscal(p,t,area) result(mult)
     use constants, only : DP
     use type_definitions, only : time
 
