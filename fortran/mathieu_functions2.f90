@@ -145,14 +145,14 @@ contains
     ! Pure and Applied Optics, 4(3), 251-262, 1995
     !$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 
-    !$OMP WORKSHARE
+    !$OMP PARALLEL WORKSHARE
     ! main diagonal/ r counting from 0:m-1 like McLachlan
     Coeff(:,:) = 0.0
     forall(i=1:M-1) Coeff(i+1,i+1) = cmplx((2*i)**2, 0, DP)
     
     ! off diagonals
     forall(i=1:m, j=1:m, j==i+1 .or. j==i-1) Coeff(i,j) = q
-    !$OMP END WORKSHARE        
+    !$OMP END PARALLEL WORKSHARE        
 
     ! special case
     Coeff(2,1) = 2.0_DP*q
@@ -177,13 +177,13 @@ contains
     ! De_{2n+1} in eqn 3.14 of St&Sp
     !$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 
-    !$OMP WORKSHARE
+    !$OMP PARALLEL WORKSHARE
     Coeff(:,:) = 0.0
     Coeff(1,1) = 1.0_DP + q
     
     forall(i=1:m-1) Coeff(i+1,i+1) = cmplx((2*i+1)**2, 0, DP)
     forall(i=1:m, j=1:m, j==i+1 .or. j==i-1) Coeff(i,j) = q
-    !$OMP END WORKSHARE
+    !$OMP END PARALLEL WORKSHARE
 
     call zgeev('N','V',M,Coeff,M,mat%mcn(m+1:2*m),dc,di,mat%A(1:m,0:m-1,1),M, &
          & work,lwork,rwork,info)
@@ -202,14 +202,14 @@ contains
     ! Do_{2n+2} in eq 3.16 of St&Sp
     !$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
     
-    !$OMP WORKSHARE
+    !$OMP PARALLEL WORKSHARE
     ! this one not shifted by one, since 2n+2 -> 2n 
     !! (but starting from one, rather than zero)
     Coeff(:,:) = 0.0
 
     forall(i=1:m) Coeff(i,i) = cmplx((2*i)**2, 0, DP)
     forall(i=1:m, j=1:m, j==i+1 .or. j==i-1) Coeff(i,j) = q
-    !$OMP END WORKSHARE
+    !$OMP END PARALLEL WORKSHARE
 
     call zgeev('N','V',M,Coeff,M,mat%mcn(2*m+1:3*m),dc,di,mat%B(1:m,0:m-1,0),M,&
          &work,lwork,rwork,info)
@@ -228,13 +228,13 @@ contains
     ! Do_{2n+1} of eqn 3.18 in St&Sp
     !$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 
-    !$OMP WORKSHARE
+    !$OMP PARALLEL WORKSHARE
     Coeff(:,:) = 0.0
     Coeff(1,1) = 1.0_DP - q
 
     forall(i=1:m-1) Coeff(i+1,i+1) = cmplx((2*i+1)**2, 0, DP)
     forall(i=1:m, j=1:m, j==i+1 .or. j==i-1) Coeff(i,j) = q
-    !$OMP END WORKSHARE
+    !$OMP END PARALLEL WORKSHARE
 
     call zgeev('N','V',M,Coeff,M,mat%mcn(3*m+1:4*m),dc,di,mat%B(1:m,0:m-1,1),M,&
          &work,lwork,rwork,info)
@@ -1241,11 +1241,11 @@ contains
 
     call BesselI_val(arg,n,I(0:n-1,:))
 
-    !$OMP WORKSHARE
+    !$OMP PARALLEL WORKSHARE
     ID(1:n-2,:) = 0.5_DP*(I(0:n-3,:) + I(2:n-1,:)) ! middle
     ID(0,:) = I(1,:) ! low end
     ID(n-1,:) = I(n-2,:) - real(n-1,DP)/arg*I(n-1,:) ! high end
-    !$OMP END WORKSHARE
+    !$OMP END PARALLEL WORKSHARE
 
   end subroutine BesselI_val_and_deriv
 
@@ -1307,11 +1307,11 @@ contains
     if (n < 3) stop 'mathieu_functions2.f90 : besselk_val_and_deriv, n must be > 3'
     call BesselK_val(arg,n,K(0:n-1,:))
 
-    !$OMP WORKSHARE
+    !$OMP PARALLEL WORKSHARE
     KD(1:n-2,:) = -0.5_DP*(K(0:n-3,:) + K(2:n-1,:)) ! middle
     KD(0,:) = -K(1,:) ! low end
     KD(n-1,:) = -(K(n-2,:) + real(n-1,DP)/arg*K(n-1,:)) ! high end
-    !$OMP END WORKSHARE
+    !$OMP END PARALLEL WORKSHARE
 
   end subroutine BesselK_val_and_deriv
 

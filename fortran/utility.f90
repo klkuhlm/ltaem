@@ -25,20 +25,26 @@ contains
     use constants, only : DP
     real(DP), intent(in), dimension(:) :: a,b
     real(DP), dimension(size(a),size(b)) :: c
+    !$OMP PARALLEL WORKSHARE
     c = spread(a,dim=2,ncopies=size(b))*spread(b,dim=1,ncopies=size(a))
+    !$OMP END PARALLEL WORKSHARE
   end function outerprod_d
 
   pure function outerprod_r(a,b) result(c)
     real, intent(in), dimension(:) :: a,b
     real, dimension(size(a),size(b)) :: c
+    !$OMP PARALLEL WORKSHARE
     c = spread(a,dim=2,ncopies=size(b))*spread(b,dim=1,ncopies=size(a))
+    !$OMP END PARALLEL WORKSHARE
   end function outerprod_r
 
   pure function outerprod_z(a,b) result(c)
     use constants, only : DP
     complex(DP), intent(in), dimension(:) :: a,b
     complex(DP), dimension(size(a),size(b)) :: c
+    !$OMP PARALLEL WORKSHARE
     c = spread(a,dim=2,ncopies=size(b))*spread(b,dim=1,ncopies=size(a))
+    !$OMP END PARALLEL WORKSHARE
   end function outerprod_z
 
   pure function outerprod_dz(ca,db) result(c)
@@ -46,7 +52,9 @@ contains
     complex(DP), intent(in), dimension(:) :: ca
     real(DP), intent(in), dimension(:) :: db
     complex(DP), dimension(size(ca),size(db)) :: c
+    !$OMP PARALLEL WORKSHARE
     c = spread(ca,dim=2,ncopies=size(db))*spread(db,dim=1,ncopies=size(ca))
+    !$OMP END PARALLEL WORKSHARE
   end function outerprod_dz
 
   pure function outerprod_zd(da,cb) result(c)
@@ -54,7 +62,9 @@ contains
     real(DP), intent(in), dimension(:) :: da
     complex(DP), intent(in), dimension(:) :: cb
     complex(DP), dimension(size(da),size(cb)) :: c
+    !$OMP PARALLEL WORKSHARE
     c = spread(da,dim=2,ncopies=size(cb))*spread(cb,dim=1,ncopies=size(da))
+    !$OMP END PARALLEL WORKSHARE
   end function outerprod_zd
   
   ! ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  
@@ -95,9 +105,9 @@ contains
     rnum = real(num - 1,DP)
     range = abs(hi - lo) 
     sgn = sign(1.0_DP,hi-lo) ! if lo > high, count backwards
-    !$OMP WORKSHARE
+    !$OMP PARALLEL WORKSHARE
     forall (i=0:num-1) v(i+1) = lo + sgn*real(i,DP)*range/rnum
-    !$OMP END WORKSHARE
+    !$OMP END PARALLEL WORKSHARE
   end function linspace
 
   ! ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -133,14 +143,14 @@ contains
      integer :: i
      if (n >= 0) then
         ! diagonal in lower triangle (+) or main diag (0)
-        !$OMP WORKSHARE
+        !$OMP PARALLEL WORKSHARE
         forall (i=1:size(A,dim=1)-n) d(i) = A(i+n,i)
-        !$OMP END WORKSHARE
+        !$OMP END PARALLEL WORKSHARE
      else
         ! diagonal in upper triangle (-)
-        !$OMP WORKSHARE
+        !$OMP PARALLEL WORKSHARE
         forall (i=1:size(A,dim=1)+n) d(i) = A(i,i-n)
-        !$OMP END WORKSHARE
+        !$OMP END PARALLEL WORKSHARE
      end if
    end function diagonal_z
    
@@ -152,14 +162,14 @@ contains
      integer :: i
      if (n >= 0) then
         ! diagonal in lower triangle (+) or main diag (0)
-        !$OMP WORKSHARE
+        !$OMP PARALLEL WORKSHARE
         forall (i=1:size(A,dim=1)-n) d(i) = A(i+n,i)
-        !$OMP END WORKSHARE
+        !$OMP END PARALLEL WORKSHARE
      else
         ! diagonal in upper triangle (-)
-        !$OMP WORKSHARE
+        !$OMP PARALLEL WORKSHARE
         forall (i=1:size(A,dim=1)+n) d(i) = A(i,i-n)
-        !$OMP END WORKSHARE
+        !$OMP END PARALLEL WORKSHARE
      end if
    end function diagonal_d
 

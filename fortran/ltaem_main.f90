@@ -84,12 +84,12 @@ program ltaem_main
 
         nt(minlt:maxlt) = 1
 
-        !$OMP WORKSHARE
+        !$OMP PARALLEL WORKSHARE
         forall(lt = minlt:maxlt)
            tee(lt) = min(10.0**(lt + MOST_LOGT), maxval(part(:)%tf))*TMAX_MULT
            s(:,lt) = pvalues(tee(lt),sol%INVLT)
         end forall
-        !$OMP END WORKSHARE
+        !$OMP END PARALLEL WORKSHARE
 
         ! to make it possible for particles / contours to share code...
         maxlt = maxlt + 1
@@ -298,7 +298,7 @@ program ltaem_main
      open(unit=404,file='calcloc.vdebug',status='replace',action='write')
 #endif
 
-     !$OMP PARALLEL DO PRIVATE(i,j,calcZ,hp,vp,lt,lot,hit,lop,hip) SHARED(sol)
+     !$OMP PARALLEL DO PRIVATE(i,j,calcZ,hp,vp,lt,lot,hit,lop,hip) SHARED(s,tnp,dom,c,e,sol)
      do j = 1,sol%nx
 #ifdef OMP
         write (*,'(A,ES13.5,A,I0)') 'x: ',sol%x(j),'  thr=',OMP_get_thread_num()
@@ -341,6 +341,7 @@ program ltaem_main
      write(*,'(A)') 'compute solution for plotting hydrograph'
      allocate(sol%h(sol%nx,1,sol%nt), hp(tnp), sol%v(sol%nx,1,sol%nt,2), vp(tnp,2))
      
+     !$OMP PARALLEL DO PRIVATE(i,calcZ,hp,vp,lt,lot,hit,lop,hip) SHARED(s,tnp,dom,c,e,sol)
      do i = 1,sol%nx
         write(*,'(A,2(1X,ES14.7E1))') 'location:',sol%x(i),sol%y(i)
 
@@ -360,6 +361,7 @@ program ltaem_main
            sol%v(i,1,lot:hit,1:2) = invlap(sol%t(lot:hit),tee(lt),vp(lop:hip,1:2),sol%INVLT)
         end do
      end do
+     !$OMP END PARALLEL DO
   end if
 
   !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

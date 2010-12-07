@@ -41,21 +41,21 @@ contains
     ! starting at -PI (-x axis) continuing around the circle CCW.
     do i=1,nc
        allocate(c(i)%Pcm(c(i)%M))
-       !$OMP WORKSHARE
+       !$OMP PARALLEL WORKSHARE
        forall(j = 1:c(i)%M)
           c(i)%Pcm(j) = -PI + 2.0*PI/c(i)%M*real(j-1,DP)
        end forall
-       !$OMP END WORKSHARE
+       !$OMP END PARALLEL WORKSHARE
        
        c(i)%id = i ! global ID
     end do
     do i=1,ne
        allocate(e(i)%Pcm(e(i)%M))
-       !$OMP WORKSHARE
+       !$OMP PARALLEL WORKSHARE
        forall (j = 1:e(i)%M)
           e(i)%Pcm(j) = -PI + 2.0*PI/e(i)%M*real(j-1,DP)
        end forall
-       !$OMP END WORKSHARE
+       !$OMP END PARALLEL WORKSHARE
        
        e(i)%id = i+nc ! global ID
     end do
@@ -273,9 +273,7 @@ contains
        allocate(nondiag(ntot,ntot))
        ! logical mask for non-diagonal elements
        nondiag = .true. 
-       !$OMP WORKSHARE
        forall(i=1:ntot) nondiag(i,i) = .false.
-       !$OMP END WORKSHARE
 
        dom%InclIn = .false. !! dom%InclIn(0:ntot,1:ntot) logical
        dom%InclUp = huge(1) !! dom%InclUp(1:ntot)        integer
@@ -288,10 +286,8 @@ contains
        ! check centers of elements (rows = circles, columns = all elements)
        if (nc > 0) then
           allocate(Rcg(nc,ntot))
-          Rcg(1:nc,1:nc) =      abs(spread(cmplx(c%x,c%y,DP),1,nc) - &
-                                  & spread(cmplx(c%x,c%y,DP),2,nc))
-          Rcg(1:nc,nc+1:ntot) = abs(spread(cmplx(e%x,e%y,DP),1,nc) - &
-                                  & spread(cmplx(c%x,c%y,DP),2,ne))
+          Rcg(1:nc,1:nc) =      abs(spread(cmplx(c%x,c%y,DP),1,nc) - spread(cmplx(c%x,c%y,DP),2,nc))
+          Rcg(1:nc,nc+1:ntot) = abs(spread(cmplx(e%x,e%y,DP),1,nc) - spread(cmplx(c%x,c%y,DP),2,ne))
           
           ! nondiag handles zero distance-to-self case
           where (Rcg(1:nc,1:ntot) < spread(c(1:nc)%r,2,ntot) .and. nondiag(1:nc,1:ntot))
@@ -338,13 +334,11 @@ contains
        ! check centers of elements (rows = ellipses, columns = all elements)
        if (ne > 0) then
           allocate(Eeg(ne,ntot),Z(ne,ntot))
-          Z(1:ne,1:nc) =      spread(cmplx(c%x,c%y,DP),1,ne) - &
-                            & spread(cmplx(e%x,e%y,DP),2,nc)
+          Z(1:ne,1:nc) =      spread(cmplx(c%x,c%y,DP),1,ne) - spread(cmplx(e%x,e%y,DP),2,nc)
           Eeg(1:ne,1:nc) =      real(cacosh(Z(1:ne,1:nc)* &
                                   & spread(exp(-EYE*e%theta)/e%f,2,nc)))
 
-          Z(1:ne,nc+1:ntot) = spread(cmplx(e%x,e%y,DP),1,ne) - &
-                            & spread(cmplx(e%x,e%y,DP),2,ne)
+          Z(1:ne,nc+1:ntot) = spread(cmplx(e%x,e%y,DP),1,ne) - spread(cmplx(e%x,e%y,DP),2,ne)
           Eeg(1:ne,nc+1:ntot) = real(cacosh(Z(1:ne,nc+1:ntot)* &
                                   & spread(exp(-EYE*e%theta)/e%f,2,ne)))
           deallocate(Z)
@@ -390,11 +384,11 @@ contains
        R(1:nc) = c(1:nc)%r
        R(nc+1:ntot) = e(1:ne)%r  ! TODO : double-check that circ/ellip can be compared validly  
 
-       !$OMP WORKSHARE
+       !$OMP PARALLEL WORKSHARE
        forall (i=1:ntot, j=1:ntot, i/=j .and. dom%InclIn(i,j).and.dom%InclIn(j,i) .and. R(i)>R(j))
           dom%InclIn(i,j) = .false.
        end forall
-       !$OMP END WORKSHARE
+       !$OMP END PARALLEL WORKSHARE
 
        deallocate(R)
 
@@ -459,11 +453,9 @@ contains
        end do
        
        ! an element isn't in its own background (by convention)
-       !$OMP WORKSHARE
        forall (i=1:ntot)
           dom%InclBg(i,i) = .false.
        end forall
-       !$OMP END WORKSHARE
 
        deallocate(nest,iv)
 

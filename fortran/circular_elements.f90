@@ -63,18 +63,24 @@ contains
 
     allocate(r%LHS(nrows,ncols), r%RHS(nrows))
 
+    !$OMP PARALLEL WORKSHARE
     cmat(1:M,0:N-1) = cos(outer(c%Pcm(:),vi(0:N-1)))
     smat(1:M,1:N-1) = sin(outer(c%Pcm(:),vi(1:N-1)))
+    !$OMP END PARALLEL WORKSHARE
 
     ! setup LHS
     ! matching or specified total head
     if (c%ibnd == 0 .or. c%ibnd == -1) then
+       !$OMP PARALLEL WORKSHARE
        r%LHS(1:M,1:N) =       cmat(:,0:N-1)/c%parent%K ! a_n head
        r%LHS(1:M,N+1:2*N-1) = smat(:,1:N-1)/c%parent%K ! b_n head
+       !$OMP END PARALLEL WORKSHARE       
 
        if (c%ibnd == 0 .or. (c%ibnd == -1 .and. c%calcin)) then
+          !$OMP PARALLEL WORKSHARE
           r%LHS(1:M,2*N:3*N-1) = -cmat(:,0:N-1)/c%K ! c_n head
           r%LHS(1:M,3*N:4*N-2) = -smat(:,1:N-1)/c%K ! d_n head
+          !$OMP END PARALLEL WORKSHARE       
        end if
     end if
     
@@ -85,16 +91,20 @@ contains
        call dBK(kap*c%r,N,Bn(0:N-1),dBn(0:N-1))
        dBn(0:N-1) = kap*dBn(0:N-1)
 
+       !$OMP PARALLEL WORKSHARE
        r%LHS(loM:hiM,1:N) =       spread(dBn(0:N-1)/Bn(0:N-1),1,M)*cmat(:,0:N-1) ! a_n flux
        r%LHS(loM:hiM,N+1:2*N-1) = spread(dBn(1:N-1)/Bn(1:N-1),1,M)*smat(:,1:N-1) ! b_n flux
-       
+       !$OMP END PARALLEL WORKSHARE       
+
        if (c%ibnd == 0 .or. (c%ibnd == 1 .and. c%calcin)) then
           kap = kappa(p,c%element)
           call dBI(kap*c%r,N,Bn(0:N-1),dBn(0:N-1))
           dBn(0:N-1) = kap*dBn(0:N-1)
           
+          !$OMP PARALLEL WORKSHARE
           r%LHS(loM:hiM,2*N:3*N-1) = -spread(dBn(0:N-1)/Bn(0:N-1),1,M)*cmat(:,0:N-1) ! c_n flux
           r%LHS(loM:hiM,3*N:4*N-2) = -spread(dBn(1:N-1)/Bn(1:N-1),1,M)*smat(:,1:N-1) ! d_n flux
+          !$OMP END PARALLEL WORKSHARE
        end if
        deallocate(Bn,dBn)
     end if
@@ -196,8 +206,10 @@ contains
 
           allocate(Bn(M,0:N-1),Bn0(0:N-1),cmat(M,0:N-1),smat(M,N-1))
 
+          !$OMP PARALLEL WORKSHARE
           cmat(1:M,0:N-1) = cos(outer(c%G(targ)%Pgm(:), vi(0:N-1)))
           smat(1:M,1:N-1) = sin(outer(c%G(targ)%Pgm(:), vi(1:N-1)))
+          !$OMP END PARALLEL WORKSHARE
 
           ! setup LHS 
           ! $$$$$$$$$$ head effects of source (c) on target (el) $$$$$$$$$$
@@ -211,9 +223,11 @@ contains
                 Bn(1:M,0:N-1) = bK(kap*c%G(targ)%Rgm(:),N)
                 Bn0(0:N-1) =    bK(kap*c%r,N)
 
+                !$OMP PARALLEL WORKSHARE
                 ! head effects on outside of other element
                 r%LHS(1:M,1:N) =       Bn(:,0:N-1)/spread(Bn0(0:N-1),1,M)*cmat(:,0:N-1)/c%parent%K ! a_n
                 r%LHS(1:M,N+1:2*N-1) = Bn(:,1:N-1)/spread(Bn0(1:N-1),1,M)*smat(:,1:N-1)/c%parent%K ! b_n
+                !$OMP END PARALLEL WORKSHARE
 
                 ! outside is always in 1:2*N-1 slot
                 loN = 1
@@ -237,9 +251,11 @@ contains
                    hiN = 2*N-1
                 end if
 
+                !$OMP PARALLEL WORKSHARE
                 ! head effects on other element
                 r%LHS(1:M,loN:loN+N-1) = -Bn(:,0:N-1)/spread(Bn0(0:N-1),1,M)*cmat(:,0:N-1)/c%K ! c_n
                 r%LHS(1:M,loN+N:hiN)   = -Bn(:,1:N-1)/spread(Bn0(1:N-1),1,M)*smat(:,1:N-1)/c%K ! d_n
+                !$OMP END PARALLEL WORKSHARE
              end if
 
              if (c%ibnd == 2 .and. dom%inclBg(src,targ)) then
@@ -295,31 +311,38 @@ contains
                 end if
              end if
 
+             !$OMP PARALLEL WORKSHARE
              ! derivative wrt radius of source element
              dPot_dR(1:M,1:N) =       dBn(:,0:N-1)/spread(Bn0(0:N-1),1,M)*cmat(:,0:N-1)
              dPot_dR(1:M,N+1:2*N-1) = dBn(:,1:N-1)/spread(Bn0(1:N-1),1,M)*smat(:,1:N-1)
+             !$OMP END PARALLEL WORKSHARE
 
              if (el%ibnd == 2 .and. dom%inclBg(src,targ)) then
                 ! wellbore storage and skin from finite-radius well
                 dPot_dR(1:M,1) = storwell(c,p)*dPot_dR(:,1)
                 dPot_dP(1:M,1:2*N-1) = 0.0 ! wells have angular symmetry
              else
+                !$OMP PARALLEL WORKSHARE
                 ! derivative wrt angle of source element for more general circular elements
                 dPot_dP(1:M,1) = 0.0
                 dPot_dP(1:M,2:N) =      -Bn(:,1:N-1)*spread(vi(1:N-1)/Bn0(1:N-1),1,M)*smat(:,1:N-1)
                 dPot_dP(1:M,N+1:2*N-1) = Bn(:,1:N-1)*spread(vi(1:N-1)/Bn0(1:N-1),1,M)*cmat(:,1:N-1)
+                !$OMP END PARALLEL WORKSHARE
              end if
 
+             !$OMP PARALLEL WORKSHARE
              ! project these from cylindrical onto Cartesian coordinates
              dPot_dX(1:M,1:2*N-1) = dPot_dR*spread(cos(c%G(targ)%Pgm),2,2*N-1) - &
                                   & dPot_dP*spread(sin(c%G(targ)%Pgm)/c%G(targ)%Rgm,2,2*N-1)
              dPot_dY(1:M,1:2*N-1) = dPot_dR*spread(sin(c%G(targ)%Pgm),2,2*N-1) + &
                                   & dPot_dP*spread(cos(c%G(targ)%Pgm)/c%G(targ)%Rgm,2,2*N-1)
+             !$OMP END PARALLEL WORKSHARE
 
              ! project from Cartesian to "radial" coordinate of target element
              if (el%id <= dom%num(1)) then
                 ! other element is a circle
                 if (el%ibnd == 2) then
+                   !$OMP PARALLEL WORKSHARE
                    ! other element is a well with wellbore storage (Type III BC)
                    ! need head effects too
                    r%LHS(1:M,loN:loN+N-1) = Bn(:,0:N-1)/spread(Bn0(0:N-1),1,M)*cmat/K
@@ -332,6 +355,7 @@ contains
                    r%LHS(1:M,loN:hiN) = (r%LHS + (2.0 + el%r**2*el%dskin*p/el%parent%T)* &
                         & (dPot_dX*spread(cos(el%Pcm),2,2*N-1) + &
                         &  dPot_dY*spread(sin(el%Pcm),2,2*N-1)))
+                   !$OMP END PARALLEL WORKSHARE
                 else
                    ! other element is a 'normal' circular element without wellbore storage
                    r%LHS(loM:hiM,loN:hiN) = dPot_dX*spread(cos(el%Pcm),2,2*N-1) + &
@@ -464,6 +488,7 @@ contains
 
     ! if outside >> a_n is 1:N, b_n is N+1:2N-1 
 
+    !$OMP PARALLEL WORKSHARE
     aa(1:np,0:N-1) = c%coeff(lo:hi,n0:n0+N-1) ! a_n or c_n
     bb(1:np,0) = 0.0 ! make odd/even conformable
     bb(1:np,1:N-1) = c%coeff(lo:hi,n0+N:n0+2*N-2) ! b_n or d_n
@@ -471,6 +496,7 @@ contains
     H(1:np) = sum(BRgp(1:np,0:N-1)/BR0(1:np,0:N-1)* &
          & ( aa(1:np,0:N-1)*spread(cos(vr(0:N-1)*Pgp),1,np) + &
          &   bb(1:np,0:N-1)*spread(sin(vr(0:N-1)*Pgp),1,np) ),dim=2)
+    !$OMP END PARALLEL WORKSHARE
 
 !!$       ! TODO: add in area source term for matching too
 
@@ -517,6 +543,7 @@ contains
        BR0(1:np,0:N-1) =  bK(c%r*kap(:),N)
     end if
 
+    !$OMP PARALLEL WORKSHARE
     aa(1:np,0:N-1) = c%coeff(lo:hi,n0:n0+N-1)
     bb(1:np,0) = 0.0 ! make odd/even conformable
     bb(1:np,1:N-1) = c%coeff(lo:hi,n0+N:n0+2*N-2)
@@ -530,6 +557,7 @@ contains
     dH(1:np,2) = sum(BRgp(1:np,0:N-1)/BR0(1:np,0:N-1)*spread(vr(0:N-1),1,np)* &  
          & ( bb(1:np,0:N-1)*spread(cos(vr(0:N-1)*Pgp),1,np) - &
          &   aa(1:np,0:N-1)*spread(sin(vr(0:N-1)*Pgp),1,np) ),dim=2)    
+    !$OMP END PARALLEL WORKSHARE
 
 !!$       ! TODO: add in area source term for matching too
 

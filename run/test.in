@@ -24,7 +24,7 @@ True  False  True  2  test.xyz  dump.out  box.elem  test.geom    ::  re-compute 
 7.845983101501957657e-01
 8.856735688224002256e-01
 9.997697679981565333e-01
-1.0D-6  1.0D-8  20  :: alpha, tolerance, M
+1.0D-6  1.0D-8  24  :: alpha, tolerance, M
 2  box_circles.in     :: number of circular elements, circular elements input file
 4  box_ellipses.in    :: number of elliptical elements, elliptical elements input file
 file_not_used     :: particle inputs file
