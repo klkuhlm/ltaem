@@ -16,10 +16,8 @@ program ltaem_main
   use geometry, only : distanceAngleCalcs
   use ellipse_mathieu_init, only : ellipse_init
 
-#ifdef OMP
-  ! for parallel execution using OpenMP
-  use omp_lib, only : omp_get_thread_num
-#endif
+!!$  !!  for parallel execution using OpenMP
+!!$  !$  use omp_lib, only : omp_get_thread_num, omp_get_num_procs, omp_get_max_threads
 
   implicit none
   type(domain)  :: dom
@@ -58,6 +56,9 @@ program ltaem_main
      sol%infname = 'input.in'
   end if
 
+!!$  !! some parallel-related statistics
+!!$  !$ write(*,'(2(A,I0))') 'OpenMP num procs:',omp_get_num_procs(), ' OpenMP max threads:',omp_get_max_threads()
+
   ! read in data, initialize variables, allocate major structs
   call readInput(sol,dom,bg,c,e,part)
   nc = size(c,dim=1)
@@ -84,12 +85,10 @@ program ltaem_main
 
         nt(minlt:maxlt) = 1
 
-        !$OMP PARALLEL WORKSHARE
         forall(lt = minlt:maxlt)
            tee(lt) = min(10.0**(lt + MOST_LOGT), maxval(part(:)%tf))*TMAX_MULT
            s(:,lt) = pvalues(tee(lt),sol%INVLT)
         end forall
-        !$OMP END PARALLEL WORKSHARE
 
         ! to make it possible for particles / contours to share code...
         maxlt = maxlt + 1
@@ -261,7 +260,7 @@ program ltaem_main
      tmpfname = 'calc_part_    .debug'
 #endif
 
-     !$OMP PARALLEL DO PRIVATE(j) SHARED(part)
+     !$OMP PARALLEL DO 
      do j = 1, sol%nPart
 
 #ifdef DEBUG
@@ -298,13 +297,10 @@ program ltaem_main
      open(unit=404,file='calcloc.vdebug',status='replace',action='write')
 #endif
 
-     !$OMP PARALLEL DO PRIVATE(i,j,calcZ,hp,vp,lt,lot,hit,lop,hip) SHARED(s,tnp,dom,c,e,sol)
+     !$OMP PARALLEL DO PRIVATE(calcZ,hp,vp,lot,hit,lop,hip) 
      do j = 1,sol%nx
-#ifdef OMP
-        write (*,'(A,ES13.5,A,I0)') 'x: ',sol%x(j),'  thr=',OMP_get_thread_num()
-#else
+!!$        !$ write (*,'(I0,1X)',advance="no") OMP_get_thread_num() 
         write (*,'(A,ES13.5)') 'x: ',sol%x(j) 
-#endif
         do i = 1,sol%ny
 
            calcZ = cmplx(sol%x(j),sol%y(i),DP)
@@ -341,7 +337,7 @@ program ltaem_main
      write(*,'(A)') 'compute solution for plotting hydrograph'
      allocate(sol%h(sol%nx,1,sol%nt), hp(tnp), sol%v(sol%nx,1,sol%nt,2), vp(tnp,2))
      
-     !$OMP PARALLEL DO PRIVATE(i,calcZ,hp,vp,lt,lot,hit,lop,hip) SHARED(s,tnp,dom,c,e,sol)
+     !$OMP PARALLEL DO PRIVATE(calcZ,hp,vp,lot,hit,lop,hip) 
      do i = 1,sol%nx
         write(*,'(A,2(1X,ES14.7E1))') 'location:',sol%x(i),sol%y(i)
 

@@ -157,10 +157,8 @@ contains
     complex(DP), dimension(2*lap%M+1) :: p
     integer :: i
 
-    !$OMP PARALLEL WORKSHARE
     forall (i=0:2*lap%M)
        p(i+1) = cmplx(lap%alpha - log(lap%tol)/(2.0*tee), PI*i/tee, DP)
     end forall
-    !$OMP END PARALLEL WORKSHARE
   end function deHoog_pvalues
 end module inverse_Laplace_Transform

@@ -80,7 +80,6 @@ contains
        n = -flag
        allocate(ti(n),Q(0:n))
 
-       !$OMP PARALLEL WORKSHARE
        ! unpack initial times, pumping rates and final time
        ti(1:n) = par(1:n)
        tf = par(n+1)
@@ -90,7 +89,6 @@ contains
        mult(1:np) = (sum(spread(Q(1:n) - Q(0:n-1),2,np)*&
             & exp(-outer(ti(1:n),p(1:np))),dim=1) - &
             & sum(Q(1:n) - Q(0:n-1))*exp(-tf*p(:)))/p(:)
-       !$OMP END PARALLEL WORKSHARE
 
        deallocate(ti,Q)
     end select

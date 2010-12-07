@@ -421,7 +421,6 @@ contains
     vs = -1.0 ! sign vector
     where (mod(vi,2)==0) vs = 1.0
 
-    !$OMP PARALLEL WORKSHARE
     arg(1:MS,1:nmax) = spread(vs(0:MS-1)/real(1-(2*vi(0:MS-1))**2,DP),2,nmax)
     
     ! factor of 4 different from Kuhlman&Neuman paper
@@ -429,7 +428,6 @@ contains
     a2n(1:nmax) = time(p,e%time,.false.)*e%bdryQ/(2.0*PI)* &
             & Ke(e%parent%mat(idx), vi(0:N-1:2), e%r) / dKe(e%parent%mat(idx), vi(0:N-1:2), e%r)* &
             & (-vs(0:N-1:2))*sum(arg(1:MS,1:nmax)*conjg(e%parent%mat(idx)%A(1:MS,0:nmax-1,0)),dim=1)
-    !$OMP END PARALLEL WORKSHARE
     
   end function line
   

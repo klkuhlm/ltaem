@@ -24,10 +24,8 @@ contains
     np = size(p)
     if (el%leakFlag /= 0) then
        allocate(kap2(np),exp2z(np))
-       !$OMP PARALLEL WORKSHARE
        kap2(1:np) = sqrt(p(:)*el%aquitardSs/el%aquitardK)
        exp2z(1:np) = exp(-2.0*kap2(:)*el%aquitardb)
-       !$OMP END PARALLEL WORKSHARE
     end if
     
     !! leaky-ness
@@ -66,7 +64,7 @@ contains
   end function kappa_pVect
   
   !! scalar version useful in matching
-  function kappa_pscal(p,el) result(q)
+  pure function kappa_pscal(p,el) result(q)
     use constants, only : DP
     use type_definitions, only : element
     complex(DP), intent(in) :: p
