@@ -10,9 +10,9 @@ KKLOW=utility.o bessel_functions.o mathieu_functions2.o
 #BLASLIB=/home/kris/src/lapack-3.3.0/blas_LINUX.a
 
 ##work linux desktop ##########
-LAPACKLIB=/home/klkuhlm/src/lapack-3.3.0/lapack_LINUX.a
-BLASLIB=/home/klkuhlm/src/lapack-3.3.0/blas_LINUX.a
-#LAPACKLIB=/opt/intel/mkl/10.0.3.020/lib/em64t/libmkl_lapack.a
+#LAPACKLIB=/home/klkuhlm/src/lapack-3.3.0/lapack_LINUX.a
+#BLASLIB=/home/klkuhlm/src/lapack-3.3.0/blas_LINUX.a
+LAPACKLIB=/opt/intel/mkl/10.0.3.020/lib/em64t/libmkl_lapack.a
 
 ### for intel compiler
 ##################################
@@ -28,18 +28,18 @@ MAIN=ltaem_main.o
 TARG=ltaem
 OBJS=$(EXTERNAL) constants.o $(KKLOW) type_definitions.o $(KKHIGH)
 
-############## ifort 11.1 ##########
+################ ifort 11.1 ##########
 ##F90=ifort
 ##OMP=-openmp 
 ##CPP=-cpp
 ##DFLAGS=-O0 -g -traceback -warn all -check bounds -check pointers -check uninit -check format -check output_conversion
 ###DFLAGS=-O0 -g -traceback -warn all -check all
 ##DFLAGS+=$(CPP) #-DDEBUG
-##PFLAGS=$(CPP)  -xHOST -O3 -ipo # $(OMP)
+##PFLAGS=$(CPP)  -xHOST -O3 $(OMP)
 ##LINKFLAG=$(DFLAGS) $(OMP)
-#######################################
+#########################################
 
-#### gfortran #################
+## gfortran #################
 F90=gfortran-4.6
 OMP=-fopenmp 
 CPP=-cpp
@@ -49,7 +49,7 @@ DFLAGS+=$(CPP) #-DDEBUG
 ##DFLAGS+=-fdump-rtl-expand
 PFLAGS=-O2 $(CPP) -march=native  $(OMP) 
 LINKFLAG=$(PFLAGS) 
-###################################
+#################################
 
 # switch between performance or debugging flags
 FLAGS=$(PFLAGS)
