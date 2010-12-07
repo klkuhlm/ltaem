@@ -134,14 +134,12 @@ contains
        allocate(work(33*bigN))       
     end if
 
-    !$OMP PARALLEL WORKSHARE
     forall (i=1:ntot)
        row(i,0) = 1 + sum(row(1:i-1,1))  ! lower bound
        row(i,2) = sum(row(1:i,1))        ! upper bound
        col(i,0) = 1 + sum(col(1:i-1,1))
        col(i,2) = sum(col(1:i,1))
     end forall
-    !$OMP END PARALLEL WORKSHARE
 
 #ifdef DEBUG
     print '(A,I0,1X,I0)','shape(res): ',shape(res)

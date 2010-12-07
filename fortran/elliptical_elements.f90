@@ -95,10 +95,8 @@ contains
           dRMn(1:N-1,1) = dKo(f%mat(i), vi(1:N-1), e%r) ! odd deriv
           dRMn(0,1) = 0.0
 
-          !$OMP PARALLEL WORKSHARE
           r%LHS(loM:hiM,1:N) =       spread(dRMn(0:N-1,0)/RMn(0:N-1,0), 1,M)*cemat(:,0:N-1,0) ! a_n flux
           r%LHS(loM:hiM,N+1:2*N-1) = spread(dRMn(1:N-1,1)/RMn(1:N-1,1), 1,M)*semat(:,1:N-1,0) ! b_n flu
-          !$OMP END PARALLEL WORKSHARE
 
           if (e%ibnd == 0 .or. (e%ibnd == 1 .and. e%calcin)) then
              RMn(0:N-1,0) =   Ie(e%mat(i), vi(0:N-1), e%r)
@@ -108,10 +106,8 @@ contains
              dRMn(1:N-1,1) = dIo(e%mat(i), vi(1:N-1), e%r)
              dRMn(0,1) = 0.0
 
-             !$OMP PARALLEL WORKSHARE
              r%LHS(loM:hiM,2*N:3*N-1) = -spread(dRMn(0:N-1,0)/RMn(0:N-1,0), 1,M)*cemat(:,0:N-1,1) ! c_n flux
              r%LHS(loM:hiM,3*N:4*N-2) = -spread(dRMn(1:N-1,1)/RMn(1:N-1,1), 1,M)*semat(:,1:N-1,1) ! d_n flux
-             !$OMP END PARALLEL WORKSHARE
           end if
           deallocate(RMn,dRMn)
        end if
@@ -213,11 +209,9 @@ contains
                 ! odd functions not needed for line source, but computed anyway
                 K = f%K
 
-                !$OMP PARALLEL WORKSHARE
                 ! head effects due to ellipse on outside other element
                 r%LHS(1:M,1:N) =       RMn(:,0:N-1,0)/spread(RMn0(0:N-1,0),1,M)*cemat(:,0:N-1)/f%K ! a_n
                 r%LHS(1:M,N+1:2*N-1) = RMn(:,1:N-1,1)/spread(RMn0(1:N-1,1),1,M)*semat(:,1:N-1)/f%K ! b_n
-                !$OMP END PARALLEL WORKSHARE
 
                 loN = 1
                 hiN = 2*N-1
@@ -246,11 +240,9 @@ contains
                    hiN = 2*N-1
                 end if
 
-                !$OMP PARALLEL WORKSHARE
                 ! head effects due to ellipse on inside other element
                 r%LHS(1:M,loN:loN+N-1) = -RMn(:,0:N-1,0)/spread(RMn0(0:N-1,0),1,M)*cemat(:,0:N-1)/K ! c_n
                 r%LHS(1:M,loN+N:hiN)   = -RMn(:,1:N-1,1)/spread(RMn0(1:N-1,1),1,M)*semat(:,0:N-1)/K ! d_n
-                !$OMP END PARALLEL WORKSHARE
              end if
 
 #ifdef DEBUG             
@@ -327,7 +319,6 @@ contains
              print '(2(A,ES10.2E3))', '|DRMn|   max',maxval(abs(dRMn(:,1:,:))),' min',minval(abs(dRMn(:,1:,:)))
 #endif
 
-             !$OMP PARALLEL WORKSHARE
              ! derivative wrt radius of source element
              dPot_dR(1:M,1:N) =       dRMn(:,0:N-1,0)/spread(RMn0(0:N-1,0),1,M)*cemat(:,0:N-1)
              dPot_dR(1:M,N+1:2*N-1) = dRMn(:,1:N-1,1)/spread(RMn0(1:N-1,1),1,M)*semat(:,1:N-1)
@@ -335,19 +326,16 @@ contains
              ! derivative wrt angle of source element 
              dPot_dP(1:M,1:N) =       RMn(:,0:N-1,0)/spread(RMn0(0:N-1,0),1,M)*dcemat(:,0:N-1)
              dPot_dP(1:M,N+1:2*N-1) = RMn(:,1:N-1,1)/spread(RMn0(1:N-1,1),1,M)*dsemat(:,1:N-1)
-             !$OMP END PARALLEL WORKSHARE
 
              ! project these from elliptical onto Cartesian coordinates
              allocate(hsq(size(e%G(t)%Rgm),2*N-1))
 
-             !$OMP PARALLEL WORKSHARE
              ! squared metric factor -- less a common f
              hsq = spread(e%f/2.0*(cosh(2.0*e%G(t)%Rgm) - cos(2.0*e%G(t)%Pgm)),2,2*N-1) 
              dPot_dX = (dPot_dR*spread(sinh(e%G(t)%Rgm)*cos(e%G(t)%Pgm),2,2*N-1) - &
                       & dPot_dP*spread(cosh(e%G(t)%Rgm)*sin(e%G(t)%Pgm),2,2*N-1))/hsq
              dPot_dY = (dPot_dR*spread(cosh(e%G(t)%Rgm)*sin(e%G(t)%Pgm),2,2*N-1) + &
                       & dPot_dP*spread(sinh(e%G(t)%Rgm)*cos(e%G(t)%Pgm),2,2*N-1))/hsq
-             !$OMP END PARALLEL WORKSHARE
 
              ! rotate to compensate for potentially arbitrary source ellipse
              call rotate_vel_mat(dPot_dX,dPot_dY,e%theta)
@@ -489,12 +477,10 @@ contains
        end do
     end if
 
-    !$OMP PARALLEL WORKSHARE
     aa(1:np,0:N-1) = e%coeff(lo:hi,n0:n0+N-1)
     bb(1:np,1:N-1) = e%coeff(lo:hi,n0+N:n0+2*N-2)
     H(1:np) = sum(RMRgp(1:np,0:N-1,0)/RMR0(1:np,0:N-1,0)*aa(1:np,0:N-1)*AM(1:np,0:N-1,0), 2) + &
             & sum(RMRgp(1:np,1:N-1,1)/RMR0(1:np,1:N-1,1)*bb(1:np,1:N-1)*AM(1:np,1:N-1,1), 2)
-    !$OMP END PARALLEL WORKSHARE
 
 !!$       ! TODO: add in area source term for matching too
 
@@ -567,14 +553,13 @@ contains
        end do
     end if
 
-    !$OMP PARALLEL WORKSHARE
     aa(1:np,0:N-1) = e%coeff(lo:hi,n0:n0+N-1)
     bb(1:np,1:N-1) = e%coeff(lo:hi,n0+N:n0+2*N-2)
     dH(1:np,1) = sum(dRMRgp(1:np,0:N-1,0)/RMR0(1:np,0:N-1,0)*aa(1:np,0:N-1)*AM(1:np,0:N-1,0), 2) + &
                & sum(dRMRgp(1:np,1:N-1,1)/RMR0(1:np,1:N-1,1)*bb(1:np,1:N-1)*AM(1:np,1:N-1,1), 2)
     dH(1:np,2) = sum(RMRgp(1:np,0:N-1,0)/RMR0(1:np,0:N-1,0)*aa(1:np,0:N-1)*dAM(1:np,0:N-1,0), 2) + &
                & sum(RMRgp(1:np,1:N-1,1)/RMR0(1:np,1:N-1,1)*bb(1:np,1:N-1)*dAM(1:np,1:N-1,1), 2)
-    !$OMP END PARALLEL WORKSHARE
+
 
 !!$       ! TODO: add in area source term for matching too
 

@@ -152,7 +152,7 @@ contains
     
     ! off diagonals
     forall(i=1:m, j=1:m, j==i+1 .or. j==i-1) Coeff(i,j) = q
-    !$OMP END PARALLEL WORKSHARE        
+    !$OMP END PARALLEL WORKSHARE
 
     ! special case
     Coeff(2,1) = 2.0_DP*q
@@ -166,11 +166,11 @@ contains
     if (info /= 0) write (*,'(A,I0,A)') "ZGEEV ERROR ",info, &
          &" calculating even coefficients of even order"
 
+    !$OMP PARALLEL WORKSHARE
     ! Morse norm  ce_2n(psi=0)
     w = sum(spread(vi(1:M),2,M)*mat%A(:,:,0),dim=1)
-    
-    ! normalize so |ce_2n(psi=0)| = +1
     mat%A(:,:,0) = mat%A(:,:,0)/spread(w,1,m)
+    !$OMP END PARALLEL WORKSHARE
 
     !$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
     ! even coefficients (a) of odd order
@@ -191,11 +191,11 @@ contains
     if (info /= 0) write(*,'(A,I0,A)') "ZGEEV ERROR ",info, &
          &" calculating even coefficients of odd order"
 
+    !$OMP PARALLEL WORKSHARE
     ! se'_2n+1(psi=0)
     w = sum(spread((2*v(0:M-1)+1)*vi(0:M-1),2,m)*mat%A(:,:,1),dim=1)
-    
-    ! normalize so |se'_2n+1(psi=0)|=+1
     mat%A(:,:,1) = mat%A(:,:,1)/spread(w,1,m)
+    !$OMP END PARALLEL WORKSHARE
 
     !$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
     ! odd coefficients (b) of even order
@@ -217,11 +217,11 @@ contains
     if (info /= 0) write (*,'(A,I0,A)') "ZGEEV ERROR ",info, &
          &" calculating odd coefficients of even order"
 
+    !$OMP PARALLEL WORKSHARE
     ! ce_2n+2(psi=0)
     w = sum(spread((2*v(0:M-1)+2)*vi(0:M-1),dim=2,ncopies=m)*mat%B(:,:,0),dim=1)
-
-    ! normalize so |ce_2n+2(psi=0)| = +1
     mat%B(:,:,0) = mat%B(:,:,0)/spread(w,1,m)
+    !$OMP END PARALLEL WORKSHARE
 
     !$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
     ! odd coefficients (b) of odd order
@@ -242,10 +242,11 @@ contains
     if (info /= 0) write (*,'(A,I0,A)') "ZGEEV ERROR ",info, &
          &" calculating odd coefficients of odd order"
 
+    !$OMP PARALLEL WORKSHARE
     ! ce_2n+1(psi=0)
     w = sum(mat%B(:,:,1)*spread(vi(0:M-1),2,M),dim=1)
-    
     mat%B(:,:,1) = mat%B(:,:,1)/spread(w,1,m)
+    !$OMP END PARALLEL WORKSHARE
 
     deallocate(coeff,rwork,w,work)
 
@@ -1086,6 +1087,7 @@ contains
 
     call check_cutoff(mf,n)
 
+    !$OMP PARALLEL WORKSHARE
     ! compute vector of integers counting up
     forall (j=0:mf%m-1) i(j+1) = j
     v = real(i,DP) 
@@ -1099,6 +1101,8 @@ contains
 
     EV = pack(nn,mod(n,2)==0)
     OD = pack(nn,mod(n,2)==1)
+    !$OMP END PARALLEL WORKSHARE
+
   end subroutine angfcnsetup
 
   subroutine radfcnsetup(mf,n,z,sqrtq,v1,v2,v,vi,EV,OD)
@@ -1117,6 +1121,7 @@ contains
 
     call check_cutoff(mf,n)
 
+    !$OMP PARALLEL WORKSHARE
     ! compute vector of integers counting up
     forall (j=0:mf%m-1) i(j+1) = j
     v = real(i,DP)
@@ -1134,6 +1139,8 @@ contains
 
     EV = pack(nn,mod(n,2)==0)
     OD = pack(nn,mod(n,2)==1)
+    !$OMP END PARALLEL WORKSHARE
+
   end subroutine radfcnsetup
 
   subroutine radderivfcnsetup(mf,n,z,sqrtq,v1,v2,enz,epz,v,vi,EV,OD)
@@ -1153,6 +1160,7 @@ contains
 
     call check_cutoff(mf,n)
 
+    !$OMP PARALLEL WORKSHARE
     ! compute vector of integers counting up
     forall (j=0:mf%m-1) i(j+1) = j
     v = real(i,DP)
@@ -1172,6 +1180,8 @@ contains
 
     EV = pack(nn,mod(n,2)==0)
     OD = pack(nn,mod(n,2)==1)
+    !$OMP END PARALLEL WORKSHARE
+
   end subroutine radderivfcnsetup
 
   !! &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&

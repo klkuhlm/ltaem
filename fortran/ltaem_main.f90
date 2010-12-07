@@ -16,8 +16,8 @@ program ltaem_main
   use geometry, only : distanceAngleCalcs
   use ellipse_mathieu_init, only : ellipse_init
 
-!!$  !!  for parallel execution using OpenMP
-!!$  !$  use omp_lib, only : omp_get_thread_num, omp_get_num_procs, omp_get_max_threads
+  !!  for parallel execution using OpenMP
+  !$  use omp_lib, only : omp_get_thread_num, omp_get_num_procs, omp_get_max_threads
 
   implicit none
   type(domain)  :: dom
@@ -56,8 +56,8 @@ program ltaem_main
      sol%infname = 'input.in'
   end if
 
-!!$  !! some parallel-related statistics
-!!$  !$ write(*,'(2(A,I0))') 'OpenMP num procs:',omp_get_num_procs(), ' OpenMP max threads:',omp_get_max_threads()
+  !! some parallel-related statistics
+  !$ write(*,'(2(A,I0))') 'OpenMP num procs:',omp_get_num_procs(), ' OpenMP max threads:',omp_get_max_threads()
 
   ! read in data, initialize variables, allocate major structs
   call readInput(sol,dom,bg,c,e,part)
@@ -260,7 +260,7 @@ program ltaem_main
      tmpfname = 'calc_part_    .debug'
 #endif
 
-     !$OMP PARALLEL DO 
+     !$OMP PARALLEL DO SHARED(part,sol)
      do j = 1, sol%nPart
 
 #ifdef DEBUG
@@ -297,9 +297,9 @@ program ltaem_main
      open(unit=404,file='calcloc.vdebug',status='replace',action='write')
 #endif
 
-     !$OMP PARALLEL DO PRIVATE(calcZ,hp,vp,lot,hit,lop,hip) 
+     !$OMP PARALLEL DO PRIVATE(calcZ,hp,vp,lot,hit,lop,hip) SHARED(sol)
      do j = 1,sol%nx
-!!$        !$ write (*,'(I0,1X)',advance="no") OMP_get_thread_num() 
+        !$ write (*,'(I0,1X)',advance="no") OMP_get_thread_num() 
         write (*,'(A,ES13.5)') 'x: ',sol%x(j) 
         do i = 1,sol%ny
 
@@ -337,7 +337,7 @@ program ltaem_main
      write(*,'(A)') 'compute solution for plotting hydrograph'
      allocate(sol%h(sol%nx,1,sol%nt), hp(tnp), sol%v(sol%nx,1,sol%nt,2), vp(tnp,2))
      
-     !$OMP PARALLEL DO PRIVATE(calcZ,hp,vp,lot,hit,lop,hip) 
+     !$OMP PARALLEL DO PRIVATE(calcZ,hp,vp,lot,hit,lop,hip) SHARED(sol)
      do i = 1,sol%nx
         write(*,'(A,2(1X,ES14.7E1))') 'location:',sol%x(i),sol%y(i)
 

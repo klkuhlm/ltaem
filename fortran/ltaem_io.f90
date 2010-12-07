@@ -587,12 +587,10 @@ contains
     ! compute secondary parameters
     bg%alpha = bg%K/bg%Ss
     bg%T = bg%K*bg%b
-    !$OMP PARALLEL WORKSHARE
     c(:)%alpha = c(:)%K/c(:)%Ss
     e(:)%alpha = e(:)%K/e(:)%Ss
     c(:)%T = c(:)%K*c(:)%b
     e(:)%T = e(:)%K*e(:)%b
-    !$OMP END PARALLEL WORKSHARE
 
     write(chint,'(I4.4)') dom%num(1)
     fmt(2) = '('//chint//'(ES11.5,1X),A) ' ! circles
