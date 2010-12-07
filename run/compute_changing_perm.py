@@ -1,7 +1,5 @@
 import numpy as np
 import subprocess
-import matplotlib.pyplot as plt
-##import matplotlib.colors as clr
 
 PIPE = subprocess.PIPE
 
@@ -9,7 +7,7 @@ nk = 18
 nrows = 40
 ncols = 40
 
-kvec = np.logspace(-10,0,nk)[::-1] # permeability (large to small)
+kvec = np.logspace(-9,0,nk)[::-1] # permeability (large to small)
 theta = np.pi/4.0
 
 # want one corner of line to stay in same place as line grows
@@ -28,20 +26,18 @@ pltx = np.zeros((nrows,ncols))
 plty = np.zeros((nrows,ncols))
 out = np.zeros((nrows,ncols,nk,3),np.float64)
 
-# how to vary N and ms with kappa???
-N = 10
-##cutoff = 1.0E-6
 
-for cutoff in np.logspace(-9,-3,3):
-   for j,(x,y,k) in enumerate(zip(xc,yc,kvec)):
-      passed = False
-   
-      # start small, increase matrix size until stop failing for a given cutoff
-      for ms in range(10,140,2):
-         
-         if not passed:
-            fel = open('single_line_ellipses.in','w')
-            fel.write("""%i :: N
+for N in [6,8,10,12]:
+   for cutoff in np.logspace(-8,-4,3):
+      for j,(x,y,k) in enumerate(zip(xc,yc,kvec)):
+         passed = False
+      
+         # start small, increase matrix size until stop failing for a given cutoff
+         for ms in range(10,160,2):
+            
+            if not passed:
+               fel = open('single_line_ellipses.in','w')
+               fel.write("""%i :: N
 22 :: M
 %i  :: ms
 2  :: ibnd
@@ -69,10 +65,10 @@ False :: unconfined?
 1.0D0  :: b
 1.0D0 :: dimensionless skin
 """ % (N,ms,x,y,theta))
-            fel.close()
+               fel.close()
    
-            fin = open('single_line.in','w')
-            fin.write("""True  False  True  1  single_line_contour.xyz  dump.out  single_well.elem  single_well.geom    ::  re-compute coefficients?, particle?, contour?, output flag, outputFN, coeffFN (output), elementHierarchy (input), geometryFN (output)
+               fin = open('single_line.in','w')
+               fin.write("""True  False  True  1  single_line_contour.xyz  dump.out  single_well.elem  single_well.geom    ::  re-compute coefficients?, particle?, contour?, output flag, outputFN, coeffFN (output), elementHierarchy (input), geometryFN (output)
 2.0D-1  %.22e  1.0D-4   0  1.0D0  1.0D-4  1.0D0  %i  %.22e ::  por, k, Ss, leakFlag, K2, Ss2, b2, ellipse MS, ellipse cutoff
 1.5D-1  2.0D0  False  1.0  :: Sy, Kz, unconfined?, b
 40  40  1  :: nx, ny, nt
@@ -84,75 +80,43 @@ False :: unconfined?
 1  single_line_ellipses.in      :: number of elliptical elements, elliptical elements input file
 file_not_used     :: particle inputs file
 """ % (k,ms,cutoff))
-            fin.close()
+               fin.close()
    
-            (stdout,stderr) = subprocess.Popen(['./ltaem','single_line.in'],
-                                            stdout=PIPE,stderr=PIPE).communicate()
+               (stdout,stderr) = subprocess.Popen(['./ltaem','single_line.in'],
+                                                  stdout=PIPE,stderr=PIPE).communicate()
    
 #            fout = open('screen_j%3.3i_ms%3.3i_k%.2f.dbg' % (j,ms,np.log10(k)),'w')
 #            fout.write(stdout)
 #            fout.close()
    
-            if ('not large enough to meet tolerance' in stdout):
-               # error occurs in initialization routine
-               val = stdout.split('\n')[2].split('(')[1].rstrip(')').split(',')
-               q = np.complex(float(val[0]),float(val[1]))
-            else:
-               # error occurs when computing mathieu functions
-               nq = int(stdout.split('\n')[0].split()[1])
-               qlines = stdout.split('\n')[3:3+nq]
-               qstrs = [line.lstrip('(').rstrip(')').split(',') for line in qlines]
-               q = [np.complex(float(row[0]),float(row[1])) for row in qstrs]
-   
-            if ('CHECK_CUTOFF' not in stderr) and ('not large enough to meet tolerance' not in stdout):
-               print  '%i,%.7e,%.7e,%i,%7e,passed' % (j,k,np.abs(q).max(),ms,cutoff)
-      
-               if 'gnuplot contour map style output' in stdout:
-                  if j == 0:
-                     pltx = np.loadtxt('single_line_contour.xyz',skiprows=7)[:,0].reshape((nrows,ncols))
-                     plty = np.loadtxt('single_line_contour.xyz',skiprows=7)[:,1].reshape((nrows,ncols))
-      
-                  for kk in range(3):
-                     out[:,:,j,kk] = np.loadtxt('single_line_contour.xyz',skiprows=7)[:,2+kk].reshape((nrows,ncols))
+               if ('not large enough to meet tolerance' in stdout):
+                  # error occurs in initialization routine
+                  val = stdout.split('\n')[2].split('(')[1].rstrip(')').split(',')
+                  q = np.complex(float(val[0]),float(val[1]))
                else:
-                  print 'STDOUT::\n',stdout
-                  print 'STDERR::\n',stderr
-   
-               passed = True
-            else:
-               print '%i,%.7e,%.7e,%i,%7e,failed' % (j,k,np.abs(q).max(),ms,cutoff)
-               passed = False
+                  # error occurs when computing mathieu functions
+                  nq = int(stdout.split('\n')[0].split()[1])
+                  qlines = stdout.split('\n')[3:3+nq]
+                  qstrs = [line.lstrip('(').rstrip(')').split(',') for line in qlines]
+                  q = [np.complex(float(row[0]),float(row[1])) for row in qstrs]
+      
+               if ('CHECK_CUTOFF' not in stderr) and ('not large enough to meet tolerance' not in stdout):
+                  print  '%i,%.7e,%.7e,%i,%7e,passed,%i' % (j,k,np.abs(q).max(),ms,cutoff,N)
+         
+                  if 'gnuplot contour map style output' in stdout:
+                     if j == 0:
+                        pltx = np.loadtxt('single_line_contour.xyz',skiprows=7)[:,0].reshape((nrows,ncols))
+                        plty = np.loadtxt('single_line_contour.xyz',skiprows=7)[:,1].reshape((nrows,ncols))
+         
+                     for kk in range(3):
+                        out[:,:,j,kk] = np.loadtxt('single_line_contour.xyz',skiprows=7)[:,2+kk].reshape((nrows,ncols))
+                  else:
+                     print 'STDOUT::\n',stdout
+                     print 'STDERR::\n',stderr
+      
+                  passed = True
+               else:
+                  print '%i,%.7e,%.7e,%i,%7e,failed,%i' % (j,k,np.abs(q).max(),ms,cutoff,N)
+                  passed = False
 
-#nrm = clr.Normalize(vmin=0.0,vmax=out[:,:,0,0].max()) # use same colorscale across all plots
-   
-##plt.figure(1,figsize=(28,21))
-##for r in range(3):
-##    for c in range(4):
-##        idx = 4*r + c
-##
-##        plt.subplot(3,4,idx+1)
-##        plt.contourf(pltx,plty,out[:,:,idx,0],20)
-##        plt.plot([x0,x1[idx]],[y0,y1[idx]],'k-')
-##        plt.axis('image')
-##        plt.axis([0,1.1,0,1.1])
-##        plt.colorbar(shrink=0.5)
-##        plt.title('f=%.2e' % (fvec[idx]))
-##
-##plt.savefig('compare-lines-head.png')
-##plt.close(1)
-##
-##plt.figure(1,figsize=(26,21))
-##for r in range(3):
-##    for c in range(4):
-##        idx = 4*r + c
-##
-##        plt.subplot(3,4,idx+1)
-##        plt.quiver(pltx,plty,out[:,:,idx,1],out[:,:,idx,2])
-##        ax = plt.axis()
-##        plt.plot([x0,x1[idx]],[y0,y1[idx]],'k-')
-##        plt.axis('image')
-##        plt.axis([0,1.1,0,1.1])
-##        plt.title('f=%.2e' % (fvec[idx]))
-##
-##plt.savefig('compare-lines-vec.png')
 

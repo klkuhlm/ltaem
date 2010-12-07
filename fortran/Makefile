@@ -6,12 +6,12 @@ KKLOW=utility.o bessel_functions.o mathieu_functions2.o
 #BLASLIB=/Users/klkuhlm/src/lapack-3.2.1/blas_MAC.a
 
 ##home linux desktop ##########
-LAPACKLIB=/home/kris/src/lapack-3.3.0/lapack_LINUX.a
-BLASLIB=/home/kris/src/lapack-3.3.0/blas_LINUX.a
+#LAPACKLIB=/home/kris/src/lapack-3.3.0/lapack_LINUX.a
+#BLASLIB=/home/kris/src/lapack-3.3.0/blas_LINUX.a
 
 ##work linux desktop ##########
-#LAPACKLIB=/home/klkuhlm/src/lapack-3.3.0/lapack_LINUX.a
-#BLASLIB=/home/klkuhlm/src/lapack-3.3.0/blas_LINUX.a
+LAPACKLIB=/home/klkuhlm/src/lapack-3.3.0/lapack_LINUX.a
+BLASLIB=/home/klkuhlm/src/lapack-3.3.0/blas_LINUX.a
 #LAPACKLIB=/opt/intel/mkl/10.0.3.020/lib/em64t/libmkl_lapack.a
 
 ### for intel compiler
@@ -40,14 +40,14 @@ OBJS=$(EXTERNAL) constants.o $(KKLOW) type_definitions.o $(KKHIGH)
 #######################################
 
 #### gfortran #################
-F90=gfortran-4.5
+F90=gfortran-4.6
 OMP=-fopenmp -DOMP
 CPP=-cpp
 DFLAGS=-O0 -Wall -Wextra -fbacktrace -g
 DFLAGS+=-frange-check -fcheck=all -finit-real=snan -finit-integer=-99999
 DFLAGS+=$(CPP) #-DDEBUG 
 ##DFLAGS+=-fdump-rtl-expand
-PFLAGS=-O0 $(CPP) -flto -march=native # $(OMP)
+PFLAGS=-Os $(CPP) -flto  -march=native # $(OMP) 
 LINKFLAG=$(PFLAGS) #$(OMP)
 ###################################
 

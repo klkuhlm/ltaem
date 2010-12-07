@@ -24,7 +24,7 @@ n = len(name)
 
 plt.figure(1)
 plt.subplot(211)
-plt.bar(np.arange(n),100*(np.array(mem) - mem[0])/mem[0])
+plt.bar(np.arange(n),np.array(mem)/1024)
 plt.ylabel('relative mem (%)')
 plt.xticks(np.arange(n),[''*n])
 plt.subplot(212)

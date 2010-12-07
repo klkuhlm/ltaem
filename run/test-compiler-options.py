@@ -4,7 +4,7 @@ from glob import glob
 PIPE = subprocess.PIPE
 
 
-exes = glob('ltaem-*O[0,1,2,3]')
+exes = glob('ltaem-*O?')
 exes.sort()
 
 fhout = open('run-data.csv','w')
@@ -16,7 +16,7 @@ for exe in exes:
 
     p = subprocess.Popen(cmd,stdout=PIPE,stderr=PIPE,shell=True)
     (stdout,stderr) = p.communicate()
-    
+
     # time output goes to stderr
     fhout.write(stderr.strip() + '\n')
 

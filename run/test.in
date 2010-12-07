@@ -1,7 +1,7 @@
 True  False  True  2  test.xyz  dump.out  box.elem  test.geom    ::  re-compute coefficients?, particle?, contour?, output flag, outputFN, coeffFN (output), elementHierarchy (input), geometryFN (output)
 2.0D-1  2.0D0  1.0D-4   0  1.0D0  1.0D-4  1.0D0  10  ::  por, k, Ss, leakFlag, K2, Ss2, b2, ellipse MS
 1.5D-1  2.0D0  False  1.0  :: Sy, Kz, unconfined?, b
-10  10  20  :: nx, ny, nt
+20  20  20  :: nx, ny, nt
 -0.26000 -0.25475 -0.24949 -0.24424 -0.23899 -0.23374 -0.22848 -0.22323 -0.21798 -0.21273 -0.20747 -0.20222 -0.19697 -0.19172 -0.18646 -0.18121 -0.17596 -0.17071 -0.16545 -0.16020 
 -0.13500 -0.12949 -0.12398 -0.11847 -0.11296 -0.10745 -0.10194 -0.09643 -0.09092 -0.08541 -0.07990 -0.07439 -0.06888 -0.06337 -0.05786 -0.05235 -0.04684 -0.04133 -0.03582 -0.03031
 1.000000000000000056e-01
