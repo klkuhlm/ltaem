@@ -27,10 +27,6 @@ contains
     use elliptical_elements, only : ellipse_calc
     use kappa_mod, only : kappa
     use time_mod, only : time
-#ifdef DEBUG
-    use utility, only : ccosh
-    use constants, only : EYE, PI
-#endif
 
     complex(DP), intent(in) :: Z  ! location for calculation (complex coordinates)
     complex(DP), dimension(:), intent(in) :: p  ! vector of Laplace parameters
@@ -45,9 +41,6 @@ contains
     type(element), pointer :: elin => null()
     integer :: nc, ne, ntot, np, j
     integer :: in, oth
-#ifdef DEBUG
-    complex(DP) :: Ztmp
-#endif
 
     call check_np(p,lo,hi)
     nc = dom%num(1)
@@ -58,52 +51,27 @@ contains
     ! determine which inclusion this point is in, and related geometry
     call CalcLocation(Z,c,e,dom,Rgp,Pgp,in) 
    
-#ifdef DEBUG
-    if (any(Rgp < spacing(0.0) .or. Pgp < -PI .or. Pgp > PI)) then
-       print *, 'headCalc error in results returned from calcLocation Rgp:',Rgp,' Pgp:',Pgp
-       stop
-    end if
-#endif
-
     H(:) = 0.0
-
-#ifdef DEBUG
-    ! units opened in ltaem_main.f90
-    ! which element is each calculation point located in?
-    write(303,*) real(Z),aimag(Z),in
-    ! write cartesian vectors pointing from center of each element to
-    ! calc point for visual checking in gnuplot
-    do j = 1,nc
-       write(404,*) c(j)%x,c(j)%y,Rgp(j)*cos(Pgp(j)),Rgp(j)*sin(Pgp(j))
-    end do
-    do j = 1,ne
-       Ztmp = e(j)%f*ccosh(cmplx(Rgp(j+nc),Pgp(j+nc),DP))*exp(EYE*e(j)%theta)
-       write(404,*) e(j)%x,e(j)%y,real(Ztmp),aimag(Ztmp)
-    end do
-    write(404,'(/)')
-#endif
 
     ! TODO there should be a way to combine the two branches of this 
     ! if statement into a more general single branch.
 
-!!$    print '(A,I0)', 'in ==',in
     !##################################################
     !! calculation point is outside all elements (in background)
     if (in == 0) then
        do j = 1,nc
           if (dom%InclUp(j) == 0) then  ! circle is also in background
-             H(1:np) = H(1:np) + &
-                  & circle_calc(p,c(j),lo,hi,Rgp(j),Pgp(j),.false.)
+             H(1:np) = H(:) + circle_calc(p,c(j),lo,hi,Rgp(j),Pgp(j),.false.)
           end if
        end do
        
        do j = nc+1,ntot
           if (dom%InclUp(j) == 0) then  ! ellipse is also in background
-             H(1:np) = H(1:np) + &
-                  & ellipse_calc(p,e(j-nc),lo,hi,Rgp(j),Pgp(j),.false.)
+             H(1:np) = H(:) + ellipse_calc(p,e(j-nc),lo,hi,Rgp(j),Pgp(j),.false.)
           end if
        end do
        H(1:np) = H(1:np)/bg%k ! convert to head
+       ! TODO: apply source term to background
 
     !##################################################
     !! calculation point is inside an element (not background)
@@ -111,14 +79,12 @@ contains
        if (in <= nc) then
           ! calculation point is inside (or on bdry of) a circular element
           if (c(in)%calcin) then
-             H(1:np) = H(1:np) + &
-                  & circle_calc(p,c(in),lo,hi,Rgp(in),Pgp(in),.true.)
+             H(1:np) = H(:) + circle_calc(p,c(in),lo,hi,Rgp(in),Pgp(in),.true.)
           end if
        else 
           ! calculation point is inside (or on bdry of) an elliptical element
           if (e(in-nc)%calcin) then
-             H(1:np) = H(1:np) + &
-                  & ellipse_calc(p,e(in-nc),lo,hi,Rgp(in),Pgp(in),.true.)
+             H(1:np) = H(:) + ellipse_calc(p,e(in-nc),lo,hi,Rgp(in),Pgp(in),.true.)
           end if
        end if
 
@@ -126,15 +92,13 @@ contains
        do oth = 1,nc
           ! oth element is a circle
           if (dom%InclIn(in,oth)) then
-             H(1:np) = H(1:np) + &
-                  & circle_calc(p,c(oth),lo,hi,Rgp(oth),Pgp(oth),.false.)
+             H(1:np) = H(:) + circle_calc(p,c(oth),lo,hi,Rgp(oth),Pgp(oth),.false.)
           end if
        end do
        do oth = nc+1,ntot
           ! other element is an ellipse
           if (dom%InclIn(in,oth)) then
-             H(1:np) = H(1:np) + &
-                  & ellipse_calc(p,e(oth-nc),lo,hi,Rgp(oth),Pgp(oth),.false.)
+             H(1:np) = H(:) + ellipse_calc(p,e(oth-nc),lo,hi,Rgp(oth),Pgp(oth),.false.)
           end if
        end do
        
@@ -163,9 +127,6 @@ contains
     use kappa_mod, only : kappa
     use time_mod, only : time
     use utility, only : rotate_vel
-#ifdef DEBUG
-    use constants, only : PI
-#endif
 
     complex(DP), intent(in) :: Z
     complex(DP), dimension(:), intent(in) :: p
@@ -191,13 +152,6 @@ contains
     ! determine which inclusion this point is in, and related geometry
     call CalcLocation(Z,c,e,dom,Rgp,Pgp,in) 
 
-#ifdef DEBUG
-    if (any(Rgp < spacing(0.0) .or. Pgp < -PI .or. Pgp > PI)) then
-       print *, 'velCalc error in results returned from calcLocation Rgp:',Rgp,' Pgp:',Pgp
-       stop
-    end if
-#endif
-
     v(1:np,1:2) = 0.0
 
     ! TODO
@@ -211,10 +165,8 @@ contains
           if (dom%InclUp(j) == 0) then  ! circle is also in background
              dH(1:np,1:2) = circle_deriv(p,c(j),lo,hi,Rgp(j),Pgp(j),.false.)
              ! project onto X and Y
-             v(1:np,1) = v(:,1) + &
-                  & cos(Pgp(j))*dH(:,1) - sin(Pgp(j))*dH(:,2)/Rgp(j) ! x
-             v(1:np,2) = v(:,2) + &
-                  & sin(Pgp(j))*dH(:,1) + cos(Pgp(j))*dH(:,2)/Rgp(j) ! y
+             v(1:np,1) = v(:,1) + cos(Pgp(j))*dH(:,1) - sin(Pgp(j))*dH(:,2)/Rgp(j) ! x
+             v(1:np,2) = v(:,2) + sin(Pgp(j))*dH(:,1) + cos(Pgp(j))*dH(:,2)/Rgp(j) ! y
           end if
        end do
        
@@ -240,10 +192,8 @@ contains
           !! calculation point is inside (or on bdry of) a circular element
           if (c(in)%calcin) then
              dH(1:np,1:2) = circle_deriv(p,c(in),lo,hi,Rgp(in),Pgp(in),.true.)
-             v(1:np,1) = v(:,1) + &
-                  & cos(Pgp(in))*dH(:,1) - sin(Pgp(in))*dH(:,2)/Rgp(in)
-             v(1:np,2) = v(:,2) + &
-                  & sin(Pgp(in))*dH(:,1) + cos(Pgp(in))*dH(:,2)/Rgp(in)
+             v(1:np,1) = v(:,1) + cos(Pgp(in))*dH(:,1) - sin(Pgp(in))*dH(:,2)/Rgp(in)
+             v(1:np,2) = v(:,2) + sin(Pgp(in))*dH(:,1) + cos(Pgp(in))*dH(:,2)/Rgp(in)
           end if
        else 
           ! calculation point is inside or on the boundary of an elliptical element
@@ -264,10 +214,8 @@ contains
           ! other element is a circle
           if (dom%InclIn(in,oth)) then
              dH(1:np,1:2) = circle_deriv(p,c(oth),lo,hi,Rgp(oth),Pgp(oth),.false.)
-             v(1:np,1) = v(:,1) + &
-                  & cos(Pgp(oth))*dH(:,1) - sin(Pgp(oth))*dH(:,2)/Rgp(oth)
-             v(1:np,2) = v(:,2) + &
-                  & sin(Pgp(oth))*dH(:,1) + cos(Pgp(oth))*dH(:,2)/Rgp(oth)
+             v(1:np,1) = v(:,1) + cos(Pgp(oth))*dH(:,1) - sin(Pgp(oth))*dH(:,2)/Rgp(oth)
+             v(1:np,2) = v(:,2) + sin(Pgp(oth))*dH(:,1) + cos(Pgp(oth))*dH(:,2)/Rgp(oth)
           end if
        end do
        do oth = nc+1,ntot
@@ -334,7 +282,7 @@ contains
   subroutine calcLocation(Z,c,e,dom,Rgp,Pgp,inside)
     use constants, only : DP, EYE
     use type_definitions, only : circle, ellipse, domain
-    use utility, only : ccosh, cacosh
+    use geomConv, only : xy2cA, xy2eA
 
     complex(DP), intent(in) :: Z
     type(circle),  dimension(:), intent(in) :: c
@@ -344,7 +292,6 @@ contains
     integer, intent(out) :: inside
 
     complex(DP), dimension(sum(dom%num)) :: Zgp
-    complex(DP), dimension(dom%num(2)) :: Ztmp
     integer, dimension(sum(dom%num)) :: inout
 
     integer :: nc, ne, ntot, j, first, second, third, k
@@ -358,9 +305,9 @@ contains
     k = 0
 
     ! components of vector from center of circle to observation point
-    Zgp(1:nc) = Z - c(:)%z
-    Rgp(1:nc) = abs(Zgp(1:nc))
-    Pgp(1:nc) = atan2(aimag(Zgp(1:nc)), real(Zgp(1:nc)))
+    Zgp(1:nc) = xy2cA(Z,c(:))
+    Rgp(1:nc) = abs(Zgp(1:nc))   ! r 
+    Pgp(1:nc) = aimag(Zgp(1:nc)) ! theta
     do j = 1, nc
        if (Rgp(j) < c(j)%r) then    ! inside (not including on boundary)
           k = k+1
@@ -369,10 +316,9 @@ contains
     end do
 
     ! components of vector from center of ellipse to observation point
-    Zgp(nc+1:ntot) = Z - e(:)%z 
-    Ztmp(1:ne) = cacosh( Zgp(nc+1:ntot)*exp(-EYE*e(:)%theta)/e(:)%f )
-    Rgp(nc+1:ntot) =  real(Ztmp(1:ne))
-    Pgp(nc+1:ntot) = aimag(Ztmp(1:ne))
+    Zgp(nc+1:ntot) = xy2eA(Z,e(:))
+    Rgp(nc+1:ntot) =  real(Zgp(1:ne)) ! eta
+    Pgp(nc+1:ntot) = aimag(Zgp(1:ne)) ! psi
     do j = 1, ne
        if (Rgp(j+nc) < e(j)%r) then    ! inside (not including on boundary)
           k = k+1

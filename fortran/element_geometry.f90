@@ -14,8 +14,7 @@ contains
     use constants, only: DP, PI, EYE
     use type_definitions, only : domain, circle, ellipse, element, solution, matching
     use file_ops, only : writeGeometry
-    use utility, only : ccosh, cacosh
-    use geomConv
+    use geomConv, only : c2xyA, e2xyA, xy2cA, xy2eA 
 
     type(domain), intent(inout) :: dom
     type(circle),  target, intent(inout), dimension(:) :: c

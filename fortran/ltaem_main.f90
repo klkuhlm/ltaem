@@ -292,11 +292,6 @@ program ltaem_main
      allocate(sol%h(sol%nx,sol%ny,sol%nt),   hp(tnP), &
           &   sol%v(sol%nx,sol%ny,sol%nt,2), vp(tnP,2))
 
-#ifdef DEBUG
-     open(unit=303,file='calcloc.debug',status='replace',action='write')
-     open(unit=404,file='calcloc.vdebug',status='replace',action='write')
-#endif
-
      !$OMP PARALLEL DO PRIVATE(calcZ,hp,vp,lot,hit,lop,hip) SHARED(sol)
      do j = 1,sol%nx
         !$ write (*,'(I0,1X)',advance="no") OMP_get_thread_num() 
@@ -326,11 +321,6 @@ program ltaem_main
         end do
      end do
      !$OMP END PARALLEL DO
-
-#ifdef DEBUG
-     close(303)
-     close(404)
-#endif
 
   else ! hydrograph output (x,y locations are in pairs; e.g. inner product)
 
