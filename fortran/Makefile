@@ -40,7 +40,7 @@ OBJS=$(EXTERNAL) constants.o $(KKLOW) type_definitions.o $(KKHIGH)
 #########################################
 
 ## gfortran #################
-F90=gfortran-4.6
+F90=gfortran-4.5
 OMP=-fopenmp 
 CPP=-cpp
 DFLAGS=-O0 -Wall -Wextra -fbacktrace -g
@@ -48,11 +48,11 @@ DFLAGS+=-frange-check -fcheck=all -finit-real=snan -finit-integer=-99999
 DFLAGS+=$(CPP) #-DDEBUG 
 ##DFLAGS+=-fdump-rtl-expand
 PFLAGS=-O2 $(CPP) -march=native  $(OMP) 
-LINKFLAG=$(PFLAGS) 
+LINKFLAG=$(DFLAGS) 
 #################################
 
 # switch between performance or debugging flags
-FLAGS=$(PFLAGS)
+FLAGS=$(DFLAGS)
 
 # the link step
 main: $(OBJS) $(MAIN)

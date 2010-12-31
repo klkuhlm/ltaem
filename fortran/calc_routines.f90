@@ -301,7 +301,7 @@ contains
   function headCalcV(vec,p,lo,hi,dom,c,e,bg) result(H)
     use type_definitions, only : element, domain, circle, ellipse
     use constants, only : DP
-    complex(DP), intent(in) :: vec ! location for calculation (2-element vector)
+    real(DP), dimension(2), intent(in) :: vec ! location for calculation (2-element vector)
     complex(DP), dimension(:), intent(in) :: p  ! vector of Laplace parameters
     integer, intent(in) :: lo,hi  ! lo,hi bounds of p relative to overall s
     type(domain), intent(in) :: dom
@@ -309,13 +309,15 @@ contains
     type(ellipse), target, dimension(:), intent(in) :: e
     type(element), intent(in) :: bg
     complex(DP), dimension(size(p,1)) :: H  
-    H = velCalcZ(cmplx(vec(1),vec(2),DP),p,lo,hi,dom,c,e,bg)
+
+    H(:) = headCalcZ(cmplx(vec(1),vec(2),DP),p,lo,hi,dom,c,e,bg)
+
   end function headCalcV
   
   function velCalcV(vec,p,lo,hi,dom,c,e,bg) result(v)
     use type_definitions, only : element, domain, circle, ellipse
     use constants, only : DP
-    complex(DP), intent(in) :: vec
+    real(DP), dimension(2), intent(in) :: vec
     complex(DP), dimension(:), intent(in) :: p
     integer, intent(in) :: lo,hi  ! lo,hi bounds of p relative to overall s
     type(domain), intent(in) :: dom
@@ -323,7 +325,9 @@ contains
     type(ellipse), target, dimension(:), intent(in) :: e
     type(element), intent(in) :: bg
     complex(DP), dimension(size(p,1),2) :: v
-    v = velCalcZ(cmplx(vec(1),vec(2),DP),p,lo,hi,dom,c,e,bg)
+
+    v(:,1:2) = velCalcZ(cmplx(vec(1),vec(2),DP),p,lo,hi,dom,c,e,bg)
+
   end function velCalcV
 
   !##################################################

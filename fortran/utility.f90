@@ -24,6 +24,7 @@ contains
   pure function v2c(v) result(z) 
     use constants, only : DP
     real(DP), intent(in), dimension(2) :: v
+    complex(DP) :: z
     z = cmplx(v(1),v(2),DP)
   end function v2c
   
