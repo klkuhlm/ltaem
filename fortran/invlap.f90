@@ -23,7 +23,7 @@ contains
   !! (no error checking done in this regard)
   !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   function deHoog_invLap_vect(t,tee,fp,lap) result(ft)
-    use constants, only : DP, PI
+    use constants, only : DP, PI, EYE
     use type_definitions, only : INVLT
 
     real(DP), intent(in) :: tee              ! scaling factor (previously T=2*tmax, but potentially adjustable)
@@ -80,7 +80,7 @@ contains
        B(-1:0,1:nt) = 1.0
 
        ! base of the power series
-       z(1:nt) = exp(cmplx(0.0,1.0,DP)*PI*t(:)/tee)
+       z(1:nt) = exp(EYE*PI*t(:)/tee)
 
        ! coefficients of Pade approximation
        ! using recurrence for all but last term

@@ -26,7 +26,7 @@ KKHIGH=kappa.o time.o ltaem_io.o invlap.o ellipse_mathieu_init.o circular_elemen
 MAIN=ltaem_main.o
 
 TARG=ltaem
-OBJS=$(EXTERNAL) constants.o $(KKLOW) type_definitions.o $(KKHIGH)
+OBJS=$(EXTERNAL) constants.o $(KKLOW) type_definitions.o geometryUtil.o $(KKHIGH)
 
 ################ ifort 11.1 ##########
 ##F90=ifort
@@ -76,7 +76,8 @@ clean:
 cbessel.o complex_bessel.mod : ./external/cbessel.f90
 constants.o constants.mod : constants.f90
 type_definitions.o type_definitions.mod : constants.mod mathieu_functions.mod type_definitions.f90
-utility.o utility.mod : constants.mod
+utility.o utility.mod : constants.mod utility.f90
+geometryUtil.o geomConv.mod : constants.mod type_definitions.mod utility.mod geometryUtil.f90
 bessel_functions.o bessel_functions.mod : complex_bessel.mod constants.mod bessel_functions.f90
 mathieu_functions2.o mathieu_functions.mod : constants.mod mathieu_functions2.f90
 kappa.o kappa_mod.mod : constants.mod type_definitions.mod kappa.f90

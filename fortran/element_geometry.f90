@@ -15,6 +15,7 @@ contains
     use type_definitions, only : domain, circle, ellipse, element, solution, matching
     use file_ops, only : writeGeometry
     use utility, only : ccosh, cacosh
+    use geomConv
 
     type(domain), intent(inout) :: dom
     type(circle),  target, intent(inout), dimension(:) :: c
@@ -24,10 +25,7 @@ contains
     type(matching), pointer :: other => null()
 
     integer :: i, j, ne, nc, ntot, par, M
-    complex(DP), allocatable :: z(:)
-#ifdef DEBUG
-    integer :: k
-#endif
+    complex(DP), allocatable :: Zgm(:)
 
     nc = dom%num(1)
     ne = dom%num(2)
@@ -56,72 +54,33 @@ contains
        e(i)%id = i+nc ! global ID
     end do
 
-#ifdef DEBUG
-    open(unit=101,file='geom_self.debug',action='write',status='replace')
-#endif
-
     ! circular element self-geometry
     do i = 1,nc
        M = c(i)%M
-       allocate(c(i)%Zcm(M), c(i)%Zom(M), c(i)%G(ntot))
-
-       ! x,y components from center of element to points on circumference
-       if (M > 1) then
-          c(i)%Zcm(1:M) = c(i)%r*exp(c(i)%Pcm(1:M)*EYE)
+       allocate(c(i)%Zom(M), c(i)%G(ntot))
+       
+       if (M > 1) then 
+          ! x,y from Cartesian origin to point on circumference of element
+          c(i)%Zom(1:M) = c2xyA(cmplx(c(i)%r,c(i)%Pcm(1:M),DP),c(i)) 
        else
           ! when only one matching point move to center of element
-          c(i)%Zcm(1) = cmplx(0.0,0.0,DP)
-       end if
-
-       ! x,y from Cartesian origin to point on circumference of element
-       c(i)%Zom(1:M) = c(i)%Zcm(:) + cmplx(c(i)%x,c(i)%y,DP)
-
-#ifdef DEBUG
-       write(101,*) '# elem',i
-       do j=1,M
-          write(101,*) 0.0,0.0,real(c(i)%Zom(j)),aimag(c(i)%Zom(j))
-       end do
-       write(101,'(/)')
-#endif
-
+          c(i)%Zom(1) = c(i)%z
+       end if      
     end do
 
     ! elliptical element self-geometry
     do i = 1,ne
        M = e(i)%M
-       allocate(e(i)%Zcm(M), e(i)%Zom(M), e(i)%G(ntot), z(M))
+       allocate(e(i)%Zom(M), e(i)%G(ntot))
 
-       ! local elliptical coordinates (r is eta)
-       z(1:M) = e(i)%f*ccosh(cmplx(e(i)%r,e(i)%Pcm(1:M),DP))
-       ! z is local Cartesian coordinate, with +x parallel to semi-focal axis
-
-       ! x,y components from center of element to points on circumference
-       ! account for rotation of local elliptical coordinates
        if (M > 1) then
-          e(i)%Zcm(1:M) = z(:)*exp(EYE*e(i)%theta)
+          ! x,y from Cartesian origin to point on circumference of element
+          e(i)%Zom(1:M) = e2xyA(cmplx(e(i)%r,e(i)%Pcm(1:M),DP),e(i))
        else
           ! when only one matching location move to center of line between foci
-          e(i)%Zcm(1) = cmplx(0.0,0.0,DP)
+          e(i)%Zom(1) = e(i)%z
        end if
-       deallocate(z)
-
-       ! x,y from Cartesian origin to point on circumference of element
-       e(i)%Zom(1:M) = e(i)%Zcm(:) + cmplx(e(i)%x,e(i)%y,DP)
-
-#ifdef DEBUG
-       write(101,*) '# elem',i+nc
-       do j=1,M
-          write(101,*) 0.0,0.0,real(e(i)%Zom(j)),aimag(e(i)%Zom(j))
-       end do
-       write(101,'(/)')
-#endif
-
     end do
-
-#ifdef DEBUG    
-    close(101)
-    open(unit=202,file='geom_other.debug',action='write',status='replace')
-#endif
 
     ! compute radial distances and angles to points on the circumferece of other elements
     ! from this element (cross-geometry), in terms of the current circle's or ellipse's
@@ -137,21 +96,14 @@ contains
              end if
              M = other%M    
 
-             allocate(c(i)%G(j)%Zgm(M), c(i)%G(j)%Rgm(M), c(i)%G(j)%Pgm(M))
+             allocate(Zgm(M), c(i)%G(j)%Rgm(M), c(i)%G(j)%Pgm(M))
 
-             c(i)%G(j)%Zgm(1:M) = other%Zom(1:M) - cmplx(c(i)%x,c(i)%y,DP)
-             c(i)%G(j)%Rgm(1:M) = abs(c(i)%G(j)%Zgm(1:M)) ! r
-             c(i)%G(j)%Pgm(1:M) = atan2(aimag(c(i)%G(j)%Zgm(1:M)), &
-                                    & real(c(i)%G(j)%Zgm(1:M))) ! theta
+             Zgm(1:M) = xy2cA(other%Zom(1:M),c(i))
+             c(i)%G(j)%Rgm(1:M) =   abs(Zgm(1:M)) ! r
+             c(i)%G(j)%Pgm(1:M) = aimag(Zgm(1:M)) ! theta
+
+             deallocate(Zgm)
              other => null()
-
-#ifdef DEBUG
-             write(202,*) '# src:',i,' tgt:',j
-             do k=1,M
-                write(202,*) c(i)%x,c(i)%y,real(c(i)%G(j)%Zgm(k)),aimag(c(i)%G(j)%Zgm(k))
-             end do
-             write(202,'(/)')
-#endif
           end if
        end do
     end do
@@ -166,31 +118,14 @@ contains
              end if
              M = other%M    
 
-             allocate(e(i)%G(j)%Zgm(M), e(i)%G(j)%Rgm(M), e(i)%G(j)%Pgm(M), z(M))
+             allocate(Zgm(M), e(i)%G(j)%Rgm(M), e(i)%G(j)%Pgm(M))
 
-             e(i)%G(j)%Zgm(1:M) = other%Zom(1:M) - cmplx(e(i)%x,e(i)%y,DP)
-             z(1:M) = cacosh( e(i)%G(j)%Zgm(1:M)*exp(-EYE*e(i)%theta)/e(i)%f )
-             e(i)%G(j)%Rgm(1:M) =  real(z(1:M)) ! eta
-             e(i)%G(j)%Pgm(1:M) = aimag(z(1:M)) ! psi
+             Zgm(1:M) = xy2eA(other%Zom(1:M),e(i))
+             e(i)%G(j)%Rgm(1:M) =  real(Zgm(1:M)) ! eta
+             e(i)%G(j)%Pgm(1:M) = aimag(Zgm(1:M)) ! psi
              
-             deallocate(z)
+             deallocate(Zgm)
              other => null()
-
-#ifdef DEBUG
-             write(202,*) '# src:',i+nc,' tgt:',j
-             do k=1,M
-                write(202,*) e(i)%x,e(i)%y,real(e(i)%G(j)%Zgm(k)),aimag(e(i)%G(j)%Zgm(k))
-             end do
-             write(202,'(/)')
-          
-             write(202,*) '# src:',i+nc,' tgt:',j, '*converted from elliptcial coords*'
-             do k=1,M
-                write(202,*) e(i)%x,e(i)%y, &
-                     & real(exp(EYE*e(i)%theta)*e(i)%f*ccosh(cmplx(e(i)%G(j)%Rgm(k),e(i)%G(j)%Pgm(k),DP))),&
-                     & aimag(exp(EYE*e(i)%theta)*e(i)%f*ccosh(cmplx(e(i)%G(j)%Rgm(k),e(i)%G(j)%Pgm(k),DP)))
-             end do
-             write(202,'(/)')
-#endif
           end if
        end do
     end do
@@ -231,11 +166,6 @@ contains
           stop 201
        end if
     end do
-
-
-#ifdef DEBUG
-    close(202)
-#endif
 
     ! create listing of points on circumference of circles for plotting
     call writeGeometry(c,e,sol)    
@@ -282,8 +212,8 @@ contains
        ! check centers of elements (rows = circles, columns = all elements)
        if (nc > 0) then
           allocate(Rcg(nc,ntot))
-          Rcg(1:nc,1:nc) =      abs(spread(cmplx(c%x,c%y,DP),1,nc) - spread(cmplx(c%x,c%y,DP),2,nc))
-          Rcg(1:nc,nc+1:ntot) = abs(spread(cmplx(e%x,e%y,DP),1,nc) - spread(cmplx(c%x,c%y,DP),2,ne))
+          Rcg(1:nc,1:nc) =      abs(spread(c%z,1,nc) - spread(c%z,2,nc))
+          Rcg(1:nc,nc+1:ntot) = abs(spread(e%z,1,nc) - spread(c%z,2,ne))
           
           ! nondiag handles zero distance-to-self case
           where (Rcg(1:nc,1:ntot) < spread(c(1:nc)%r,2,ntot) .and. nondiag(1:nc,1:ntot))
@@ -296,7 +226,7 @@ contains
           !  1) elements intersect (2 pts) or touch (1 point) = BAD
           !  2) smaller element inside larger element         = OK
 
-          ! check circle-on-circle intersection
+          ! check circle-on-circle intersection          
           do i = 1, nc
              do j = 1, nc
                 if (i /= j) then
@@ -330,13 +260,11 @@ contains
        ! check centers of elements (rows = ellipses, columns = all elements)
        if (ne > 0) then
           allocate(Eeg(ne,ntot),Z(ne,ntot))
-          Z(1:ne,1:nc) =      spread(cmplx(c%x,c%y,DP),1,ne) - spread(cmplx(e%x,e%y,DP),2,nc)
-          Eeg(1:ne,1:nc) =      real(cacosh(Z(1:ne,1:nc)* &
-                                  & spread(exp(-EYE*e%theta)/e%f,2,nc)))
+          Z(1:ne,1:nc) =      spread(c%z,1,ne) - spread(e%z,2,nc)
+          Eeg(1:ne,1:nc) =      real(cacosh(Z(1:ne,1:nc)*spread(exp(-EYE*e%theta)/e%f,2,nc)))
 
-          Z(1:ne,nc+1:ntot) = spread(cmplx(e%x,e%y,DP),1,ne) - spread(cmplx(e%x,e%y,DP),2,ne)
-          Eeg(1:ne,nc+1:ntot) = real(cacosh(Z(1:ne,nc+1:ntot)* &
-                                  & spread(exp(-EYE*e%theta)/e%f,2,ne)))
+          Z(1:ne,nc+1:ntot) = spread(e%z,1,ne) - spread(e%z,2,ne)
+          Eeg(1:ne,nc+1:ntot) = real(cacosh(Z(1:ne,nc+1:ntot)*spread(exp(-EYE*e%theta)/e%f,2,ne)))
           deallocate(Z)
 
           where (Eeg(1:ne,1:ntot) < spread(e%r,2,ntot) .and. nondiag(1:ne,1:ntot))

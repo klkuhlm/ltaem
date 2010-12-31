@@ -66,7 +66,7 @@ contains
   end function outerprod_zd
   
   ! ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  
-  pure elemental function ccosh(z) result(f)
+  elemental function ccosh(z) result(f)
     use constants, only : DP
     complex(DP), intent(in) :: z
     complex(DP) :: f
@@ -76,7 +76,7 @@ contains
     f = cmplx(cosh(x)*cos(y), sinh(x)*sin(y),DP)
   end function ccosh
 
-  pure elemental function cacosh(z) result(f)
+  elemental function cacosh(z) result(f)
     use constants, only : DP
     complex(DP), intent(in) :: z
     complex(DP) :: f
@@ -222,5 +222,4 @@ contains
     v = reshape(vv,[n,m])
     
   end subroutine rotate_vel_mat
-
 end module utility

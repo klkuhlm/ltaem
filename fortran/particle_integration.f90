@@ -37,7 +37,7 @@ contains
     px = p%x
     py = p%y
     dt = p%dt       
-    if (.not. p%forward) dt = -dt
+    if (.not. p%forward) dt = -dt ! backwards particle tracking
     
     p%r(0,1:3) = [pt,px,py]
     count = 1
@@ -52,12 +52,12 @@ contains
        if (partEnd .or. trackDone(p%forward,pt+dt,p%tf)) exit rkm
        x0 = [px,py]
 
-       ! forward Euler 1/3-step  (predictor)
+       ! forward Euler 1/3-step  predictor
        call getsrange(pt,lo,ns,los,his,lt)
        vInit = invlap(pt,tee(lt),velCalc(x0,s(:,lt),los,his,dom,c,e,bg),sol%INVLT)
        FwdEuler(1:2) = x0(1:2) + dt/3.0*vInit(1:2)
 
-       ! trapazoid rule 1/3-step (corrector)
+       ! trapazoid rule 1/3-step corrector
        call getsrange(pt + dt/3.0,lo,ns,los,his,lt)
        vTrap = invlap(pt+dt/3.0,tee(lt),velCalc(FwdEuler,s(:,lt),los,his,dom,c,e,bg),sol%INVLT)
        Trap(1:2) = x0(1:2) + dt/6.0*(vInit(1:2) + vTrap(1:2))
@@ -165,7 +165,7 @@ contains
     px = p%x
     py = p%y
     dt = p%dt
-    if (.not. p%forward) dt = -dt
+    if (.not. p%forward) dt = -dt ! backwards particle tracking
 
     ! initialize with starting position
     p%r(0,1:3) = [pt,px,py]
@@ -364,7 +364,8 @@ contains
   ! check if particle has moved into a sink
 
   function sinkCheck(px,py,c,e) result(partEnd)
-    use constants, only : DP
+    use constants, only : DP, EYE
+    use utility, only : cacosh
     use type_definitions, only : ellipse, circle
     implicit none
 
@@ -372,20 +373,29 @@ contains
     type(circle),  dimension(:), intent(in) :: c
     type(ellipse), dimension(:), intent(in) :: e
     logical :: partEnd
+    complex(DP) :: pz
 
     partEnd = .false.
+    pz = cmplx(px,py,DP)
 
     ! did the particle enter an ibnd==2 circle (well)?
-    if (any(c%ibnd == 2) .and. any(abs(cmplx(px,py,DP) - cmplx(c%x,c%y,DP)) < c%r)) then
+    if (any(c%ibnd == 2 .and. abs(pz - c%z) < c%r)) then
        partEnd = .true.
+       goto 999
     end if
 
-    ! TODO add check for flowing into ibnd==2 ellipse (line sink)
+    ! did the particle enter an ibnd==2 ellipse (line sink)?
+    if (any(e%ibnd == 2 .and. real(cacosh((pz-e%z)*exp(-EYE*e%theta)/e%f)) < e%r)) then
+       partEnd = .true.
+       goto 999
+    end if
 
     ! TODO handle flowing into a constant head/flux element (from inside or
     ! TODO from outside, circles or ellipses
 
     ! TODO dealing with area-sinks is more complex, will be dealt with later
+
+999 continue      
   end function sinkCheck
 
 end module particle_integrate

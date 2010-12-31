@@ -358,7 +358,7 @@ contains
     k = 0
 
     ! components of vector from center of circle to observation point
-    Zgp(1:nc) = Z - cmplx(c(:)%x,c(:)%y,DP)
+    Zgp(1:nc) = Z - c(:)%z
     Rgp(1:nc) = abs(Zgp(1:nc))
     Pgp(1:nc) = atan2(aimag(Zgp(1:nc)), real(Zgp(1:nc)))
     do j = 1, nc
@@ -369,7 +369,7 @@ contains
     end do
 
     ! components of vector from center of ellipse to observation point
-    Zgp(nc+1:ntot) = Z - cmplx(e(:)%x,e(:)%y,DP) 
+    Zgp(nc+1:ntot) = Z - e(:)%z 
     Ztmp(1:ne) = cacosh( Zgp(nc+1:ntot)*exp(-EYE*e(:)%theta)/e(:)%f )
     Rgp(nc+1:ntot) =  real(Ztmp(1:ne))
     Pgp(nc+1:ntot) = aimag(Ztmp(1:ne))

@@ -209,6 +209,7 @@ contains
 
        read(22,*) c(:)%x ! any real number is ok
        read(22,*) c(:)%y
+       c(:)%z = cmplx(c%x,c%y,DP)
 
        read(22,*) c(:)%k
        if (any(c%k < spacing(0.0))) then
@@ -415,6 +416,7 @@ contains
 
        read(33,*) e(:)%x
        read(33,*) e(:)%y
+       e(:)%z = cmplx(e%x,e%y,DP)
 
        read(33,*) e(:)%f
        if (any(e%f < spacing(0.0))) then

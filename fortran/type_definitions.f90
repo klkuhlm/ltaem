@@ -87,7 +87,6 @@ module type_definitions
     
   type :: geom
      ! number of matching points along other elements
-     complex(DP), allocatable :: Zgm(:)
      real(DP), allocatable :: Rgm(:), Pgm(:), metric(:)
   end type geom
   
@@ -117,6 +116,7 @@ module type_definitions
 
      ! location of center of element
      real(DP) :: x = -999., y =-999.
+     complex(DP) :: z = (-999.,-999.)
 
      ! "radius" of element (eta for ellipses)
      ! semi-focal distance (zero for circles)
@@ -128,7 +128,7 @@ module type_definitions
      real(DP), allocatable :: Pcm(:)
 
      ! computed geometry from this element to all others
-     complex(DP), allocatable :: Zcm(:), Zom(:)
+     complex(DP), allocatable :: Zom(:)
      type(geom), allocatable :: G(:) ! number of elements
 
      ! coefficients determined through matching
