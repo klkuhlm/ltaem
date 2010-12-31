@@ -473,8 +473,6 @@ contains
          & ( aa(1:np,0:N-1)*spread(cos(vr(0:N-1)*Pgp),1,np) + &
          &   bb(1:np,0:N-1)*spread(sin(vr(0:N-1)*Pgp),1,np) ),dim=2)
 
-!!$       ! TODO: add in area source term for matching too
-
   end function circle_calc
 
   function circle_deriv(p,c,lo,hi,Rgp,Pgp,inside) result(dH)
@@ -531,8 +529,6 @@ contains
     dH(1:np,2) = sum(BRgp(1:np,0:N-1)/BR0(1:np,0:N-1)*spread(vr(0:N-1),1,np)* &  
          & ( bb(1:np,0:N-1)*spread(cos(vr(0:N-1)*Pgp),1,np) - &
          &   aa(1:np,0:N-1)*spread(sin(vr(0:N-1)*Pgp),1,np) ),dim=2)    
-
-!!$       ! TODO: add in area source term for matching too
 
   end function circle_deriv
 end module circular_elements

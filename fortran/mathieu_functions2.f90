@@ -77,8 +77,6 @@ contains
     integer, optional, intent(in) :: MM
     real(DP), optional, intent(in) :: cutoff
 
-    ! TODO: some of the norm-calcs and -manipulations should be done with BLAS-1 or BLAS-2
-
     ! resulting structure defined at top of containing module
     type(mathieu) :: mat
     integer :: i, j, M
@@ -145,14 +143,12 @@ contains
     ! Pure and Applied Optics, 4(3), 251-262, 1995
     !$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 
-    !$OMP PARALLEL WORKSHARE
     ! main diagonal/ r counting from 0:m-1 like McLachlan
     Coeff(:,:) = 0.0
     forall(i=1:M-1) Coeff(i+1,i+1) = cmplx((2*i)**2, 0, DP)
     
     ! off diagonals
     forall(i=1:m, j=1:m, j==i+1 .or. j==i-1) Coeff(i,j) = q
-    !$OMP END PARALLEL WORKSHARE
 
     ! special case
     Coeff(2,1) = 2.0_DP*q
@@ -166,24 +162,20 @@ contains
     if (info /= 0) write (*,'(A,I0,A)') "ZGEEV ERROR ",info, &
          &" calculating even coefficients of even order"
 
-    !$OMP PARALLEL WORKSHARE
     ! Morse norm  ce_2n(psi=0)
     w = sum(spread(vi(1:M),2,M)*mat%A(:,:,0),dim=1)
     mat%A(:,:,0) = mat%A(:,:,0)/spread(w,1,m)
-    !$OMP END PARALLEL WORKSHARE
 
     !$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
     ! even coefficients (a) of odd order
     ! De_{2n+1} in eqn 3.14 of St&Sp
     !$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 
-    !$OMP PARALLEL WORKSHARE
     Coeff(:,:) = 0.0
     Coeff(1,1) = 1.0_DP + q
     
     forall(i=1:m-1) Coeff(i+1,i+1) = cmplx((2*i+1)**2, 0, DP)
     forall(i=1:m, j=1:m, j==i+1 .or. j==i-1) Coeff(i,j) = q
-    !$OMP END PARALLEL WORKSHARE
 
     call zgeev('N','V',M,Coeff,M,mat%mcn(m+1:2*m),dc,di,mat%A(1:m,0:m-1,1),M, &
          & work,lwork,rwork,info)
@@ -191,25 +183,21 @@ contains
     if (info /= 0) write(*,'(A,I0,A)') "ZGEEV ERROR ",info, &
          &" calculating even coefficients of odd order"
 
-    !$OMP PARALLEL WORKSHARE
     ! se'_2n+1(psi=0)
     w = sum(spread((2*v(0:M-1)+1)*vi(0:M-1),2,m)*mat%A(:,:,1),dim=1)
     mat%A(:,:,1) = mat%A(:,:,1)/spread(w,1,m)
-    !$OMP END PARALLEL WORKSHARE
 
     !$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
     ! odd coefficients (b) of even order
     ! Do_{2n+2} in eq 3.16 of St&Sp
     !$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
     
-    !$OMP PARALLEL WORKSHARE
     ! this one not shifted by one, since 2n+2 -> 2n 
     !! (but starting from one, rather than zero)
     Coeff(:,:) = 0.0
 
     forall(i=1:m) Coeff(i,i) = cmplx((2*i)**2, 0, DP)
     forall(i=1:m, j=1:m, j==i+1 .or. j==i-1) Coeff(i,j) = q
-    !$OMP END PARALLEL WORKSHARE
 
     call zgeev('N','V',M,Coeff,M,mat%mcn(2*m+1:3*m),dc,di,mat%B(1:m,0:m-1,0),M,&
          &work,lwork,rwork,info)
@@ -217,24 +205,20 @@ contains
     if (info /= 0) write (*,'(A,I0,A)') "ZGEEV ERROR ",info, &
          &" calculating odd coefficients of even order"
 
-    !$OMP PARALLEL WORKSHARE
     ! ce_2n+2(psi=0)
     w = sum(spread((2*v(0:M-1)+2)*vi(0:M-1),dim=2,ncopies=m)*mat%B(:,:,0),dim=1)
     mat%B(:,:,0) = mat%B(:,:,0)/spread(w,1,m)
-    !$OMP END PARALLEL WORKSHARE
 
     !$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
     ! odd coefficients (b) of odd order
     ! Do_{2n+1} of eqn 3.18 in St&Sp
     !$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 
-    !$OMP PARALLEL WORKSHARE
     Coeff(:,:) = 0.0
     Coeff(1,1) = 1.0_DP - q
 
     forall(i=1:m-1) Coeff(i+1,i+1) = cmplx((2*i+1)**2, 0, DP)
     forall(i=1:m, j=1:m, j==i+1 .or. j==i-1) Coeff(i,j) = q
-    !$OMP END PARALLEL WORKSHARE
 
     call zgeev('N','V',M,Coeff,M,mat%mcn(3*m+1:4*m),dc,di,mat%B(1:m,0:m-1,1),M,&
          &work,lwork,rwork,info)
@@ -242,11 +226,9 @@ contains
     if (info /= 0) write (*,'(A,I0,A)') "ZGEEV ERROR ",info, &
          &" calculating odd coefficients of odd order"
 
-    !$OMP PARALLEL WORKSHARE
     ! ce_2n+1(psi=0)
     w = sum(mat%B(:,:,1)*spread(vi(0:M-1),2,M),dim=1)
     mat%B(:,:,1) = mat%B(:,:,1)/spread(w,1,m)
-    !$OMP END PARALLEL WORKSHARE
 
     deallocate(coeff,rwork,w,work)
 
@@ -282,7 +264,7 @@ contains
     integer, dimension(:), intent(in) :: n
     real(DP), dimension(:), intent(in) :: z
     type(mathieu), intent(in) :: mf
-    complex(DP), dimension(size(n),size(z)) :: ce
+    complex(DP), dimension(size(z),size(n)) :: ce
 
     ! internal variables
     integer, dimension(size(n)) :: j
@@ -297,11 +279,11 @@ contains
     njo = size(OD)
     j = floor(n/2.0)
     
-    ce(EV,:) = sum(spread(mf%A(:,j(EV),0),3,nz)* &
-         & spread(cos(outer(2*v,PIOV2-z)),2,nje),dim=1)
+    ce(:,EV) = sum(spread(mf%A(:,j(EV),0),2,nz)* &
+         & spread(cos(outer(2*v,PIOV2-z)),3,nje),dim=1)
 
-    ce(OD,:) = sum(spread(mf%B(:,j(OD),1),3,nz)* &
-         & spread(sin(outer(2*v+1,PIOV2-z)),2,njo),dim=1)   
+    ce(:,OD) = sum(spread(mf%B(:,j(OD),1),2,nz)* &
+         & spread(sin(outer(2*v+1,PIOV2-z)),3,njo),dim=1)   
 
   end function ce_vect_nz
 
@@ -315,7 +297,7 @@ contains
     integer, dimension(:), intent(in) :: n
     real(DP), dimension(:), intent(in) :: z
     type(mathieu), intent(in) :: mf
-    complex(DP), dimension(size(n),size(z)) :: se
+    complex(DP), dimension(size(z),size(n)) :: se
 
     integer, dimension(size(n)) :: j
     real(DP), dimension(mf%M):: v, vi
@@ -330,13 +312,13 @@ contains
     j = floor((n-1)/2.0)
     where (n==0) j = 0
 
-    se(EV,:) = sum(spread(mf%B(:,j(EV),0),3,nz)* &
-         & spread(sin(outer(2*v+2,PIOV2-z)),2,nje),dim=1)
+    se(:,EV) = sum(spread(mf%B(:,j(EV),0),2,nz)* &
+         & spread(sin(outer(2*v+2,PIOV2-z)),3,nje),dim=1)
 
-    se(OD,:) = sum(spread(mf%A(:,j(OD),1),3,nz)* &
-         & spread(cos(outer(2*v+1,PIOV2-z)),2,njo),dim=1)
+    se(:,OD) = sum(spread(mf%A(:,j(OD),1),2,nz)* &
+         & spread(cos(outer(2*v+1,PIOV2-z)),3,njo),dim=1)
 
-    where (spread(n,2,nz) == 0) se = -huge(1.0)  ! se_0() is invalid
+    where (spread(n,1,nz) == 0) se = -huge(1.0)  ! se_0() is invalid
   end function se_vect_nz
 
   !############################################################
@@ -348,7 +330,7 @@ contains
     integer, dimension(:), intent(in) :: n
     real(DP), dimension(:), intent(in) :: z
     type(mathieu), intent(in) :: mf
-    complex(DP), dimension(size(n),size(z)) :: Dce
+    complex(DP), dimension(size(z),size(n)) :: Dce
 
     integer, dimension(size(n)) :: j
     real(DP), dimension(mf%M):: v, vi
@@ -362,11 +344,11 @@ contains
     njo = size(OD)
     j = floor(n/2.0)
 
-    Dce(EV,:) = sum(spread(spread(2*v,2,nje)*mf%A(:,j(EV),0),3,nz)* &
-         & spread(sin(outer(2*v,PIOV2-z)),2,nje),dim=1)
+    Dce(:,EV) = sum(spread(spread(2*v,2,nje)*mf%A(:,j(EV),0),2,nz)* &
+         & spread(sin(outer(2*v,PIOV2-z)),3,nje),dim=1)
 
-    Dce(OD,:) = -sum(spread(spread(2*v+1,2,njo)*mf%B(:,j(OD),1),3,nz)* &
-         & spread(cos(outer(2*v+1,PIOV2-z)),2,njo),dim=1)
+    Dce(:,OD) = -sum(spread(spread(2*v+1,2,njo)*mf%B(:,j(OD),1),2,nz)* &
+         & spread(cos(outer(2*v+1,PIOV2-z)),3,njo),dim=1)
 
   end function Dce_vect_nz
 
@@ -379,7 +361,7 @@ contains
     integer, dimension(:), intent(in) :: n
     real(DP), dimension(:), intent(in) :: z
     type(mathieu), intent(in) :: mf
-    complex(DP), dimension(size(n),size(z)) :: Dse
+    complex(DP), dimension(size(z),size(n)) :: Dse
 
     integer, dimension(size(n)) :: j
     real(DP), dimension(mf%M):: v, vi
@@ -394,13 +376,13 @@ contains
     j = floor((n-1)/2.0)
     where (n==0) j=0
 
-    Dse(EV,:) = -sum(spread(spread(2*v+2,2,nje)*mf%B(:,j(EV),0),3,nz)* &
-         & spread(cos(outer(2*v+2,PIOV2-z)),2,nje),dim=1)
+    Dse(:,EV) = -sum(spread(spread(2*v+2,2,nje)*mf%B(:,j(EV),0),2,nz)* &
+         & spread(cos(outer(2*v+2,PIOV2-z)),3,nje),dim=1)
 
-    Dse(OD,:) = sum(spread(spread(2*v+1,2,njo)*mf%A(:,j(OD),1),3,nz)* &
-         & spread(sin(outer(2*v+1,PIOV2-z)),2,njo),dim=1)
+    Dse(:,OD) = sum(spread(spread(2*v+1,2,njo)*mf%A(:,j(OD),1),2,nz)* &
+         & spread(sin(outer(2*v+1,PIOV2-z)),3,njo),dim=1)
 
-    where (spread(n,2,nz) == 0) Dse = -huge(1.0)  ! se_0() is undefined
+    where (spread(n,1,nz) == 0) Dse = -huge(1.0)  ! se_0() is undefined
   end function Dse_vect_nz
 
   !############################################################
@@ -411,7 +393,7 @@ contains
     integer, dimension(:), intent(in) :: n
     real(DP), dimension(:), intent(in) :: z
     type(mathieu), intent(in) :: mf
-    complex(DP), dimension(size(n),size(z)) :: Ie
+    complex(DP), dimension(size(z),size(n)) :: Ie
 
     integer, dimension(size(n)) :: j
     real(DP), dimension(mf%M):: v, vi
@@ -431,14 +413,14 @@ contains
     call BesselI_val(v1,M+1,I1(0:M,1:nz))
     call BesselI_val(v2,M+1,I2(0:M,1:nz))
 
-    Ie(EV,:) = sum(spread(spread(vi,2,nje)*mf%A(:,j(EV),0),3,nz)* &
-         & spread(I1(0:m-1,:)*I2(0:m-1,:),2,nje),dim=1)/spread(mf%A(1,j(EV),0),2,nz)
+    Ie(:,EV) = sum(spread(spread(vi,2,nje)*mf%A(:,j(EV),0),2,nz)* &
+         & spread(I1(0:m-1,:)*I2(0:m-1,:),3,nje),dim=1)/spread(mf%A(1,j(EV),0),1,nz)
 
-    Ie(OD,:) = sum(spread(spread(vi,2,njo)*mf%B(:,j(OD),1),3,nz)* &
-         & spread(I1(0:m-1,:)*I2(1:m,:) + I1(1:m,:)*I2(0:m-1,:),2,njo),dim=1)/ &
-         & spread(mf%B(1,j(OD),1),2,nz)
+    Ie(:,OD) = sum(spread(spread(vi,2,njo)*mf%B(:,j(OD),1),2,nz)* &
+         & spread(I1(0:m-1,:)*I2(1:m,:) + I1(1:m,:)*I2(0:m-1,:),3,njo),dim=1)/ &
+         & spread(mf%B(1,j(OD),1),1,nz)
 
-    Ie = Ie*spread(exp(abs(real(v1)) + abs(real(v2))),1,size(n))
+    Ie = Ie*spread(exp(abs(real(v1)) + abs(real(v2))),2,size(n))
   end function Ie_vect_nz
 
   !############################################################
@@ -449,7 +431,7 @@ contains
     integer, dimension(:), intent(in) :: n
     real(DP), dimension(:), intent(in) :: z
     type(mathieu), intent(in) :: mf
-    complex(DP), dimension(size(n),size(z)) :: Io
+    complex(DP), dimension(size(z),size(n)) :: Io
 
     integer, dimension(size(n)) :: j
     real(DP), dimension(mf%M):: v, vi
@@ -470,15 +452,15 @@ contains
     call BesselI_val(v1,m+2,I1(0:m+1,:))
     call BesselI_val(v2,m+2,I2(0:m+1,:))
 
-    Io(EV,:) = sum(spread(spread(vi,2,nje)*mf%B(:,j(EV),0),3,nz)* &
-         & spread(I1(0:m-1,:)*I2(2:m+1,:) - I1(2:m+1,:)*I2(0:m-1,:),2,nje),dim=1)/ &
-         & spread(mf%B(1,j(EV),0),2,nz)
+    Io(:,EV) = sum(spread(spread(vi,2,nje)*mf%B(:,j(EV),0),2,nz)* &
+         & spread(I1(0:m-1,:)*I2(2:m+1,:) - I1(2:m+1,:)*I2(0:m-1,:),3,nje),dim=1)/ &
+         & spread(mf%B(1,j(EV),0),1,nz)
 
-    Io(OD,:) = sum(spread(spread(vi,2,njo)*mf%A(:,j(OD),1),3,nz)* &
-         & spread(I1(0:m-1,:)*I2(1:m,:) - I1(1:m,:)*I2(0:m-1,:),2,njo),dim=1)/ &
-         & spread(mf%A(1,j(OD),1),2,nz)
+    Io(:,OD) = sum(spread(spread(vi,2,njo)*mf%A(:,j(OD),1),2,nz)* &
+         & spread(I1(0:m-1,:)*I2(1:m,:) - I1(1:m,:)*I2(0:m-1,:),3,njo),dim=1)/ &
+         & spread(mf%A(1,j(OD),1),1,nz)
 
-    Io = Io*spread(exp(abs(real(v1)) + abs(real(v2))),1,size(n))
+    Io = Io*spread(exp(abs(real(v1)) + abs(real(v2))),2,size(n))
    end function Io_vect_nz
 
   !############################################################
@@ -489,7 +471,7 @@ contains
     integer, dimension(:), intent(in) :: n
     real(DP), dimension(:), intent(in) :: z
     type(mathieu), intent(in) :: mf
-    complex(DP), dimension(size(n),size(z)) :: Ke
+    complex(DP), dimension(size(z),size(n)) :: Ke
 
     integer, dimension(size(n)) :: j
     real(DP), dimension(mf%M):: v, vi
@@ -509,14 +491,14 @@ contains
     call BesselI_val(v1,m+1,I(0:m,:))
     call BesselK_val(v2,m+1,K(0:m,:))
 
-    Ke(EV,:) = sum(spread(mf%A(:,j(EV),0),3,nz)* &
-         & spread(I(0:m-1,:)*K(0:m-1,:),2,nje),dim=1)/spread(mf%A(1,j(EV),0),2,nz)
+    Ke(:,EV) = sum(spread(mf%A(:,j(EV),0),2,nz)* &
+         & spread(I(0:m-1,:)*K(0:m-1,:),3,nje),dim=1)/spread(mf%A(1,j(EV),0),1,nz)
 
-    Ke(OD,:) = sum(spread(mf%B(:,j(OD),1),3,nz)* &
-         & spread(I(0:m-1,:)*K(1:m,:) - I(1:m,:)*K(0:m-1,:),2,njo),dim=1)/ &
-         & spread(mf%B(1,j(OD),1),2,nz)
+    Ke(:,OD) = sum(spread(mf%B(:,j(OD),1),2,nz)* &
+         & spread(I(0:m-1,:)*K(1:m,:) - I(1:m,:)*K(0:m-1,:),3,njo),dim=1)/ &
+         & spread(mf%B(1,j(OD),1),1,nz)
 
-    Ke = Ke*spread(exp(abs(real(v1)) - v2),1,size(n))
+    Ke = Ke*spread(exp(abs(real(v1)) - v2),2,size(n))
   end function Ke_vect_nz
 
   !############################################################
@@ -527,7 +509,7 @@ contains
     integer, dimension(:), intent(in) :: n
     real(DP), dimension(:), intent(in) :: z
     type(mathieu), intent(in) :: mf
-    complex(DP), dimension(size(n),size(z)) :: Ko
+    complex(DP), dimension(size(z),size(n)) :: Ko
 
     integer, dimension(size(n)) :: j
     real(DP), dimension(mf%M):: v, vi
@@ -548,16 +530,16 @@ contains
     call BesselI_val(v1,m+2,I(0:m+1,:))
     call BesselK_val(v2,m+2,K(0:m+1,:))
 
-    Ko(EV,:) = sum(spread(mf%B(:,j(EV),0),3,nz)* &
-         & spread(I(0:m-1,:)*K(2:m+1,:) - I(2:m+1,:)*K(0:m-1,:),2,nje),dim=1)/ &
-         & spread(mf%B(1,j(EV),0),2,nz)
+    Ko(:,EV) = sum(spread(mf%B(:,j(EV),0),2,nz)* &
+         & spread(I(0:m-1,:)*K(2:m+1,:) - I(2:m+1,:)*K(0:m-1,:),3,nje),dim=1)/ &
+         & spread(mf%B(1,j(EV),0),1,nz)
 
-    Ko(OD,:) = sum(spread(mf%A(:,j(OD),1),3,nz)* &
-         & spread(I(0:m-1,:)*K(1:m,:) + I(1:m,:)*K(0:m-1,:),2,njo),dim=1)/ &
-         & spread(mf%A(1,j(OD),1),2,nz)
+    Ko(:,OD) = sum(spread(mf%A(:,j(OD),1),2,nz)* &
+         & spread(I(0:m-1,:)*K(1:m,:) + I(1:m,:)*K(0:m-1,:),3,njo),dim=1)/ &
+         & spread(mf%A(1,j(OD),1),1,nz)
 
-    Ko = Ko*spread(exp(abs(real(v1)) - v2),1,size(n))
-    where (spread(n,2,nz) == 0) Ko = -huge(1.0)  ! Ko_0() is invalid
+    Ko = Ko*spread(exp(abs(real(v1)) - v2),2,size(n))
+    where (spread(n,1,nz) == 0) Ko = -huge(1.0)  ! Ko_0() is invalid
   end function Ko_vect_nz
 
   !############################################################
@@ -568,7 +550,7 @@ contains
     integer, dimension(:), intent(in) :: n
     real(DP), dimension(:), intent(in) :: z
     type(mathieu), intent(in) :: mf
-    complex(DP), dimension(size(n),size(z)) :: DIe
+    complex(DP), dimension(size(z),size(n)) :: DIe
 
     integer, dimension(size(n)) :: j
     real(DP), dimension(mf%M):: v, vi
@@ -589,16 +571,16 @@ contains
     call BesselI_val_and_deriv(v1,m+1,I1(0:m,:),DI1(0:m,:))
     call BesselI_val_and_deriv(v2,m+1,I2(0:m,:),DI2(0:m,:))
 
-    DIe(EV,:) = sqrtq*sum(spread(spread(vi,2,nje)*mf%A(:,j(EV),0),3,nz)* &
-         & spread(epz*I1(0:m-1,:)*DI2(0:m-1,:) - enz*DI1(0:m-1,:)*I2(0:m-1,:),2,nje),dim=1)/ &
-         & spread(mf%A(1,j(EV),0),2,nz)
+    DIe(:,EV) = sqrtq*sum(spread(spread(vi,2,nje)*mf%A(:,j(EV),0),2,nz)* &
+         & spread(epz*I1(0:m-1,:)*DI2(0:m-1,:) - enz*DI1(0:m-1,:)*I2(0:m-1,:),3,nje),dim=1)/ &
+         & spread(mf%A(1,j(EV),0),1,nz)
 
-    DIe(OD,:) = sqrtq*sum(spread(spread(vi,2,njo)*mf%B(:,j(OD),1),3,nz)* &
+    DIe(:,OD) = sqrtq*sum(spread(spread(vi,2,njo)*mf%B(:,j(OD),1),2,nz)* &
          & spread(epz*I1(0:m-1,:)*DI2(1:m,:) - enz*DI1(0:m-1,:)*I2(1:m,:) + &
-         &        epz*I1(1:m,:)*DI2(0:m-1,:) - enz*DI1(1:m,:)*I2(0:m-1,:),2,njo),dim=1)/&
-         & spread(mf%B(1,j(OD),1),2,nz)
+         &        epz*I1(1:m,:)*DI2(0:m-1,:) - enz*DI1(1:m,:)*I2(0:m-1,:),3,njo),dim=1)/&
+         & spread(mf%B(1,j(OD),1),1,nz)
 
-    DIe = DIe*spread(exp(abs(real(v1)) + abs(real(v2))),1,size(n))
+    DIe = DIe*spread(exp(abs(real(v1)) + abs(real(v2))),2,size(n))
   end function DIe_vect_nz
 
   !############################################################
@@ -609,7 +591,7 @@ contains
     integer, dimension(:), intent(in) :: n
     real(DP), dimension(:), intent(in) :: z
     type(mathieu), intent(in) :: mf
-    complex(DP), dimension(size(n),size(z)) :: DIo
+    complex(DP), dimension(size(z),size(n)) :: DIo
 
     integer, dimension(size(n)) :: j
     real(DP), dimension(mf%M):: v, vi
@@ -631,18 +613,18 @@ contains
     call BesselI_val_and_deriv(v1,m+2,I1(0:m+1,:),DI1(0:m+1,:))
     call BesselI_val_and_deriv(v2,m+2,I2(0:m+1,:),DI2(0:m+1,:))
 
-    DIo(EV,:) = sqrtq*sum(spread(spread(vi,2,nje)*mf%B(:,j(EV),0),3,nz)* &
+    DIo(:,EV) = sqrtq*sum(spread(spread(vi,2,nje)*mf%B(:,j(EV),0),2,nz)* &
          & spread(epz*I1(0:m-1,:)*DI2(2:m+1,:) - enz*DI1(0:m-1,:)*I2(2:m+1,:) - &
-         &        epz*I1(2:m+1,:)*DI2(0:m-1,:) - enz*DI1(2:m+1,:)*I2(0:m-1,:),2,nje),dim=1)/&
-         & spread(mf%B(1,j(EV),0),2,nz)
+         &        epz*I1(2:m+1,:)*DI2(0:m-1,:) - enz*DI1(2:m+1,:)*I2(0:m-1,:),3,nje),dim=1)/&
+         & spread(mf%B(1,j(EV),0),1,nz)
 
-    DIo(OD,:) = sqrtq*sum(spread(spread(vi,2,njo)*mf%A(:,j(OD),1),3,nz)* &
+    DIo(:,OD) = sqrtq*sum(spread(spread(vi,2,njo)*mf%A(:,j(OD),1),2,nz)* &
          & spread(epz*I1(0:m-1,:)*DI2(1:m,:) - enz*DI1(0:m-1,:)*I2(1:m,:) - &
-         &        epz*I1(1:m,:)*DI2(0:m-1,:) - enz*DI1(1:m,:)*I2(0:m-1,:),2,njo),dim=1)/&
-         & spread(mf%A(1,j(OD),1),2,nz)
+         &        epz*I1(1:m,:)*DI2(0:m-1,:) - enz*DI1(1:m,:)*I2(0:m-1,:),3,njo),dim=1)/&
+         & spread(mf%A(1,j(OD),1),1,nz)
 
-    DIo = DIo*spread(exp(abs(real(v1)) + abs(real(v2))),1,size(n))
-    where (spread(n,2,nz) == 0) DIo = -huge(1.0)  ! DIo_0() is invalid
+    DIo = DIo*spread(exp(abs(real(v1)) + abs(real(v2))),2,size(n))
+    where (spread(n,1,nz) == 0) DIo = -huge(1.0)  ! DIo_0() is invalid
   end function DIo_vect_nz
 
   !############################################################
@@ -655,7 +637,7 @@ contains
     integer, dimension(:), intent(in) :: n
     real(DP), dimension(:), intent(in) :: z
     type(mathieu), intent(in) :: mf
-    complex(DP), dimension(size(n),size(z)) :: DKe
+    complex(DP), dimension(size(z),size(n)) :: DKe
 
     integer, dimension(size(n)) :: j
     real(DP), dimension(mf%M):: v, vi
@@ -676,16 +658,16 @@ contains
     call BesselI_val_and_deriv(v1,m+1,I(0:m,:),DI(0:m,:))
     call BesselK_val_and_deriv(v2,m+1,K(0:m,:),DK(0:m,:))
 
-    DKe(EV,:) = sqrtq*sum(spread(mf%A(:,j(EV),0),3,nz)* &
-         & spread(epz*I(0:m-1,:)*DK(0:m-1,:) - enz*DI(0:m-1,:)*K(0:m-1,:),2,nje),dim=1)/&
-         & spread(mf%A(1,j(EV),0),2,nz)
+    DKe(:,EV) = sqrtq*sum(spread(mf%A(:,j(EV),0),2,nz)* &
+         & spread(epz*I(0:m-1,:)*DK(0:m-1,:) - enz*DI(0:m-1,:)*K(0:m-1,:),3,nje),dim=1)/&
+         & spread(mf%A(1,j(EV),0),1,nz)
     
-    DKe(OD,:) = sqrtq*sum(spread(mf%B(:,j(OD),1),3,nz)* &
+    DKe(:,OD) = sqrtq*sum(spread(mf%B(:,j(OD),1),2,nz)* &
          & spread(epz*I(0:m-1,:)*DK(1:m,:) - enz*DI(0:m-1,:)*K(1:m,:) - &
-         &        epz*I(1:m,:)*DK(0:m-1,:) - epz*DI(1:m,:)*K(0:m-1,:),2,njo),dim=1)/ &
-         & spread(mf%B(1,j(OD),1),2,nz)
+         &        epz*I(1:m,:)*DK(0:m-1,:) - epz*DI(1:m,:)*K(0:m-1,:),3,njo),dim=1)/ &
+         & spread(mf%B(1,j(OD),1),1,nz)
 
-    DKe = DKe*spread(exp(abs(real(v1)) - v2),1,size(n))
+    DKe = DKe*spread(exp(abs(real(v1)) - v2),2,size(n))
   end function DKe_vect_nz
 
   !############################################################
@@ -697,7 +679,7 @@ contains
     integer, dimension(:), intent(in) :: n
     real(DP), dimension(:), intent(in) :: z
     type(mathieu), intent(in) :: mf
-    complex(DP), dimension(size(n),size(z)) :: DKo
+    complex(DP), dimension(size(z),size(n)) :: DKo
 
     integer, dimension(size(n)) :: j
     real(DP), dimension(mf%M):: v, vi
@@ -719,18 +701,18 @@ contains
     call BesselI_val_and_deriv(v1,m+2,I(0:m+1,:),DI(0:m+1,:))
     call BesselK_val_and_deriv(v2,m+2,K(0:m+1,:),DK(0:m+1,:))
 
-    DKo(EV,:) = sqrtq*sum(spread(mf%B(:,j(EV),0),3,nz)* &
+    DKo(:,EV) = sqrtq*sum(spread(mf%B(:,j(EV),0),2,nz)* &
          & spread(epz*I(0:m-1,:)*DK(2:m+1,:) - enz*DI(0:m-1,:)*K(2:m+1,:) - &
-         &        epz*I(2:m+1,:)*DK(0:m-1,:) - epz*DI(2:m+1,:)*K(0:m-1,:),2,nje),dim=1)/&
-         & spread(mf%B(1,j(EV),0),2,nz)
+         &        epz*I(2:m+1,:)*DK(0:m-1,:) - epz*DI(2:m+1,:)*K(0:m-1,:),3,nje),dim=1)/&
+         & spread(mf%B(1,j(EV),0),1,nz)
 
-    DKo(OD,:) = sqrtq*sum(spread(mf%A(:,j(OD),1),3,nz)* &
+    DKo(:,OD) = sqrtq*sum(spread(mf%A(:,j(OD),1),2,nz)* &
          & spread(epz*I(0:m-1,:)*DK(1:m,:) - enz*DI(0:m-1,:)*K(1:m,:) + &
-         &        epz*I(1:m,:)*DK(0:m-1,:) - enz*DI(1:m,:)*K(0:m-1,:),2,njo),dim=1)/&
-         & spread(mf%A(1,j(OD),1),2,nz)
+         &        epz*I(1:m,:)*DK(0:m-1,:) - enz*DI(1:m,:)*K(0:m-1,:),3,njo),dim=1)/&
+         & spread(mf%A(1,j(OD),1),1,nz)
 
-    DKo = DKo*spread(exp(abs(real(v1)) - v2),1,size(n))
-    where (spread(n,2,nz) == 0) DKo = -huge(1.0)  ! DKo_0() is invalid
+    DKo = DKo*spread(exp(abs(real(v1)) - v2),2,size(n))
+    where (spread(n,1,nz) == 0) DKo = -huge(1.0)  ! DKo_0() is invalid
   end function DKo_vect_nz
 
   ! &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
@@ -743,7 +725,7 @@ contains
     real(DP), intent(in), dimension(:) :: z
     type(mathieu), intent(in) :: mf
     complex(DP), dimension(size(z)) :: ce
-    ce = sum(ce_vect_nz(mf,[n],z),dim=1)
+    ce = sum(ce_vect_nz(mf,[n],z),dim=2)
   end function ce_scalar_n
   function ce_scalar_z(mf,n,z) result(ce)
     use constants, only : DP
@@ -751,7 +733,7 @@ contains
     real(DP), intent(in) :: z
     type(mathieu), intent(in) :: mf
     complex(DP), dimension(size(n)) :: ce
-    ce = sum(ce_vect_nz(mf,n,[z]),dim=2)
+    ce = sum(ce_vect_nz(mf,n,[z]),dim=1)
   end function ce_scalar_z
   function ce_scalar_nz(mf,n,z) result(ce)
     use constants, only : DP
@@ -768,7 +750,7 @@ contains
     real(DP), intent(in), dimension(:) :: z
     type(mathieu), intent(in) :: mf
     complex(DP), dimension(size(z)) :: se
-    se = sum(se_vect_nz(mf,[n],z),dim=1)
+    se = sum(se_vect_nz(mf,[n],z),dim=2)
   end function se_scalar_n
   function se_scalar_z(mf,n,z) result(se)
     use constants, only : DP
@@ -776,7 +758,7 @@ contains
     real(DP), intent(in) :: z
     type(mathieu), intent(in) :: mf
     complex(DP), dimension(size(n)) :: se
-    se = sum(se_vect_nz(mf,n,[z]),dim=2)
+    se = sum(se_vect_nz(mf,n,[z]),dim=1)
   end function se_scalar_z
   function se_scalar_nz(mf,n,z) result(se)
     use constants, only : DP
@@ -793,7 +775,7 @@ contains
     real(DP), intent(in), dimension(:) :: z
     type(mathieu), intent(in) :: mf
     complex(DP), dimension(size(z)) :: Dce
-    Dce = sum(Dce_vect_nz(mf,[n],z),dim=1)
+    Dce = sum(Dce_vect_nz(mf,[n],z),dim=2)
   end function Dce_scalar_n
   function Dce_scalar_z(mf,n,z) result(Dce)
     use constants, only : DP
@@ -801,7 +783,7 @@ contains
     real(DP), intent(in) :: z
     type(mathieu), intent(in) :: mf
     complex(DP), dimension(size(n)) :: Dce
-    Dce = sum(Dce_vect_nz(mf,n,[z]),dim=2)
+    Dce = sum(Dce_vect_nz(mf,n,[z]),dim=1)
   end function Dce_scalar_z
   function Dce_scalar_nz(mf,n,z) result(Dce)
     use constants, only : DP
@@ -818,7 +800,7 @@ contains
     real(DP), intent(in), dimension(:) :: z
     type(mathieu), intent(in) :: mf
     complex(DP), dimension(size(z)) :: Dse
-    Dse = sum(Dse_vect_nz(mf,[n],z),dim=1)
+    Dse = sum(Dse_vect_nz(mf,[n],z),dim=2)
   end function Dse_scalar_n
   function Dse_scalar_z(mf,n,z) result(Dse)
     use constants, only : DP
@@ -826,7 +808,7 @@ contains
     real(DP), intent(in) :: z
     type(mathieu), intent(in) :: mf
     complex(DP), dimension(size(n)) :: Dse
-    Dse = sum(Dse_vect_nz(mf,n,[z]),dim=2)
+    Dse = sum(Dse_vect_nz(mf,n,[z]),dim=1)
   end function Dse_scalar_z
   function Dse_scalar_nz(mf,n,z) result(Dse)
     use constants, only : DP
@@ -843,7 +825,7 @@ contains
     real(DP), intent(in), dimension(:) :: z
     type(mathieu), intent(in) :: mf
     complex(DP), dimension(size(z)) :: Ie
-    Ie = sum(Ie_vect_nz(mf,[n],z),dim=1)
+    Ie = sum(Ie_vect_nz(mf,[n],z),dim=2)
   end function Ie_scalar_n
   function Ie_scalar_z(mf,n,z) result(Ie)
     use constants, only : DP
@@ -851,7 +833,7 @@ contains
     real(DP), intent(in) :: z
     type(mathieu), intent(in) :: mf
     complex(DP), dimension(size(n)) :: Ie
-    Ie = sum(Ie_vect_nz(mf,n,[z]),dim=2)
+    Ie = sum(Ie_vect_nz(mf,n,[z]),dim=1)
   end function Ie_scalar_z
   function Ie_scalar_nz(mf,n,z) result(Ie)
     use constants, only : DP
@@ -868,7 +850,7 @@ contains
     real(DP), intent(in), dimension(:) :: z
     type(mathieu), intent(in) :: mf
     complex(DP), dimension(size(z)) :: Io
-    Io = sum(Io_vect_nz(mf,[n],z),dim=1)
+    Io = sum(Io_vect_nz(mf,[n],z),dim=2)
   end function Io_scalar_n
   function Io_scalar_z(mf,n,z) result(Io)
     use constants, only : DP
@@ -876,7 +858,7 @@ contains
     real(DP), intent(in) :: z
     type(mathieu), intent(in) :: mf
     complex(DP), dimension(size(n)) :: Io
-    Io = sum(Io_vect_nz(mf,n,[z]),dim=2)
+    Io = sum(Io_vect_nz(mf,n,[z]),dim=1)
   end function Io_scalar_z
   function Io_scalar_nz(mf,n,z) result(Io)
     use constants, only : DP
@@ -893,7 +875,7 @@ contains
     real(DP), intent(in), dimension(:) :: z
     type(mathieu), intent(in) :: mf
     complex(DP), dimension(size(z)) :: Ke
-    Ke = sum(Ke_vect_nz(mf,[n],z),dim=1)
+    Ke = sum(Ke_vect_nz(mf,[n],z),dim=2)
   end function Ke_scalar_n
   function Ke_scalar_z(mf,n,z) result(Ke)
     use constants, only : DP
@@ -901,7 +883,7 @@ contains
     real(DP), intent(in) :: z
     type(mathieu), intent(in) :: mf
     complex(DP), dimension(size(n)) :: Ke
-    Ke = sum(Ke_vect_nz(mf,n,[z]),dim=2)
+    Ke = sum(Ke_vect_nz(mf,n,[z]),dim=1)
   end function Ke_scalar_z
   function Ke_scalar_nz(mf,n,z) result(Ke)
     use constants, only : DP
@@ -918,7 +900,7 @@ contains
     real(DP), intent(in), dimension(:) :: z
     type(mathieu), intent(in) :: mf
     complex(DP), dimension(size(z)) :: Ko
-    Ko = sum(Ko_vect_nz(mf,[n],z),dim=1)
+    Ko = sum(Ko_vect_nz(mf,[n],z),dim=2)
   end function Ko_scalar_n
   function Ko_scalar_z(mf,n,z) result(Ko)
     use constants, only : DP
@@ -926,7 +908,7 @@ contains
     real(DP), intent(in) :: z
     type(mathieu), intent(in) :: mf
     complex(DP), dimension(size(n)) :: Ko
-    Ko = sum(Ko_vect_nz(mf,n,[z]),dim=2)
+    Ko = sum(Ko_vect_nz(mf,n,[z]),dim=1)
   end function Ko_scalar_z
   function Ko_scalar_nz(mf,n,z) result(Ko)
     use constants, only : DP
@@ -943,7 +925,7 @@ contains
     real(DP), intent(in), dimension(:) :: z
     type(mathieu), intent(in) :: mf
     complex(DP), dimension(size(z)) :: DIe
-    DIe = sum(DIe_vect_nz(mf,[n],z),dim=1)
+    DIe = sum(DIe_vect_nz(mf,[n],z),dim=2)
   end function DIe_scalar_n
   function DIe_scalar_z(mf,n,z) result(DIe)
     use constants, only : DP
@@ -951,7 +933,7 @@ contains
     real(DP), intent(in) :: z
     type(mathieu), intent(in) :: mf
     complex(DP), dimension(size(n)) :: DIe
-    DIe = sum(DIe_vect_nz(mf,n,[z]),dim=2)
+    DIe = sum(DIe_vect_nz(mf,n,[z]),dim=1)
   end function DIe_scalar_z
   function DIe_scalar_nz(mf,n,z) result(DIe)
     use constants, only : DP
@@ -968,7 +950,7 @@ contains
     real(DP), intent(in), dimension(:) :: z
     type(mathieu), intent(in) :: mf
     complex(DP), dimension(size(z)) :: DIo
-    DIo = sum(DIo_vect_nz(mf,[n],z),dim=1)
+    DIo = sum(DIo_vect_nz(mf,[n],z),dim=2)
   end function DIo_scalar_n
   function DIo_scalar_z(mf,n,z) result(DIo)
     use constants, only : DP
@@ -976,7 +958,7 @@ contains
     real(DP), intent(in) :: z
     type(mathieu), intent(in) :: mf
     complex(DP), dimension(size(n)) :: DIo
-    DIo = sum(DIo_vect_nz(mf,n,[z]),dim=2)
+    DIo = sum(DIo_vect_nz(mf,n,[z]),dim=1)
   end function DIo_scalar_z
   function DIo_scalar_nz(mf,n,z) result(DIo)
     use constants, only : DP
@@ -993,7 +975,7 @@ contains
     real(DP), intent(in), dimension(:) :: z
     type(mathieu), intent(in) :: mf
     complex(DP), dimension(size(z)) :: DKe
-    DKe = sum(DKe_vect_nz(mf,[n],z),dim=1)
+    DKe = sum(DKe_vect_nz(mf,[n],z),dim=2)
   end function DKe_scalar_n
   function DKe_scalar_z(mf,n,z) result(DKe)
     use constants, only : DP
@@ -1001,7 +983,7 @@ contains
     real(DP), intent(in) :: z
     type(mathieu), intent(in) :: mf
     complex(DP), dimension(size(n)) :: DKe
-    DKe = sum(DKe_vect_nz(mf,n,[z]),dim=2)
+    DKe = sum(DKe_vect_nz(mf,n,[z]),dim=1)
   end function DKe_scalar_z
   function DKe_scalar_nz(mf,n,z) result(DKe)
     use constants, only : DP
@@ -1018,7 +1000,7 @@ contains
     real(DP), intent(in), dimension(:) :: z
     type(mathieu), intent(in) :: mf
     complex(DP), dimension(size(z)) :: DKo
-    DKo = sum(DKo_vect_nz(mf,[n],z),dim=1)
+    DKo = sum(DKo_vect_nz(mf,[n],z),dim=2)
   end function DKo_scalar_n
   function DKo_scalar_z(mf,n,z) result(DKo)
     use constants, only : DP
@@ -1026,7 +1008,7 @@ contains
     real(DP), intent(in) :: z
     type(mathieu), intent(in) :: mf
     complex(DP), dimension(size(n)) :: DKo
-    DKo = sum(DKo_vect_nz(mf,n,[z]),dim=2)
+    DKo = sum(DKo_vect_nz(mf,n,[z]),dim=1)
   end function DKo_scalar_z
   function DKo_scalar_nz(mf,n,z) result(DKo)
     use constants, only : DP
@@ -1087,7 +1069,6 @@ contains
 
     call check_cutoff(mf,n)
 
-    !$OMP PARALLEL WORKSHARE
     ! compute vector of integers counting up
     forall (j=0:mf%m-1) i(j+1) = j
     v = real(i,DP) 
@@ -1101,7 +1082,6 @@ contains
 
     EV = pack(nn,mod(n,2)==0)
     OD = pack(nn,mod(n,2)==1)
-    !$OMP END PARALLEL WORKSHARE
 
   end subroutine angfcnsetup
 
@@ -1121,7 +1101,6 @@ contains
 
     call check_cutoff(mf,n)
 
-    !$OMP PARALLEL WORKSHARE
     ! compute vector of integers counting up
     forall (j=0:mf%m-1) i(j+1) = j
     v = real(i,DP)
@@ -1139,7 +1118,6 @@ contains
 
     EV = pack(nn,mod(n,2)==0)
     OD = pack(nn,mod(n,2)==1)
-    !$OMP END PARALLEL WORKSHARE
 
   end subroutine radfcnsetup
 
@@ -1160,7 +1138,6 @@ contains
 
     call check_cutoff(mf,n)
 
-    !$OMP PARALLEL WORKSHARE
     ! compute vector of integers counting up
     forall (j=0:mf%m-1) i(j+1) = j
     v = real(i,DP)
@@ -1180,7 +1157,6 @@ contains
 
     EV = pack(nn,mod(n,2)==0)
     OD = pack(nn,mod(n,2)==1)
-    !$OMP END PARALLEL WORKSHARE
 
   end subroutine radderivfcnsetup
 
@@ -1251,11 +1227,9 @@ contains
 
     call BesselI_val(arg,n,I(0:n-1,:))
 
-    !$OMP PARALLEL WORKSHARE
     ID(1:n-2,:) = 0.5_DP*(I(0:n-3,:) + I(2:n-1,:)) ! middle
     ID(0,:) = I(1,:) ! low end
     ID(n-1,:) = I(n-2,:) - real(n-1,DP)/arg*I(n-1,:) ! high end
-    !$OMP END PARALLEL WORKSHARE
 
   end subroutine BesselI_val_and_deriv
 
@@ -1317,11 +1291,9 @@ contains
     if (n < 3) stop 'mathieu_functions2.f90 : besselk_val_and_deriv, n must be > 3'
     call BesselK_val(arg,n,K(0:n-1,:))
 
-    !$OMP PARALLEL WORKSHARE
     KD(1:n-2,:) = -0.5_DP*(K(0:n-3,:) + K(2:n-1,:)) ! middle
     KD(0,:) = -K(1,:) ! low end
     KD(n-1,:) = -(K(n-2,:) + real(n-1,DP)/arg*K(n-1,:)) ! high end
-    !$OMP END PARALLEL WORKSHARE
 
   end subroutine BesselK_val_and_deriv
 

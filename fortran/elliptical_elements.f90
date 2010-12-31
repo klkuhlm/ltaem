@@ -63,12 +63,12 @@ contains
        f => e%parent
 
        ! outside ang. mod. Mathieu fcns (last dimension is inside/outside)
-       cemat(1:M,0:N-1,0) = transpose(ce(f%mat(i), vi(0:N-1), e%Pcm(:)))
-       semat(1:M,1:N-1,0) = transpose(se(f%mat(i), vi(1:N-1), e%Pcm(:)))
+       cemat(1:M,0:N-1,0) = ce(f%mat(i), vi(0:N-1), e%Pcm(:))
+       semat(1:M,1:N-1,0) = se(f%mat(i), vi(1:N-1), e%Pcm(:))
        if (e%ibnd == 0 .or. (e%calcin .and. (e%ibnd == 1 .or. e%ibnd == -1))) then
           ! inside
-          cemat(1:M,0:N-1,1) = transpose(ce(e%mat(i), vi(0:N-1), e%Pcm(:)))
-          semat(1:M,1:N-1,1) = transpose(se(e%mat(i), vi(1:N-1), e%Pcm(:)))
+          cemat(1:M,0:N-1,1) = ce(e%mat(i), vi(0:N-1), e%Pcm(:))
+          semat(1:M,1:N-1,1) = se(e%mat(i), vi(1:N-1), e%Pcm(:))
        end if
 
        ! setup LHS
@@ -198,10 +198,10 @@ contains
              if (dom%inclBg(s,t)) then
                 ! can the target element "see" the outside of the source element?
                 ! use exterior angular and radial modified Mathieu functions
-                cemat(1:M,0:N-1) = transpose(ce(f%mat(idx), vi(0:N-1), e%G(t)%Pgm(:)))
-                semat(1:M,1:N-1) = transpose(se(f%mat(idx), vi(1:N-1), e%G(t)%Pgm(:)))
-                RMn(1:M,0:N-1,0) = transpose(Ke(f%mat(idx), vi(0:N-1), e%G(t)%Rgm(:)))
-                RMn(1:M,1:N-1,1) = transpose(Ko(f%mat(idx), vi(1:N-1), e%G(t)%Rgm(:)))
+                cemat(1:M,0:N-1) = ce(f%mat(idx), vi(0:N-1), e%G(t)%Pgm(:))
+                semat(1:M,1:N-1) = se(f%mat(idx), vi(1:N-1), e%G(t)%Pgm(:))
+                RMn(1:M,0:N-1,0) = Ke(f%mat(idx), vi(0:N-1), e%G(t)%Rgm(:))
+                RMn(1:M,1:N-1,1) = Ko(f%mat(idx), vi(1:N-1), e%G(t)%Rgm(:))
                 RMn(1:M,0,1) = 0.0
                 RMn0(0:N-1,0) = Ke(f%mat(idx), vi(0:N-1), e%r)
                 RMn0(1:N-1,1) = Ko(f%mat(idx), vi(1:N-1), e%r)
@@ -220,10 +220,10 @@ contains
                 ! can target element "see" the inside of the source element?
                 ! i.e., is the source element the parent?
                 ! use interior angular and radial modified Mathieu functions
-                cemat(1:M,0:N-1) = transpose(ce(e%mat(idx), vi(0:N-1), e%G(t)%Pgm(:)))
-                semat(1:M,1:N-1) = transpose(se(e%mat(idx), vi(1:N-1), e%G(t)%Pgm(:)))
-                RMn(1:M,0:N-1,0) = transpose(Ie(e%mat(idx), vi(0:N-1), e%G(t)%Rgm(:)))
-                RMn(1:M,1:N-1,1) = transpose(Io(e%mat(idx), vi(1:N-1), e%G(t)%Rgm(:)))
+                cemat(1:M,0:N-1) = ce(e%mat(idx), vi(0:N-1), e%G(t)%Pgm(:))
+                semat(1:M,1:N-1) = se(e%mat(idx), vi(1:N-1), e%G(t)%Pgm(:))
+                RMn(1:M,0:N-1,0) = Ie(e%mat(idx), vi(0:N-1), e%G(t)%Rgm(:))
+                RMn(1:M,1:N-1,1) = Io(e%mat(idx), vi(1:N-1), e%G(t)%Rgm(:))
                 RMn(1:M,0,1) = 0.0
                 RMn0(0:N-1,0) = Ie(e%mat(idx), vi(0:N-1), e%r)
                 RMn0(1:N-1,1) = Io(e%mat(idx), vi(1:N-1), e%r)
@@ -263,20 +263,20 @@ contains
              if (dom%inclBg(s,t)) then
                 ! use exterior angular and radial modified mathieu functions
                 if (.not. el%ibnd == 0) then
-                   cemat(1:M,0:N-1) = transpose(ce(f%mat(idx), vi(0:N-1), e%G(t)%Pgm(:)))
-                   RMn(1:M,0:N-1,0) = transpose(Ke(f%mat(idx), vi(0:N-1), e%G(t)%Rgm(:)))
+                   cemat(1:M,0:N-1) = ce(f%mat(idx), vi(0:N-1), e%G(t)%Pgm(:))
+                   RMn(1:M,0:N-1,0) = Ke(f%mat(idx), vi(0:N-1), e%G(t)%Rgm(:))
                    RMn0(0:N-1,0) = Ke(f%mat(idx), vi(0:N-1), e%r)
-                   semat(1:M,1:N-1) = transpose(se(f%mat(idx), vi(1:N-1), e%G(t)%Pgm(:)))
-                   RMn(1:M,1:N-1,1) = transpose(Ko(f%mat(idx), vi(1:N-1), e%G(t)%Rgm(:)))
+                   semat(1:M,1:N-1) = se(f%mat(idx), vi(1:N-1), e%G(t)%Pgm(:))
+                   RMn(1:M,1:N-1,1) = Ko(f%mat(idx), vi(1:N-1), e%G(t)%Rgm(:))
                    RMn(1:M,0,1) = 0.0
                    RMn0(1:N-1,1) = Ko(f%mat(idx), vi(1:N-1), e%r)
                    RMn0(0,1) = 0.0
                    K = f%K
                 end if
-                dcemat(1:M,0:N-1) = transpose(dce(f%mat(idx), vi(0:N-1), e%G(t)%Pgm(:)))
-                dRMn(1:M,0:N-1,0) = transpose(dKe(f%mat(idx), vi(0:N-1), e%G(t)%Rgm(:)))
-                dsemat(1:M,1:N-1) = transpose(dse(f%mat(idx), vi(1:N-1), e%G(t)%Pgm(:)))
-                dRMn(1:M,1:N-1,1) = transpose(dKo(f%mat(idx), vi(1:N-1), e%G(t)%Rgm(:)))
+                dcemat(1:M,0:N-1) = dce(f%mat(idx), vi(0:N-1), e%G(t)%Pgm(:))
+                dRMn(1:M,0:N-1,0) = dKe(f%mat(idx), vi(0:N-1), e%G(t)%Rgm(:))
+                dsemat(1:M,1:N-1) = dse(f%mat(idx), vi(1:N-1), e%G(t)%Pgm(:))
+                dRMn(1:M,1:N-1,1) = dKo(f%mat(idx), vi(1:N-1), e%G(t)%Rgm(:))
                 dRMn(1:M,0,1) = 0.0
 
                 loN = 1
@@ -285,19 +285,19 @@ contains
              else
                 ! use interior angular and radial modified Mathieu functions
                 if (.not. el%ibnd == 0) then
-                   cemat(1:M,0:N-1) = transpose(ce(e%mat(idx), vi(0:N-1), e%G(t)%Pgm(:)))
-                   semat(1:M,1:N-1) = transpose(se(e%mat(idx), vi(1:N-1), e%G(t)%Pgm(:)))
-                   RMn(1:M,0:N-1,0) = transpose(Ie(e%mat(idx), vi(0:N-1), e%G(t)%Rgm(:)))
-                   RMn(1:M,1:N-1,1) = transpose(Io(e%mat(idx), vi(1:N-1), e%G(t)%Rgm(:)))
+                   cemat(1:M,0:N-1) = ce(e%mat(idx), vi(0:N-1), e%G(t)%Pgm(:))
+                   semat(1:M,1:N-1) = se(e%mat(idx), vi(1:N-1), e%G(t)%Pgm(:))
+                   RMn(1:M,0:N-1,0) = Ie(e%mat(idx), vi(0:N-1), e%G(t)%Rgm(:))
+                   RMn(1:M,1:N-1,1) = Io(e%mat(idx), vi(1:N-1), e%G(t)%Rgm(:))
                    RMn(1:M,0,1) = 0.0
                    RMn0(0:N-1,0) = -Ie(e%mat(idx), vi(0:N-1), e%r) ! apply in/out-side sign here
                    RMn0(1:N-1,1) = -Io(e%mat(idx), vi(1:N-1), e%r)
                    RMn0(0,1) = 0.0
                 end if
-                dcemat(1:M,0:N-1) = transpose(dce(e%mat(idx), vi(0:N-1), e%G(t)%Pgm(:)))
-                dsemat(1:M,1:N-1) = transpose(dse(e%mat(idx), vi(1:N-1), e%G(t)%Pgm(:)))
-                dRMn(1:M,0:N-1,0) = transpose(dIe(e%mat(idx), vi(0:N-1), e%G(t)%Rgm(:)))
-                dRMn(1:M,1:N-1,1) = transpose(dIo(e%mat(idx), vi(1:N-1), e%G(t)%Rgm(:)))
+                dcemat(1:M,0:N-1) = dce(e%mat(idx), vi(0:N-1), e%G(t)%Pgm(:))
+                dsemat(1:M,1:N-1) = dse(e%mat(idx), vi(1:N-1), e%G(t)%Pgm(:))
+                dRMn(1:M,0:N-1,0) = dIe(e%mat(idx), vi(0:N-1), e%G(t)%Rgm(:))
+                dRMn(1:M,1:N-1,1) = dIo(e%mat(idx), vi(1:N-1), e%G(t)%Rgm(:))
                 dRMn(1:M,0,1) = 0.0
                 K = e%K
 
