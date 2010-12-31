@@ -203,6 +203,9 @@ module type_definitions
   ! particle related parameters (one for each particle)
   !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   type :: particle
+
+     ! is particle tracked backwards or forwards?
+     logical :: forward = .true.
   
      ! starting x&y location, inital & final times
      real(DP) :: x = -999., y = -999., ti = -999., tf = -999.

@@ -622,6 +622,8 @@ contains
        read(44,*) sol%nPart,  sol%streakSkip
        allocate(p(sol%nPart))
 
+       read(44,*) p(:)%forward ! true=forward tracking, false=backwards tracking
+
        read(44,*) p(:)%tol   ! error tolerance for rkm
        if (any(p%tol < spacing(1.0D0))) then
           write(*,*) 'p%tol must be > 0.0 ',p%tol
@@ -655,16 +657,26 @@ contains
           stop 248
        end if
 
-       read(44,*) p(:)%tf
-       if (any(p%tf < p%ti)) then
-          write(*,*) 'p%tf must be > p%ti  ti:',p%ti,' tf:',p%tf
+       read(44,*) p(:)%tf ! particle end time
+       if (any(p%tf < spacing(1.0))) then
+          write(*,*) 'p%tf must be > 0.0 ',p%tf
           stop 249
        end if
+
+       if (any(p%tf < p%ti .and. p%forward)) then
+          write(*,*) 'p%tf must be > p%ti  for forward tracking ti:',p%ti,' tf:',p%tf
+          stop 250
+       end if
+       if (any(p%tf > p%ti .and. .not.p%forward)) then
+          write(*,*) 'p%tf must be < p%ti  for backward tracking ti:',p%ti,' tf:',p%tf
+          stop 251
+       end if
+       
 
        read(44,*) p(:)%int
        if (any(p%int < 1 .or. p%int == 3 .or. p%int > 4)) then
           write(*,*) 'p%int must be {1,2,4} ',p%int
-          stop 250
+          stop 252
        end if
        
        read(44,*) p(:)%InclIn

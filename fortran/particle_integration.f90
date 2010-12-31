@@ -25,21 +25,20 @@ contains
 
     integer :: count, lt, los, his, ns
     logical :: partEnd
-    complex(DP), dimension(size(s,dim=1),2) :: velp
     real(DP), dimension(2) :: vInit,vTrap,vAB3,vAB2,vSF
     real(DP), dimension(2) :: fwdEuler,Trap,halfAB,fullAB,Simp,x0
-    real(DP) :: error, pt, px, py, dt, tf, L
+    real(DP) :: error, pt, px, py, dt,  L
     real(DP), parameter :: SAFETY = 0.9
 
     !  TODO not using porosity correctly ?
 
     ns = size(s,dim=1)
-    pt = p%ti
+    pt = p%ti 
     px = p%x
     py = p%y
-    dt = p%dt
-    tf = p%tf
-
+    dt = p%dt       
+    if (.not. p%forward) dt = -dt
+    
     p%r(0,1:3) = [pt,px,py]
     count = 1
 
@@ -49,44 +48,33 @@ contains
     write(*,'(A)')    '*******************************' 
 
     ! Runge-Kutta-Merson 4th-order adaptive integration scheme
-    rkm: do 
-       if (partEnd .or. pt+dt >= tf) exit rkm
-
+    rkm: do
+       if (partEnd .or. trackDone(p%forward,pt+dt,p%tf)) exit rkm
        x0 = [px,py]
 
        ! forward Euler 1/3-step  (predictor)
        call getsrange(pt,lo,ns,los,his,lt)
-       velp(1:ns,1:2) = velCalc(x0,s(:,lt),los,his,dom,c,e,bg)
-       vInit(1:2) = invlap(pt,tee(lt),velp(:,1:2),sol%INVLT)
-
+       vInit = invlap(pt,tee(lt),velCalc(x0,s(:,lt),los,his,dom,c,e,bg),sol%INVLT)
        FwdEuler(1:2) = x0(1:2) + dt/3.0*vInit(1:2)
 
        ! trapazoid rule 1/3-step (corrector)
        call getsrange(pt + dt/3.0,lo,ns,los,his,lt)
-       velp(1:ns,1:2) = velCalc(FwdEuler,s(:,lt),los,his,dom,c,e,bg)
-       vTrap(1:2) = invlap(pt + dt/3.0,tee(lt),velp(:,1:2),sol%INVLT)
-
+       vTrap = invlap(pt+dt/3.0,tee(lt),velCalc(FwdEuler,s(:,lt),los,his,dom,c,e,bg),sol%INVLT)
        Trap(1:2) = x0(1:2) + dt/6.0*(vInit(1:2) + vTrap(1:2))
 
        ! Adams-Bashforth 1/2-step predictor 
-       velp(1:ns,1:2) = velCalc(Trap,s(:,lt),los,his,dom,c,e,bg)
-       vAB3(1:2) = invlap(pt+dt/3.0,tee(lt),velp(:,1:2),sol%INVLT)
-
+       vAB3 = invlap(pt+dt/3.0,tee(lt),velCalc(Trap,s(:,lt),los,his,dom,c,e,bg),sol%INVLT)
        halfAB(1:2) = x0(1:2) + dt/8.0*(vInit(1:2) + 3*vAB3(1:2))
 
        ! full step Adams-Bashforth predictor
        call getsrange(pt + dt/2.0,lo,ns,los,his,lt)
-       velp(1:ns,1:2) = velCalc(halfAB,s(:,lt),los,his,dom,c,e,bg)
-       vAB2(1:2) = invlap(pt+dt/2.0,tee(lt),velp(:,1:2),sol%INVLT)
-
-       fullAB(1:2) = x0(:) + dt/2.0*(vInit(:) - 3*vAB3(:) + 4*vAB2(:))
+       vAB2 = invlap(pt+dt/2.0,tee(lt),velCalc(halfAB,s(:,lt),los,his,dom,c,e,bg),sol%INVLT)
+       fullAB(1:2) = x0(1:2) + dt/2.0*(vInit(1:2) - 3*vAB3(1:2) + 4*vAB2(1:2))
 
        ! full step Simpson's rule corrector
        call getsrange(pt + dt,lo,ns,los,his,lt)
-       velp(1:ns,1:2) = velCalc(halfAB,s(:,lt),los,his,dom,c,e,bg)
-       vSF = invlap(pt+dt,tee(lt), velp(:,1:2),sol%INVLT)
-
-       Simp(1:2) = x0(:) + dt/6.0*(vInit(:) + 4*vAB2(:) + vSF(:))
+       vSF = invlap(pt+dt,tee(lt),velCalc(halfAB,s(:,lt),los,his,dom,c,e,bg),sol%INVLT)
+       Simp(1:2) = x0(1:2) + dt/6.0*(vInit(1:2) + 4*vAB2(1:2) + vSF(1:2))
 
        ! relative error (biggest of x- or y-direction)
        error = maxval(abs((Simp - fullAB)/Simp))
@@ -97,7 +85,7 @@ contains
        ! only advance to next step if error level is acceptable
        ! _and_ resulting step is less than prescribed limit 
        ! _or_ we have gotten to the minimum step size (proceed anyways)
-       if ((error < p%tol .and. L <= p%maxL) .or. dt <= p%mindt) then
+       if ((error < p%tol .and. L <= p%maxL) .or. abs(dt) <= p%mindt) then
           pt = pt + dt
           px = Simp(1)
           py = Simp(2)
@@ -120,7 +108,7 @@ contains
 
        ! new step size based on error estimate: 
        ! Numerical Recipes, Press et al 1992, eqn 16.2.10, p 712
-       if (.not. partEnd .and. pt <= p%tf) then
+       if ((.not. partEnd) .and. (.not. trackDone(p%forward,pt,p%tf))) then
 
           if (L > p%maxL) then
              ! cut time step to minimize distance
@@ -137,9 +125,10 @@ contains
 
           end if
 
-          if (dt <= p%mindt) then
+          if (abs(dt) <= p%mindt) then
              write(*,'(3(A,ES12.6E2))') 'min step; dt=',dt,' error=',error, ' pt=',pt
              dt = p%mindt
+             if (.not. p%forward) dt = -dt
           end if
        end if
     end do rkm
@@ -165,8 +154,7 @@ contains
     type(element), intent(in) :: bg
 
     integer :: i, numdt, lt, ns, los, his
-    real(DP) :: pt, px, py, dt, tf
-    complex(DP), dimension(1:size(s,dim=1),2) :: velp
+    real(DP) :: pt, px, py, dt
     real(DP), dimension(2) :: FwdEuler,BkwdEuler,MidPt,Simp,x0
     real(DP), dimension(2) :: vInit,vBkwdEuler,vMidpt,vSimp
 
@@ -177,7 +165,7 @@ contains
     px = p%x
     py = p%y
     dt = p%dt
-    tf = p%tf
+    if (.not. p%forward) dt = -dt
 
     ! initialize with starting position
     p%r(0,1:3) = [pt,px,py]
@@ -187,16 +175,16 @@ contains
     write(*,'(A)')    '*******************************' 
 
     ! Runge-Kutta 4th order integration scheme (non-adaptive)
-    numdt = ceiling((tf - pt)/dt)
+    numdt = ceiling((p%tf - pt)/abs(dt))
     write(*,'(A,ES11.5,A,I0)') 'step size=',dt,' number steps needed=',numdt
 
     rk: do i = 1,numdt   
        if (mod(i,20) == 0) write(*,'(I0,A,ES12.6E2)') i,' t=',pt
 
        ! see if particle will reach end this step
-       if (pt + dt >= tf) then
+       if (trackDone(p%forward,pt+dt,p%tf)) then
           write(*,'(A,I3,A,ES12.6E2)') &
-               & 'particle',p%id,' reached final time:',tf
+               & 'particle',p%id,' reached final time:',p%tf
           exit rk
        end if
 
@@ -204,30 +192,22 @@ contains
 
        ! forward Euler 1/2-step  (predictor)
        call getsrange(pt,lo,ns,los,his,lt)
-       velp(1:ns,1:2) = velCalc(x0,s(:,lt),los,his,dom,c,e,bg)
-       vInit(1:2) = invlap(pt, tee(lt), velp(:,1:2), sol%INVLT)
-
+       vInit = invlap(pt,tee(lt),velCalc(x0,s(:,lt),los,his,dom,c,e,bg),sol%INVLT)
        FwdEuler(1:2) = x0(1:2) + dt/2.0*vInit(1:2)
 
        ! backward Euler 1/2-step (corrector)
        call getsrange(pt + dt/2.0,lo,ns,los,his,lt)
-       velp(1:ns,1:2) = velCalc(FwdEuler,s(:,lt),los,his,dom,c,e,bg)
-       vBkwdEuler(1:2) = invlap(pt + dt/2.0, tee(lt), velp(:,1:2), sol%INVLT)
-
+       vBkwdEuler = invlap(pt+dt/2.0,tee(lt),velCalc(FwdEuler,s(:,lt),los,his,dom,c,e,bg),sol%INVLT)
        BkwdEuler(1:2) = x0(1:2) + dt/2.0*vBkwdEuler(1:2)
 
        ! midpoint rule full-step predictor
        call getsrange(pt + dt,lo,ns,los,his,lt)
-       velp(1:ns,1:2) = velCalc(BkwdEuler,s(:,lt),los,his,dom,c,e,bg)
-       vMidpt(1:2) = invlap(pt + dt, tee(lt), velp(:,1:2), sol%INVLT)
-
+       vMidpt = invlap(pt+dt,tee(lt),velCalc(BkwdEuler,s(:,lt),los,his,dom,c,e,bg),sol%INVLT)
        Midpt(1:2) = x0(1:2) + dt*vMidpt(1:2)
 
        ! Simpson's rule full-step corrector
-       velp(1:ns,1:2) = velCalc(Midpt,s(:,lt),los,his,dom,c,e,bg)
-       vSimp(1:2) = invlap(pt + dt, tee(lt), velp(:,1:2), sol%INVLT)
-
-       Simp(1:2) = x0(:) + dt/6.0*(vinit(:) + 2*vBkwdEuler(:) + 2*vMidpt(:) + vSimp(:))
+       vSimp = invlap(pt+dt,tee(lt),velCalc(Midpt,s(:,lt),los,his,dom,c,e,bg),sol%INVLT)
+       Simp(1:2) = x0(1:2) + dt/6.0*(vinit(1:2) + 2*vBkwdEuler(1:2) + 2*vMidpt(1:2) + vSimp(1:2))
 
        pt = pt + dt
        px = Simp(1)
@@ -262,9 +242,8 @@ contains
     type(domain), intent(in) :: dom
     type(element), intent(in) :: bg
 
-    complex(DP), dimension(1:size(s,1),2) :: velp
     integer :: i, numdt, lt, los, his, ns
-    real(DP) :: pt, px, py, dt, tf
+    real(DP) :: pt, px, py, dt
     real(DP), dimension(2) :: vel
 
     ! TODO not using porosity correctly?
@@ -274,32 +253,31 @@ contains
     px = p%x
     py = p%y
     dt = p%dt
-    tf = p%tf
+    if (.not. p%forward) dt = -dt
 
     ! initialize with starting position
     p%r(0,1:3) = [pt,px,py]
 
     ! 1st order fwd Euler
-    numdt = ceiling((tf - pt)/dt)
+    numdt = ceiling((p%tf - pt)/abs(dt))
     
     write(*,'(A)')    '****************************************'
     write(*,'(A,I0)') 'fwd Euler integration, particle ', p%id
     write(*,'(A)')    '****************************************'
 
     fe: do i = 1,numdt   
-       if( mod(i,100) ==0 ) write(*,'(I0,A,ES12.6E2)') i,' t=',pt
+       if(mod(i,100) == 0) write(*,'(I0,A,ES12.6E2)') i,' t=',pt
 
        ! see if particle will reach end this step
-       if (pt + dt >= tf) then
+       if (trackDone(p%forward,pt+dt,p%tf)) then
           write(*,'(A,I0,A,ES12.6E2)') &
-               &'particle',p%id,' reached specified ending time:',tf
+               &'particle',p%id,' reached specified ending time:',p%tf
           exit fe
        end if
 
        ! full step forward Euler
        call getsrange(pt,lo,ns,los,his,lt)
-       velp(1:ns,1:2) = velCalc([px,py],s(:,lt),los,his,dom,c,e,bg)
-       vel(1:2) = invlap(pt,tee(lt),velp(:,1:2),sol%INVLT)
+       vel = invlap(pt,tee(lt),velCalc([px,py],s(:,lt),los,his,dom,c,e,bg),sol%INVLT)
 
        px = px + dt*vel(1)
        py = py + dt*vel(2)
@@ -318,9 +296,37 @@ contains
   end subroutine fwdEuler
 
   !###########################################################################
+  ! logical function for comparing tracking time to final time
+
+  pure function trackDone(fwd,tp,te) result(done)
+    use constants, only : DP
+    logical, intent(in) :: fwd  ! is tracking forward or backwards?
+    real(DP), intent(in) :: tp,te ! particle and "end" time
+    logical :: done
+
+    if (fwd) then
+       ! forward particle tracking
+       if (tp >= te) then
+          done = .true.
+       else
+          done = .false.
+       end if
+    else
+       ! backwards particle tracking
+       if (tp <= te) then
+          done = .true.
+       else
+          done = .false.
+       end if
+    end if
+    
+  end function trackDone
+  
+
+  !###########################################################################
   ! some common range-computing code
   
-  subroutine getsrange(t,lo,ns,los,his,lt)
+  subroutine getSRange(t,lo,ns,los,his,lt)
     use constants, only : DP
     real(DP), intent(in) :: t
     integer, intent(in) :: lo,ns
@@ -330,7 +336,7 @@ contains
     los = (lt-lo)*ns + 1    ! low and high indices on p or s
     his = los + ns - 1
 
-  end subroutine getsrange
+  end subroutine getSRange
 
   !###########################################################################
   ! re-allocate particle%r array to longer first dimension
