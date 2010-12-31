@@ -8,10 +8,19 @@ module calc_routines
   private
   public :: headCalc, velCalc
 
+  ! overloaded to accept complex point or 2-element vector as location
+  interface headCalc
+     module procedure headCalcZ, headCalcV
+  end interface
+  
+  interface velCalc
+     module procedure velCalcZ, velCalcV
+  end interface
+  
 contains
 
   !##################################################
-  function headCalc(Z,p,lo,hi,dom,c,e,bg) result(H)
+  function headCalcZ(Z,p,lo,hi,dom,c,e,bg) result(H)
     use type_definitions, only : element, domain, circle, ellipse
     use constants, only : DP
     use circular_elements, only : circle_calc
@@ -142,10 +151,10 @@ contains
        elin => null()
 
     end if
-  end function headCalc
+  end function headCalcZ
 
   !##################################################
-  function velCalc(Z,p,lo,hi,dom,c,e,bg) result(v)
+  function velCalcZ(Z,p,lo,hi,dom,c,e,bg) result(v)
    
     use type_definitions, only : element, domain, circle, ellipse
     use constants, only : DP
@@ -287,7 +296,35 @@ contains
        elin => null()
 
     end if
-  end function velCalc
+  end function velCalcZ
+
+  function headCalcV(vec,p,lo,hi,dom,c,e,bg) result(H)
+    use type_definitions, only : element, domain, circle, ellipse
+    use constants, only : DP
+    complex(DP), intent(in) :: vec ! location for calculation (2-element vector)
+    complex(DP), dimension(:), intent(in) :: p  ! vector of Laplace parameters
+    integer, intent(in) :: lo,hi  ! lo,hi bounds of p relative to overall s
+    type(domain), intent(in) :: dom
+    type(circle),  target, dimension(:), intent(in) :: c
+    type(ellipse), target, dimension(:), intent(in) :: e
+    type(element), intent(in) :: bg
+    complex(DP), dimension(size(p,1)) :: H  
+    H = velCalcZ(cmplx(vec(1),vec(2),DP),p,lo,hi,dom,c,e,bg)
+  end function headCalcV
+  
+  function velCalcV(vec,p,lo,hi,dom,c,e,bg) result(v)
+    use type_definitions, only : element, domain, circle, ellipse
+    use constants, only : DP
+    complex(DP), intent(in) :: vec
+    complex(DP), dimension(:), intent(in) :: p
+    integer, intent(in) :: lo,hi  ! lo,hi bounds of p relative to overall s
+    type(domain), intent(in) :: dom
+    type(circle),  target, dimension(:), intent(in) :: c
+    type(ellipse), target, dimension(:), intent(in) :: e
+    type(element), intent(in) :: bg
+    complex(DP), dimension(size(p,1),2) :: v
+    v = velCalcZ(cmplx(vec(1),vec(2),DP),p,lo,hi,dom,c,e,bg)
+  end function velCalcV
 
   !##################################################
   subroutine calcLocation(Z,c,e,dom,Rgp,Pgp,inside)

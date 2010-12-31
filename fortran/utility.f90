@@ -4,7 +4,7 @@ module utility
   implicit none
 
   private
-  public :: diag, logspace, linspace, outer, ccosh, cacosh, ynot, rotate_vel, rotate_vel_mat
+  public :: v2c, diag, logspace, linspace, outer, ccosh, cacosh, ynot, rotate_vel, rotate_vel_mat
 
   interface diag
      module procedure diagonal_z, diagonal_d
@@ -20,6 +20,13 @@ module utility
   
 contains
 
+  ! ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  pure function v2c(v) result(z) 
+    use constants, only : DP
+    real(DP), intent(in), dimension(2) :: v
+    z = cmplx(v(1),v(2),DP)
+  end function v2c
+  
   ! ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   pure function outerprod_d(a,b) result(c)
     use constants, only : DP
