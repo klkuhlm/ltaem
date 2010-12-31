@@ -482,8 +482,6 @@ contains
     H(1:np) = sum(RMRgp(1:np,0:N-1,0)/RMR0(1:np,0:N-1,0)*aa(1:np,0:N-1)*AM(1:np,0:N-1,0), 2) + &
             & sum(RMRgp(1:np,1:N-1,1)/RMR0(1:np,1:N-1,1)*bb(1:np,1:N-1)*AM(1:np,1:N-1,1), 2)
 
-!!$       ! TODO: add in area source term for matching too
-
   end function ellipse_calc
 
   function ellipse_deriv(p,e,lo,hi,Rgp,Pgp,inside) result(dH)
@@ -559,9 +557,6 @@ contains
                & sum(dRMRgp(1:np,1:N-1,1)/RMR0(1:np,1:N-1,1)*bb(1:np,1:N-1)*AM(1:np,1:N-1,1), 2)
     dH(1:np,2) = sum(RMRgp(1:np,0:N-1,0)/RMR0(1:np,0:N-1,0)*aa(1:np,0:N-1)*dAM(1:np,0:N-1,0), 2) + &
                & sum(RMRgp(1:np,1:N-1,1)/RMR0(1:np,1:N-1,1)*bb(1:np,1:N-1)*dAM(1:np,1:N-1,1), 2)
-
-
-!!$       ! TODO: add in area source term for matching too
 
   end function ellipse_deriv
 
