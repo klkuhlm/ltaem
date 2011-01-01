@@ -14,9 +14,6 @@ contains
     use type_definitions, only : circle, solution, ellipse, domain, match_result
     use circular_elements, only : circle_match, well
     use elliptical_elements, only : ellipse_match !!, line is repeated below to accommodate gfortran bug
-#ifdef DEBUG
-    use type_definitions, only : print_match_result
-#endif
 
     interface  !! solve over-determined system via least-squares in LAPACK
        subroutine ZGELS(TRANSA, M, N, NRHS, A, LDA, B, LDB, WORK, &
@@ -29,10 +26,6 @@ contains
          integer, intent(out) :: INFO
        end subroutine ZGELS
     end interface
-
-#ifdef DEBUG
-    character(13) :: fmt
-#endif
 
     type(circle),  dimension(:), intent(inout) :: c
     type(ellipse), dimension(:), intent(inout) :: e
@@ -50,10 +43,6 @@ contains
     ! size(work) should be ~ 33xbigN? (32- & 64-bit linux)
     complex(DP), allocatable :: WORK(:)
 
-#ifdef DEBUG
-    print *, 'matrix_solution: c:',c%id,' e:',e%id,' #tot el:',sum(dom%num(1:2)),' p:',p,' idx:',idx
-#endif
-
     nc = size(c,dim=1)
     ne = size(e,dim=1)
     ntot = nc + ne
@@ -66,29 +55,16 @@ contains
        row(i,1) = size(res(i,i)%RHS,1)
        col(i,1) = size(res(i,i)%LHS,2)
 
-#ifdef DEBUG
-       print *, 'circle on self',i,' row',row(i,1),' col',col(i,1)
-!!$       call print_match_result(res(i,i))
-#endif
-
        ! circle on other circle
        do j=1,nc
           if(i/=j) then
              res(j,i) = circle_match(c(i),c(j)%matching,dom,p)
-#ifdef DEBUG
-             print *, 'circle',i,'on other circle',j
-!!$             call print_match_result(res(j,i))
-#endif
           end if
        end do
 
        ! circle on other ellipse
        do j=1,ne
           res(j+nc,i) = circle_match(c(i),e(j)%matching,dom,p)
-#ifdef DEBUG
-          print *, 'circle',i,'on other ellipse',j+nc
-!!$          call print_match_result(res(j+nc,i))
-#endif
        end do
     end do
 
@@ -98,28 +74,16 @@ contains
        row(i+nc,1) = size(res(nc+i,nc+i)%RHS,1)
        col(i+nc,1) = size(res(nc+i,nc+i)%LHS,2)
 
-#ifdef DEBUG
-       print *, 'ellipse on self',nc+i,' row',row(i+nc,1),' col',col(i+nc,1)
-!!$       call print_match_result(res(nc+i,nc+i))
-#endif
 
        ! ellipse on other circle
        do j = 1, nc
           res(j,nc+i) = ellipse_match(e(i),c(j)%matching,dom,p,idx)
-#ifdef DEBUG
-          print *, 'ellipse',i+nc,'on other circle',j
-!!$          call print_match_result(res(j,nc+i))
-#endif
        end do
 
        ! ellipse on other ellipse
        do j = 1, ne
           if (i /= j) then
              res(nc+j,nc+i) = ellipse_match(e(i),e(j)%matching,dom,p,idx)
-#ifdef DEBUG
-             print *, 'ellipse',i+nc,'on other ellipse',j+nc
-!!$             call print_match_result(res(nc+j,nc+i))
-#endif
           end if
        end do
     end do
@@ -141,23 +105,11 @@ contains
        col(i,2) = sum(col(1:i,1))
     end forall
 
-#ifdef DEBUG
-    print '(A,I0,1X,I0)','shape(res): ',shape(res)
-#endif
-
     ! convert structures into single matrix for solution via least squares
     do rr=1,ntot
-       do cc=1,ntot
-#ifdef DEBUG
-          print '(2(A,I0))', 'row ',rr,' col ',cc
-          print '(2(A,2(1X,I0)))','row lo:hi',row(rr,0),row(rr,2),'  col lo:hi',col(cc,0),col(cc,2)
-          print '(A,2(1X,I0))', 'LHS shape:',shape(res(rr,cc)%LHS)
-          print '(A,2(1X,I0))', 'RHS shape:',shape(res(rr,cc)%RHS)
-#endif
-          
+       do cc=1,ntot          
           A(row(rr,0):row(rr,2),col(cc,0):col(cc,2)) = res(rr,cc)%LHS
           b(row(rr,0):row(rr,2)) = b(row(rr,0):row(rr,2)) + res(rr,cc)%RHS
-          
        end do
     end do
 
@@ -167,26 +119,18 @@ contains
        ! use LAPACK routine to solve least-squares via Q-R decomposition
        ! this routine works for all three potential use cases
        ! M>N (overdetermined), M==N (even-determined), and M<N (underdetermined)
-#ifdef DEBUG
-       print *, 'bigM',bigM,' bigN',bigN,' shape(A)',shape(A),' shape(b)',shape(b)
-#endif
+
        call ZGELS(TRANSA='N',M=bigM,N=bigN,NRHS=1,A=A(:,:),LDA=bigM,B=b(:),LDB=bigM,&
             & WORK=work,LDWORK=size(work,dim=1),INFO=ierr)
        if (ierr /= 0) then
           write(*,'(A,I0,2(A,ES10.3))') 'ZGELS error: ',ierr,' p:',real(p),'+i',aimag(p)
           stop 
        else
-#ifdef DEBUG
-          print *, 'ZEGLS successful'
-#endif
        end if
     end if
 
     ! put result into local coeff variables
     do i=1,nc
-#ifdef DEBUG       
-       print *, 'circle',i
-#endif
        ! Circles -- ensure container for results is allocated
        if (.not. allocated(c(i)%coeff)) then
           ! solution for each value of p, saved as a 2D matrix
@@ -226,17 +170,6 @@ contains
           ! get coefficients from line routine (only even-order, even coeff used)
           e(i)%coeff(idx,:) = 0.0 
           e(i)%coeff(idx,1:e(i)%N:2) = line(e(i),p,idx) ! a_(2n)
-#ifdef DEBUG
-          print *, 'line source coefficients: N:',e(i)%N,' shape(coeff)',&
-               & shape(e(i)%coeff),' shape(line)',shape(line(e(i),p,idx))
-          fmt = '(  (I12,12X))'
-          write(fmt(2:3),'(I2.2)') size(e(i)%coeff,dim=2)
-          write(*,fmt) (j,j=1,size(e(i)%coeff,dim=2))
-          do j=1,size(e(i)%coeff,dim=2)
-             write(*,'(2(A,ES10.2E3),A)',advance='no'),'(',real(e(i)%coeff(idx,j)),',',aimag(e(i)%coeff(idx,j)),') '
-          end do
-          write(*,*)
-#endif
        end if
     end do
     deallocate(A,b,row,col)
@@ -262,7 +195,7 @@ contains
     N = e%N 
     MS = e%ms
     nmax = ceiling(e%N/2.0)
-    vi(0:MS-1) = [(i,i=0,MS-1)]  ! integer index vector
+    forall (i=0:MS-1) vi(i) = i  ! integer index vector
     vs = -1.0 ! sign vector
     where (mod(vi,2)==0) vs = 1.0
 
