@@ -303,6 +303,7 @@ contains
        ! ## 3.1 remove bigger elements from inside 
        ! smaller elements, for the case they are concentric
        allocate(R(ntot), nest(ntot), iv(ntot))
+       forall (i=1:ntot) iv(i) = i
        iv = [(i,i=1,ntot)]
        R(1:nc) = c(1:nc)%r
        R(nc+1:ntot) = e(1:ne)%r  ! TODO : double-check that circ/ellip can be compared validly  

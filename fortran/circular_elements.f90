@@ -33,7 +33,7 @@ contains
 
     N = c%N
     M = c%M
-    vi(0:N-1) = real([(j,j=0,N-1)],DP)
+    forall (j=0:N-1) vi(j) = j
 
     if (c%ibnd == 0) then
        nrows = 2*M
@@ -152,7 +152,7 @@ contains
     N = c%N ! number of coefficients in the source circular element
     targ = el%id
     src = c%id
-    vi(0:N-1) = real([(j,j=0,N-1)],DP)
+    forall (j=0:N-1) vi(j) = j
 
     M = el%M
     ! target element determines number of rows
@@ -440,7 +440,7 @@ contains
 
     N = c%N
     np = size(p,1)
-    vr(0:N-1) = real([(i,i=0,N-1)],DP)
+    forall (i=0:N-1) vr(i) = i
 
     if (inside) then
        if (c%ibnd == 0) then
@@ -496,7 +496,7 @@ contains
 
     N = c%N
     np = size(p,1)
-    vr(0:N-1) = real([(i,i=0,N-1)],DP)
+    forall (i=0:N-1) vr(i) = i
 
     if (inside) then
        if (c%match) then

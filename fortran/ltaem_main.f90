@@ -141,6 +141,7 @@ program ltaem_main
 #endif
      end if
 
+     ! create an index the same shape as s (which has non-standard lower bound on dim 2)
      allocate(idxmat(size(s,dim=1),lbound(s,dim=2):ubound(s,dim=2)))
      idxmat = reshape([(j,j=1,tnp)],shape(s))
 

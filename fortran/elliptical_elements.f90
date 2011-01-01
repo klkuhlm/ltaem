@@ -36,7 +36,7 @@ contains
 
     N = e%N
     M = e%M
-    vi(0:N-1) = [(j,j=0,N-1)]
+    forall (j=0:N-1) vi(j) = j
 
     if (e%ibnd == 0) then
        nrows = 2*M
@@ -155,7 +155,7 @@ contains
     N = e%N ! number of coefficients in the source elliptical element
     t = el%id  ! <= target
     s = e%id   ! <= source
-    vi(0:N-1) = [(j,j=0,N-1)]
+    forall (j=0:N-1) vi(j) = j
 
     M = el%M
     ! target element determines number of rows
@@ -405,7 +405,7 @@ contains
     N = e%N 
     MS = e%ms
     nmax = ceiling(e%N/2.0)
-    vi(0:MS-1) = [(i,i=0,MS-1)]  ! integer vector
+    forall (i=0:MS-1) vi(i) = i ! integer vector
     vs = -1.0 ! sign vector
     where (mod(vi,2)==0) vs = 1.0
 
@@ -443,7 +443,7 @@ contains
 
     N = e%N
     np = size(p,1)
-    vi(0:N-1) = [(i,i=0,N-1)]
+    forall (i=0:N-1) vi(i) = i
 
     if (inside) then
        if (e%match) then
@@ -508,7 +508,7 @@ contains
 
     N = e%N
     np = size(p,1)
-    vi(0:N-1) = [(i,i=0,N-1)]
+    forall (i=0:N-1) vi(i) = i
 
     if (inside) then
        if (e%match) then
