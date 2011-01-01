@@ -124,7 +124,7 @@ contains
             & WORK=work,LDWORK=size(work,dim=1),INFO=ierr)
        if (ierr /= 0) then
           write(*,'(A,I0,2(A,ES10.3))') 'ZGELS error: ',ierr,' p:',real(p),'+i',aimag(p)
-          stop 
+          stop 999
        else
        end if
     end if

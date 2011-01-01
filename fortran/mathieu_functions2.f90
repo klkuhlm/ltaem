@@ -15,8 +15,6 @@ module mathieu_functions
   public :: print_mathieu_type
 #endif
 
-  ! TODO: swap order of dimensions in all functions (eliminate transpose in high-level code)
-
   interface ce   ! even first kind angular MF
      module procedure ce_scalar_nz, ce_scalar_n, ce_scalar_z, ce_vect_nz
   end interface
@@ -106,7 +104,7 @@ contains
     M = mat%M
 
     allocate(v(0:M),vi(0:M))
-    v = real([(j,j=0,M)],DP)
+    forall (j=0:M) v(j) = j
     where(mod([(j,j=0,M)],2)==0)
        vi = 1.0_DP
     elsewhere
@@ -1028,31 +1026,32 @@ contains
   subroutine check_cutoff(mf,n)
     type(mathieu), intent(in) :: mf
     integer, dimension(:), intent(in) :: n
-    logical, dimension(size(n),size(n)) :: offd 
-    integer :: i
+    logical, dimension(size(n),size(n)) :: offD 
+    integer :: i, nn
 
+    nn = size(n)
     if (any(n < 0)) then
-       write(*,*) 'CHECK_CUTOFF: order of Mathieu functions must be >= 0',n
-       stop 'CHECK_CUTOFF: only non-negative Mathieu function orders'
+       write(*,*) 'CHECK_CUTOFF1: order of Mathieu functions must be >= 0',n
+       stop 'CHECK_CUTOFF1: only non-negative Mathieu function orders'
     end if
     
-    if (size(n,dim=1) > 1) then
+    if (nn > 1) then
        ! since vectors of integer indexing vectors are used on the LHS of
        ! expressions, we must test for many-to-one conditions, since it is a no-no
-       offd = .TRUE.
-       forall (i=1:size(n)) offd(i,i) = .FALSE.
+       offD = .TRUE.
+       forall (i = 1:nn) offD(i,i) = .FALSE.
        ! check if off-diagonal terms in tensor product difference nxn - nxn are zero
-       if (any((spread(n,2,size(n))-spread(n,1,size(n))) == 0 .and. offd)) then
-          write(*,*) 'CHECK_CUTOFF: cannot have repeated indices in vector order',n
-          stop 'CHECK_CUTOFF: eliminate repeated indices to Mathieu functions'
+       if (any((spread(n,2,nn) - spread(n,1,nn)) == 0 .and. offD)) then
+          write(*,*) 'CHECK_CUTOFF2: cannot have repeated indices in vector order',n
+          stop 'CHECK_CUTOFF2: eliminate repeated indices to Mathieu functions'
        end if
     end if
 
-    if (maxval(n,dim=1) > mf%m - mf%buffer) then
-       write(*,'(A,I0,3(A,ES12.4E3),2(A,I0))') 'CHECK_CUTOFF: max order=',maxval(n,1), &
+    if (maxval(n) > mf%m - mf%buffer) then
+       write(*,'(A,I0,3(A,ES12.4E3),2(A,I0))') 'CHECK_CUTOFF3: max order=',maxval(n), &
             & ' too large for q=(',real(mf%q),',',aimag(mf%q), &
             & ') given CUTOFF=',mf%CUTOFF,'; buffer =',mf%buffer, ', M=',mf%M
-       stop 'CHECK_CUTOFF: increase Mathieu function M or decrease CUTOFF'
+       stop 'CHECK_CUTOFF3: increase Mathieu function M or decrease CUTOFF'
     end if
   end subroutine check_cutoff
 
@@ -1173,6 +1172,7 @@ contains
     integer, intent(in) :: n
     complex(DP), intent(out), dimension(0:n-1,size(arg)) :: I
     integer :: numzero, ierr, j
+    integer, parameter :: NPRINT = 5
 
 #ifdef DEBUG
     character(33) :: fmt
@@ -1188,21 +1188,21 @@ contains
        if (ierr /= 0) then
           select case(ierr)
           case(1)
-             write(*,*) "CBESI: input error, z=",arg(1:min(ubound(arg,1),5))," n=",n
+             write(*,*) "CBESI: input error, z=",arg(1:min(ubound(arg,1),NPRINT))," n=",n
              stop "CBESI: input error"
           case(2)
              write(*,*) "CBESI: overflow, z or order too" //&
-                  &"large for unscaled output, z=",arg(1:min(ubound(arg,1),5))," n=",n
+                  &"large for unscaled output, z=",arg(1:min(ubound(arg,1),NPRINT))," n=",n
              stop "CBESI: overflow, z or order too large for unscaled output"
 #ifdef DEBUG
           case(3)
              fmt = '(A, (ES11.3E3,1X,ES11.3E3,3X),I0)'
-             write(fmt(4:4),'(I1)') min(ubound(arg,1),5)   
-             write(*,fmt) "CBESI: loss of precision, z=",arg(1:min(ubound(arg,1),5)),numzero
+             write(fmt(4:4),'(I1)') min(ubound(arg,1),NPRINT)   
+             write(*,fmt) "CBESI: loss of precision, z=",arg(1:min(ubound(arg,1),NPRINT)),numzero
 #endif
           case(4)
              write(*,*) "CBESI: overflow, z or order too &
-                  &large, z=",arg(1:min(ubound(arg,1),5))," n=",n
+                  &large, z=",arg(1:min(ubound(arg,1),NPRINT))," n=",n
              stop "CBESI: overflow, z or order too large"
           case(5)
              stop "CBESI: algorithm termination not met"
@@ -1240,6 +1240,7 @@ contains
     integer, intent(in) :: n
     complex(DP), intent(out), dimension(0:n-1,size(arg)) :: K
     integer :: numzero, ierr, j
+    integer, parameter :: NPRINT = 5
 
 #ifdef DEBUG
     character(33) :: fmt
@@ -1252,22 +1253,22 @@ contains
        if (ierr /= 0) then
           select case(ierr)
           case(1)
-             write(*,*) "CBESK: input error, z=",arg(1:min(ubound(arg,1),5))," n=",n
+             write(*,*) "CBESK: input error, z=",arg(1:min(ubound(arg,1),NPRINT))," n=",n
              stop "CBESK: input error"
           case(2)
              write(*,*) "CBESK: overflow, z too small or order " // &
-                  &"too large for unscaled output, z=",arg(1:min(ubound(arg,1),5))," n=",n
+                  &"too large for unscaled output, z=",arg(1:min(ubound(arg,1),NPRINT))," n=",n
              stop "CBESK: overflow, z too small or order too &
                   &large for unscaled output"
 #ifdef DEBUG             
           case(3)
              fmt = '(A, (ES11.3E3,1X,ES11.3E3,3X),I0)'
-             write(fmt(4:4),'(I1)') min(ubound(arg,1),5)
-             write(*,fmt) "CBESK: loss of precision, z=",arg(1:min(ubound(arg,1),5)),numzero
+             write(fmt(4:4),'(I1)') min(ubound(arg,1),NPRINT)
+             write(*,fmt) "CBESK: loss of precision, z=",arg(1:min(ubound(arg,1),NPRINT)),numzero
 #endif
           case(4)
              write(*,*) "CBESK: overflow, z too small or order " //&
-                  &"too large, z=",arg(1:min(ubound(arg,1),5))," n=",n
+                  &"too large, z=",arg(1:min(ubound(arg,1),NPRINT))," n=",n
              stop "CBESK: overflow, z too small or order too large"
           case(5)
              stop "CBESK: algorithm termination not met"
