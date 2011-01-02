@@ -43,16 +43,16 @@ OBJS=$(EXTERNAL) constants.o $(KKLOW) type_definitions.o geometryUtil.o $(KKHIGH
 F90=gfortran-4.5
 OMP=-fopenmp 
 CPP=-cpp
-DFLAGS=-O0 -Wall -Wextra -fbacktrace -ggdb 
-DFLAGS+=-frange-check -fcheck=all -finit-real=snan -finit-integer=-99999
+DFLAGS=-O0 -Wall -Wextra -fbacktrace -ggdb $(OMP)
+#DFLAGS+=-frange-check -fcheck=all -finit-real=snan -finit-integer=-99999
 DFLAGS+=$(CPP)  #-DDEBUG 
 ##DFLAGS+=-fdump-rtl-expand
-PFLAGS=-O2  $(CPP)  $(OMP)   -march=native
-LINKFLAG=$(PFLAGS) 
+PFLAGS=-O0  $(CPP) -ggdb  -march=native  $(OMP)
+LINKFLAG=$(DFLAGS) 
 #################################
 
 # switch between performance or debugging flags
-FLAGS=$(PFLAGS)
+FLAGS=$(DFLAGS)
 
 # the link step
 main: $(OBJS) $(MAIN)
