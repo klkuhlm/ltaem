@@ -120,8 +120,8 @@ contains
        ! this routine works for all three potential use cases
        ! M>N (overdetermined), M==N (even-determined), and M<N (underdetermined)
 
-       call ZGELS(TRANSA='N',M=bigM,N=bigN,NRHS=1,A=A(:,:),LDA=bigM,B=b(:),LDB=bigM,&
-            & WORK=work,LDWORK=size(work,dim=1),INFO=ierr)
+       call ZGELS(TRANSA='N', M=bigM, N=bigN, NRHS=1, A=A(:,:), LDA=bigM, B=b(:), &
+            & LDB=bigM, WORK=work, LDWORK=size(work), INFO=ierr)
        if (ierr /= 0) then
           write(*,'(A,I0,2(A,ES10.3))') 'ZGELS error: ',ierr,' p:',real(p),'+i',aimag(p)
           stop 999
@@ -132,6 +132,7 @@ contains
     ! put result into local coeff variables
     do i=1,nc
        ! Circles -- ensure container for results is allocated
+       ! allocation should only happen on first pass through this subroutine
        if (.not. allocated(c(i)%coeff)) then
           ! solution for each value of p, saved as a 2D matrix
           allocate(c(i)%coeff(sol%totalnP,col(i,1)))

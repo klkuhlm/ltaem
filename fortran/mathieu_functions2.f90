@@ -154,8 +154,9 @@ contains
     lwork = 2*M+1
     allocate(work(lwork)) 
 
-    call zgeev('N','V',M,Coeff,M,mat%mcn(1:m),dc,di,mat%A(1:m,0:m-1,0),M,&
-         & work,lwork,rwork,info)
+    call zgeev(JOBVL='N', JOBVR='V',N=M, A=Coeff, LDA=M, W=mat%mcn(1:m), &
+         & VL=dc, LDVL=di, VR=mat%A(1:m,0:m-1,0), LDVR=M, &
+         & WORK=work, LWORK=lwork, RWORK=rwork, INFO=info)
 
     if (info /= 0) write (*,'(A,I0,A)') "ZGEEV ERROR ",info, &
          &" calculating even coefficients of even order"
@@ -1224,7 +1225,6 @@ contains
 
     ! the recurrence relationships assume at least three entries
     if (n < 3) stop 'mathieu_functions2.f90 : besseli_val_and_deriv, n must be > 3'
-
     call BesselI_val(arg,n,I(0:n-1,:))
 
     ID(1:n-2,:) = 0.5_DP*(I(0:n-3,:) + I(2:n-1,:)) ! middle

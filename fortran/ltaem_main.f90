@@ -119,10 +119,6 @@ program ltaem_main
      sol%totalnP = size(s) ! total number of Laplace parameters across all times
      tnp = sol%totalnP
 
-#ifdef DEBUG     
-     write(*,'(A,3(I0,1X))') 'shape(s)',shape(s),' tnp',tnp
-#endif
-
      ! calculate coefficients for each value of Laplace parameter
      ! ** common between particle tracking and contours/hydrographs **
      
@@ -130,31 +126,31 @@ program ltaem_main
      if (ne > 0) then
         write(*,'(A)') 'Computing Mathieu coefficients ...'
         call ellipse_init(e,bg,s)
-
-#ifdef DEBUG
-        ! added for debugging max q size
-        write(*,'(A)') 'background q:'
-        do j=1,size(bg%mat,1)
-           write(*,'(2(A,ES10.3),A,I0)') '(',real(bg%mat(j)%q),&
-                & ',',aimag(bg%mat(j)%q),') ',bg%mat(j)%M
-        end do
-#endif
      end if
 
      ! create an index the same shape as s (which has non-standard lower bound on dim 2)
      allocate(idxmat(size(s,dim=1),lbound(s,dim=2):ubound(s,dim=2)))
      idxmat = reshape([(j,j=1,tnp)],shape(s))
 
+     ! when in parallel, call once to initialize the results matrices in solution.f90
+     !$ call matrix_solution(c,e,dom,sol,s(1,minlt),idxmat(1,minlt))
+     !$ write(*,'(A/)') 'solution initialization...'
+
+     !$ write(*,'(A)',advance="no") 'thr'
+     write(*,'(A)') ' logt  idx            p'
+
+     !$OMP PARALLEL DO PRIVATE(lt,j)
      do lt = minlt,maxlt-1
-        write(*,'(A,I0,A)') 'log t= 10^(',lt,')' 
         if (nt(lt) > 0) then
            do j = 1,2*sol%m+1
-              write(*,'(I3,1X,2(A,ES10.3),A)') j, '(',&
-                   & real(s(j,lt)),',',aimag(s(j,lt)),')'              
+              !$ write (*,'(I2,1X)',advance="no") OMP_get_thread_num() 
+              write(*,'(I4,1X,I4,1X,2(A,ES10.3),A)') lt,j, '(',&
+                   & real(s(j,lt)),',',aimag(s(j,lt)),')'  
               call matrix_solution(c,e,dom,sol,s(j,lt),idxmat(j,lt))
            end do
         end if
      end do
+     !$OMP END PARALLEL DO
 
      ! only write output if there is at least one matching element
      if(any(e(:)%match) .or. any(c(:)%match)) then

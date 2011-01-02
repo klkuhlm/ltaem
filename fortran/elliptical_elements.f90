@@ -21,11 +21,10 @@ contains
     use utility, only : ynot 
     implicit none
 
-    type(ellipse), target, intent(in) :: e
+    type(ellipse), intent(in) :: e
     complex(DP), intent(in) :: p
     integer, intent(in) :: i ! indicates which value of p (global state)
     type(match_result) :: r
-    type(element), pointer :: f => null()  ! shortcut for parent of element 
 
     integer :: j, N, M, loM, hiM, nrows, ncols
     ! mod. radial Mathieu function (K{e,o} or I{e,o})
@@ -60,11 +59,10 @@ contains
     allocate(r%LHS(nrows,ncols), r%RHS(nrows))
 
     if (e%ibnd /= 2) then
-       f => e%parent
 
        ! outside ang. mod. Mathieu fcns (last dimension is inside/outside)
-       cemat(1:M,0:N-1,0) = ce(f%mat(i), vi(0:N-1), e%Pcm(:))
-       semat(1:M,1:N-1,0) = se(f%mat(i), vi(1:N-1), e%Pcm(:))
+       cemat(1:M,0:N-1,0) = ce(e%parent%mat(i), vi(0:N-1), e%Pcm(:))
+       semat(1:M,1:N-1,0) = se(e%parent%mat(i), vi(1:N-1), e%Pcm(:))
        if (e%ibnd == 0 .or. (e%calcin .and. (e%ibnd == 1 .or. e%ibnd == -1))) then
           ! inside
           cemat(1:M,0:N-1,1) = ce(e%mat(i), vi(0:N-1), e%Pcm(:))
@@ -74,8 +72,8 @@ contains
        ! setup LHS
        ! matching or specified total head
        if (e%ibnd == 0 .or. e%ibnd == -1) then
-          r%LHS(1:M,1:N) =       cemat(:,0:N-1,0)/f%K ! a_n head
-          r%LHS(1:M,N+1:2*N-1) = semat(:,1:N-1,0)/f%K ! b_n head
+          r%LHS(1:M,1:N) =       cemat(:,0:N-1,0)/e%parent%K ! a_n head
+          r%LHS(1:M,N+1:2*N-1) = semat(:,1:N-1,0)/e%parent%K ! b_n head
 
           if (e%ibnd == 0 .or. (e%ibnd == -1 .and. e%calcin)) then
              r%LHS(1:M,2*N:3*N-1) = -cemat(:,0:N-1,1)/e%K ! c_n head
@@ -88,11 +86,11 @@ contains
           allocate(RMn(0:N-1,0:1),dRMn(0:N-1,0:1))
 
           ! radial functions last dimension is even/odd
-          RMn(0:N-1,0) =   Ke(f%mat(i), vi(0:N-1), e%r) ! even fn
-          RMn(1:N-1,1) =   Ko(f%mat(i), vi(1:N-1), e%r) ! odd fn
+          RMn(0:N-1,0) =   Ke(e%parent%mat(i), vi(0:N-1), e%r) ! even fn
+          RMn(1:N-1,1) =   Ko(e%parent%mat(i), vi(1:N-1), e%r) ! odd fn
           RMn(0,1) = 0.0
-          dRMn(0:N-1,0) = dKe(f%mat(i), vi(0:N-1), e%r) ! even deriv
-          dRMn(1:N-1,1) = dKo(f%mat(i), vi(1:N-1), e%r) ! odd deriv
+          dRMn(0:N-1,0) = dKe(e%parent%mat(i), vi(0:N-1), e%r) ! even deriv
+          dRMn(1:N-1,1) = dKo(e%parent%mat(i), vi(1:N-1), e%r) ! odd deriv
           dRMn(0,1) = 0.0
 
           r%LHS(loM:hiM,1:N) =       spread(dRMn(0:N-1,0)/RMn(0:N-1,0), 1,M)*cemat(:,0:N-1,0) ! a_n flux
@@ -119,13 +117,12 @@ contains
           r%RHS(1:M) = time(p,e%time,.false.)*e%bdryQ
        case(0)
           ! put constant area source term effects on RHS
-          r%RHS(1:M) = -time(p,e%time,.true.)*e%areaQ*e%Ss/kappa(p,f)**2
+          r%RHS(1:M) = -time(p,e%time,.true.)*e%areaQ*e%Ss/kappa(p,e%parent)**2
           r%RHS(M+1:2*M) = 0.0_DP ! area source has no flux effects
        case(1)
           ! put specified flux effects on RHS
           r%RHS(1:M) = time(p,e%time,.false.)*e%bdryQ/ynot(e%r,e%f)
        end select
-       f => null()
     end if
   end function ellipse_match_self
 
@@ -136,7 +133,7 @@ contains
     use utility, only : rotate_vel_mat
     implicit none
 
-    type(ellipse), target, intent(in) :: e ! source ellipse
+    type(ellipse), intent(in) :: e ! source ellipse
     type(matching), intent(in) :: el ! target element (circle or ellipse)
     type(domain), intent(in) :: dom
     complex(DP), intent(in) :: p
@@ -150,7 +147,6 @@ contains
     complex(DP), allocatable :: dPot_dR(:,:), dPot_dP(:,:), dPot_dX(:,:), dPot_dY(:,:)
     real(DP), allocatable :: hsq(:,:)
     real(DP) :: K
-    type(element), pointer :: f => null()
 
     N = e%N ! number of coefficients in the source elliptical element
     t = el%id  ! <= target
@@ -185,7 +181,6 @@ contains
     r%RHS = 0.0
 
     if (nrows > 0) then
-       f => e%parent
 
        if (dom%inclBg(s,t) .or. dom%InclIn(s,t)) then
 
@@ -198,20 +193,20 @@ contains
              if (dom%inclBg(s,t)) then
                 ! can the target element "see" the outside of the source element?
                 ! use exterior angular and radial modified Mathieu functions
-                cemat(1:M,0:N-1) = ce(f%mat(idx), vi(0:N-1), e%G(t)%Pgm(:))
-                semat(1:M,1:N-1) = se(f%mat(idx), vi(1:N-1), e%G(t)%Pgm(:))
-                RMn(1:M,0:N-1,0) = Ke(f%mat(idx), vi(0:N-1), e%G(t)%Rgm(:))
-                RMn(1:M,1:N-1,1) = Ko(f%mat(idx), vi(1:N-1), e%G(t)%Rgm(:))
+                cemat(1:M,0:N-1) = ce(e%parent%mat(idx), vi(0:N-1), e%G(t)%Pgm(:))
+                semat(1:M,1:N-1) = se(e%parent%mat(idx), vi(1:N-1), e%G(t)%Pgm(:))
+                RMn(1:M,0:N-1,0) = Ke(e%parent%mat(idx), vi(0:N-1), e%G(t)%Rgm(:))
+                RMn(1:M,1:N-1,1) = Ko(e%parent%mat(idx), vi(1:N-1), e%G(t)%Rgm(:))
                 RMn(1:M,0,1) = 0.0
-                RMn0(0:N-1,0) = Ke(f%mat(idx), vi(0:N-1), e%r)
-                RMn0(1:N-1,1) = Ko(f%mat(idx), vi(1:N-1), e%r)
+                RMn0(0:N-1,0) = Ke(e%parent%mat(idx), vi(0:N-1), e%r)
+                RMn0(1:N-1,1) = Ko(e%parent%mat(idx), vi(1:N-1), e%r)
                 RMn0(0,1) = 0.0
                 ! odd functions not needed for line source, but computed anyway
-                K = f%K
+                K = e%parent%K
 
                 ! head effects due to ellipse on outside other element
-                r%LHS(1:M,1:N) =       RMn(:,0:N-1,0)/spread(RMn0(0:N-1,0),1,M)*cemat(:,0:N-1)/f%K ! a_n
-                r%LHS(1:M,N+1:2*N-1) = RMn(:,1:N-1,1)/spread(RMn0(1:N-1,1),1,M)*semat(:,1:N-1)/f%K ! b_n
+                r%LHS(1:M,1:N) =       RMn(:,0:N-1,0)/spread(RMn0(0:N-1,0),1,M)*cemat(:,0:N-1)/K ! a_n
+                r%LHS(1:M,N+1:2*N-1) = RMn(:,1:N-1,1)/spread(RMn0(1:N-1,1),1,M)*semat(:,1:N-1)/K ! b_n
 
                 loN = 1
                 hiN = 2*N-1
@@ -245,13 +240,6 @@ contains
                 r%LHS(1:M,loN+N:hiN)   = -RMn(:,1:N-1,1)/spread(RMn0(1:N-1,1),1,M)*semat(:,0:N-1)/K ! d_n
              end if
 
-#ifdef DEBUG             
-             print '(2(A,ES10.2E3))', '|cemat|  max',maxval(abs(cemat)),' min',minval(abs(cemat))
-             print '(2(A,ES10.2E3))', '|semat|  max',maxval(abs(semat)),' min',minval(abs(semat))
-             print '(2(A,ES10.2E3))', '|RMn|    max',maxval(abs(RMn(:,1:,:))),' min',minval(abs(RMn(:,1:,:)))
-             print '(2(A,ES10.2E3))', '|RMn0|   max',maxval(abs(RMn0(1:,:))),' min',minval(abs(RMn0(1:,:)))
-#endif
-
           end if
 
           ! for matching, specified total flux, or specified elemental flux target element
@@ -263,20 +251,20 @@ contains
              if (dom%inclBg(s,t)) then
                 ! use exterior angular and radial modified mathieu functions
                 if (.not. el%ibnd == 0) then
-                   cemat(1:M,0:N-1) = ce(f%mat(idx), vi(0:N-1), e%G(t)%Pgm(:))
-                   RMn(1:M,0:N-1,0) = Ke(f%mat(idx), vi(0:N-1), e%G(t)%Rgm(:))
-                   RMn0(0:N-1,0) = Ke(f%mat(idx), vi(0:N-1), e%r)
-                   semat(1:M,1:N-1) = se(f%mat(idx), vi(1:N-1), e%G(t)%Pgm(:))
-                   RMn(1:M,1:N-1,1) = Ko(f%mat(idx), vi(1:N-1), e%G(t)%Rgm(:))
+                   cemat(1:M,0:N-1) = ce(e%parent%mat(idx), vi(0:N-1), e%G(t)%Pgm(:))
+                   RMn(1:M,0:N-1,0) = Ke(e%parent%mat(idx), vi(0:N-1), e%G(t)%Rgm(:))
+                   RMn0(0:N-1,0) = Ke(e%parent%mat(idx), vi(0:N-1), e%r)
+                   semat(1:M,1:N-1) = se(e%parent%mat(idx), vi(1:N-1), e%G(t)%Pgm(:))
+                   RMn(1:M,1:N-1,1) = Ko(e%parent%mat(idx), vi(1:N-1), e%G(t)%Rgm(:))
                    RMn(1:M,0,1) = 0.0
-                   RMn0(1:N-1,1) = Ko(f%mat(idx), vi(1:N-1), e%r)
+                   RMn0(1:N-1,1) = Ko(e%parent%mat(idx), vi(1:N-1), e%r)
                    RMn0(0,1) = 0.0
-                   K = f%K
+                   K = e%parent%K
                 end if
-                dcemat(1:M,0:N-1) = dce(f%mat(idx), vi(0:N-1), e%G(t)%Pgm(:))
-                dRMn(1:M,0:N-1,0) = dKe(f%mat(idx), vi(0:N-1), e%G(t)%Rgm(:))
-                dsemat(1:M,1:N-1) = dse(f%mat(idx), vi(1:N-1), e%G(t)%Pgm(:))
-                dRMn(1:M,1:N-1,1) = dKo(f%mat(idx), vi(1:N-1), e%G(t)%Rgm(:))
+                dcemat(1:M,0:N-1) = dce(e%parent%mat(idx), vi(0:N-1), e%G(t)%Pgm(:))
+                dRMn(1:M,0:N-1,0) = dKe(e%parent%mat(idx), vi(0:N-1), e%G(t)%Rgm(:))
+                dsemat(1:M,1:N-1) = dse(e%parent%mat(idx), vi(1:N-1), e%G(t)%Pgm(:))
+                dRMn(1:M,1:N-1,1) = dKo(e%parent%mat(idx), vi(1:N-1), e%G(t)%Rgm(:))
                 dRMn(1:M,0,1) = 0.0
 
                 loN = 1
@@ -312,12 +300,6 @@ contains
                 end if
 
              end if
-
-#ifdef DEBUG
-             print '(2(A,ES10.2E3))', '|Dcemat| max',maxval(abs(dcemat)),' min',minval(abs(dcemat))
-             print '(2(A,ES10.2E3))', '|Dsemat| max',maxval(abs(dsemat)),' min',minval(abs(dsemat))
-             print '(2(A,ES10.2E3))', '|DRMn|   max',maxval(abs(dRMn(:,1:,:))),' min',minval(abs(dRMn(:,1:,:)))
-#endif
 
              ! derivative wrt radius of source element
              dPot_dR(1:M,1:N) =       dRMn(:,0:N-1,0)/spread(RMn0(0:N-1,0),1,M)*cemat(:,0:N-1)
