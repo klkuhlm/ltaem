@@ -9,7 +9,7 @@ program ltaem_main
   use constants, only : DP
   use type_definitions, only : domain, element, circle, ellipse, solution, INVLT, particle
   use file_ops, only : readinput, writeresults
-  use inverse_Laplace_Transform, only : invlap => deHoog_invlap, pvalues => deHoog_pvalues
+  use inverse_Laplace_Transform, only : L => deHoog_invlap, pvalues => deHoog_pvalues
   use particle_integrate, only : rungeKuttaMerson, rungeKutta, fwdEuler
   use solution_mod, only : matrix_solution
   use calc_routines, only : headCalc, velCalc
@@ -293,8 +293,8 @@ program ltaem_main
               lop = (lt - minlt)*size(s,dim=1) + 1
               hip = lop + size(s,dim=1) - 1
 
-              sol%h(j,i,lot:hit) =     invlap(sol%t(lot:hit), tee(lt), hp(lop:hip), sol%INVLT)
-              sol%v(j,i,lot:hit,1:2) = invlap(sol%t(lot:hit), tee(lt), vp(lop:hip,1:2), sol%INVLT)
+              sol%h(j,i,lot:hit) =     L(sol%t(lot:hit), tee(lt), hp(lop:hip), sol%INVLT)
+              sol%v(j,i,lot:hit,1:2) = L(sol%t(lot:hit), tee(lt), vp(lop:hip,1:2), sol%INVLT)
            end do
         end do
      end do
@@ -321,8 +321,8 @@ program ltaem_main
            hip = lop + size(s,1) - 1
 
            ! don't need second dimension of results matricies
-           sol%h(i,1,lot:hit) =     invlap(sol%t(lot:hit),tee(lt),hp(lop:hip),sol%INVLT)
-           sol%v(i,1,lot:hit,1:2) = invlap(sol%t(lot:hit),tee(lt),vp(lop:hip,1:2),sol%INVLT)
+           sol%h(i,1,lot:hit) =     L(sol%t(lot:hit),tee(lt),hp(lop:hip),sol%INVLT)
+           sol%v(i,1,lot:hit,1:2) = L(sol%t(lot:hit),tee(lt),vp(lop:hip,1:2),sol%INVLT)
         end do
      end do
      !$OMP END PARALLEL DO

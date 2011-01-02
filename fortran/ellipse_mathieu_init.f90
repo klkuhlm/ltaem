@@ -32,15 +32,14 @@ contains
 
     ! TODO: make a decision about matrix size here and
     ! either bail out if too large, or potentially use an 
-    ! asymptotic expansion
+    ! asymptotic expansion (needs investigation)
 
+    write(*,'(A)',advance='no') 'bg: q-MS '
     do i = 1, tnp
-       if (bg%cutoff < 0.0) then
-          bg%mat(i) = mathieu_init(kap(i), MM=max(bg%ms,dim(i)))
-       else  ! only include if read from file (default = -999.)
-          bg%mat(i) = mathieu_init(kap(i), MM=max(bg%ms,dim(i)), CUTOFF=bg%cutoff)
-       end if
+       bg%mat(i) = mathieu_init(kap(i), MM=max(bg%ms,dim(i)), CUTOFF=bg%cutoff)
+       write(*,'(3(I0,1X))',advance='no') i,bg%MS,dim(i)
     end do
+    write(*,'(/)')
 
     ! allocate/initialize each element for each value of p
     do j = 1, size(e)
@@ -50,11 +49,12 @@ contains
           kap = kappa(p,e(j)%element)
           dim(:) = shirts(e(j)%N, kap)
 
+          write(*,'(A,I0,1X)',advance='no') 'el',j,': q-MS '
           do i = 1, tnp
-             ! TODO adjustable cutoff not handled except in background 
-             ! either add here or remove above.
-             e(j)%mat(i) = mathieu_init(kap(i), MM=max(e(j)%MS,dim(i)))
+             e(j)%mat(i) = mathieu_init(kap(i), MM=max(e(j)%MS,dim(i)), CUTOFF=e(j)%cutoff)
+             write(*,'(3(I0,1X))',advance='no') i,e(j)%MS,dim(i)
           end do
+          write(*,'(/)')
        end if
     end do
   end subroutine ellipse_init
@@ -66,12 +66,13 @@ contains
     integer :: dim
     real(DP) :: C,D
     
-    ! estimate required matrix size, based on rational approximation due to 
-    ! Shirts, R.B., 1993. "The Computation of Eigenvalues and Solutions of Mathieu's
+    ! estimate required matrix size to achieve accuracy ~ 1.0E-12,
+    ! based on rational approximation due to  Shirts, R.B., 1993.
+    ! "The Computation of Eigenvalues and Solutions of Mathieu's
     ! Differential Equation for Noninteger Order", ACM TOMS 19(3) pp377-390.
 
-    C = (8.46 +   0.444*n)/(1.0_DP + 0.085*n)
-    D = (0.240 + 0.0214*n)/(1.0_DP + 0.059*n)
+    C = (8.46_DP +   0.444_DP*n)/(1.0_DP + 0.085_DP*n)
+    D = (0.240_DP + 0.0214_DP*n)/(1.0_DP + 0.059_DP*n)
     dim = int(n + 3.0_DP + C*abs(q)**D)
 
   end function shirts

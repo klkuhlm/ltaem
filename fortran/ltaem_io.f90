@@ -87,12 +87,7 @@ contains
 
     read(15,*,iostat=ierr) bg%por, bg%k, bg%ss, bg%leakFlag, &
          & bg%aquitardK, bg%aquitardSs, bg%aquitardb, bg%ms, bg%cutoff
-    if (ierr /= 0) then
-       !! re-read line without cutoff value (added recently)
-       backspace(15) ! rewind file one record
-       read(15,*,iostat=ierr) bg%por, bg%k, bg%ss, bg%leakFlag, &
-            & bg%aquitardK, bg%aquitardSs, bg%aquitardb, bg%ms
-    end if
+    if (ierr /= 0) stop 'error on line 2 of input file'
     
     ! reals checked here, bg%ms checked in ellipse section, leakflag checked elsewhere
     if (any([bg%por,bg%k,bg%ss] < spacing(0.0))) then
@@ -397,7 +392,14 @@ contains
        end if
 
        read(33,*) e(:)%ms ! bg%ms read above
-       ! these are computed now, so checking this here doesn't mean as much as it did.
+       ! these are computed now (this value is now used as an alternate minimum),
+       ! so checking this here doesn't mean as much as it once did.
+
+       read(33,*) e(:)%cutoff
+       if (any(e%cutoff < spacing(0.0))) then
+          write(*,*) 'e%cutoff must be > 0.0 ',e%cutoff
+          stop 227
+       end if      
 
        read(33,*) e(:)%ibnd
        if (any(e%ibnd < -1 .or. e%ibnd > 2)) then
@@ -554,36 +556,38 @@ contains
        write(16,fmt(1)) e(:)%n,              '  ||   number of elliptical free parameter (Fourier coeffs)'
        write(16,fmt(1)) e(:)%m,              '  ||   number of ellipse matching locations'
        write(16,fmt(1)) e(:)%ms,             '  ||   size of "infinite" Mathieu matrices'
-       write(16,fmt(1)) e(:)%ibnd,           '  ||    ellipse ibnd array'
-       write(16,fmt(2)) e(:)%match,          '  ||    ellipse matching array'
-       write(16,fmt(2)) e(:)%calcin,         '  ||    calculate inside this ellipse?'
+       write(16,fmt(3)) e(:)%cutoff,         '  ||   desired accuracy cutoff for Mathieu function matrices'
+       write(16,fmt(1)) e(:)%ibnd,           '  ||   ellipse ibnd array'
+       write(16,fmt(2)) e(:)%match,          '  ||   ellipse matching array'
+       write(16,fmt(2)) e(:)%calcin,         '  ||   calculate inside this ellipse?'
        ! TODO free-water storage for ellipses not handled yet
-       write(16,fmt(2)) e(:)%storin,         '  ||    calculate free-water storage for this ellipse?' 
-       write(16,fmt(3)) e(:)%r,              '  ||    ellipse radius (eta)'
-       write(16,fmt(3)) e(:)%x,              '  ||    ellipse center x'
-       write(16,fmt(3)) e(:)%y,              '  ||    ellipse center y'
-       write(16,fmt(3)) e(:)%f,              '  ||    ellipse semi-focal length'
-       write(16,fmt(3)) e(:)%theta,          '  ||    ellipse angle rotation with +x axis'
-       write(16,fmt(3)) e(:)%k,              '  ||    ellipse aquifer k' 
-       write(16,fmt(3)) e(:)%ss,             '  ||    ellipse aquifer Ss'
-       write(16,fmt(3)) e(:)%por,            '  ||    ellipse aquifer porosity'
-       write(16,fmt(3)) e(:)%areaQ,          '  ||     ellipse area rch rate'
-       write(16,fmt(3)) e(:)%bdryQ,          '  ||     ellipse boundary rch rate or head'
-       write(16,fmt(2)) e(:)%leakFlag,       '  ||     ellipse leaky type'
-       write(16,fmt(3)) e(:)%aquitardK,      '  ||     ellipse leaky aquitard K'
-       write(16,fmt(3)) e(:)%aquitardSs,     '  ||     ellipse leaky aquitard Ss'
-       write(16,fmt(3)) e(:)%aquitardb,      '  ||     ellipse leaky aquitard thickness'
-       write(16,fmt(2)) e(:)%unconfinedFlag, '  ||     ellipse unconfined flag'
-       write(16,fmt(3)) e(:)%Sy,             '  ||     ellipse aquifer specific yield'
-       write(16,fmt(3)) e(:)%Kz,             '  ||     ellipse aquifer vertical K'
-       write(16,fmt(3)) e(:)%b,              '  ||    ellipse aquifer thickness'
-       write(16,fmt(3)) e(:)%dskin,          '  ||    ellipse boundary dimensionless skin factor'
+       write(16,fmt(2)) e(:)%storin,         '  ||   calculate free-water storage for this ellipse?' 
+       write(16,fmt(3)) e(:)%r,              '  ||   ellipse radius (eta)'
+       write(16,fmt(3)) e(:)%x,              '  ||   ellipse center x'
+       write(16,fmt(3)) e(:)%y,              '  ||   ellipse center y'
+       write(16,fmt(3)) e(:)%f,              '  ||   ellipse semi-focal length'
+       write(16,fmt(3)) e(:)%theta,          '  ||   ellipse angle rotation with +x axis'
+       write(16,fmt(3)) e(:)%k,              '  ||   ellipse aquifer k' 
+       write(16,fmt(3)) e(:)%ss,             '  ||   ellipse aquifer Ss'
+       write(16,fmt(3)) e(:)%por,            '  ||   ellipse aquifer porosity'
+       write(16,fmt(3)) e(:)%areaQ,          '  ||   ellipse area rch rate'
+       write(16,fmt(3)) e(:)%bdryQ,          '  ||   ellipse boundary rch rate or head'
+       write(16,fmt(2)) e(:)%leakFlag,       '  ||   ellipse leaky type'
+       write(16,fmt(3)) e(:)%aquitardK,      '  ||   ellipse leaky aquitard K'
+       write(16,fmt(3)) e(:)%aquitardSs,     '  ||   ellipse leaky aquitard Ss'
+       write(16,fmt(3)) e(:)%aquitardb,      '  ||   ellipse leaky aquitard thickness'
+       write(16,fmt(2)) e(:)%unconfinedFlag, '  ||   ellipse unconfined flag'
+       write(16,fmt(3)) e(:)%Sy,             '  ||   ellipse aquifer specific yield'
+       write(16,fmt(3)) e(:)%Kz,             '  ||   ellipse aquifer vertical K'
+       write(16,fmt(3)) e(:)%b,              '  ||   ellipse aquifer thickness'
+       write(16,fmt(3)) e(:)%dskin,          '  ||   ellipse boundary dimensionless skin factor'
     else
+       ! no elliptical elements
        allocate(e(0))
     end if
     
     ntot = sum(dom%num) ! total number of circular and elliptical elements
-    if (ntot < 1) stop 'ltaem_io.f90 Need at least one circular (including well) or&
+    if (ntot < 1) stop 'READINPUT: Need at least one circular (including well) or&
             & elliptical (including line) element.'
 
     ! compute secondary parameters

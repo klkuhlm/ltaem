@@ -7,9 +7,9 @@ contains
 
   subroutine rungeKuttaMerson(s,tee,c,e,bg,sol,dom,p,lo)
     use constants, only : DP
-    use inverse_laplace_transform, only : invlap => deHoog_invlap
+    use inverse_laplace_transform, only : L => deHoog_invlap
     use type_definitions, only : circle, ellipse, element, solution, particle, domain
-    use calc_routines, only : velcalc
+    use calc_routines, only : V => velcalc
     use utility, only : v2c
     implicit none
 
@@ -27,10 +27,8 @@ contains
     logical :: partEnd
     real(DP), dimension(2) :: vInit,vTrap,vAB3,vAB2,vSF
     real(DP), dimension(2) :: fwdEuler,Trap,halfAB,fullAB,Simp,x0
-    real(DP) :: error, pt, px, py, dt,  L
+    real(DP) :: error, pt, px, py, dt, length
     real(DP), parameter :: SAFETY = 0.9
-
-    !  TODO not using porosity correctly ?
 
     ns = size(s,dim=1)
     pt = p%ti 
@@ -43,9 +41,7 @@ contains
     count = 1
 
     partEnd = .false.
-    write(*,'(/A)')    '*******************************' 
-    write(*,'(A,I0)') 'rkm integration, particle ',p%id
-    write(*,'(A)')    '*******************************' 
+    write(*,'(A,I0)') '** rkm integration, particle ',p%id
 
     ! Runge-Kutta-Merson 4th-order adaptive integration scheme
     rkm: do
@@ -54,38 +50,38 @@ contains
 
        ! forward Euler 1/3-step  predictor
        call getsrange(pt,lo,ns,los,his,lt)
-       vInit = invlap(pt,tee(lt),velCalc(x0,s(:,lt),los,his,dom,c,e,bg),sol%INVLT)
+       vInit = L(pt,tee(lt), V(x0,s(:,lt),los,his,dom,c,e,bg), sol%INVLT)
        FwdEuler(1:2) = x0(1:2) + dt/3.0*vInit(1:2)
 
        ! trapazoid rule 1/3-step corrector
        call getsrange(pt + dt/3.0,lo,ns,los,his,lt)
-       vTrap = invlap(pt+dt/3.0,tee(lt),velCalc(FwdEuler,s(:,lt),los,his,dom,c,e,bg),sol%INVLT)
+       vTrap = L(pt+dt/3.0,tee(lt), V(FwdEuler,s(:,lt),los,his,dom,c,e,bg), sol%INVLT)
        Trap(1:2) = x0(1:2) + dt/6.0*(vInit(1:2) + vTrap(1:2))
 
        ! Adams-Bashforth 1/2-step predictor 
-       vAB3 = invlap(pt+dt/3.0,tee(lt),velCalc(Trap,s(:,lt),los,his,dom,c,e,bg),sol%INVLT)
+       vAB3 = L(pt+dt/3.0,tee(lt), V(Trap,s(:,lt),los,his,dom,c,e,bg), sol%INVLT)
        halfAB(1:2) = x0(1:2) + dt/8.0*(vInit(1:2) + 3*vAB3(1:2))
 
        ! full step Adams-Bashforth predictor
        call getsrange(pt + dt/2.0,lo,ns,los,his,lt)
-       vAB2 = invlap(pt+dt/2.0,tee(lt),velCalc(halfAB,s(:,lt),los,his,dom,c,e,bg),sol%INVLT)
+       vAB2 = L(pt+dt/2.0,tee(lt), V(halfAB,s(:,lt),los,his,dom,c,e,bg), sol%INVLT)
        fullAB(1:2) = x0(1:2) + dt/2.0*(vInit(1:2) - 3*vAB3(1:2) + 4*vAB2(1:2))
 
        ! full step Simpson's rule corrector
        call getsrange(pt + dt,lo,ns,los,his,lt)
-       vSF = invlap(pt+dt,tee(lt),velCalc(halfAB,s(:,lt),los,his,dom,c,e,bg),sol%INVLT)
+       vSF = L(pt+dt,tee(lt), V(halfAB,s(:,lt),los,his,dom,c,e,bg), sol%INVLT)
        Simp(1:2) = x0(1:2) + dt/6.0*(vInit(1:2) + 4*vAB2(1:2) + vSF(1:2))
 
        ! relative error (biggest of x- or y-direction)
        error = maxval(abs((Simp - fullAB)/Simp))
 
        ! magnitude of total step taken (straight line)
-       L = abs(v2c(Simp) - v2c(x0))
+       length = abs(v2c(Simp) - v2c(x0))
 
        ! only advance to next step if error level is acceptable
        ! _and_ resulting step is less than prescribed limit 
        ! _or_ we have gotten to the minimum step size (proceed anyways)
-       if ((error < p%tol .and. L <= p%maxL) .or. abs(dt) <= p%mindt) then
+       if ((error < p%tol .and. length <= p%maxL) .or. abs(dt) <= p%mindt) then
           pt = pt + dt
           px = Simp(1)
           py = Simp(2)
@@ -110,7 +106,7 @@ contains
        ! Numerical Recipes, Press et al 1992, eqn 16.2.10, p 712
        if ((.not. partEnd) .and. (.not. trackDone(p%forward,pt,p%tf))) then
 
-          if (L > p%maxL) then
+          if (length > p%maxL) then
              ! cut time step to minimize distance
              ! integrated in one step
              dt = dt/3.0
@@ -138,9 +134,9 @@ contains
   !$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
   subroutine rungekutta(s,tee,c,e,bg,sol,dom,p,lo)
     use constants, only : DP
-    use inverse_laplace_transform, only : invlap => deHoog_invlap
+    use inverse_laplace_transform, only : L => deHoog_invlap
     use type_definitions, only : circle, ellipse, element, solution, particle, domain
-    use calc_routines, only : velCalc
+    use calc_routines, only : V => velCalc
     implicit none
 
     integer, intent(in) :: lo
@@ -158,8 +154,6 @@ contains
     real(DP), dimension(2) :: FwdEuler,BkwdEuler,MidPt,Simp,x0
     real(DP), dimension(2) :: vInit,vBkwdEuler,vMidpt,vSimp
 
-    ! TODO not using porosity correctly?
-
     ns = size(s,dim=1)
     pt = p%ti
     px = p%x
@@ -170,9 +164,7 @@ contains
     ! initialize with starting position
     p%r(0,1:3) = [pt,px,py]
 
-    write(*,'(/A)')    '*******************************' 
-    write(*,'(A,I0)') 'rk integration, particle ',p%id
-    write(*,'(A)')    '*******************************' 
+    write(*,'(A,I0)') '** rk integration, particle ',p%id
 
     ! Runge-Kutta 4th order integration scheme (non-adaptive)
     numdt = ceiling((p%tf - pt)/abs(dt))
@@ -192,22 +184,22 @@ contains
 
        ! forward Euler 1/2-step  (predictor)
        call getsrange(pt,lo,ns,los,his,lt)
-       vInit = invlap(pt,tee(lt),velCalc(x0,s(:,lt),los,his,dom,c,e,bg),sol%INVLT)
+       vInit = L(pt,tee(lt), V(x0,s(:,lt),los,his,dom,c,e,bg), sol%INVLT)
        FwdEuler(1:2) = x0(1:2) + dt/2.0*vInit(1:2)
 
        ! backward Euler 1/2-step (corrector)
        call getsrange(pt + dt/2.0,lo,ns,los,his,lt)
-       vBkwdEuler = invlap(pt+dt/2.0,tee(lt),velCalc(FwdEuler,s(:,lt),los,his,dom,c,e,bg),sol%INVLT)
+       vBkwdEuler = L(pt+dt/2.0,tee(lt), V(FwdEuler,s(:,lt),los,his,dom,c,e,bg), sol%INVLT)
        BkwdEuler(1:2) = x0(1:2) + dt/2.0*vBkwdEuler(1:2)
 
        ! midpoint rule full-step predictor
        call getsrange(pt + dt,lo,ns,los,his,lt)
-       vMidpt = invlap(pt+dt,tee(lt),velCalc(BkwdEuler,s(:,lt),los,his,dom,c,e,bg),sol%INVLT)
+       vMidpt = L(pt+dt,tee(lt), V(BkwdEuler,s(:,lt),los,his,dom,c,e,bg), sol%INVLT)
        Midpt(1:2) = x0(1:2) + dt*vMidpt(1:2)
 
        ! Simpson's rule full-step corrector
-       vSimp = invlap(pt+dt,tee(lt),velCalc(Midpt,s(:,lt),los,his,dom,c,e,bg),sol%INVLT)
-       Simp(1:2) = x0(1:2) + dt/6.0*(vinit(1:2) + 2*vBkwdEuler(1:2) + 2*vMidpt(1:2) + vSimp(1:2))
+       vSimp = L(pt+dt,tee(lt), V(Midpt,s(:,lt),los,his,dom,c,e,bg), sol%INVLT)
+       Simp(1:2) = x0(:) + dt/6.0*(vinit(:) + 2*vBkwdEuler(:) + 2*vMidpt(:) + vSimp(:))
 
        pt = pt + dt
        px = Simp(1)
@@ -227,9 +219,9 @@ contains
   !$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
   subroutine fwdEuler(s,tee,c,e,bg,sol,dom,p,lo)
     use constants, only : DP
-    use inverse_laplace_transform, only : invlap => deHoog_invlap
+    use inverse_laplace_transform, only : L => deHoog_invlap
     use type_definitions, only : circle, ellipse, element, solution, particle, domain
-    use calc_routines, only : velCalc
+    use calc_routines, only : V => velCalc
     implicit none
 
     integer, intent(in) :: lo
@@ -246,8 +238,6 @@ contains
     real(DP) :: pt, px, py, dt
     real(DP), dimension(2) :: vel
 
-    ! TODO not using porosity correctly?
-
     ns = size(s,dim=1)
     pt = p%ti
     px = p%x
@@ -261,9 +251,7 @@ contains
     ! 1st order fwd Euler
     numdt = ceiling((p%tf - pt)/abs(dt))
     
-    write(*,'(A)')    '****************************************'
-    write(*,'(A,I0)') 'fwd Euler integration, particle ', p%id
-    write(*,'(A)')    '****************************************'
+    write(*,'(A,I0)') '** fwd Euler integration, particle ', p%id
 
     fe: do i = 1,numdt   
        if(mod(i,100) == 0) write(*,'(I0,A,ES12.6E2)') i,' t=',pt
@@ -277,7 +265,7 @@ contains
 
        ! full step forward Euler
        call getsrange(pt,lo,ns,los,his,lt)
-       vel = invlap(pt,tee(lt),velCalc([px,py],s(:,lt),los,his,dom,c,e,bg),sol%INVLT)
+       vel = L(pt,tee(lt),V([px,py],s(:,lt),los,his,dom,c,e,bg),sol%INVLT)
 
        px = px + dt*vel(1)
        py = py + dt*vel(2)
@@ -361,7 +349,7 @@ contains
   end subroutine reallocate
 
   !###########################################################################
-  ! check if particle has moved into a sink
+  ! check if particle has moved into a sink (left flow domain)
 
   function sinkCheck(px,py,c,e) result(partEnd)
     use constants, only : DP, EYE
@@ -379,19 +367,19 @@ contains
     pz = cmplx(px,py,DP)
 
     ! did the particle enter an ibnd==2 circle (well)?
-    if (any(c%ibnd == 2 .and. abs(pz - c%z) < c%r)) then
+    if (any(c%ibnd == 2 .and. abs(pz - c%z) <= c%r)) then
        partEnd = .true.
        goto 999
     end if
 
     ! did the particle enter an ibnd==2 ellipse (line sink)?
-    if (any(e%ibnd == 2 .and. real(cacosh((pz-e%z)*exp(-EYE*e%theta)/e%f)) < e%r)) then
+    if (any(e%ibnd == 2 .and. real(cacosh((pz-e%z)*exp(-EYE*e%theta)/e%f)) <= e%r)) then
        partEnd = .true.
        goto 999
     end if
 
     ! TODO handle flowing into a constant head/flux element (from inside or
-    ! TODO from outside, circles or ellipses
+    !      from outside, circles or ellipses
 
     ! TODO dealing with area-sinks is more complex, will be dealt with later
 

@@ -71,6 +71,13 @@ contains
        end subroutine ZGEEV
     end interface
 
+    interface  ! level-1 BLAS routine for vector norm-1 (absolute sum) 
+       real(KIND=8) function DZASUM(N,ZX,INCX) 
+         integer, intent(in) :: N,INCX
+         complex(KIND=8), intent(in), dimension(n) :: ZX
+       end function DZASUM
+    end interface
+
     complex(DP), intent(in) :: q
     integer, optional, intent(in) :: MM
     real(DP), optional, intent(in) :: cutoff
@@ -78,7 +85,7 @@ contains
     ! resulting structure defined at top of containing module
     type(mathieu) :: mat
     integer :: i, j, M
-    real(DP) :: dg
+    real(DP) :: dg, denom
 
     ! just one matrix of recursion coefficients (used 4 times)
     complex(DP), allocatable :: coeff(:,:)
@@ -125,7 +132,8 @@ contains
     
     ! A/B 3rd dimension: 0(even) or 1(odd) cases of the second dimension
 
-    allocate(coeff(M,M), rwork(33*M), w(M), mat%mcn(4*M), &
+    lwork = 2*M+1
+    allocate(coeff(M,M), rwork(33*M), work(lwork), w(M), mat%mcn(4*M), &
          & mat%A(1:M,0:M-1,0:1), mat%B(1:M,0:M-1,0:1))
 
     di = 1 ! dummy integer for lapack
@@ -145,12 +153,9 @@ contains
     forall(i=1:m, j=1:m, j==i+1 .or. j==i-1) Coeff(i,j) = q
 
     ! special case
-    Coeff(2,1) = 2.0_DP*q
+    Coeff(2,1) = 2.0*q
 
-    lwork = 2*M+1
-    allocate(work(lwork)) 
-
-    call zgeev(JOBVL='N', JOBVR='V',N=M, A=Coeff, LDA=M, W=mat%mcn(1:m), &
+    call ZGEEV(JOBVL='N', JOBVR='V',N=M, A=Coeff, LDA=M, W=mat%mcn(1:m), &
          & VL=dc, LDVL=di, VR=mat%A(1:m,0:m-1,0), LDVR=M, &
          & WORK=work, LWORK=lwork, RWORK=rwork, INFO=info)
 
@@ -159,7 +164,7 @@ contains
 
     ! Morse norm  ce_2n(psi=0)
     w = sum(spread(vi(1:M),2,M)*mat%A(:,:,0),dim=1)
-    mat%A(:,:,0) = mat%A(:,:,0)/spread(w,1,m)
+    mat%A(:,:,0) = mat%A(:,:,0)/spread(w,1,M)
 
     !$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
     ! even coefficients (a) of odd order
@@ -172,15 +177,16 @@ contains
     forall(i=1:m-1) Coeff(i+1,i+1) = cmplx((2*i+1)**2, 0, DP)
     forall(i=1:m, j=1:m, j==i+1 .or. j==i-1) Coeff(i,j) = q
 
-    call zgeev('N','V',M,Coeff,M,mat%mcn(m+1:2*m),dc,di,mat%A(1:m,0:m-1,1),M, &
-         & work,lwork,rwork,info)
+    call ZGEEV(JOBVL='N', JOBVR='V', N=M, A=Coeff, LDA=M, W=mat%mcn(m+1:2*m),&
+         & VL=dc, LDVL=di, VR=mat%A(1:m,0:m-1,1), LDVR=M, &
+         & WORK=work, LWORK=lwork, RWORK=rwork, INFO=info)
          
     if (info /= 0) write(*,'(A,I0,A)') "ZGEEV ERROR ",info, &
          &" calculating even coefficients of odd order"
 
     ! se'_2n+1(psi=0)
-    w = sum(spread((2*v(0:M-1)+1)*vi(0:M-1),2,m)*mat%A(:,:,1),dim=1)
-    mat%A(:,:,1) = mat%A(:,:,1)/spread(w,1,m)
+    w = sum(spread((2*v(0:M-1)+1)*vi(0:M-1),2,M)*mat%A(:,:,1),dim=1)
+    mat%A(:,:,1) = mat%A(:,:,1)/spread(w,1,M)
 
     !$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
     ! odd coefficients (b) of even order
@@ -194,15 +200,16 @@ contains
     forall(i=1:m) Coeff(i,i) = cmplx((2*i)**2, 0, DP)
     forall(i=1:m, j=1:m, j==i+1 .or. j==i-1) Coeff(i,j) = q
 
-    call zgeev('N','V',M,Coeff,M,mat%mcn(2*m+1:3*m),dc,di,mat%B(1:m,0:m-1,0),M,&
-         &work,lwork,rwork,info)
+    call ZGEEV(JOBVL='N', JOBVR='V', N=M, A=Coeff, LDA=M, W=mat%mcn(2*m+1:3*m),&
+         & VL=dc, LDVL=di, VR=mat%B(1:m,0:m-1,0),LDVR=M,&
+         & WORK=work, LWORK=lwork, RWORK=rwork, INFO=info)
 
     if (info /= 0) write (*,'(A,I0,A)') "ZGEEV ERROR ",info, &
          &" calculating odd coefficients of even order"
 
     ! ce_2n+2(psi=0)
-    w = sum(spread((2*v(0:M-1)+2)*vi(0:M-1),dim=2,ncopies=m)*mat%B(:,:,0),dim=1)
-    mat%B(:,:,0) = mat%B(:,:,0)/spread(w,1,m)
+    w = sum(spread((2*v(0:M-1)+2)*vi(0:M-1),2,M)*mat%B(:,:,0),dim=1)
+    mat%B(:,:,0) = mat%B(:,:,0)/spread(w,1,M)
 
     !$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
     ! odd coefficients (b) of odd order
@@ -215,8 +222,9 @@ contains
     forall(i=1:m-1) Coeff(i+1,i+1) = cmplx((2*i+1)**2, 0, DP)
     forall(i=1:m, j=1:m, j==i+1 .or. j==i-1) Coeff(i,j) = q
 
-    call zgeev('N','V',M,Coeff,M,mat%mcn(3*m+1:4*m),dc,di,mat%B(1:m,0:m-1,1),M,&
-         &work,lwork,rwork,info)
+    call ZGEEV(JOBVL='N', JOBVR='V', N=M, A=Coeff, LDA=M, W=mat%mcn(3*m+1:4*m),&
+         & VL=dc, LDVL=di, VR=mat%B(1:m,0:m-1,1), LDVR=M,&
+         & WORK=work, LWORK=lwork, RWORK=rwork, INFO=info)
 
     if (info /= 0) write (*,'(A,I0,A)') "ZGEEV ERROR ",info, &
          &" calculating odd coefficients of odd order"
@@ -228,11 +236,12 @@ contains
     deallocate(coeff,rwork,w,work)
 
     ! perform some heuristic checking of max allowable order
-    dg = sum(abs(diag(mat%A(:,:,0),0)))/m ! average size of diagonal element
+    dg = DZASUM(N=M, ZX=diag(mat%A(:,:,0),0), INCX=1)/m ! average size of diagonal element
 
     bufcheck: do j=1,m
-       if (sum(abs(diag(mat%A(:,:,0), j)))/(dg*(m-j)) < mat%CUTOFF .and. &
-         & sum(abs(diag(mat%A(:,:,0),-j)))/(dg*(m-j)) < mat%CUTOFF) then
+       denom = dg*(m-j)
+       if (DZASUM(N=M-j, ZX=diag(mat%A(:,:,0), j), INCX=1)/denom < mat%CUTOFF .and. &
+         & DZASUM(N=M-j, ZX=diag(mat%A(:,:,0),-j), INCX=1)/denom < mat%CUTOFF) then
            mat%buffer = j
            exit bufcheck
         end if

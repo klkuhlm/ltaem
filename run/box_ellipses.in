@@ -1,6 +1,7 @@
 18 18 18 18 :: N
 50 50 50 50 :: M
 10 10 10 10 :: ms
+1.0E-8 1.0E-8 1.0E-8 1.0E-8 :: cutoff
 1  1  1  1  :: ibnd
 f  f  f  f :: calcin?
 f  f  f  f :: storin?

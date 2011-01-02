@@ -419,10 +419,6 @@ contains
     complex(DP), dimension(size(p,1),0:e%N-1,0:1) :: RMRgp,RMR0,AM
     integer :: n0, np, i, j, N
 
-!!$#ifdef DEBUG
-!!$    print *, 'ellipse_calc: e:',e%id,' lo:',lo,' hi:',hi,' Rgp:',Rgp,' Pgp:',Pgp,' inside:',inside
-!!$#endif
-
     N = e%N
     np = size(p,1)
     forall (i=0:N-1) vi(i) = i
@@ -483,10 +479,6 @@ contains
     complex(DP), dimension(size(p,1),0:e%N-1) :: aa,bb
     complex(DP), dimension(size(p,1),0:e%N-1,0:1) :: RMRgp,RMR0,AM,dRMRgp,dAM
     integer :: n0, np, i, j, N
-
-!!$#ifdef DEBUG
-!!$    print *, 'ellipse_deriv: e:',e%id,' lo:',lo,' hi:',hi,' Rgp:',Rgp,' Pgp:',Pgp,' inside:',inside
-!!$#endif
 
     N = e%N
     np = size(p,1)

@@ -5,7 +5,10 @@ module type_definitions
 
   private 
   public :: domain, time, element, match_result, matching, circle, ellipse, &
-       & INVLT, solution, particle, print_match_result
+       & INVLT, solution, particle
+#ifdef DEBUG
+  public :: print_match_result
+#endif
   
   type :: domain
      ! number of each type of element
@@ -75,7 +78,7 @@ module type_definitions
      ! StorIn is only checked if CalcIn is false for an element.
      logical :: CalcIn = .false., StorIn = .false.
 
-     ! the parent element
+     ! pointer to the parent element
      type(element), pointer :: parent => null()
 
      ! structure containing matrices of mathieu function parameters
@@ -235,6 +238,7 @@ module type_definitions
      integer :: numt = -999
   end type particle
 
+#ifdef DEBUG
 contains
   subroutine print_match_result(r)
     type(match_result), intent(in) :: r
@@ -270,5 +274,6 @@ contains
        write(*,*) '* nothing to print * row:',row,'col:',col
     end if
   end subroutine print_match_result
+#endif
 
 end module type_definitions
