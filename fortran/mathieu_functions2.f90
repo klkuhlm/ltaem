@@ -117,10 +117,6 @@ contains
        mat%CUTOFF = 1.0D-10
     endif
 
-#ifdef DEBUG
-    print *, 'mathieu_init: q:',q,' mat%M:',mat%M,' mat%CUTOFF:',mat%CUTOFF
-#endif
-
     ! A/B 1st dimension: subscript in McLachlan notation,
     ! i.e., the position in the infinite sum
     

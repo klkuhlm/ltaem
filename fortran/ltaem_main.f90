@@ -45,10 +45,6 @@ program ltaem_main
   real(DP), parameter :: EARLIEST_PARTICLE = 1.0E-5, MOST_LOGT = 0.999
   real(DP), parameter :: TMAX_MULT = 2.0_DP  ! traditionally 2.0, but 4.0 could work (Mark Bakker)...
 
-#ifdef DEBUG
-  character(20) :: tmpfname
-#endif
-
   intrinsic :: get_command_argument
   call get_command_argument(1,sol%inFName)
   if (len_trim(sol%infname) == 0) then
@@ -251,19 +247,8 @@ program ltaem_main
         part(i)%id = i
      end do
 
-#ifdef DEBUG
-     ! cycle over particles, integrating each
-     ! re-shape matrix s into a vector
-     tmpfname = 'calc_part_    .debug'
-#endif
-
      !$OMP PARALLEL DO SHARED(part,sol)
      do j = 1, sol%nPart
-
-#ifdef DEBUG
-        write(tmpfname(11:14),'(I4.4)') j
-        open(unit=77,file=tmpfname,action='write',status='replace')
-#endif
 
         select case (part(j)%int)
         case (1)
@@ -274,10 +259,6 @@ program ltaem_main
                    call fwdEuler(s,tee,c,e,bg,sol,dom,part(j),lbound(tee,dim=1))
         end select
         ! invalid integration code checked in ltaem-io routine
-
-#ifdef DEBUG
-        close(77)
-#endif
 
      end do
      !$OMP END PARALLEL DO
