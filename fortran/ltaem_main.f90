@@ -332,5 +332,7 @@ program ltaem_main
   ! cleanup memory and write output to file
   call writeResults(sol,part)
 
+  deallocate(c,e,part,s,hp,vp,sol%h,sol%v,sol%t)
+
 end program ltaem_main
 
