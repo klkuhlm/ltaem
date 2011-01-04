@@ -47,7 +47,7 @@ DFLAGS=-O0 -Wall -Wextra -gdwarf-3 -fbacktrace ##$(OMP)
 #DFLAGS+=-frange-check -fcheck=all -finit-real=snan -finit-integer=-99999
 DFLAGS+=$(CPP)  #-DDEBUG 
 ##DFLAGS+=-fdump-rtl-expand
-PFLAGS=-O3 -fwhole-program -flto  $(CPP) -march=native ##$(OMP)
+PFLAGS=-O3 $(CPP) -march=native $(OMP)
 LINKFLAG=$(PFLAGS) 
 #################################
 
