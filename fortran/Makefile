@@ -47,12 +47,12 @@ DFLAGS=-O0 -Wall -Wextra -gdwarf-3 -fbacktrace ##$(OMP)
 #DFLAGS+=-frange-check -fcheck=all -finit-real=snan -finit-integer=-99999
 DFLAGS+=$(CPP)  #-DDEBUG 
 ##DFLAGS+=-fdump-rtl-expand
-PFLAGS=-O2 -g $(CPP) -march=native ##$(OMP)
-LINKFLAG=$(DFLAGS) 
+PFLAGS=-O3 -fwhole-program -flto  $(CPP) -march=native ##$(OMP)
+LINKFLAG=$(PFLAGS) 
 #################################
 
 # switch between performance or debugging flags
-FLAGS=$(DFLAGS)
+FLAGS=$(PFLAGS)
 
 # the link step
 main: $(OBJS) $(MAIN)
