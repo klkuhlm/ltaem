@@ -2,16 +2,16 @@ EXTERNAL=cbessel.o
 KKLOW=utility.o bessel_functions.o mathieu_functions2.o
 
 ##Work MacPro##############################
-#LAPACKLIB=/Users/klkuhlm/src/lapack-3.2.1/lapack_MAC.a
-#BLASLIB=/Users/klkuhlm/src/lapack-3.2.1/blas_MAC.a
+LAPACKLIB=/Users/klkuhlm/src/lapack-3.3.0/lapack_MAC.a
+BLASLIB=/Users/klkuhlm/src/lapack-3.3.0/blas_MAC.a
 
 ##home linux desktop ##########
 #LAPACKLIB=/home/kris/src/lapack-3.3.0/lapack_LINUX.a
 #BLASLIB=/home/kris/src/lapack-3.3.0/blas_LINUX.a
 
 ##work linux desktop ##########
-LAPACKLIB=/home/klkuhlm/src/lapack-3.3.0/lapack_LINUX.a
-BLASLIB=/home/klkuhlm/src/lapack-3.3.0/blas_LINUX.a
+#LAPACKLIB=/home/klkuhlm/src/lapack-3.3.0/lapack_LINUX.a
+#BLASLIB=/home/klkuhlm/src/lapack-3.3.0/blas_LINUX.a
 #LAPACKLIB=/opt/intel/mkl/10.0.3.020/lib/em64t/libmkl_lapack.a
 
 ### for intel compiler
