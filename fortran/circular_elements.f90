@@ -16,7 +16,7 @@ contains
     use constants, only : DP, PI
     use kappa_mod, only : kappa
     use time_mod, only : time
-    use utility, only : cos_recurrence, sin_recurrence
+    use utility, only : outer
     use type_definitions, only : circle, match_result
     use bessel_functions, only : bK, bI, dbK, dbI
     implicit none
@@ -63,8 +63,8 @@ contains
 
     allocate(r%LHS(nrows,ncols), r%RHS(nrows))
 
-    cmat(1:M,0:N-1) = cos_recurrence(c%Pcm(:),N)
-    smat(1:M,1:N-1) = sin_recurrence(c%Pcm(:),N)
+    cmat(1:M,0:N-1) = cos(outer(c%Pcm(:),vi(0:N)))
+    smat(1:M,1:N-1) = sin(outer(c%Pcm(:),vi(1:N)))
 
     ! setup LHS
     ! matching or specified total head
@@ -130,7 +130,7 @@ contains
     use constants, only : DP, PI
     use kappa_mod, only : kappa
     use time_mod, only : time
-    use utility, only : cos_recurrence, sin_recurrence, rotate_vel_mat
+    use utility, only : outer, rotate_vel_mat
     use type_definitions, only : circle, domain, matching, match_result
     use bessel_functions, only : bK, bI, dbK, dbI
     implicit none
@@ -197,8 +197,8 @@ contains
 
           allocate(Bn(M,0:N-1),Bn0(0:N-1),cmat(M,0:N-1),smat(M,N-1))
 
-          cmat(1:M,0:N-1) = cos_recurrence(c%G(targ)%Pgm(:),N)
-          smat(1:M,1:N-1) = sin_recurrence(c%G(targ)%Pgm(:),N)
+          cmat(1:M,0:N-1) = cos(outer(c%G(targ)%Pgm(:),vi(0:N)))
+          smat(1:M,1:N-1) = sin(outer(c%G(targ)%Pgm(:),vi(1:N)))
 
           ! setup LHS 
           ! $$$$$$$$$$ head effects of source (c) on target (el) $$$$$$$$$$
