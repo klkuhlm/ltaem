@@ -1032,8 +1032,7 @@ contains
   subroutine check_cutoff(mf,n)
     type(mathieu), intent(in) :: mf
     integer, dimension(:), intent(in) :: n
-    logical, dimension(size(n),size(n)) :: offD 
-    integer :: i, nn
+    integer :: nn
 
     nn = size(n)
     if (any(n < 0)) then
@@ -1044,10 +1043,9 @@ contains
     if (nn > 1) then
        ! since vectors of integer indexing vectors are used on the LHS of
        ! expressions, we must test for many-to-one conditions, since it is a no-no
-       offD = .TRUE.
-       forall (i = 1:nn) offD(i,i) = .FALSE.
-       ! check if off-diagonal terms in tensor product difference nxn - nxn are zero
-       if (any((spread(n,2,nn) - spread(n,1,nn)) == 0 .and. offD)) then
+
+       ! assuming they are in order, check for two adjoining integers that are the same
+       if (any(n(1:nn-1) - n(2:nn) == 0)) then
           write(*,*) 'CHECK_CUTOFF2: cannot have repeated indices in vector order',n
           stop 'CHECK_CUTOFF2: eliminate repeated indices to Mathieu functions'
        end if

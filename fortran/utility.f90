@@ -5,6 +5,7 @@ module utility
 
   private
   public :: v2c, diag, logspace, linspace, outer, ccosh, cacosh, ynot, rotate_vel, rotate_vel_mat
+  public :: cos_recurrence, sin_recurrence
 
   interface diag
      module procedure diagonal_z, diagonal_d
@@ -19,6 +20,36 @@ module utility
   end interface
   
 contains
+
+  function cos_recurrence(x,n) result(c)
+    use constants, only : DP
+    real(DP), intent(in), dimension(:) :: x
+    integer, intent(in) :: n
+    real(DP), dimension(size(x),0:n-1) :: c
+    integer :: i
+
+    c(:,0) = 1.0
+    c(:,1) = cos(x)
+    do i = 2,N-2
+       c(:,i) = 2.0*c(:,1)*c(:,i-1) - c(:,i-2)
+    end do
+  end function cos_recurrence
+
+  function sin_recurrence(x,n) result(s)
+    use constants, only : DP
+    real(DP), intent(in), dimension(:) :: x
+    integer, intent(in) :: n
+    real(DP), dimension(size(x),1:n-1) :: s
+    real(DP), dimension(size(x)) :: c
+    integer :: i
+
+    s(:,1) = sin(x)
+    s(:,2) = sin(2.0*x)
+    c = cos(x)
+    do i = 3,N-2
+       s(:,i) = 2.0*c*s(:,i-1) - s(:,i-2)
+    end do
+  end function sin_recurrence
 
   ! ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   pure function v2c(v) result(z) 
