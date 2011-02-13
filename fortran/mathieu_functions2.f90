@@ -1,16 +1,10 @@
 module mathieu_functions
-  use constants, only : DP   
+  use constants, only : DP
+  use type_definitions, only : mathieu
   implicit none
 
-  type, public :: mathieu
-     integer :: M = -999,  buffer = -999
-     real(DP) :: CUTOFF = -999.
-     complex(DP) :: q = (-999.,-999.)
-     complex(DP), allocatable :: mcn(:), A(:,:,:), B(:,:,:)  ! 4*M; 1:M, 0:M-1, 0:1
-  end type mathieu
-
   private  !! only interfaces, mathieu_init, and debugging routine are publicly callable
-  public :: ce, Dce, se, Dse, Ke, Ko, DKe, DKo, Ie, Io, DIe, DIo, mathieu_init
+  public :: mathieu, ce, Dce, se, Dse, Ke, Ko, DKe, DKo, Ie, Io, DIe, DIo, mathieu_init
 #ifdef DEBUG
   public :: print_mathieu_type
 #endif

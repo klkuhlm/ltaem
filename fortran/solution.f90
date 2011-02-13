@@ -13,7 +13,9 @@ contains
     use constants, only : DP
     use type_definitions, only : circle, solution, ellipse, domain, match_result
     use circular_elements, only : circle_match, well
-    use elliptical_elements, only : ellipse_match !!, line is repeated below to accommodate gfortran bug
+    !!is repeated below to accommodate gfortran bug
+    use elliptical_elements, only : ellipse_match
+!!$    use elliptical_elements, only : line
 
     interface  !! solve over-determined system via least-squares in LAPACK
        subroutine ZGELS(TRANSA, M, N, NRHS, A, LDA, B, LDB, WORK, &

@@ -1,15 +1,23 @@
 module type_definitions
   use constants, only : DP, lenFN
-  use mathieu_functions, only : mathieu
   implicit none
 
   private 
   public :: domain, time, element, match_result, matching, circle, ellipse, &
-       & INVLT, solution, particle
+       & INVLT, solution, particle, mathieu
+
 #ifdef DEBUG
   public :: print_match_result
 #endif
   
+  type :: mathieu
+     ! things required to compute mathieu functions
+     integer :: M = -999,  buffer = -999
+     real(DP) :: CUTOFF = -999.
+     complex(DP) :: q = (-999.,-999.)
+     complex(DP), allocatable :: mcn(:), A(:,:,:), B(:,:,:)  ! 4*M; 1:M, 0:M-1, 0:1
+  end type mathieu
+
   type :: domain
      ! number of each type of element
      ! 1=circles (wells as special case), 2=ellipses (lines as special case)

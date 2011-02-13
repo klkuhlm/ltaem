@@ -5,7 +5,7 @@ module elliptical_elements
   implicit none
 
   private
-  public :: ellipse_match, ellipse_calc, ellipse_deriv, line
+  public :: line, ellipse_match, ellipse_calc, ellipse_deriv
 
   interface ellipse_match
      module procedure ellipse_match_self, ellipse_match_other
@@ -368,38 +368,6 @@ contains
     end if
     
   end function ellipse_match_other
-
-  function line(e,p,idx) result(a2n)
-    ! this function returns the coefficients for a specified-flux line source
-    use constants, only : DP, PI
-    use time_mod, only : time
-    use type_definitions, only : ellipse
-    use mathieu_functions, only : Ke,dKe
-    type(ellipse), intent(in) :: e
-    complex(DP), intent(in) :: p
-    integer, intent(in) :: idx
-    complex(DP), dimension(ceiling(e%N/2.0)) :: a2n ! only even coefficients of even order
-    real(DP), dimension(0:e%ms-1) :: vs
-    real(DP), dimension(1:e%ms,ceiling(e%N/2.0)) :: arg
-    integer, dimension(0:e%ms-1) :: vi
-    integer :: i, N, MS, nmax
-
-    N = e%N 
-    MS = e%ms
-    nmax = ceiling(e%N/2.0)
-    forall (i=0:MS-1) vi(i) = i ! integer vector
-    vs = -1.0 ! sign vector
-    where (mod(vi,2)==0) vs = 1.0
-
-    arg(1:MS,1:nmax) = spread(vs(0:MS-1)/real(1-(2*vi(0:MS-1))**2,DP),2,nmax)
-    
-    ! factor of 4 different from Kuhlman&Neuman paper
-    ! include Radial/dRadial MF here to balance with those in general solution
-    a2n(1:nmax) = time(p,e%time,.false.)*e%bdryQ/(2.0*PI)* &
-            & Ke(e%parent%mat(idx), vi(0:N-1:2), e%r) / dKe(e%parent%mat(idx), vi(0:N-1:2), e%r)* &
-            & (-vs(0:N-1:2))*sum(arg(1:MS,1:nmax)*conjg(e%parent%mat(idx)%A(1:MS,0:nmax-1,0)),dim=1)
-    
-  end function line
   
   function ellipse_calc(p,e,lo,hi,Rgp,Pgp,inside) result(H)
     use constants, only : DP
@@ -533,6 +501,38 @@ contains
                & sum(RMRgp(1:np,1:N-1,1)/RMR0(1:np,1:N-1,1)*bb(1:np,1:N-1)*dAM(1:np,1:N-1,1), 2)
 
   end function ellipse_deriv
+
+    function line(e,p,idx) result(a2n)
+    ! this function returns the coefficients for a specified-flux line source
+    use constants, only : DP, PI
+    use time_mod, only : time
+    use type_definitions, only : ellipse
+    use mathieu_functions, only : Ke,dKe
+    type(ellipse), intent(in) :: e
+    complex(DP), intent(in) :: p
+    integer, intent(in) :: idx
+    complex(DP), dimension(ceiling(e%N/2.0)) :: a2n ! only even coefficients of even order
+    real(DP), dimension(0:e%ms-1) :: vs
+    real(DP), dimension(1:e%ms,ceiling(e%N/2.0)) :: arg
+    integer, dimension(0:e%ms-1) :: vi
+    integer :: i, N, MS, nmax
+
+    N = e%N 
+    MS = e%ms
+    nmax = ceiling(e%N/2.0)
+    forall (i=0:MS-1) vi(i) = i ! integer vector
+    vs = -1.0 ! sign vector
+    where (mod(vi,2)==0) vs = 1.0
+
+    arg(1:MS,1:nmax) = spread(vs(0:MS-1)/real(1-(2*vi(0:MS-1))**2,DP),2,nmax)
+    
+    ! factor of 4 different from Kuhlman&Neuman paper
+    ! include Radial/dRadial MF here to balance with those in general solution
+    a2n(1:nmax) = time(p,e%time,.false.)*e%bdryQ/(2.0*PI)* &
+            & Ke(e%parent%mat(idx), vi(0:N-1:2), e%r) / dKe(e%parent%mat(idx), vi(0:N-1:2), e%r)* &
+            & (-vs(0:N-1:2))*sum(arg(1:MS,1:nmax)*conjg(e%parent%mat(idx)%A(1:MS,0:nmax-1,0)),dim=1)
+    
+  end function line
 
 end module elliptical_elements
 
