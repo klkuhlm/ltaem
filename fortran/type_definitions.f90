@@ -20,7 +20,7 @@ module type_definitions
 
      ! matrix indicating if an element is inside or in the background of
      ! a current element
-     logical, allocatable :: InclIn(:,:), InclBg(:,:)
+     logical(1), allocatable :: InclIn(:,:), InclBg(:,:)
   end type domain
   
   type :: time

@@ -63,8 +63,8 @@ contains
 
     allocate(r%LHS(nrows,ncols), r%RHS(nrows))
 
-    cmat(1:M,0:N-1) = cos(outer(c%Pcm(:),vi(0:N)))
-    smat(1:M,1:N-1) = sin(outer(c%Pcm(:),vi(1:N)))
+    cmat(1:M,0:N-1) = cos(outer(c%Pcm(:),vi(0:N-1)))
+    smat(1:M,1:N-1) = sin(outer(c%Pcm(:),vi(1:N-1)))
 
     ! setup LHS
     ! matching or specified total head
@@ -197,8 +197,8 @@ contains
 
           allocate(Bn(M,0:N-1),Bn0(0:N-1),cmat(M,0:N-1),smat(M,N-1))
 
-          cmat(1:M,0:N-1) = cos(outer(c%G(targ)%Pgm(:),vi(0:N)))
-          smat(1:M,1:N-1) = sin(outer(c%G(targ)%Pgm(:),vi(1:N)))
+          cmat(1:M,0:N-1) = cos(outer(c%G(targ)%Pgm(:),vi(0:N-1)))
+          smat(1:M,1:N-1) = sin(outer(c%G(targ)%Pgm(:),vi(1:N-1)))
 
           ! setup LHS 
           ! $$$$$$$$$$ head effects of source (c) on target (el) $$$$$$$$$$
