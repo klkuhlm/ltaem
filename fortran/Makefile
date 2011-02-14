@@ -21,15 +21,15 @@
 #
 
 EXTERNAL=cbessel.o
-KKLOW=utility.o bessel_functions.o mathieu_functions2.o
+KKLOW=type_definitions.o utility.o bessel_functions.o mathieu_functions2.o
 
 ##Work MacPro##############################
-#LAPACKLIB=/Users/klkuhlm/src/lapack-3.3.0/lapack_MAC.a
-#BLASLIB=/Users/klkuhlm/src/lapack-3.3.0/blas_MAC.a
+LAPACKLIB=/Users/klkuhlm/src/lapack-3.3.0/lapack_MAC.a
+BLASLIB=/Users/klkuhlm/src/lapack-3.3.0/blas_MAC.a
 
 ##home linux desktop ##########
-LAPACKLIB=/home/kris/src/lapack-3.3.0/lapack_LINUX.a
-BLASLIB=/home/kris/src/lapack-3.3.0/blas_LINUX.a
+#LAPACKLIB=/home/kris/src/lapack-3.3.0/lapack_LINUX.a
+#BLASLIB=/home/kris/src/lapack-3.3.0/blas_LINUX.a
 
 ##work linux desktop ##########
 #LAPACKLIB=/home/klkuhlm/src/lapack-3.3.0/lapack_LINUX.a
@@ -48,7 +48,7 @@ KKHIGH=kappa.o time.o ltaem_io.o invlap.o ellipse_mathieu_init.o circular_elemen
 MAIN=ltaem_main.o
 
 TARG=ltaem
-OBJS=$(EXTERNAL) constants.o $(KKLOW) type_definitions.o geometryUtil.o $(KKHIGH)
+OBJS=$(EXTERNAL) constants.o $(KKLOW) geometryUtil.o $(KKHIGH)
 
 ################ ifort 11.1 ##########
 ##F90=ifort
@@ -70,11 +70,11 @@ DFLAGS+=-frange-check -fcheck=all ##-finit-real=snan -finit-integer=-99999
 DFLAGS+=$(CPP)  #-DDEBUG 
 ##DFLAGS+=-fdump-rtl-expand
 PFLAGS=-O3 $(CPP) -march=native $(OMP)
-LINKFLAG=$(DFLAGS) 
+LINKFLAG=$(PFLAGS) 
 #################################
 
 # switch between performance or debugging flags
-FLAGS=$(DFLAGS)
+FLAGS=$(PFLAGS)
 
 # the link step
 main: $(OBJS) $(MAIN)
