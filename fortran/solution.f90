@@ -35,7 +35,7 @@ contains
     use constants, only : DP
     use type_definitions, only : circle, solution, ellipse, domain, match_result
     use circular_elements, only : circle_match, well
-    !!is repeated below to accommodate gfortran bug
+    !!"line" is repeated below to accommodate gfortran bug
     use elliptical_elements, only : ellipse_match
 !!$    use elliptical_elements, only : line
 

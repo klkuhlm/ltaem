@@ -27,7 +27,7 @@ module elliptical_elements
   implicit none
 
   private
-  public :: line, ellipse_match, ellipse_calc, ellipse_deriv
+  public :: ellipse_match, ellipse_calc, ellipse_deriv, line
 
   interface ellipse_match
      module procedure ellipse_match_self, ellipse_match_other
@@ -524,12 +524,13 @@ contains
 
   end function ellipse_deriv
 
-    function line(e,p,idx) result(a2n)
+  function line(e,p,idx) result(a2n)
     ! this function returns the coefficients for a specified-flux line source
     use constants, only : DP, PI
     use time_mod, only : time
     use type_definitions, only : ellipse
     use mathieu_functions, only : Ke,dKe
+
     type(ellipse), intent(in) :: e
     complex(DP), intent(in) :: p
     integer, intent(in) :: idx

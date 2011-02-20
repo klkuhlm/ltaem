@@ -21,7 +21,7 @@
 #
 
 EXTERNAL=cbessel.o
-KKLOW=utility.o bessel_functions.o mathieu_functions2.o
+KKLOW=type_definitions.o utility.o bessel_functions.o mathieu_functions2.o
 
 ##Work MacPro##############################
 #LAPACKLIB=/Users/klkuhlm/src/lapack-3.3.0/lapack_MAC.a
@@ -48,7 +48,7 @@ KKHIGH=kappa.o time.o ltaem_io.o invlap.o ellipse_mathieu_init.o circular_elemen
 MAIN=ltaem_main.o
 
 TARG=ltaem
-OBJS=$(EXTERNAL) constants.o $(KKLOW) type_definitions.o geometryUtil.o $(KKHIGH)
+OBJS=$(EXTERNAL) constants.o $(KKLOW) geometryUtil.o $(KKHIGH)
 
 ################ ifort 11.1 ##########
 ##F90=ifort
