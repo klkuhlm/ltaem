@@ -355,9 +355,10 @@ contains
        ! analytic time integration in Laplace space (divide by p)
        call getsrange(pt,lo,ns,los,his,lt)
        
-       arg(1:ns,1:2) = (V(loc(1:2),s(:,lt),los,his,dom,c,e,bg) + &
-            & spread(loc(1:2),1,ns))/spread(s(:,lt),2,2)
-       loc(1:2) = L(pt,tee(lt),arg(1:ns,1:2),sol%INVLT)
+       print *, 'i:,pt,loc',i,pt,loc
+
+       arg(1:ns,1:2) = (V(loc(1:2),s(:,lt),los,his,dom,c,e,bg))/spread(s(:,lt),2,2)
+       loc(1:2) = loc(1:2) + L(pt,tee(lt),arg(1:ns,1:2),sol%INVLT) 
 
        pt = pt + dt
 

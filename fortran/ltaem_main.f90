@@ -52,7 +52,7 @@ program ltaem_main
   integer :: tnp                              ! total-number-p (product of dimensions)
   integer :: nc, ne                           ! #-circles, #-ellipses
   integer :: crow, ccol                       ! coeff-#-row, coeff-#-col
-  integer :: lt, minlt, maxlt        ! indexes related to log10 time
+  integer :: lt, minlt, maxlt                 ! indexes related to log10 time
   integer :: lot, hit, lop, hip, lo           ! local hi and lo indices for each log cycle
   integer, allocatable :: nt(:)               ! #-times-each-log-cycle
   integer, allocatable :: parnumdt(:)         ! number of dt expected for each particle
@@ -350,13 +350,14 @@ program ltaem_main
         end do
      end do
      !$OMP END PARALLEL DO
+
   end if
 
   !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   ! cleanup memory and write output to file
   call writeResults(sol,part)
 
-  deallocate(c,e,part,s,hp,vp,sol%h,sol%v,sol%t)
+
 
 end program ltaem_main
 
