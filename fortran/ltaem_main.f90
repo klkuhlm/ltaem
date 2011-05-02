@@ -32,7 +32,7 @@ program ltaem_main
   use type_definitions, only : domain, element, circle, ellipse, solution, INVLT, particle
   use file_ops, only : readinput, writeresults
   use inverse_Laplace_Transform, only : L => deHoog_invlap, pvalues => deHoog_pvalues
-  use particle_integrate, only : rungeKuttaMerson, rungeKutta, fwdEuler
+  use particle_integrate, only : rungeKuttaMerson, rungeKutta, fwdEuler, analytic
   use solution_mod, only : matrix_solution
   use calc_routines, only : headCalc, velCalc
   use geometry, only : distanceAngleCalcs
@@ -276,9 +276,11 @@ program ltaem_main
         case (1)
            call rungeKuttaMerson(s,tee,c,e,bg,sol,dom,part(j),lbound(tee,dim=1))
         case (2)
-                 call rungeKutta(s,tee,c,e,bg,sol,dom,part(j),lbound(tee,dim=1))
+           call rungeKutta(s,tee,c,e,bg,sol,dom,part(j),lbound(tee,dim=1))
+        case (3)
+           call analytic(s,tee,c,e,bg,sol,dom,part(j),lbound(tee,dim=1))
         case (4)
-                   call fwdEuler(s,tee,c,e,bg,sol,dom,part(j),lbound(tee,dim=1))
+           call fwdEuler(s,tee,c,e,bg,sol,dom,part(j),lbound(tee,dim=1))
         end select
         ! invalid integration code checked in ltaem-io routine
 

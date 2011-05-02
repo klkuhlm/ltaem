@@ -702,8 +702,8 @@ contains
        
 
        read(44,*) p(:)%int
-       if (any(p%int < 1 .or. p%int == 3 .or. p%int > 4)) then
-          write(*,*) 'p%int must be {1,2,4} ',p%int
+       if (any(p%int < 1 .or. p%int > 4)) then
+          write(*,*) 'p%int must be {1,2,3,4} ',p%int
           stop 252
        end if
        

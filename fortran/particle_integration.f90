@@ -23,7 +23,7 @@
 module particle_integrate
   implicit none
   private
-  public :: rungekuttamerson, rungekutta, fwdEuler
+  public :: rungekuttamerson, rungekutta, fwdEuler, analytic
 
 contains
 
@@ -304,6 +304,75 @@ contains
     p%numt = i - 1
           
   end subroutine fwdEuler
+
+  !$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+  subroutine analytic(s,tee,c,e,bg,sol,dom,p,lo)
+    use constants, only : DP
+    use inverse_laplace_transform, only : L => deHoog_invlap
+    use type_definitions, only : circle, ellipse, element, solution, particle, domain
+    use calc_routines, only : V => velCalc
+    implicit none
+
+    integer, intent(in) :: lo
+    real(DP), intent(in) :: tee(lo:)
+    complex(DP), intent(in) :: s(1:,lo:) !! matrix of Laplace parameter np by nlogcycles
+    type(particle), intent(inout) :: p
+    type(circle),  dimension(:), intent(in) :: c
+    type(ellipse), dimension(:), intent(in) :: e
+    type(solution), intent(in) :: sol
+    type(domain), intent(in) :: dom
+    type(element), intent(in) :: bg
+
+    integer :: i, numdt, lt, los, his, ns
+    real(DP) :: pt, px, py, dt
+    complex(DP), dimension(size(s),2) :: arg
+    real(DP), dimension(2) :: loc
+
+    ns = size(s,dim=1)
+    pt = p%ti
+    loc(1:2) = [p%x,p%y]
+    dt = p%dt
+    if (.not. p%forward) dt = -dt
+
+    ! initialize with starting position
+    p%r(0,1:3) = [pt,px,py]
+
+    ! 1st order fwd Euler
+    numdt = ceiling((p%tf - pt)/abs(dt))
+    
+    write(*,'(A,I0)') '** analytic Laplace space integration, particle ', p%id
+
+    fe: do i = 1,numdt   
+       if(mod(i,100) == 0) write(*,'(I0,A,ES12.6E2)') i,' t=',pt
+
+       ! see if particle will reach end this step
+       if (trackDone(p%forward,pt+dt,p%tf)) then
+          write(*,'(A,I0,A,ES12.6E2)') &
+               &'particle',p%id,' reached specified ending time:',p%tf
+          exit fe
+       end if
+
+       ! analytic time integration in Laplace space (divide by p)
+       call getsrange(pt,lo,ns,los,his,lt)
+       
+       arg(1:ns,1:2) = (V(loc(1:2),s(:,lt),los,his,dom,c,e,bg) + &
+            & spread(loc(1:2),1,ns))/spread(s(:,lt),2,2)
+       loc(1:2) = L(pt,tee(lt),arg(1:ns,1:2),sol%INVLT)
+
+       pt = pt + dt
+
+       p%r(i,1:3) = [pt,loc(1),loc(2)]
+       p%r(i-1,4:5) = [-999., -999.]  ! velocity not directly computed
+
+       if (sinkCheck(px,py,c,e)) then
+          write(*,'(A,I0,A,ES12.6E2)') 'particle ',p%id,' entered a sink at t=',pt
+          exit fe
+       end if
+    end do fe
+    p%numt = i - 1
+          
+  end subroutine analytic
+
 
   !###########################################################################
   ! logical function for comparing tracking time to final time
