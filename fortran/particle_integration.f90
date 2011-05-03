@@ -443,6 +443,7 @@ contains
   !###########################################################################
   ! check if particle has moved into a sink (left flow domain)
 
+  ! TODO: modify sinkCheck or create sourceCheck for reverse tracking
   function sinkCheck(px,py,c,e) result(partEnd)
     use constants, only : DP, EYE
     use utility, only : cacosh
@@ -457,6 +458,9 @@ contains
 
     partEnd = .false.
     pz = cmplx(px,py,DP)
+
+    ! TODO: try to check whether particle passed near a well during last time step
+    ! TODO: then pass back a signal to take a smaller time step
 
     ! did the particle enter an ibnd==2 circle (well)?
     if (any(c%ibnd == 2 .and. abs(pz - c%z) <= c%r)) then
