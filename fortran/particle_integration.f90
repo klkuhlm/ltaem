@@ -135,11 +135,11 @@ contains
 
           elseif (p%tol >= error) then
              ! enlarge dt to speed up integration when possible
-             dt = SAFETY*dt*(p%tol/error)**0.2000
+             dt = SAFETY*dt*(p%tol/error)**2.0D-1
 
           else
              ! reduce dt to increase accurace when needed
-             dt = SAFETY*dt*(p%tol/error)**0.2500
+             dt = SAFETY*dt*(p%tol/error)**2.5D-1
 
           end if
 
@@ -330,7 +330,7 @@ contains
 
     ns = size(s,dim=1)
     pt = p%ti
-    loc(1:2) = [p%x,p%y]
+    loc(1:2) = [p%x,p%y] ! starting position
     dt = p%dt
     if (.not. p%forward) dt = -dt
 
