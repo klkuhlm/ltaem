@@ -28,8 +28,8 @@ KKLOW=type_definitions.o utility.o bessel_functions.o mathieu_functions2.o
 #BLASLIB=/Users/klkuhlm/src/lapack-3.3.0/blas_MAC.a
 
 ##home linux desktop ##########
-#LAPACKLIB=/home/kris/src/lapack-3.3.0/lapack_LINUX.a
-#BLASLIB=/home/kris/src/lapack-3.3.0/blas_LINUX.a
+LAPACKLIB=/home/kris/src/lapack-3.3.0/lapack_LINUX.a
+BLASLIB=/home/kris/src/lapack-3.3.0/blas_LINUX.a
 
 ##work linux desktop ##########
 LAPACKLIB=/home/klkuhlm/src/lapack-3.3.0/lapack_LINUX.a
@@ -61,8 +61,8 @@ OBJS=$(EXTERNAL) constants.o $(KKLOW) geometryUtil.o $(KKHIGH)
 ##LINKFLAG=$(DFLAGS) $(OMP)
 #########################################
 
-## gfortran >= 4.4 #################
-F90=gfortran-4.6
+## gfortran #################
+F90=gfortran # must be >= version 4.4
 OMP=-fopenmp 
 CPP=-cpp
 DFLAGS=-O0 -Wall -Wextra -gdwarf-3 -fbacktrace -fwhole-file -fno-realloc-lhs ##$(OMP)
