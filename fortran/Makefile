@@ -62,19 +62,23 @@ OBJS=$(EXTERNAL) constants.o $(KKLOW) geometryUtil.o $(KKHIGH)
 #########################################
 
 ## gfortran #################
-F90=gfortran # must be >= version 4.4
+F90=gfortran-4.7 # must be >= version 4.4
 OMP=-fopenmp 
 CPP=-cpp
-DFLAGS=-O0 -Wall -Wextra -gdwarf-3 -fbacktrace -fwhole-file -fno-realloc-lhs ##$(OMP)
+DFLAGS=-O0 -Wall -Wextra -g -fbacktrace -fwhole-file -fno-realloc-lhs ##$(OMP)
 DFLAGS+=-frange-check -fcheck=all ##-finit-real=snan -finit-integer=-99999
 DFLAGS+=$(CPP)  #-DDEBUG 
 ##DFLAGS+=-fdump-rtl-expand
-PFLAGS=-O3 $(CPP) -march=native $(OMP) -fno-realloc-lhs -flto #-fsplit-stack -fwhole-file 
-LINKFLAG=$(DFLAGS) 
+PFLAGS=-O3 $(CPP) -march=native -fno-realloc-lhs -flto
+PFLAGEXTRA=-fwhole-file  -fsplit-stack  -fstack-arrays # -fno-protect-parens
+LINKFLAG=$(PFLAGS) 
 #################################
 
+BFLAGS=$(PFLAGS) 
+PFLAGS+=$(PFLAGEXTRA) $(OMP)
+
 # switch between performance or debugging flags
-FLAGS=$(DFLAGS)
+FLAGS=$(PFLAGS)
 
 # the link step
 main: $(OBJS) $(MAIN)
@@ -83,7 +87,7 @@ main: $(OBJS) $(MAIN)
 
 # this external library tends to produce spurious errors about implicit type conversions
 cbessel.o : ./external/cbessel.f90
-	$(F90) -c $(FLAGS) -o $@ $<
+	$(F90) -c $(BFLAGS) -o $@ $<
 
 %.o: %.f90
 	$(F90) -c $(FLAGS) -o $@ $<
