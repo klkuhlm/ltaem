@@ -70,12 +70,12 @@ DFLAGS+=-frange-check -fcheck=all ##-finit-real=snan -finit-integer=-99999
 DFLAGS+=$(CPP)  #-DDEBUG 
 ##DFLAGS+=-fdump-rtl-expand
 PFLAGS=-O3 $(CPP) -march=native -fno-realloc-lhs -flto
-PFLAGEXTRA=-fwhole-file  -fsplit-stack  -fstack-arrays # -fno-protect-parens
+PFLAGEXTRA=-fwhole-file -fstack-arrays 
 LINKFLAG=$(PFLAGS) 
 #################################
 
 BFLAGS=$(PFLAGS) 
-PFLAGS+=$(PFLAGEXTRA) $(OMP)
+PFLAGS+=$(PFLAGEXTRA) #$(OMP)
 
 # switch between performance or debugging flags
 FLAGS=$(PFLAGS)
