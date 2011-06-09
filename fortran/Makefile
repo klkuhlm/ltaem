@@ -65,17 +65,17 @@ OBJS=$(EXTERNAL) constants.o $(KKLOW) geometryUtil.o $(KKHIGH)
 F90=gfortran-4.7 # must be >= version 4.4
 OMP=-fopenmp 
 CPP=-cpp
-DFLAGS=-O0 -Wall -Wextra -g -fbacktrace -fwhole-file -fno-realloc-lhs ##$(OMP)
+DFLAGS=-O0 -Wall -Wextra -g -fbacktrace -fwhole-file -fno-realloc-lhs 
 DFLAGS+=-frange-check -fcheck=all ##-finit-real=snan -finit-integer=-99999
 DFLAGS+=$(CPP)  #-DDEBUG 
 ##DFLAGS+=-fdump-rtl-expand
-PFLAGS=-O3 $(CPP) -march=native -fno-realloc-lhs -flto
+PFLAGS=-O3 $(CPP) -march=native -fno-realloc-lhs -flto 
 PFLAGEXTRA=-fwhole-file -fstack-arrays 
 LINKFLAG=$(PFLAGS) 
 #################################
 
 BFLAGS=$(PFLAGS) 
-PFLAGS+=$(PFLAGEXTRA) #$(OMP)
+PFLAGS+=$(PFLAGEXTRA) $(OMP)
 
 # switch between performance or debugging flags
 FLAGS=$(PFLAGS)
