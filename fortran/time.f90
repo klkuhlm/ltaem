@@ -46,7 +46,7 @@ contains
     complex(DP), dimension(size(p,1)) :: mult
 
     integer :: n, np, flag
-    real(DP), allocatable :: ti(:), q(:), par(:)
+    real(DP), allocatable :: ti(:), y(:), dy(:), W(:), par(:)
     real(DP) :: tf
     
     np = size(p,1)
@@ -97,22 +97,45 @@ contains
        mult(1:np) = exp(-par(2)*p)* &
             &  (1.0 - exp(-par(1)*p/2.0))/ &
             & ((1.0 + exp(-par(1)*p/2.0))*p)
-    case(:-1)
+    case(-100:-1)
        !! arbitrary piecewise constant pumping rate with n steps, from ti(1) to tf
        n = -flag
-       allocate(ti(n),Q(0:n))
+       allocate(ti(n),y(0:n),dy(n))
 
        ! unpack initial times, pumping rates and final time
        ti(1:n) = par(1:n)
        tf = par(n+1)
-       Q(0) = 0.0
-       Q(1:n) = par(n+2:2*n+1)
-       
-       mult(1:np) = (sum(spread(Q(1:n) - Q(0:n-1),2,np)*&
-            & exp(-outer(ti(1:n),p(1:np))),dim=1) - &
-            & sum(Q(1:n) - Q(0:n-1))*exp(-tf*p(:)))/p(:)
+       y(0) = 0.0
+       y(1:n) = par(n+2:2*n+1)
+       dy = y(1:n) - y(0:n-1)
 
-       deallocate(ti,Q)
+       mult(1:np) = (sum(spread(dy(:),2,np)*exp(-outer(ti(1:n),p(:))),1) - &
+            & sum(dy(:))*exp(-tf*p(:)))/p(1:np)
+
+       deallocate(ti,y,dy)
+
+    case(:-101)
+       !! piecewise linear pumping rate with n steps, from ti(1) to tf
+       !! no jumps in value (no vertical slopes)
+       n = -flag - 100
+       allocate(ti(n),W(0:n+1),y(1:n))
+
+       ! unpack initial times, pumping rates and final time
+       ti(1:n) = par(1:n)
+       tf = par(n+1)
+       y(1:n) = par(n+2:2*n+1)
+
+       ! compute slope between each pair of points
+       W(0) = 0.0
+       W(n+1) = 0.0
+       W(1:n) = (y(2:n+1) - y(1:n))/([ti(2:n),tf] - ti(1:n)) ! rise/run
+
+       mult(1:np) = (sum(spread(W(1:n) - W(0:n-1),2,np)*&
+            & exp(-outer(ti(1:n),p(1:np))),dim=1) - &
+            & sum(W(1:n) - W(0:n-1))*exp(-tf*p(:)))/p(:)**2
+
+       deallocate(ti,W,y)
+
     end select
     deallocate(par)
 

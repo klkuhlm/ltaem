@@ -28,8 +28,8 @@ KKLOW=type_definitions.o utility.o bessel_functions.o mathieu_functions2.o
 #BLASLIB=/Users/klkuhlm/src/lapack-3.3.0/blas_MAC.a
 
 ##home linux desktop ##########
-LAPACKLIB=/home/kris/src/lapack-3.3.0/lapack_LINUX.a
-BLASLIB=/home/kris/src/lapack-3.3.0/blas_LINUX.a
+#LAPACKLIB=/home/kris/src/lapack-3.3.0/lapack_LINUX.a
+#BLASLIB=/home/kris/src/lapack-3.3.0/blas_LINUX.a
 
 ##work linux desktop ##########
 LAPACKLIB=/home/klkuhlm/src/lapack-3.3.0/lapack_LINUX.a
@@ -69,7 +69,7 @@ DFLAGS=-O0 -Wall -Wextra -g -fbacktrace -fwhole-file -fno-realloc-lhs
 DFLAGS+=-frange-check -fcheck=all ##-finit-real=snan -finit-integer=-99999
 DFLAGS+=$(CPP)  #-DDEBUG 
 ##DFLAGS+=-fdump-rtl-expand
-PFLAGS=-O3 $(CPP) -march=native -fno-realloc-lhs -flto 
+PFLAGS=-O3 $(CPP) -march=native -fno-realloc-lhs 
 PFLAGEXTRA=-fwhole-file -fstack-arrays 
 LINKFLAG=$(PFLAGS) 
 #################################
@@ -78,7 +78,7 @@ BFLAGS=$(PFLAGS)
 PFLAGS+=$(PFLAGEXTRA) $(OMP)
 
 # switch between performance or debugging flags
-FLAGS=$(PFLAGS)
+FLAGS=$(DFLAGS)
 
 # the link step
 main: $(OBJS) $(MAIN)
