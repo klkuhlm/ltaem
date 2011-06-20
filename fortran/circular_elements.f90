@@ -57,7 +57,7 @@ contains
     M = c%M
     forall (j=0:N-1) vi(j) = j
 
-    if (c%ibnd == 0 .or. ((c%ibnd == -1 .or. c%ibnd == 1) .and. c%calcin)) then
+    if (c%ibnd == 0) then
        nrows = 2*M
        ncols = 4*N-2
        ! loM:hiM is index range for flux matching portion, beyond head-matching part
@@ -76,12 +76,26 @@ contains
           ncols = 0
        end if
     else
-       nrows = M
-       ncols = 2*N-1
-       ! here only flux matching, no head matching, so loM:him = 1:M
-       loM = 1
-       hiM = M
+       if (c%calcin .and. (c%ibnd == -1 .or. c%ibnd == 1)) then
+          ! if computing inside a specified head/flux element
+          ! then need to compute solutions on both sides (even if
+          ! only computing on the inside -- just to be safe)
+          nrows = M
+          ncols = 4*N-2 
+          ! only flux or head matching, so loM:him = 1:M
+          loM = 1
+          hiM = M
+       else
+          ! other cases (no calc inside)
+          nrows = M
+          ncols = 2*N-1
+          ! here only head or flux matching, so loM:him = 1:M
+          loM = 1
+          hiM = M
+       end if
     end if
+
+    print *, c%ibnd,nrows,ncols,loM,hiM
 
     allocate(r%LHS(nrows,ncols), r%RHS(nrows))
 
@@ -206,7 +220,11 @@ contains
           ! compute effects due to well for RHS
           ncols = 1  ! reset to zero at end of routine
        end if
+    elseif (c%calcin .and. c%ibnd == -1 .or. c%ibnd == 1) then
+       ! specified flux/head with calc inside
+       ncols = 4*N-2
     else
+       ! specified flux/head w/o calc inside
        ncols = 2*N-1
     end if
     
