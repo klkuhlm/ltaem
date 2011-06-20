@@ -83,6 +83,8 @@ contains
        hiM = M
     end if
 
+    print *, c%ibnd, nrows,ncols,loM,hiM,N,M
+
     allocate(r%LHS(nrows,ncols), r%RHS(nrows))
 
     cmat(1:M,0:N-1) = cos(outer(c%Pcm(:),vi(0:N-1)))

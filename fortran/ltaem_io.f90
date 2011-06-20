@@ -132,14 +132,14 @@ contains
     end if
 
     ! echo input from first 3 lines to file
-    write(16,'(3(1L,1X),I0,5(1X,A))') sol%calc, sol%particle, sol%contour, sol%output, &
+    write(16,'(3(L1,1X),I0,5(1X,A))') sol%calc, sol%particle, sol%contour, sol%output, &
          & trim(sol%outFname), trim(sol%coeffFName), trim(sol%elemHfName), &
          & trim(sol%geomFname),'  ||    re-calculate coefficients?, particle?, &
          & contour?, output, out/coeff/hierarchy/geometry file names'
-    write(16,'(3(ES11.5,1X),1L,3(1X,ES11.5),1X,I0,ES11.4,A)') bg%por, bg%k, bg%ss, &
+    write(16,'(3(ES11.5,1X),L1,3(1X,ES11.5),1X,I0,ES11.4,A)') bg%por, bg%k, bg%ss, &
          & bg%leakFlag, bg%aquitardK, bg%aquitardSs, bg%aquitardb, bg%ms, bg%cutoff, & 
          & '  ||    por, k, Ss, leaky flag, K2, Ss2, b2, ellipse MS, ellipse cutoff'
-    write(16,'(2(ES11.5,1X),1L,1X,ES11.5,A)') bg%Sy, bg%kz, bg%unconfinedFlag, &
+    write(16,'(2(ES11.5,1X),L1,1X,ES11.5,A)') bg%Sy, bg%kz, bg%unconfinedFlag, &
          & bg%b, '  || Sy, Kz, unconfined?, BGb'
     
 
