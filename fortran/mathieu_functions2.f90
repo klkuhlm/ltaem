@@ -27,9 +27,7 @@ module mathieu_functions
 
   private  !! only interfaces, mathieu_init, and debugging routine are publicly callable
   public :: mathieu, ce, Dce, se, Dse, Ke, Ko, DKe, DKo, Ie, Io, DIe, DIo, mathieu_init
-#ifdef DEBUG
   public :: print_mathieu_type
-#endif
 
   interface ce   ! even first kind angular MF
      module procedure ce_scalar_nz, ce_scalar_n, ce_scalar_z, ce_vect_nz
@@ -1194,9 +1192,7 @@ contains
     integer :: numzero, ierr, j
     integer, parameter :: NPRINT = 5
 
-#ifdef DEBUG
-    character(33) :: fmt
-#endif
+!!$    character(33) :: fmt
 
     ! scaling for I BF:: cy = I_fnu(z)*exp(-abs(x))
     ! where z = x + iy
@@ -1214,12 +1210,10 @@ contains
              write(*,*) "CBESI: overflow, z or order too" //&
                   &"large for unscaled output, z=",arg(1:min(ubound(arg,1),NPRINT))," n=",n
              stop "CBESI: overflow, z or order too large for unscaled output"
-#ifdef DEBUG
-          case(3)
-             fmt = '(A, (ES11.3E3,1X,ES11.3E3,3X),I0)'
-             write(fmt(4:4),'(I1)') min(ubound(arg,1),NPRINT)   
-             write(*,fmt) "CBESI: loss of precision, z=",arg(1:min(ubound(arg,1),NPRINT)),numzero
-#endif
+!!$          case(3)
+!!$             fmt = '(A, (ES11.3E3,1X,ES11.3E3,3X),I0)'
+!!$             write(fmt(4:4),'(I1)') min(ubound(arg,1),NPRINT)   
+!!$             write(*,fmt) "CBESI: loss of precision, z=",arg(1:min(ubound(arg,1),NPRINT)),numzero
           case(4)
              write(*,*) "CBESI: overflow, z or order too &
                   &large, z=",arg(1:min(ubound(arg,1),NPRINT))," n=",n
@@ -1261,9 +1255,7 @@ contains
     integer :: numzero, ierr, j
     integer, parameter :: NPRINT = 5
 
-#ifdef DEBUG
-    character(33) :: fmt
-#endif
+!!$    character(33) :: fmt
 
     ! scaling for K BF :: cy = K_fnu(z)*exp(z)
     do j=1,size(arg)
@@ -1279,12 +1271,10 @@ contains
                   &"too large for unscaled output, z=",arg(1:min(ubound(arg,1),NPRINT))," n=",n
              stop "CBESK: overflow, z too small or order too &
                   &large for unscaled output"
-#ifdef DEBUG             
-          case(3)
-             fmt = '(A, (ES11.3E3,1X,ES11.3E3,3X),I0)'
-             write(fmt(4:4),'(I1)') min(ubound(arg,1),NPRINT)
-             write(*,fmt) "CBESK: loss of precision, z=",arg(1:min(ubound(arg,1),NPRINT)),numzero
-#endif
+!!$          case(3)
+!!$             fmt = '(A, (ES11.3E3,1X,ES11.3E3,3X),I0)'
+!!$             write(fmt(4:4),'(I1)') min(ubound(arg,1),NPRINT)
+!!$             write(*,fmt) "CBESK: loss of precision, z=",arg(1:min(ubound(arg,1),NPRINT)),numzero
           case(4)
              write(*,*) "CBESK: overflow, z too small or order " //&
                   &"too large, z=",arg(1:min(ubound(arg,1),NPRINT))," n=",n
@@ -1317,7 +1307,6 @@ contains
 
   end subroutine BesselK_val_and_deriv
 
-#ifdef DEBUG
   subroutine print_mathieu_type(m,n)
     type(mathieu), intent(in) :: m
     integer, intent(in) :: n
@@ -1337,6 +1326,5 @@ contains
     write(*,fmt) (' B(',j,',1:n,0):', ('(',real(m%B(j,i,0)),',',aimag(m%B(j,i,0)),')',i=1,n),j=1,n)
     write(*,fmt) (' B(',j,',1:n,1):', ('(',real(m%B(j,i,1)),',',aimag(m%B(j,i,1)),')',i=1,n),j=1,n)
   end subroutine print_mathieu_type
-#endif
 
 end module mathieu_functions

@@ -56,8 +56,7 @@ OBJS=$(EXTERNAL) constants.o $(KKLOW) geometryUtil.o $(KKHIGH)
 ##CPP=-cpp
 ##DFLAGS=-O0 -g -traceback -warn all -check bounds -check pointers -check uninit -check format -check output_conversion
 ###DFLAGS=-O0 -g -traceback -warn all -check all
-##DFLAGS+=$(CPP) #-DDEBUG
-##PFLAGS=$(CPP)  -xHOST -O3 $(OMP)
+##PFLAGS=-xHOST -O3 $(OMP)
 ##LINKFLAG=$(DFLAGS) $(OMP)
 #########################################
 
@@ -65,11 +64,10 @@ OBJS=$(EXTERNAL) constants.o $(KKLOW) geometryUtil.o $(KKHIGH)
 F90=gfortran-4.7 # must be >= 4.7 (development version)
 OMP=-fopenmp 
 CPP=-cpp
-DFLAGS=-O0 -Wall -Wextra -g -fbacktrace -fwhole-file -fno-realloc-lhs 
+DFLAGS=-O0 -Wall -Wextra -g -fbacktrace -fno-realloc-lhs 
 DFLAGS+=-frange-check -fcheck=all 
-DFLAGS+=$(CPP)  
 ##DFLAGS+=-fdump-rtl-expand
-PFLAGS=-Ofast $(CPP) -march=native -fno-realloc-lhs 
+PFLAGS=-Ofast -march=native -fno-realloc-lhs 
 LINKFLAG=$(PFLAGS) 
 #################################
 
@@ -77,7 +75,7 @@ BFLAGS=$(PFLAGS)
 PFLAGS+=$(PFLAGEXTRA) $(OMP)
 
 # switch between performance or debugging flags
-FLAGS=$(PFLAGS)
+FLAGS=$(DFLAGS)
 
 # the link step
 main: $(OBJS) $(MAIN)

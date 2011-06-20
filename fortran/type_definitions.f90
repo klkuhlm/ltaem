@@ -27,10 +27,8 @@ module type_definitions
   private 
   public :: domain, time, element, match_result, matching, circle, ellipse, &
        & INVLT, solution, particle, mathieu
-
-#ifdef DEBUG
   public :: print_match_result
-#endif
+
   
   type :: mathieu
      ! things required to compute mathieu functions
@@ -268,7 +266,6 @@ module type_definitions
      integer :: numt = -999
   end type particle
 
-#ifdef DEBUG
 contains
   subroutine print_match_result(r)
     type(match_result), intent(in) :: r
@@ -304,6 +301,5 @@ contains
        write(*,*) '* nothing to print * row:',row,'col:',col
     end if
   end subroutine print_match_result
-#endif
 
 end module type_definitions
