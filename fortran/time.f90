@@ -24,9 +24,9 @@ module time_mod
   implicit none
 
   private 
-  public :: time
+  public :: timef
 
-  interface time
+  interface timef
      module procedure Time_pScal, Time_pVect
   end interface
 

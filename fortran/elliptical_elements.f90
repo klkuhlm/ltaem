@@ -37,7 +37,7 @@ contains
   function ellipse_match_self(e,p,i) result(r)
     use constants, only : DP, PI
     use kappa_mod, only : kappa
-    use time_mod, only : time
+    use time_mod, only : timef
     use type_definitions, only : ellipse, match_result, element
     use mathieu_functions, only : ce, se, Ke, Ko, dKe, dKo, Ie, Io, dIe, dIo
     use utility, only : ynot 
@@ -136,14 +136,14 @@ contains
        select case(e%ibnd)
        case(-1)
           ! put specified head on RHS
-          r%RHS(1:M) = time(p,e%time,.false.)*e%bdryQ
+          r%RHS(1:M) = timef(p,e%time,.false.)*e%bdryQ
        case(0)
           ! put constant area source term effects on RHS
-          r%RHS(1:M) = -time(p,e%time,.true.)*e%areaQ*e%Ss/kappa(p,e%parent)**2
+          r%RHS(1:M) = -timef(p,e%time,.true.)*e%areaQ*e%Ss/kappa(p,e%parent)**2
           r%RHS(M+1:2*M) = 0.0_DP ! area source has no flux effects
        case(1)
           ! put specified flux effects on RHS
-          r%RHS(1:M) = time(p,e%time,.false.)*e%bdryQ/ynot(e%r,e%f)
+          r%RHS(1:M) = timef(p,e%time,.false.)*e%bdryQ/ynot(e%r,e%f)
        end select
     end if
   end function ellipse_match_self
@@ -394,7 +394,7 @@ contains
   function ellipse_calc(p,e,lo,hi,Rgp,Pgp,inside) result(H)
     use constants, only : DP
     use type_definitions, only : ellipse
-    use time_mod, only : time
+    use time_mod, only : timef
     use mathieu_functions, only : Ke,Ko, Ie,Io, ce,se
 
     complex(DP), dimension(:), intent(in) :: p
@@ -455,7 +455,7 @@ contains
   function ellipse_deriv(p,e,lo,hi,Rgp,Pgp,inside) result(dH)
     use constants, only : DP
     use type_definitions, only : ellipse
-    use time_mod, only : time
+    use time_mod, only : timef
     use mathieu_functions, only : Ke,Ko, Ie,Io, ce,se, dKe,dKo, dIe,dIo, dce,dse
 
     complex(DP), dimension(:), intent(in) :: p
@@ -527,7 +527,7 @@ contains
   function line(e,p,idx) result(a2n)
     ! this function returns the coefficients for a specified-flux line source
     use constants, only : DP, PI
-    use time_mod, only : time
+    use time_mod, only : timef
     use type_definitions, only : ellipse
     use mathieu_functions, only : Ke,dKe
 
@@ -551,7 +551,7 @@ contains
     
     ! factor of 4 different from Kuhlman&Neuman paper
     ! include Radial/dRadial MF here to balance with those in general solution
-    a2n(1:nmax) = time(p,e%time,.false.)*e%bdryQ/(2.0*PI)* &
+    a2n(1:nmax) = timef(p,e%time,.false.)*e%bdryQ/(2.0*PI)* &
             & Ke(e%parent%mat(idx), vi(0:N-1:2), e%r) / dKe(e%parent%mat(idx), vi(0:N-1:2), e%r)* &
             & (-vs(0:N-1:2))*sum(arg(1:MS,1:nmax)*conjg(e%parent%mat(idx)%A(1:MS,0:nmax-1,0)),dim=1)
     

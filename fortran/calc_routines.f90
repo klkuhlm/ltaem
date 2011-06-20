@@ -48,7 +48,7 @@ contains
     use circular_elements, only : circle_calc
     use elliptical_elements, only : ellipse_calc
     use kappa_mod, only : kappa
-    use time_mod, only : time
+    use time_mod, only : timef
 
     complex(DP), intent(in) :: Z  ! location for calculation (complex coordinates)
     complex(DP), dimension(:), intent(in) :: p  ! vector of Laplace parameters
@@ -131,7 +131,7 @@ contains
        end if
        
        ! apply potential source term on inside of element
-       H(1:np) = H(:) - elin%areaQ*elin%Ss*time(p,elin%time,.true.)/kappa(p,elin)**2
+       H(1:np) = H(:) - elin%areaQ*elin%Ss*timef(p,elin%time,.true.)/kappa(p,elin)**2
        H(1:np) = H(:)/elin%K ! convert to head
 
        elin => null()
@@ -147,7 +147,7 @@ contains
     use circular_elements, only : circle_deriv
     use elliptical_elements, only : ellipse_deriv
     use kappa_mod, only : kappa
-    use time_mod, only : time
+    use time_mod, only : timef
     use utility, only : rotate_vel
 
     complex(DP), intent(in) :: Z

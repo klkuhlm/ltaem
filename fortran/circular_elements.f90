@@ -37,7 +37,7 @@ contains
   function circle_match_self(c,p) result(r)
     use constants, only : DP, PI
     use kappa_mod, only : kappa
-    use time_mod, only : time
+    use time_mod, only : timef
     use utility, only : outer
     use type_definitions, only : circle, match_result
     use bessel_functions, only : bK, bI, dbK, dbI
@@ -83,7 +83,7 @@ contains
        hiM = M
     end if
 
-    print *, c%ibnd, nrows,ncols,loM,hiM,N,M
+    print *, 'ibnd',c%ibnd, 'row,col',nrows,ncols,'lo,hi M',loM,hiM,'N,M',N,M 
 
     allocate(r%LHS(nrows,ncols), r%RHS(nrows))
 
@@ -128,22 +128,22 @@ contains
     select case(c%ibnd)
     case(-1)
        ! put specified head on RHS
-       r%RHS(1:M) = time(p,c%time,.false.)*c%bdryQ
+       r%RHS(1:M) = timef(p,c%time,.false.)*c%bdryQ
     case(0)
        ! put constant area source term effects (from inside the element) on RHS
        ! TODO : handle area source in background
-       r%RHS(1:M) = -time(p,c%time,.true.)*c%areaQ*c%Ss/kappa(p,c%element)**2
+       r%RHS(1:M) = -timef(p,c%time,.true.)*c%areaQ*c%Ss/kappa(p,c%element)**2
        r%RHS(M+1:2*M) = 0.0 ! constant area source has no flux effects
     case(1)
        ! put specified flux effects on RHS
        ! TODO : check addition of aquifer thickness to denominator
-       r%RHS(1:M) = time(p,c%time,.false.)*c%bdryQ/(2.0*PI*c%r*c%b)
+       r%RHS(1:M) = timef(p,c%time,.false.)*c%bdryQ/(2.0*PI*c%r*c%b)
     case(2)
        if (c%StorIn) then
           ! effects of wellbore storage and skin on finite-radius well
           ! effects of other elements on this one show up in off-diagonals
           r%LHS(1:M,1) = storwell(c,p)*r%LHS(1:M,1)
-          r%RHS(1:M) = time(p,c%time,.false.)*c%bdryQ/(PI*c%r*c%parent%T)
+          r%RHS(1:M) = timef(p,c%time,.false.)*c%bdryQ/(PI*c%r*c%parent%T)
        else
           continue ! no wellbore storage; nothing to do, since matrix is zero-sized
        end if
@@ -153,7 +153,7 @@ contains
   function circle_match_other(c,el,dom,p) result(r)
     use constants, only : DP, PI
     use kappa_mod, only : kappa
-    use time_mod, only : time
+    use time_mod, only : timef
     use utility, only : outer, rotate_vel_mat
     use type_definitions, only : circle, domain, matching, match_result
     use bessel_functions, only : bK, bI, dbK, dbI
@@ -408,7 +408,7 @@ contains
     ! this function returns the a_0 coefficient for a simple "well"
     use constants, only : DP, PI
     use kappa_mod, only : kappa
-    use time_mod, only : time
+    use time_mod, only : timef
     use type_definitions, only : circle
     use bessel_functions, only : bK
     type(circle), intent(in) :: c
@@ -419,7 +419,7 @@ contains
     kap = kappa(p,c%parent)
     Kn(0:1) = bK(kap*c%r,2)
     ! TODO: should this have a factor of "b" in the denominator?
-    a0 = Kn(0)*time(p,c%time,.false.)*c%bdryQ/(2.0*PI*c%r*Kn(1)*kap)
+    a0 = Kn(0)*timef(p,c%time,.false.)*c%bdryQ/(2.0*PI*c%r*Kn(1)*kap)
   end function well
   
   function storwell(c,p) result(a0)
@@ -446,7 +446,7 @@ contains
   function circle_calc(p,c,lo,hi,Rgp,Pgp,inside) result(H)
     use constants, only : DP
     use kappa_mod, only : kappa
-    use time_mod, only : time
+    use time_mod, only : timef
     use type_definitions, only : circle
     use bessel_functions, only : bK, bI
 
@@ -502,7 +502,7 @@ contains
   function circle_deriv(p,c,lo,hi,Rgp,Pgp,inside) result(dH)
     use constants, only : DP
     use kappa_mod, only : kappa
-    use time_mod, only : time
+    use time_mod, only : timef
     use type_definitions, only : circle
     use bessel_functions, only : bK, bI, dbk, dbi
 
