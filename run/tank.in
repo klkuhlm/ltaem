@@ -1,10 +1,9 @@
 True  False  False  3  tank.dat  dump-tank.out  tank.elem  tank.geom    ::  re-compute coefficients?, particle?, contour?, output flag, outputFN, coeffFN (output), elementHierarchy (output), geometryFN (output)
 2.0D-1  1.0D-4  1.0D-4   0  1.0D0  1.0D-4  1.0D0  10  1.0E-8  ::  por, k, Ss, leakFlag, K2, Ss2, b2, ellipse MS, MS cutoff
 2.0D-1  2.0D0 True  0.508  :: Sy, Kz, unconfined?, b
-2  1  480  :: nx, ny, nt
+2  1  479  :: nx, ny, nt
 0.25 0.50
 0.0  0.0
-0.000000000000000000e+00
 3.000000000000000000e+01
 6.000000000000000000e+01
 9.000000000000000000e+01
