@@ -57,7 +57,7 @@ contains
     M = c%M
     forall (j=0:N-1) vi(j) = j
 
-    if (c%ibnd == 0) then
+    if (c%ibnd == 0 .or. ((c%ibnd == -1 .or. c%ibnd == 1) .and. c%calcin)) then
        nrows = 2*M
        ncols = 4*N-2
        ! loM:hiM is index range for flux matching portion, beyond head-matching part
@@ -82,8 +82,6 @@ contains
        loM = 1
        hiM = M
     end if
-
-    print *, 'ibnd',c%ibnd, 'row,col',nrows,ncols,'lo,hi M',loM,hiM,'N,M',N,M 
 
     allocate(r%LHS(nrows,ncols), r%RHS(nrows))
 
