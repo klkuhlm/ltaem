@@ -158,7 +158,10 @@ contains
     if (ierr /= 0) stop 'error on line 6 (sol%y(:)) of input file'
     do j=1,sol%nt  !! modified to accommidate pest (make time a column)
        read(15,*,iostat=ierr) sol%t(j)
-       if (ierr /= 0)  stop 'error reading time from input (> line 6)'
+       if (ierr /= 0 .or. sol%t(j) < epsilon(0.0))  then
+          print *, 'error reading non-zero time from input (> line 6); time row',j,'t:',sol%t(j)
+          stop 999
+       end if
     end do
     if (.not. sol%particle) then
        fmt(1) = '(    (ES12.5,1X),A) '
