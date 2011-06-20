@@ -4,7 +4,7 @@
 F  T  :: calcin?
 F  F  :: storin?
 5.0D-2  0.762   :: r
-0.0D0   0.0D0   :: x0
+1.0D-3   0.0D0   :: x0
 0.0D0   0.0D0  :: y0
 1.0D0   1.0D-4    :: K
 1.0D0   1.0D-4    :: Ss
@@ -15,14 +15,14 @@ F  F  :: storin?
 001  0.0D0  0.0D0  :: area time flag, tpar1, tpar2
 001  0.0D0  0.0D0  :: boundary time flag, tpar1, tpar2
 001  0.0D0  0.0D0  :: boundary time flag, tpar1, tpar2
-0 0  :: leaky type flag
-1.0D0 1.0D0 :: K2
-1.0D0 1.0D0 :: Ss2
-1.0D0 1.0D0 :: b2
-F   F :: unconfined?
-1.0D0 1.0D0  :: Sy
-1.0D0 1.0D0  :: Kz
-1.0D0 1.0D0   :: b
-1.0D0 1.0D0   :: dimensionless skin
+0      0  :: leaky type flag
+1.0D0  1.0D0 :: K2
+1.0D0  1.0D0 :: Ss2
+1.0D0  1.0D0 :: b2
+F      T :: unconfined?
+1.0D0  2.0D-1  :: Sy
+1.0D0  1.0D-4  :: Kz
+1.0D0  0.508   :: b
+1.0D0  1.0D0   :: dimensionless skin
 
 

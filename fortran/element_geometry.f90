@@ -224,7 +224,7 @@ contains
        forall(i=1:ntot) nondiag(i,i) = .false.
 
        dom%InclIn = .false. !! dom%InclIn(0:ntot,1:ntot) logical
-       dom%InclUp = huge(1) !! dom%InclUp(1:ntot)        integer
+       dom%InclUp = -huge(1) !! dom%InclUp(1:ntot)       integer
        dom%InclBg = .false. !! dom%InclBg(1:ntot,1:ntot) logical
 
        ! ## step 1 ####################
@@ -236,14 +236,14 @@ contains
           allocate(Rcg(nc,ntot))
           Rcg(1:nc,1:nc) =      abs(spread(c%z,1,nc) - spread(c%z,2,nc))
           Rcg(1:nc,nc+1:ntot) = abs(spread(e%z,1,nc) - spread(c%z,2,ne))
-          
+                    
           ! nondiag handles zero distance-to-self case
           where (Rcg(1:nc,1:ntot) < spread(c(1:nc)%r,2,ntot) .and. nondiag(1:nc,1:ntot))
              ! Is center of target element (2nd dim)
              ! inside radius of source element (1st dim)?
              dom%InclIn(1:nc,1:ntot) = .true.
           end where
-
+          
           ! two cases where one element center is inside another
           !  1) elements intersect (2 pts) or touch (1 point) = BAD
           !  2) smaller element inside larger element         = OK
@@ -256,7 +256,7 @@ contains
                    if (any(abs(c(i)%G(j)%Rgm(:) - c(i)%r) < spacing(1.0)) .or. &
                         & (any(c(i)%G(j)%Rgm(:) < c(i)%r) .and. &
                         &  any(c(i)%G(j)%Rgm(:) > c(i)%r))) then
-                      write(*,*) 'INTERSECTING CIRCLES: ',i,j
+                      write(*,*) 'ERROR: INTERSECTING CIRCLES: ',i,j
                       stop 400
                    end if
                 end if
@@ -269,7 +269,7 @@ contains
                 if (any(abs(c(i)%G(nc+j)%Rgm(:) - c(i)%r) < spacing(1.0)) .or. &
                      & (any(c(i)%G(nc+j)%Rgm(:) < c(i)%r) .and. &
                      &  any(c(i)%G(nc+j)%Rgm(:) > c(i)%r))) then
-                   write(*,*) 'INTERSECTING CIRCLE & ELLIPSE: ',i,j
+                   write(*,*) 'ERROR: INTERSECTING CIRCLE & ELLIPSE: ',i,j
                    stop 401
                 end if
              end do
@@ -299,7 +299,7 @@ contains
                 if (any(abs(e(i)%G(j)%Rgm(:) - e(i)%r) < spacing(1.0)) .or. &
                      & (any(e(i)%G(j)%Rgm(:) < e(i)%r) .and. &
                      &  any(e(i)%G(j)%Rgm(:) > e(i)%r))) then
-                   write(*,*) 'INTERSECTING ELLIPSE & CIRCLE: ',i,j
+                   write(*,*) 'ERROR: INTERSECTING ELLIPSE & CIRCLE: ',i,j
                    stop 402
                 end if
              end do
@@ -312,7 +312,7 @@ contains
                    if (any(abs(e(i)%G(nc+j)%Rgm(:) - e(i)%r) < spacing(1.0)) .or. &
                         & (any(e(i)%G(nc+j)%Rgm(:) < e(i)%r) .and. &
                         &  any(e(i)%G(nc+j)%Rgm(:) > e(i)%r))) then
-                      write(*,*) 'INTERSECTING ELLIPSES: ',i,j
+                      write(*,*) 'ERROR: INTERSECTING ELLIPSES: ',i,j
                       stop 403
                    end if
                 end if
@@ -330,7 +330,7 @@ contains
        R(1:nc) = c(1:nc)%r
        R(nc+1:ntot) = e(1:ne)%r  ! TODO : double-check that circ/ellip can be compared validly  
 
-       forall (i=1:ntot, j=1:ntot, i/=j .and. dom%InclIn(i,j).and.dom%InclIn(j,i) .and. R(i)>R(j))
+       forall (i=1:ntot, j=1:ntot, i/=j .and. dom%InclIn(i,j).and.dom%InclIn(j,i) .and. R(i)<R(j))
           dom%InclIn(i,j) = .false.
        end forall
 
