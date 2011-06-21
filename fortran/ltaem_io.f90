@@ -151,6 +151,10 @@ contains
              & sol%nx,', ',sol%ny,', ',sol%nt
        stop 208
     end if
+    if (.not. sol%contour .and. sol%nx /= sol%ny) then
+       write(*,*) 'for hydrograph-type output nx==ny.  nx=',sol%nx,' ny=',sol%ny
+       stop 2080
+    end if
     allocate(sol%x(sol%nx), sol%y(sol%ny), sol%t(sol%nt))
     read(15,*,iostat=ierr) sol%x(:)
     if (ierr /= 0) stop 'error on line 5 (sol%x(:)) of input file'
