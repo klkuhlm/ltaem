@@ -64,7 +64,7 @@ OBJS=$(EXTERNAL) constants.o $(KKLOW) geometryUtil.o $(KKHIGH)
 F90=gfortran-4.7 # must be >= 4.7 (development version)
 OMP=-fopenmp 
 CPP=-cpp
-DFLAGS=-O0 -Wall -Wextra -g3 -fno-realloc-lhs -std=f2003 -fmodule-private
+DFLAGS=-O0 -Wall -Wextra -g3 -fno-realloc-lhs -std=f2003 
 DFLAGS+=-frange-check -fcheck=all 
 ##DFLAGS+=-fdump-rtl-expand
 PFLAGS=-Ofast -march=native -fno-realloc-lhs 

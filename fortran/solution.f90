@@ -77,8 +77,6 @@ contains
        row(i,1) = size(res(i,i)%RHS,1)
        col(i,1) = size(res(i,i)%LHS,2)
 
-       print *, 'circle on self:',i,row(i,1),col(i,1)
-
        ! circle on other circle
        do j=1,nc
           if(i/=j) then
@@ -115,8 +113,6 @@ contains
     bigM = sum(row(:,1)) ! total number rows/cols
     bigN = sum(col(:,1))
 
-    print *, 'big M,N',bigM,bigN
-
     allocate(A(bigM,bigN), b(bigM))
     b = 0.0
 
@@ -131,21 +127,9 @@ contains
        col(i,2) = sum(col(1:i,1))
     end forall
 
-    do i=1,ntot
-       print *, i,'row',row(i,0),row(i,2)
-       print *, i,'col',col(i,0),col(i,2)
-       do j=1,ntot
-          print *, i,j,'res LHS',shape(res(i,j)%LHS)
-       end do
-       
-    end do
-
     ! convert structures into single matrix for solution via least squares
     do rr=1,ntot
        do cc=1,ntot          
-          print *, 'rr,cc:',rr,cc
-          print *, 'LHS:',shape(A(row(rr,0):row(rr,2),col(cc,0):col(cc,2)))
-          print *, 'RHS:',shape( res(rr,cc)%LHS)
           A(row(rr,0):row(rr,2),col(cc,0):col(cc,2)) = res(rr,cc)%LHS
           b(row(rr,0):row(rr,2)) = b(row(rr,0):row(rr,2)) + res(rr,cc)%RHS
        end do
