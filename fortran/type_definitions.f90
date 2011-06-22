@@ -226,8 +226,11 @@ module type_definitions
      integer :: nx = -999, ny = -999, nt = -999
      real(DP), allocatable :: x(:), y(:), t(:)
 
+     ! compute log-derivative of solution?
+     logical :: deriv = .false.
+
      ! containers for time-domain final results (x,y,t,[i:j])
-     real(DP),    allocatable :: h(:,:,:), v(:,:,:,:)
+     real(DP),    allocatable :: h(:,:,:), v(:,:,:,:), dh(:,:,:)
 
   end type solution
 

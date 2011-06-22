@@ -58,7 +58,7 @@ program ltaem_main
   integer, allocatable :: parnumdt(:)         ! number of dt expected for each particle
   integer, allocatable :: idxmat(:,:)         ! matrix of indices for parallelization
   real(DP), allocatable :: logt(:), tee(:)    ! log10-time(numt), Tmax-for-deHoog(num-log-cycles)
-  complex(DP), allocatable :: s(:,:)          ! laplace-parameter(2*M-1,num-log-cycles)
+  complex(DP), allocatable :: s(:,:), stmp(:) ! laplace-parameter(2*M-1,num-log-cycles)
   complex(DP) :: calcZ                        ! calc-point-complex-coordinates
   character(6) :: elType                      ! element-type {CIRCLE,ELLIPS}
   complex(DP), allocatable :: hp(:), vp(:,:)  ! Laplace-space head and velocity vectors
@@ -292,19 +292,23 @@ program ltaem_main
 
      write(*,'(A)') 'compute solution for plotting contours'
      allocate(sol%h(sol%nx,sol%ny,sol%nt),   hp(tnP), &
-          &   sol%v(sol%nx,sol%ny,sol%nt,2), vp(tnP,2))
+          &   sol%v(sol%nx,sol%ny,sol%nt,2), vp(tnP,2), stmp(tnp))
+     if (sol%deriv) then
+        allocate(sol%dh(sol%nx,sol%ny,sol%nt))
+     end if
 
-     !$OMP PARALLEL DO PRIVATE(calcZ,hp,vp,lot,hit,lop,hip) SHARED(sol)
+     !$OMP PARALLEL DO PRIVATE(calcZ,hp,vp,lot,hit,lop,hip,stmp) SHARED(sol)
      do j = 1,sol%nx
         !$ write (*,'(I0,1X)',advance="no") OMP_get_thread_num() 
         write (*,'(A,ES13.5)') 'x: ',sol%x(j) 
         do i = 1,sol%ny
 
            calcZ = cmplx(sol%x(j),sol%y(i),DP)
+           stmp = reshape(s,[tnp])
 
            !! compute f(p) for all values of p at this location 
-           hp(1:tnp) =    headCalc(calcZ,reshape(s,[tnp]),1,tnp,dom,c,e,bg)
-           vp(1:tnp,1:2) = velCalc(calcZ,reshape(s,[tnp]),1,tnp,dom,c,e,bg)
+           hp(1:tnp) =    headCalc(calcZ,stmp,1,tnp,dom,c,e,bg)
+           vp(1:tnp,1:2) = velCalc(calcZ,stmp,1,tnp,dom,c,e,bg)
 
            !! invert solutions one log-cycle of t at a time
            do lt = minlt,maxlt-1
@@ -318,6 +322,9 @@ program ltaem_main
               hip = lop + size(s,dim=1) - 1
 
               sol%h(j,i,lot:hit) =     L(sol%t(lot:hit), tee(lt), hp(lop:hip), sol%INVLT)
+              if (sol%deriv) then
+                 sol%dh(j,i,lot:hit) = L(sol%t(lot:hit),tee(lt), hp(lop:hip)*stmp(lop:hip),sol%INVLT)*sol%t(lot:hit)
+              end if
               sol%v(j,i,lot:hit,1:2) = L(sol%t(lot:hit), tee(lt), vp(lop:hip,1:2), sol%INVLT)
            end do
         end do
@@ -327,15 +334,20 @@ program ltaem_main
   else ! hydrograph output (x,y locations are in pairs; e.g. inner product)
 
      write(*,'(A)') 'compute solution for plotting hydrograph'
-     allocate(sol%h(sol%nx,1,sol%nt), hp(tnp), sol%v(sol%nx,1,sol%nt,2), vp(tnp,2))
+     allocate(sol%h(sol%nx,1,sol%nt), hp(tnp), sol%v(sol%nx,1,sol%nt,2), vp(tnp,2), stmp(tnp))
+     if (sol%deriv) then
+        allocate(sol%dh(sol%nx,1,sol%nt))
+     end if
      
-     !$OMP PARALLEL DO PRIVATE(calcZ,hp,vp,lot,hit,lop,hip) SHARED(sol)
+     !$OMP PARALLEL DO PRIVATE(calcZ,hp,vp,lot,hit,lop,hip,stmp) SHARED(sol)
      do i = 1,sol%nx
         write(*,'(A,2(1X,ES14.7E1))') 'location:',sol%x(i),sol%y(i)
 
+        stmp = reshape(s,[tnp])
+
         calcZ = cmplx(sol%x(i),sol%y(i),DP)
-        hp(1:tnp) =    headCalc(calcZ,reshape(s,[tnp]),1,tnp,dom,c,e,bg)
-        vp(1:tnp,1:2) = velCalc(calcZ,reshape(s,[tnp]),1,tnp,dom,c,e,bg)
+        hp(1:tnp) =    headCalc(calcZ,stmp,1,tnp,dom,c,e,bg)
+        vp(1:tnp,1:2) = velCalc(calcZ,stmp,1,tnp,dom,c,e,bg)
         
         do lt = minlt,maxlt-1
            lot = 1 + sum(nt(minlt:lt-1))
@@ -346,6 +358,9 @@ program ltaem_main
 
            ! don't need second dimension of results matricies
            sol%h(i,1,lot:hit) =     L(sol%t(lot:hit),tee(lt),hp(lop:hip),sol%INVLT)
+           if (sol%deriv) then
+              sol%dh(i,1,lot:hit) = L(sol%t(lot:hit),tee(lt),hp(lop:hip)*stmp(lop:hip),sol%INVLT)*sol%t(lot:hit)
+           end if
            sol%v(i,1,lot:hit,1:2) = L(sol%t(lot:hit),tee(lt),vp(lop:hip,1:2),sol%INVLT)
         end do
      end do
@@ -356,8 +371,6 @@ program ltaem_main
   !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   ! cleanup memory and write output to file
   call writeResults(sol,part)
-
-
 
 end program ltaem_main
 

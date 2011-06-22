@@ -68,7 +68,7 @@ contains
     endif   
 
     ! solution-specific and background aquifer parameters
-    read(15,*,iostat=ierr) sol%calc, sol%particle, sol%contour, sol%output, &
+    read(15,*,iostat=ierr) sol%calc, sol%particle, sol%contour, sol%deriv, sol%output, &
          & sol%outFname, sol%coeffFName, sol%elemHfName, sol%geomfName
     if (ierr /= 0) stop 'error on line 1 of input file'
 
@@ -80,7 +80,7 @@ contains
        sol%skipdump = .false.
     end if
 
-    ! types:: 3*logical, integer, 4*string
+    ! types:: 4*logical, integer, 4*string
     ! some simple debugging of problem-type / output-type combinations
     if (sol%output < 1 .or. (sol%output > 5 .and. sol%output /= 10 &
          & .and. sol%output /= 11)) then
@@ -132,15 +132,15 @@ contains
     end if
 
     ! echo input from first 3 lines to file
-    write(16,'(3(L1,1X),I0,5(1X,A))') sol%calc, sol%particle, sol%contour, sol%output, &
-         & trim(sol%outFname), trim(sol%coeffFName), trim(sol%elemHfName), &
+    write(16,'(4(L1,1X),I0,5(1X,A))') sol%calc, sol%particle, sol%contour, sol%deriv, &
+         & sol%output, trim(sol%outFname), trim(sol%coeffFName), trim(sol%elemHfName), &
          & trim(sol%geomFname),'  ||    re-calculate coefficients?, particle?, &
-         & contour?, output, out/coeff/hierarchy/geometry file names'
+         & contour?, deriv?, output, out/coeff/hierarchy/geometry file names'
     write(16,'(3(ES11.5,1X),L1,3(1X,ES11.5),1X,I0,ES11.4,A)') bg%por, bg%k, bg%ss, &
          & bg%leakFlag, bg%aquitardK, bg%aquitardSs, bg%aquitardb, bg%ms, bg%cutoff, & 
-         & '  ||    por, k, Ss, leaky flag, K2, Ss2, b2, ellipse MS, ellipse cutoff'
+         & '  ||   background props: por, k, Ss, leaky flag, K2, Ss2, b2, ellipse MS, ellipse cutoff'
     write(16,'(2(ES11.5,1X),L1,1X,ES11.5,A)') bg%Sy, bg%kz, bg%unconfinedFlag, &
-         & bg%b, '  || Sy, Kz, unconfined?, BGb'
+         & bg%b, '  || background props: Sy, Kz, unconfined?, BGb'
     
 
     ! desired solution points/times
@@ -769,13 +769,23 @@ contains
 
        do i = 1, s%nt
           write(20,'(A,'//tfmt//')') ' # t= ',s%t(i)
-          write(20,'(A)')   &
-          & '#      X           Y               head&
-          &                 velx                  vely'
+          write(20,'(A)',advance='no')   &
+          & '#      X           Y               head'//&
+          & '                velx                  vely'
+          if (s%deriv) then
+             write(20,'(A)') '               deriv'
+          else
+             write(20,'(A)') ''
+          end if
           do j = 1, s%ny
              do k = 1, s%nx
-                write(20,'(2('//xfmt//',1X),3('//hfmt//',1X))') &
-                     & s%x(k), s%y(j), s%h(k,j,i), s%v(k,j,i,1:2)
+                if (s%deriv) then
+                   write(20,'(2('//xfmt//',1X),4('//hfmt//',1X))') &
+                        & s%x(k), s%y(j), s%h(k,j,i), s%v(k,j,i,1:2), s%dh(k,j,i)
+                else
+                   write(20,'(2('//xfmt//',1X),3('//hfmt//',1X))') &
+                        & s%x(k), s%y(j), s%h(k,j,i), s%v(k,j,i,1:2)
+                end if
              end do
           end do
           write(20,'(/)')
@@ -822,6 +832,16 @@ contains
           end do
           close(20)
 
+          ! log-t deriv matrix
+          if (s%deriv) then
+             open(unit=20, file=trim(s%outfname)//'_dhead_'//chint(2)//'.dat', &
+                  & status='replace', action='write')
+             do i = 1, s%ny
+                write (20,'('//chint(1)//'(1x,'//hfmt//'))') (s%dh(j,i,k), j=1,s%nx)
+             end do
+             close(20)
+          end if
+          
           ! velx-matrix
           open(unit=20, file=trim(s%outfname)//'_velx_'//chint(2)//'.dat', &
                & status='replace', action='write')
@@ -847,7 +867,7 @@ contains
 
        write(*,'(/A)') '*********************************************************************'
        write(*,'(3A)') 'matlab output written to ', trim(s%outfname), &
-              & '{x,y,t,head{1-n},velx{1-n},vely{1-n}}.dat'
+              & '{x,y,t,{d,}head{1-n},velx{1-n},vely{1-n}}.dat'
        write(*,'(A)') '*********************************************************************'
        
        !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -860,11 +880,22 @@ contains
        write (20,'(A)') '# ltaem hydrograph output'      
        do i = 1, s%nx
           write (20,'(2(A,'//xfmt//'))') ' # location: x=',s%x(i),' y=',s%y(i)
-          write (20,'(A)')   '#     time              head&
-               &                  velx                vely'
+          write (20,'(A)',advance='no')   '#     time              head'//&
+               & '                  velx                vely'
+          if (s%deriv) then
+             write(20,'(A)') '                 deriv'
+          else
+             write(20,'(A)') ''
+          end if
+          
           do k = 1, s%nt
-             write (20,'(1X,'//tfmt//',3(1X,'//hfmt//'))') &
-                  & s%t(k),s%h(i,1,k),s%v(i,1,k,1:2)
+             if (s%deriv) then
+                write (20,'(1X,'//tfmt//',4(1X,'//hfmt//'))') &
+                     & s%t(k),s%h(i,1,k),s%v(i,1,k,1:2),s%dh(i,1,k)
+             else
+                write (20,'(1X,'//tfmt//',3(1X,'//hfmt//'))') &
+                     & s%t(k),s%h(i,1,k),s%v(i,1,k,1:2)
+             end if
           end do
           write (20,'(/)')
        end do       
@@ -880,15 +911,24 @@ contains
 
        ! ** gnuplot-friendly hydrograph output **
        ! column of time values at a location through time
-       ! locations separated by blank lines (grid no velocity)
+       ! locations separated by blank lines (no velocity)
        open(unit=20, file=s%outfname, status='replace', action='write')
        write (20,'(A)') '# ltaem hydrograph output'
        do j = 1, s%nx
           write (20,'(2(A,'//xfmt//'))') ' # location: x=',s%x(j),' y=',s%y(j)
-          write (20,'(A)')   '#     time              head'
+          if (s%deriv) then
+             write (20,'(A)')   '#     time              head             deriv'
+          else
+             write (20,'(A)')   '#     time              head'
+          end if
           do k = 1, s%nt
-             write (20,'(1X,'//tfmt//',1(1X,'//hfmt//'))') &
-                  & s%t(k),s%h(j,1,k)
+             if (s%deriv) then
+                write (20,'(1X,'//tfmt//',1(1X,'//hfmt//'))') &
+                     & s%t(k),s%h(j,1,k)
+             else
+                write (20,'(1X,'//tfmt//',2(1X,'//hfmt//'))') &
+                     & s%t(k),s%h(j,1,k),s%dh(j,1,k)
+             end if
           end do
           write (20,'(/)')
        end do
@@ -911,7 +951,11 @@ contains
           open(unit=20, file=trim(s%outfname)//'_'//chint(1), status='replace', &
                &action='write')
           do k = 1, s%nt
-             write (20,'('//tfmt//',1X,'//hfmt//')') s%t(k),s%h(i,1,k)
+             if (s%deriv) then
+                write (20,'('//tfmt//',2(1X,'//hfmt//'))') s%t(k),s%h(i,1,k),s%dh(i,1,k)
+             else
+                write (20,'('//tfmt//',1X,'//hfmt//')') s%t(k),s%h(i,1,k)
+             end if
           end do
           write(20,'(/)')
           close(20)
