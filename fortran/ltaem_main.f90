@@ -304,7 +304,7 @@ program ltaem_main
         do i = 1,sol%ny
 
            calcZ = cmplx(sol%x(j),sol%y(i),DP)
-           stmp = reshape(s,[tnp])
+           stmp(1:tnp) = reshape(s,[tnp])
 
            !! compute f(p) for all values of p at this location 
            hp(1:tnp) =    headCalc(calcZ,stmp,1,tnp,dom,c,e,bg)
@@ -323,7 +323,7 @@ program ltaem_main
 
               sol%h(j,i,lot:hit) =     L(sol%t(lot:hit), tee(lt), hp(lop:hip), sol%INVLT)
               if (sol%deriv) then
-                 sol%dh(j,i,lot:hit) = L(sol%t(lot:hit),tee(lt), hp(lop:hip)*stmp(lop:hip),sol%INVLT)*sol%t(lot:hit)
+                 sol%dh(j,i,lot:hit) = L(sol%t(lot:hit), tee(lt), hp(lop:hip)*stmp(lop:hip), sol%INVLT)*sol%t(lot:hit)
               end if
               sol%v(j,i,lot:hit,1:2) = L(sol%t(lot:hit), tee(lt), vp(lop:hip,1:2), sol%INVLT)
            end do
@@ -343,7 +343,7 @@ program ltaem_main
      do i = 1,sol%nx
         write(*,'(A,2(1X,ES14.7E1))') 'location:',sol%x(i),sol%y(i)
 
-        stmp = reshape(s,[tnp])
+        stmp(1:tnp) = reshape(s,[tnp])
 
         calcZ = cmplx(sol%x(i),sol%y(i),DP)
         hp(1:tnp) =    headCalc(calcZ,stmp,1,tnp,dom,c,e,bg)
