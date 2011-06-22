@@ -32,7 +32,7 @@ module kappa_mod
 
 contains
 
-  pure function kappa_pVect(p,el) result(q)
+  function kappa_pVect(p,el) result(q)
     use constants, only : DP
     use type_definitions, only : element
 
@@ -74,8 +74,8 @@ contains
     if(el%unconfinedFlag) then
 
        ! results of integrating Neuman 1972 unconfined solution from 0 -> b in z
-       ! Kz parameter is integrated away?
-       q(1:np) = q(:) + el%Sy*p(:)/(el%b*el%K)
+!!$       q(1:np) = q(:) + el%Sy*p(:)/(el%b*el%K)
+       q(1:np) = q(:) + el%Kz*p(:)/(el%K*el%b*(el%Kz/el%Sy + p(:)))
     end if
     
     !! sources are only additive under the square root
@@ -86,7 +86,7 @@ contains
   end function kappa_pVect
   
   !! scalar version useful in matching
-  pure function kappa_pscal(p,el) result(q)
+  function kappa_pscal(p,el) result(q)
     use constants, only : DP
     use type_definitions, only : element
     complex(DP), intent(in) :: p
