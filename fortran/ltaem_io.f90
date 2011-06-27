@@ -758,10 +758,10 @@ contains
     select case (s%output)
     case (1) 
        ! ** gnuplot contour map friendly output **
-       ! print results as x,y,z triplets with the given times separated by double blank lines
+       ! print results as x,y,{h,v,dh} "triplets" with the given times separated by double blank lines
 
        open(unit=20, file=s%outfname, status='replace', action='write')
-       write(20,*) '# ltaem contour map output'
+       write(20,*) '# ltaem contour map output     -*-auto-revert-*-'
        write(20,'(A,I0)') ' # t: ', s%nt
        write(20,'(A,I0)') ' # x: ', s%nx
        write(20,'(A,I0)') ' # y: ', s%ny
@@ -877,10 +877,10 @@ contains
        ! column of time values at a location through time
        ! locations separated by blank lines
        open(unit=20, file=s%outfname, status='replace', action='write')
-       write (20,'(A)') '# ltaem hydrograph output'      
+       write (20,'(A)') '# ltaem hydrograph output   -*-auto-revert-*-'      
        do i = 1, s%nx
-          write (20,'(2(A,'//xfmt//'))') ' # location: x=',s%x(i),' y=',s%y(i)
-          write (20,'(A)',advance='no')   '#     time              head'//&
+          write (20,'(2(A,'//xfmt//'))') '# location: x=',s%x(i),' y=',s%y(i)
+          write (20,'(A)',advance='no')  '#     time              head'//&
                & '                  velx                vely'
           if (s%deriv) then
              write(20,'(A)') '                 deriv'
@@ -913,9 +913,9 @@ contains
        ! column of time values at a location through time
        ! locations separated by blank lines (no velocity)
        open(unit=20, file=s%outfname, status='replace', action='write')
-       write (20,'(A)') '# ltaem hydrograph output'
+       write (20,'(A)') '# ltaem hydrograph output    -*-auto-revert-*-'
        do j = 1, s%nx
-          write (20,'(2(A,'//xfmt//'))') ' # location: x=',s%x(j),' y=',s%y(j)
+          write (20,'(2(A,'//xfmt//'))') '# location: x=',s%x(j),' y=',s%y(j)
           if (s%deriv) then
              write (20,'(A)')   '#     time              head             deriv'
           else
@@ -972,7 +972,7 @@ contains
        ! columns of time values for starting locations
        ! particles separated by blank lines
        open(unit=20, file=s%outfname, status='replace', action='write')
-       write (20,'(A)') '# ltaem particle tracking output'
+       write (20,'(A)') '# ltaem particle tracking output  -*-auto-revert-*-'
        do i = 1, size(p,dim=1) 
 !!$          write (20,'(A,I0)') '# particle: ',i
           write (20,'(A)')   &
@@ -998,7 +998,7 @@ contains
        ! each block is a requested time, each row a particle
 
        open(unit=90, file=s%outfname, status='replace', action='write')
-       write (90,'(A)') '# ltaem particle tracking streakfile output'
+       write (90,'(A)') '# ltaem particle tracking streakfile output   -*-auto-revert-*-'
 
        ! max number of times for all particles
        nt = maxval(p(:)%numt,dim=1)
@@ -1051,7 +1051,7 @@ contains
        write(*,'(2A)') 'WARNING: ltaem_io.f90 error opening output file for writing &
             &element matching locations ',s%geomFname
     else    
-       write(40,'(A)') '# points along circumference of circular and elliptical elements'
+       write(40,'(A)') '# points along circumference of circular and elliptical elements  -*-auto-revert-*-'
        do i = 1,nc
           write(40,'(A,I0)') '# circular element ',i
           write(40,fmt)  (c(i)%Zom(j), j=1,c(i)%M)

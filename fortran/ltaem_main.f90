@@ -304,7 +304,7 @@ program ltaem_main
         do i = 1,sol%ny
 
            calcZ = cmplx(sol%x(j),sol%y(i),DP)
-           stmp(1:tnp) = reshape(s,[tnp])
+           stmp(1:tnp) = reshape(s,[tnp]) 
 
            !! compute f(p) for all values of p at this location 
            hp(1:tnp) =    headCalc(calcZ,stmp,1,tnp,dom,c,e,bg)
