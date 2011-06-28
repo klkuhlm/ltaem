@@ -1,4 +1,4 @@
-True  False  True  2  test.xyz  dump.out  box.elem  test.geom    ::  re-compute coefficients?, particle?, contour?, output flag, outputFN, coeffFN (output), elementHierarchy (input), geometryFN (output)
+True  False  True  False 2  test.xyz  dump.out  box.elem  test.geom    ::  re-compute coefficients?, particle?, contour?, output flag, outputFN, coeffFN (output), elementHierarchy (input), geometryFN (output)
 2.0D-1  2.0D0  1.0D-4   0  1.0D0  1.0D-4  1.0D0  10  1.0E-8  ::  por, k, Ss, leakFlag, K2, Ss2, b2, ellipse MS, MS cutoff
 1.5D-1  2.0D0  False  1.0  :: Sy, Kz, unconfined?, b
 100  50  30  :: nx, ny, nt
