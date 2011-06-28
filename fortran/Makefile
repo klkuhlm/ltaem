@@ -23,23 +23,9 @@
 EXTERNAL=cbessel.o
 KKLOW=type_definitions.o utility.o bessel_functions.o mathieu_functions2.o
 
-##Work MacPro##############################
-#LAPACKLIB=/Users/klkuhlm/src/lapack-3.3.0/lapack_MAC.a
-#BLASLIB=/Users/klkuhlm/src/lapack-3.3.0/blas_MAC.a
-
-##home linux desktop ##########
-LAPACKLIB=/home/kris/src/lapack-3.3.0/lapack_LINUX.a
-BLASLIB=/home/kris/src/lapack-3.3.0/blas_LINUX.a
-
-##work linux desktop ##########
-#LAPACKLIB=/home/klkuhlm/src/lapack-3.3.0/lapack_LINUX.a
-#BLASLIB=/home/klkuhlm/src/lapack-3.3.0/blas_LINUX.a
-#LAPACKLIB=/opt/intel/mkl/10.0.3.020/lib/em64t/libmkl_lapack.a 
-
-### for intel compiler
-##################################
-##BLASLIB=/home/klkuhlm/src/GotoBLAS2/libgoto2.a -pthread
-##LAPACKLIB=/home/klkuhlm/src/lapack-3.2.1/lapack_LINUX.a
+# provide a link to the static lapack/blas libraries in the source directory
+LAPACKLIB=lapack.a
+BLASLIB=blas.a
 
 # main-program related
 ####################################
