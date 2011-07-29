@@ -20,7 +20,7 @@ http://dx.doi.org/10.1007/s10665-008-9251-1
 transient groundwater flow simulation", PhD Dissertation, University
 of Arizona.
 
-http://sabio.arizona.edu/search~S9?/akuhlman/akuhlman/13%2C76%2C151%2CB/frameset&FF=akuhlman+kristopher+lee&1%2C1%2C
+http://sabio.arizona.edu/record=b5975534~S9
 
 4) Kuhlman, K.L., and S.P. Neuman, 2006. "Recent Advances in LT-AEM
 Theory and Application to Transient Groundwater Flow", Copenhagen,
