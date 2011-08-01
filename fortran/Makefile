@@ -53,7 +53,7 @@ CPP=-cpp
 DFLAGS=-O0 -Wall -Wextra -g3 -fno-realloc-lhs -std=f2003 
 DFLAGS+=-frange-check -fcheck=all 
 ##DFLAGS+=-fdump-rtl-expand
-PFLAGS=-Ofast -march=native -ffast-math -fno-realloc-lhs -funroll-loops -fstack-arrays 
+PFLAGS=-Ofast -march=native -fno-realloc-lhs 
 
 #################################
 
@@ -61,7 +61,7 @@ BFLAGS=$(PFLAGS)
 PFLAGS+=$(PFLAGEXTRA) $(OMP)
 
 # switch between performance or debugging flags
-FLAGS=$(PFLAGS)
+FLAGS=$(DFLAGS)
 
 LINKFLAG=$(FLAGS) -fbacktrace
 

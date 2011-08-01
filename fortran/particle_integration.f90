@@ -342,14 +342,14 @@ contains
     
     write(*,'(A,I0)') '** analytic Laplace space integration, particle ', p%id
 
-    fe: do i = 1,numdt   
+    an: do i = 1,numdt   
        if(mod(i,100) == 0) write(*,'(I0,A,ES12.6E2)') i,' t=',pt
 
        ! see if particle will reach end this step
        if (trackDone(p%forward,pt+dt,p%tf)) then
           write(*,'(A,I0,A,ES12.6E2)') &
                &'particle',p%id,' reached specified ending time:',p%tf
-          exit fe
+          exit an
        end if
 
        ! analytic time integration in Laplace space (divide by p)
@@ -357,8 +357,11 @@ contains
        
        print *, 'i:,pt,loc',i,pt,loc
 
-       arg(1:ns,1:2) = (V(loc(1:2),s(:,lt),los,his,dom,c,e,bg))/spread(s(:,lt),2,2)
-       loc(1:2) = loc(1:2) + L(pt,tee(lt),arg(1:ns,1:2),sol%INVLT) 
+       ! integration in time -> division by laplace parameter (0,t)
+       ! time shift from t=0 -> t=t0 is exp(-p*t0)
+       arg(1:ns,1:2) = V(loc(1:2),s(:,lt),los,his,dom,c,e,bg)/spread(s(:,lt),2,2)
+       loc(1:2) = loc(1:2) + L(pt+dt,tee(lt),arg(1:ns,1:2),sol%INVLT) - &
+            & L(pt,tee(lt),spread(exp(s(:,lt))*pt,2,2)*arg(1:ns,1:2),sol%INVLT)
 
        pt = pt + dt
 
@@ -367,9 +370,9 @@ contains
 
        if (sinkCheck(px,py,c,e)) then
           write(*,'(A,I0,A,ES12.6E2)') 'particle ',p%id,' entered a sink at t=',pt
-          exit fe
+          exit an
        end if
-    end do fe
+    end do an
     p%numt = i - 1
           
   end subroutine analytic
