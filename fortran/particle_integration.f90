@@ -361,7 +361,7 @@ contains
        ! time shift from t=0 -> t=t0 is exp(-p*t0)
        arg(1:ns,1:2) = V(loc(1:2),s(:,lt),los,his,dom,c,e,bg)/spread(s(:,lt),2,2)
        loc(1:2) = loc(1:2) + L(pt+dt,tee(lt),arg(1:ns,1:2),sol%INVLT) - &
-            & L(pt,tee(lt),spread(exp(s(:,lt))*pt,2,2)*arg(1:ns,1:2),sol%INVLT)
+                           & L(pt,   tee(lt),arg(1:ns,1:2),sol%INVLT)
 
        pt = pt + dt
 
