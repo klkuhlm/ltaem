@@ -12,7 +12,7 @@ http://dx.doi.org/10.1016/j.advwatres.2011.02.008
 
 2) Kuhlman, K.L. and S.P. Neuman, 2009. "Laplace-transform
 analytic-element method for transient porous-media flow", Journal of
-Engineering Mathematics, 64(2), 113–130. 
+Engineering Mathematics, 64(2), 113-130. 
 
 http://dx.doi.org/10.1007/s10665-008-9251-1
 
