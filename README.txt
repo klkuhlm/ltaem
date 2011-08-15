@@ -2,31 +2,27 @@ this is the Fortran03 implementation of the Laplace-Transform Analytic
 Element Method (LT-AEM) for inputs consisting of combinations of
 circles, points, ellipses, and line segments.
 
-Different versions of this code have been described in the following papers:
-
+This code have been described in the following publications
+----------------------------------------------------------
 1) Bakker, M. and K.L. Kuhlman, 2011. "Computational issues and
 applications of line-elements to model subsurface flow governed by the
 modified Helmholtz equation", Advances in Water Resources.
-
 http://dx.doi.org/10.1016/j.advwatres.2011.02.008
 
 2) Kuhlman, K.L. and S.P. Neuman, 2009. "Laplace-transform
 analytic-element method for transient porous-media flow", Journal of
 Engineering Mathematics, 64(2), 113-130. 
-
 http://dx.doi.org/10.1007/s10665-008-9251-1
 
 3) Kuhlman, K.L., 2008. "Laplace transform analytic element method for
 transient groundwater flow simulation", PhD Dissertation, University
 of Arizona.
-
 http://sabio.arizona.edu/record=b5975534~S9
 
 4) Kuhlman, K.L., and S.P. Neuman, 2006. "Recent Advances in LT-AEM
 Theory and Application to Transient Groundwater Flow", Copenhagen,
 Denmark, Conference on Computational Methods in Water Resources XVI
-
-http://proceedings.cmwr-xvi.org/getFile.py/access?contribId=118&sessionId=10&resId=0&materialId=paper&confId=a051
+http://dx.doi.org/10.4122/1.1000000586
 
 
 Dependencies and Compilation Instructions
