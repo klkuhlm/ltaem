@@ -1313,7 +1313,7 @@ contains
     integer :: i,j
     character(37) :: fmt
     write(*,'(2(A,I0))') 'M:',m%M,' buffer:',m%buffer
-    write(*,'(A,ES10.4)') 'CUTOFF:',m%CUTOFF
+    write(*,'(A,ES11.4)') 'CUTOFF:',m%CUTOFF
     write(*,'(2(A,ES13.6),A)') 'q: (',real(m%q),',',aimag(m%q),')'
     fmt = '(04(A,I0,A,XX(A,ES11.4,A,ES11.4,A)/))'
     write(fmt(12:13),'(I2.2)') n

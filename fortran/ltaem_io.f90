@@ -136,10 +136,10 @@ contains
          & sol%output, trim(sol%outFname), trim(sol%coeffFName), trim(sol%elemHfName), &
          & trim(sol%geomFname),'  ||    re-calculate coefficients?, particle?, &
          & contour?, deriv?, output, out/coeff/hierarchy/geometry file names'
-    write(16,'(3(ES11.5,1X),L1,3(1X,ES11.5),1X,I0,ES11.4,A)') bg%por, bg%k, bg%ss, &
+    write(16,'(3(ES12.5,1X),L1,3(1X,ES12.5),1X,I0,ES11.4,A)') bg%por, bg%k, bg%ss, &
          & bg%leakFlag, bg%aquitardK, bg%aquitardSs, bg%aquitardb, bg%ms, bg%cutoff, & 
          & '  ||   background props: por, k, Ss, leaky flag, K2, Ss2, b2, ellipse MS, ellipse cutoff'
-    write(16,'(2(ES11.5,1X),L1,1X,ES11.5,A)') bg%Sy, bg%kz, bg%unconfinedFlag, &
+    write(16,'(2(ES12.5,1X),L1,1X,ES12.5,A)') bg%Sy, bg%kz, bg%unconfinedFlag, &
          & bg%b, '  || background props: Sy, Kz, unconfined?, BGb'
     
 
@@ -187,9 +187,9 @@ contains
     end if
     if (sol%tol < epsilon(sol%tol)) then ! epsilon(1) ~ 1.0E-8
        sol%tol = epsilon(sol%tol)
-       write(*,'(A,ES11.5)') 'WARNING: increased INVLAP solution tolerance to ',sol%tol 
+       write(*,'(A,ES12.5)') 'WARNING: increased INVLAP solution tolerance to ',sol%tol 
     end if
-    write(16,'(2(ES11.5,1X),I0,A)') sol%alpha, sol%tol, sol%m,'  ||    alpha, tol, M'
+    write(16,'(2(ES12.5,1X),I0,A)') sol%alpha, sol%tol, sol%m,'  ||    alpha, tol, M'
 
     ! circular (includes wells)
     read(15,*) dom%num(1),circleFname
@@ -640,8 +640,8 @@ contains
        write(16,fmt(3)) e(:)%alpha,'  ||    ellipse hydraulic diffusivity'
        write(16,fmt(3)) e(:)%T,    '  ||    ellipse transmissivity'
     end if
-    write(16,'(ES11.5,A)') bg%alpha,'  ||    background hydraulic diffusivity'
-    write(16,'(ES11.5,A)') bg%T,    '  ||    background transmissivity'
+    write(16,'(ES12.5,A)') bg%alpha,'  ||    background hydraulic diffusivity'
+    write(16,'(ES12.5,A)') bg%T,    '  ||    background transmissivity'
 
     ! particles
     if (sol%particle) then

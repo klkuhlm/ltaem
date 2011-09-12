@@ -115,7 +115,7 @@ contains
           partEnd = sinkCheck(px,py,c,e)
           
           if (partEnd) then
-             write(*,'(A,I0,A,ES12.6E2)') 'particle ',p%id,' entered a sink at t=',pt
+             write(*,'(A,I0,A,ES13.6E2)') 'particle ',p%id,' entered a sink at t=',pt
           else 
              if (count == ubound(p%r,dim=1)) then
                 ! if out of space in results array double the size
@@ -144,7 +144,7 @@ contains
           end if
 
           if (abs(dt) <= p%mindt) then
-             write(*,'(3(A,ES12.6E2))') 'min step; dt=',dt,' error=',error, ' pt=',pt
+             write(*,'(3(A,ES13.6E2))') 'min step; dt=',dt,' error=',error, ' pt=',pt
              dt = p%mindt
              if (.not. p%forward) dt = -dt
           end if
@@ -190,14 +190,14 @@ contains
 
     ! Runge-Kutta 4th order integration scheme (non-adaptive)
     numdt = ceiling((p%tf - pt)/abs(dt))
-    write(*,'(A,ES11.5,A,I0)') 'step size=',dt,' number steps needed=',numdt
+    write(*,'(A,ES12.5,A,I0)') 'step size=',dt,' number steps needed=',numdt
 
     rk: do i = 1,numdt   
-       if (mod(i,20) == 0) write(*,'(I0,A,ES12.6E2)') i,' t=',pt
+       if (mod(i,20) == 0) write(*,'(I0,A,ES13.6E2)') i,' t=',pt
 
        ! see if particle will reach end this step
        if (trackDone(p%forward,pt+dt,p%tf)) then
-          write(*,'(A,I3,A,ES12.6E2)') &
+          write(*,'(A,I3,A,ES13.6E2)') &
                & 'particle',p%id,' reached final time:',p%tf
           exit rk
        end if
@@ -231,7 +231,7 @@ contains
        p%r(i-1,4:5) = vSimp(1:2)
        
        if (sinkCheck(px,py,c,e)) then
-          write(*,'(A,I0,A,ES12.6E2)') 'particle ',p%id,' entered a sink at t=',pt
+          write(*,'(A,I0,A,ES13.6E2)') 'particle ',p%id,' entered a sink at t=',pt
           exit rk             
        end if      
     end do rk
@@ -276,11 +276,11 @@ contains
     write(*,'(A,I0)') '** fwd Euler integration, particle ', p%id
 
     fe: do i = 1,numdt   
-       if(mod(i,100) == 0) write(*,'(I0,A,ES12.6E2)') i,' t=',pt
+       if(mod(i,100) == 0) write(*,'(I0,A,ES13.6E2)') i,' t=',pt
 
        ! see if particle will reach end this step
        if (trackDone(p%forward,pt+dt,p%tf)) then
-          write(*,'(A,I0,A,ES12.6E2)') &
+          write(*,'(A,I0,A,ES13.6E2)') &
                &'particle',p%id,' reached specified ending time:',p%tf
           exit fe
        end if
@@ -297,7 +297,7 @@ contains
        p%r(i-1,4:5) = vel(1:2)
 
        if (sinkCheck(px,py,c,e)) then
-          write(*,'(A,I0,A,ES12.6E2)') 'particle ',p%id,' entered a sink at t=',pt
+          write(*,'(A,I0,A,ES13.6E2)') 'particle ',p%id,' entered a sink at t=',pt
           exit fe
        end if
     end do fe
@@ -343,11 +343,11 @@ contains
     write(*,'(A,I0)') '** analytic Laplace space integration, particle ', p%id
 
     an: do i = 1,numdt   
-       if(mod(i,100) == 0) write(*,'(I0,A,ES12.6E2)') i,' t=',pt
+       if(mod(i,100) == 0) write(*,'(I0,A,ES13.6E2)') i,' t=',pt
 
        ! see if particle will reach end this step
        if (trackDone(p%forward,pt+dt,p%tf)) then
-          write(*,'(A,I0,A,ES12.6E2)') &
+          write(*,'(A,I0,A,ES13.6E2)') &
                &'particle',p%id,' reached specified ending time:',p%tf
           exit an
        end if
@@ -369,7 +369,7 @@ contains
        p%r(i-1,4:5) = [-999., -999.]  ! velocity not directly computed
 
        if (sinkCheck(px,py,c,e)) then
-          write(*,'(A,I0,A,ES12.6E2)') 'particle ',p%id,' entered a sink at t=',pt
+          write(*,'(A,I0,A,ES13.6E2)') 'particle ',p%id,' entered a sink at t=',pt
           exit an
        end if
     end do an
