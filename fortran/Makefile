@@ -36,26 +36,25 @@ MAIN=ltaem_main.o
 TARG=ltaem
 OBJS=$(EXTERNAL) constants.o $(KKLOW) geometryUtil.o $(KKHIGH)
 
-################ ifort >= 12.0 ##########
-F90=ifort
-OMP=-openmp 
-CPP=-cpp
-#DFLAGS=-O0 -g -traceback -warn all -check bounds -check pointers -check uninit -check format -check output_conversion
-DFLAGS=-O0 -g -traceback -warn all -check all
-PFLAGS=-xHOST -O3 $(OMP)
-LINKFLAG=$(DFLAGS) $(OMP)
-#########################################
-
-#### gfortran #################
-##F90=gfortran-4.7 # must be >= 4.7 (development version)
-##OMP=-fopenmp 
+################## ifort >= 12.0 ##########
+##F90=ifort
+##OMP=-openmp 
 ##CPP=-cpp
-##DFLAGS=-O0 -Wall -Wextra -g3 -fno-realloc-lhs -std=f2008 
-##DFLAGS+=-frange-check -fbounds-check -fcheck=all 
-####DFLAGS+=-fdump-rtl-expand
-##PFLAGS=-Ofast -march=native -fno-realloc-lhs 
-##
-###################################
+###DFLAGS=-O0 -g -traceback -warn all -check bounds -check pointers -check uninit -check format -check output_conversion
+##DFLAGS=-O0 -g -traceback -warn all -check all
+##PFLAGS=-xHOST -O3 $(OMP)
+##LINKFLAG=$(DFLAGS) $(OMP)
+###########################################
+
+## gfortran #################
+F90=gfortran-4.7 # must be >= 4.7 (development version)
+OMP=-fopenmp 
+CPP=-cpp
+DFLAGS=-O0 -Wall -Wextra -g3 -fno-realloc-lhs -std=f2008 
+DFLAGS+=-frange-check -fbounds-check -fcheck=all 
+##DFLAGS+=-fdump-rtl-expand
+PFLAGS=-Ofast -march=native -fno-realloc-lhs 
+#################################
 
 BFLAGS=$(PFLAGS) 
 PFLAGS+=$(PFLAGEXTRA) $(OMP)
