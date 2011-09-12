@@ -42,9 +42,9 @@ contains
             & LDWORK, INFO)
          integer, intent(in) :: M, N, NRHS, LDA, LDB, LDWORK
          character(LEN=1), intent(in) :: TRANSA
-         complex(8), intent(inout), dimension(LDWORK) :: WORK
-         complex(8), intent(inout), dimension(LDA,N) :: A
-         complex(8), intent(inout), dimension(LDB,NRHS) ::  B
+         complex(KIND=8), intent(inout), dimension(LDWORK) :: WORK
+         complex(KIND=8), intent(inout), dimension(LDA,N) :: A
+         complex(KIND=8), intent(inout), dimension(LDB,NRHS) ::  B
          integer, intent(out) :: INFO
        end subroutine ZGELS
     end interface
