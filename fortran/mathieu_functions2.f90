@@ -275,7 +275,7 @@ contains
   ! ce(q) is called Se(-q) by Blanch, or Qe(q) by Alhargan
   ! functions here use identities in 7.02 of Blanch's AMS#59 publication
   function ce_vect_nz(mf,n,z) result(ce)
-    use constants, only : DP, PI, PIOV2
+    use constants, only : DP, PIOV2
     use utility, only : outer
 
     ! external arguments
@@ -310,7 +310,7 @@ contains
   ! for vector order and argument (returns an outer-product type result)
   ! se is called So(-q) by Blanch and Qo(q) by Alhargan
   function se_vect_nz(mf,n,z) result(se)
-    use constants, only : DP, PI, PIOV2
+    use constants, only : DP, PIOV2
     use utility, only : outer
     integer, dimension(:), intent(in) :: n
     real(DP), dimension(:), intent(in) :: z
@@ -343,7 +343,7 @@ contains
   ! derivative of even angular modified mathieu function (q<0)
   ! for vector order and argument (returns an outer-product type result)
   function Dce_vect_nz(mf,n,z) result(Dce)
-    use constants, only : DP, PI, PIOV2
+    use constants, only : DP, PIOV2
     use utility, only : outer
     integer, dimension(:), intent(in) :: n
     real(DP), dimension(:), intent(in) :: z
@@ -374,7 +374,7 @@ contains
   ! derivative of odd angular modified mathieu function (q<0)
   ! for vector order and argument (returns an outer-product type result)
   function Dse_vect_nz(mf,n,z) result(Dse)
-    use constants, only : DP, PI, PIOV2
+    use constants, only : DP, PIOV2
     use utility, only : outer
     integer, dimension(:), intent(in) :: n
     real(DP), dimension(:), intent(in) :: z

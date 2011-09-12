@@ -302,7 +302,7 @@ contains
 
   !##################################################
   subroutine calcLocation(Z,c,e,dom,Rgp,Pgp,inside)
-    use constants, only : DP, EYE
+    use constants, only : DP
     use type_definitions, only : circle, ellipse, domain
     use geomConv, only : xy2cA, xy2eA
 

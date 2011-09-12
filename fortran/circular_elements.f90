@@ -161,7 +161,7 @@ contains
   end function circle_match_self
 
   function circle_match_other(c,el,dom,p) result(r)
-    use constants, only : DP, PI
+    use constants, only : DP
     use kappa_mod, only : kappa
     use time_mod, only : timef
     use utility, only : outer, rotate_vel_mat

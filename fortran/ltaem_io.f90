@@ -742,7 +742,6 @@ contains
 
   !******************************************************
   subroutine writeResults(s,p)
-    use constants, only : DP
     use type_definitions, only : solution, particle
 
     type(solution), intent(in) :: s
@@ -1031,7 +1030,6 @@ contains
 
   !##################################################
   subroutine writeGeometry(c,e,s)
-    use constants, only : DP
     use type_definitions, only : circle, ellipse, solution
     
     type(circle),  dimension(:), intent(in) :: c

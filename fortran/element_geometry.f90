@@ -33,7 +33,7 @@ contains
   ! ##################################################
   ! initializes / calculates geometry
   subroutine DistanceAngleCalcs(c,e,bg,dom,sol)
-    use constants, only: DP, PI, EYE
+    use constants, only: DP, PI
     use type_definitions, only : domain, circle, ellipse, element, solution, matching
     use file_ops, only : writeGeometry
     use geomConv, only : c2xyA, e2xyA, xy2cA, xy2eA 

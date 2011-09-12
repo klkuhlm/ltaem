@@ -35,7 +35,7 @@ module elliptical_elements
 
 contains
   function ellipse_match_self(e,p,i) result(r)
-    use constants, only : DP, PI
+    use constants, only : DP
     use kappa_mod, only : kappa
     use time_mod, only : timef
     use type_definitions, only : ellipse, match_result, element
