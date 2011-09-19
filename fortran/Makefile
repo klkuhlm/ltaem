@@ -60,16 +60,14 @@ BFLAGS=$(PFLAGS)
 PFLAGS+=$(PFLAGEXTRA) $(OMP)
 
 # switch between performance or debugging flags
-FLAGS=$(PFLAGS)
+FLAGS=$(DFLAGS)
 
-LINKFLAG=$(FLAGS) -fbacktrace
+LINKFLAG=$(FLAGS) -fbacktrace $(OMP)
 
 # the link step
 main: $(OBJS) $(MAIN)
 	$(F90) $(LINKFLAG) -o $(TARG) $(OBJS) $(MAIN) $(LAPACKLIB) $(BLASLIB)
 	install $(TARG) ../run/
-
-block: gfortran-4.7 -O3 -march=native -ffast-math -funroll-loops -fstack-arrays -fopenmp -fbacktrace -o ltaem_block external/cbessel.f90 constants.f90 type_definitions.f90 utility.f90 bessel_functions.f90 mathieu_functions2.f90 geometryUtil.f90 kappa.f90 time.f90 ltaem_io.f90 invlap.f90 ellipse_mathieu_init.f90 circular_elements.f90 elliptical_elements.f90 calc_routines.f90 element_geometry.f90 solution.f90 particle_integration.f90 ltaem_main.f90 /home/klkuhlm/src/lapack-3.3.0/lapack_LINUX.a /home/klkuhlm/src/lapack-3.3.0/blas_LINUX.a
 
 # this external library tends to produce spurious errors about implicit type conversions
 cbessel.o : ./external/cbessel.f90
