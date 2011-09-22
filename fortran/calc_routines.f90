@@ -99,12 +99,12 @@ contains
     !! calculation point is inside an element (not background)
     else
        if (in <= nc) then
-          ! calculation point is inside (or on bdry of) a circular element
+          ! calculation point is inside (or on boundary of) a circular element
           if (c(in)%calcin) then
              H(1:np) = H(:) + circle_calc(p,c(in),lo,hi,Rgp(in),Pgp(in),.true.)
           end if
        else 
-          ! calculation point is inside (or on bdry of) an elliptical element
+          ! calculation point is inside (or on boundary of) an elliptical element
           if (e(in-nc)%calcin) then
              H(1:np) = H(:) + ellipse_calc(p,e(in-nc),lo,hi,Rgp(in),Pgp(in),.true.)
           end if
@@ -211,7 +211,7 @@ contains
     !##################################################
     else
        if (in <= nc) then
-          !! calculation point is inside (or on bdry of) a circular element
+          !! calculation point is inside (or on boundary of) a circular element
           if (c(in)%calcin) then
              dH(1:np,1:2) = circle_deriv(p,c(in),lo,hi,Rgp(in),Pgp(in),.true.)
              v(1:np,1) = v(:,1) + cos(Pgp(in))*dH(:,1) - sin(Pgp(in))*dH(:,2)/Rgp(in)

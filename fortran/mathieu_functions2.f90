@@ -1287,7 +1287,7 @@ contains
 
   end subroutine BesselK_val
 
-  ! use recurrance relationships for derivatives
+  ! use recurrence relationships for derivatives
   !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   ! this does not include the derivative of the argument
   !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

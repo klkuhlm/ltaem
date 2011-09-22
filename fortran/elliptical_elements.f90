@@ -82,7 +82,7 @@ contains
 
     if (e%ibnd /= 2) then
 
-       ! outside ang. mod. Mathieu fcns (last dimension is inside/outside)
+       ! outside angular modified Mathieu functions (last dimension is inside/outside)
        cemat(1:M,0:N-1,0) = ce(e%parent%mat(i), vi(0:N-1), e%Pcm(:))
        semat(1:M,1:N-1,0) = se(e%parent%mat(i), vi(1:N-1), e%Pcm(:))
        if (e%ibnd == 0 .or. (e%calcin .and. (e%ibnd == 1 .or. e%ibnd == -1))) then
@@ -269,9 +269,9 @@ contains
              allocate(dRMn(M,0:N-1,0:1), dcemat(M,0:N-1), dsemat(M,N-1), &
                   & dPot_dR(M,2*N-1), dPot_dP(M,2*N-1), dPot_dX(M,2*N-1),dPot_dY(M,2*N-1))
 
-             ! flux effects of source ellpise on target element
+             ! flux effects of source ellipse on target element
              if (dom%inclBg(s,t)) then
-                ! use exterior angular and radial modified mathieu functions
+                ! use exterior angular and radial modified Mathieu functions
                 if (.not. el%ibnd == 0) then
                    cemat(1:M,0:N-1) = ce(e%parent%mat(idx), vi(0:N-1), e%G(t)%Pgm(:))
                    RMn(1:M,0:N-1,0) = Ke(e%parent%mat(idx), vi(0:N-1), e%G(t)%Rgm(:))
@@ -323,11 +323,11 @@ contains
 
              end if
 
-             ! derivative wrt radius of source element
+             ! derivative with respect to radius of source element
              dPot_dR(1:M,1:N) =       dRMn(:,0:N-1,0)/spread(RMn0(0:N-1,0),1,M)*cemat(:,0:N-1)
              dPot_dR(1:M,N+1:2*N-1) = dRMn(:,1:N-1,1)/spread(RMn0(1:N-1,1),1,M)*semat(:,1:N-1)
 
-             ! derivative wrt angle of source element 
+             ! derivative with respect to angle of source element 
              dPot_dP(1:M,1:N) =       RMn(:,0:N-1,0)/spread(RMn0(0:N-1,0),1,M)*dcemat(:,0:N-1)
              dPot_dP(1:M,N+1:2*N-1) = RMn(:,1:N-1,1)/spread(RMn0(1:N-1,1),1,M)*dsemat(:,1:N-1)
 
@@ -482,15 +482,15 @@ contains
        end if
        do i=1,np
           j = lo+i-1
-          ! radial Mathieu functions -> to calc point
+          ! radial Mathieu functions -> to calculation point
           RMRgp(i,0:N-1,0) =   Ie(e%mat(j),vi(0:N-1),Rgp)
           RMRgp(i,1:N-1,1) =   Io(e%mat(j),vi(1:N-1),Rgp)
           dRMRgp(i,0:N-1,0) = dIe(e%mat(j),vi(0:N-1),Rgp)
           dRMRgp(i,1:N-1,1) = dIo(e%mat(j),vi(1:N-1),Rgp)
-          ! radial Mathieu functions -> to bdry of ellipse
+          ! radial Mathieu functions -> to boundary of ellipse
           RMR0(i,0:N-1,0) =    Ie(e%mat(j),vi(0:N-1),e%r)
           RMR0(i,1:N-1,1) =    Io(e%mat(j),vi(1:N-1),e%r)
-          ! angular mathieu funcitons -> to calc point
+          ! angular Mathieu functions -> to calculation point
           AM(i,0:N-1,0) =      ce(e%mat(j),vi(0:N-1),Pgp)
           AM(i,1:N-1,1) =      se(e%mat(j),vi(1:N-1),Pgp)
           dAM(i,0:N-1,0) =    dce(e%mat(j),vi(0:N-1),Pgp)
@@ -549,7 +549,7 @@ contains
 
     arg(1:MS,1:nmax) = spread(vs(0:MS-1)/real(1-(2*vi(0:MS-1))**2,DP),2,nmax)
     
-    ! factor of 4 different from Kuhlman&Neuman paper
+    ! factor of 4 different from Kuhlman & Neuman (J. Eng. Mathematics) paper
     ! include Radial/dRadial MF here to balance with those in general solution
     a2n(1:nmax) = timef(p,e%time,.false.)*e%bdryQ/(2.0*PI)* &
             & Ke(e%parent%mat(idx), vi(0:N-1:2), e%r) / dKe(e%parent%mat(idx), vi(0:N-1:2), e%r)* &

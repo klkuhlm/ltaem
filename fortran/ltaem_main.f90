@@ -58,7 +58,7 @@ program ltaem_main
   integer, allocatable :: parnumdt(:)         ! number of dt expected for each particle
   integer, allocatable :: idxmat(:,:)         ! matrix of indices for parallelization
   real(DP), allocatable :: logt(:), tee(:)    ! log10-time(numt), Tmax-for-deHoog(num-log-cycles)
-  complex(DP), allocatable :: s(:,:), stmp(:) ! laplace-parameter(2*M-1,num-log-cycles)
+  complex(DP), allocatable :: s(:,:), stmp(:) ! Laplace-parameter(2*M-1,num-log-cycles)
   complex(DP) :: calcZ                        ! calc-point-complex-coordinates
   character(6) :: elType                      ! element-type {CIRCLE,ELLIPS}
   complex(DP), allocatable :: hp(:), vp(:,:)  ! Laplace-space head and velocity vectors
@@ -83,7 +83,7 @@ program ltaem_main
   ne = size(e,dim=1)
   
   ! compute element geometry from input
-  ! read in element heirarchy data from file
+  ! read in element hierarchy data from file
   call DistanceAngleCalcs(c,e,bg,dom,sol)
 
 111 continue ! come back here if error opening restart file
@@ -112,7 +112,7 @@ program ltaem_main
         maxlt = maxlt + 1
         
      !^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-     else   ! contour maps / hydrographs
+     else   ! contour maps / time-series plots
         allocate(logt(1:sol%nt))
         
         lo = 1
@@ -138,7 +138,7 @@ program ltaem_main
      tnp = sol%totalnP
 
      ! calculate coefficients for each value of Laplace parameter
-     ! ** common between particle tracking and contours/hydrographs **
+     ! ** common between particle tracking and contours/time-series plots **
      
      ! initialize Mathieu function matrices
      if (ne > 0) then
@@ -205,7 +205,7 @@ program ltaem_main
      if(any(e(:)%match) .or. any(c(:)%match)) then
         open(unit=77, file=sol%coefffname, status='old', action='read', iostat=ierr)
         if (ierr /= 0) then
-           ! go back and recalc if no restart file
+           ! go back and recalculate if no restart file
            write(*,'(A)') 'ERROR: cannot opening restart file, recalculating...'
            sol%calc = .true.
            goto 111
@@ -333,7 +333,7 @@ program ltaem_main
 
   else ! hydrograph output (x,y locations are in pairs; e.g. inner product)
 
-     write(*,'(A)') 'compute solution for plotting hydrograph'
+     write(*,'(A)') 'compute solution for plotting time series'
      allocate(sol%h(sol%nx,1,sol%nt), hp(tnp), sol%v(sol%nx,1,sol%nt,2), vp(tnp,2), stmp(tnp))
      if (sol%deriv) then
         allocate(sol%dh(sol%nx,1,sol%nt))
@@ -356,7 +356,7 @@ program ltaem_main
            lop = (lt - minlt)*size(s,1) + 1
            hip = lop + size(s,1) - 1
 
-           ! don't need second dimension of results matricies
+           ! don't need second dimension of results matrices
            sol%h(i,1,lot:hit) =     L(sol%t(lot:hit),tee(lt),hp(lop:hip),sol%INVLT)
            if (sol%deriv) then
               sol%dh(i,1,lot:hit) = L(sol%t(lot:hit),tee(lt),hp(lop:hip)*stmp(lop:hip),sol%INVLT)*sol%t(lot:hit)

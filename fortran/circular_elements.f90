@@ -48,7 +48,7 @@ contains
     type(match_result) :: r
 
     integer :: j, N, M, loM, hiM, nrows, ncols
-    complex(DP), allocatable :: Bn(:), dBn(:) ! mod. bessel function (K or I)
+    complex(DP), allocatable :: Bn(:), dBn(:) ! mod. Bessel function (K or I)
     complex(DP) :: kap
     real(DP) :: cmat(1:c%M,0:c%N-1), smat(1:c%M,1:c%N-1)
     real(DP), dimension(0:c%N-1) :: vi

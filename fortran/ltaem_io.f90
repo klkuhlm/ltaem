@@ -254,7 +254,7 @@ contains
        end if      
 
        read(22,*) c(:)%areaQ ! area source strength (flux)
-       read(22,*) c(:)%bdryQ ! streng of specified value on bdry (head or flux) 
+       read(22,*) c(:)%bdryQ ! strength of specified value on boundary (head or flux) 
        do j=1,size(c,dim=1)
           read(22,'(I3)', advance='no') c(j)%AreaTime 
           if (c(j)%AreaTime > -1) then
@@ -357,7 +357,7 @@ contains
        fmt(3) = '('//chint//'(ES13.5,1X),A) ' ! real
 
        write(16,'(I0,A)') dom%num(1),        '  ||   number of circular elements (including wells)'
-       write(16,fmt(1)) c(:)%n,              '  ||   number of circular free parameter (Fourier coeffs)'
+       write(16,fmt(1)) c(:)%n,              '  ||   number of circular free parameter (Fourier coefficients)'
        write(16,fmt(1)) c(:)%m,              '  ||   number of circular matching locations'
        write(16,fmt(1)) c(:)%ibnd,           '  ||    circle ibnd array'
        write(16,fmt(2)) c(:)%match,          '  ||    circle matching array'
@@ -370,7 +370,7 @@ contains
        write(16,fmt(3)) c(:)%ss,             '  ||    circle aquifer Ss'
        write(16,fmt(3)) c(:)%por,            '  ||    circle aquifer porosity'
        write(16,fmt(3)) c(:)%areaQ,          '  ||    circle area rch rate'
-       write(16,fmt(3)) c(:)%bdryQ,          '  ||    circle boundry rch rate or head'
+       write(16,fmt(3)) c(:)%bdryQ,          '  ||    circle boundary rch rate or head'
        write(16,fmt(2)) c(:)%leakFlag,       '  ||     circle leaky type'
        write(16,fmt(3)) c(:)%aquitardK,      '  ||     circle leaky aquitard K'
        write(16,fmt(3)) c(:)%aquitardSs,     '  ||     circle leaky aquitard Ss'
@@ -505,7 +505,7 @@ contains
              allocate(e(j)%BTPar(2))
              read(33,*) e(j)%BTPar(:)
              write(16,'(I0,2(1X,ES12.5),A,I0)') e(j)%BdryTime,e(j)%BTPar(:),&
-                  &'  ||  Bdry time behavior, par1, par2 for ellipse ',j
+                  &'  ||  Boundary time behavior, par1, par2 for ellipse ',j
           else
              allocate(e(j)%BTPar(-2*e(j)%BdryTime+1))
              read(33,*) e(j)%BTPar(:)
@@ -513,7 +513,7 @@ contains
              write(lfmt(26:29),'(I3.3)') size(e(j)%BTPar(-e(j)%BdryTime+2:),1)
              write(16,lfmt) e(j)%BdryTime,e(j)%BTPar(:-e(j)%BdryTime+1),' | ',&
                   & e(j)%BTPar(-e(j)%BdryTime+2:), &
-                  &'  ||    Bdry ti, tf | strength for ellipse ',j
+                  &'  ||    Boundary ti, tf | strength for ellipse ',j
           end if
        end do
 
@@ -756,11 +756,11 @@ contains
 
     select case (s%output)
     case (1) 
-       ! ** gnuplot contour map friendly output **
+       ! ** GnuPlot contour map friendly output **
        ! print results as x,y,{h,v,dh} "triplets" with the given times separated by double blank lines
 
        open(unit=20, file=s%outfname, status='replace', action='write')
-       write(20,*) '# ltaem contour map output     -*-auto-revert-*-'
+       write(20,*) '# LT-AEM contour map output     -*-auto-revert-*-'
        write(20,'(A,I0)') ' # t: ', s%nt
        write(20,'(A,I0)') ' # x: ', s%nx
        write(20,'(A,I0)') ' # y: ', s%ny
@@ -793,15 +793,15 @@ contains
        close(20)
 
        write(*,'(/A)') '***********************************************************'
-       write(*,'(2A)') ' gnuplot contour map style output written to ', trim(s%outfname)
+       write(*,'(2A)') ' GnuPlot contour map style output written to ', trim(s%outfname)
        write(*,'(A)')  '***********************************************************'
 
        !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     case (2)
        
-       ! ** matlab-friendly output **
-       ! print results as matricies, with each variable (at each time) going to a separate file
-       ! (x and y matricies - similar to results from matlab function meshgrid)
+       ! ** Matlab-friendly output **
+       ! print results as matrices, with each variable (at each time) going to a separate file
+       ! x and y matrices - similar to results from Matlab function meshgrid()
        
        ! x-matrix has same row repeated numy times
        open(unit=20, file=trim(s%outfname)//'_x.dat', status='replace', &
@@ -831,7 +831,7 @@ contains
           end do
           close(20)
 
-          ! log-t deriv matrix
+          ! log-t derivative matrix
           if (s%deriv) then
              open(unit=20, file=trim(s%outfname)//'_dhead_'//chint(2)//'.dat', &
                   & status='replace', action='write')
@@ -872,11 +872,11 @@ contains
        !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     case (3)
 
-       ! ** gnuplot hydrograph-friendly output **
+       ! ** GnuPlot-friendly time series output **
        ! column of time values at a location through time
        ! locations separated by blank lines
        open(unit=20, file=s%outfname, status='replace', action='write')
-       write (20,'(A)') '# ltaem hydrograph output   -*-auto-revert-*-'      
+       write (20,'(A)') '# LT-AEM time series output   -*-auto-revert-*-'      
        do i = 1, s%nx
           write (20,'(2(A,'//xfmt//'))') '# location: x=',s%x(i),' y=',s%y(i)
           write (20,'(A)',advance='no')  '#     time              head'//&
@@ -902,17 +902,17 @@ contains
        close(20)
 
        write(*,'(/A)') '***********************************************************'
-       write(*,'(2A)') 'gnuplot style output written to ', trim(s%outfname)
+       write(*,'(2A)') 'GnuPlot style output written to ', trim(s%outfname)
        write(*,'(A)') '***********************************************************'
 
        !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     case (11)
 
-       ! ** gnuplot-friendly hydrograph output **
+       ! ** GnuPlot-friendly time series output **
        ! column of time values at a location through time
        ! locations separated by blank lines (no velocity)
        open(unit=20, file=s%outfname, status='replace', action='write')
-       write (20,'(A)') '# ltaem hydrograph output    -*-auto-revert-*-'
+       write (20,'(A)') '# LT-AEM time series output    -*-auto-revert-*-'
        do j = 1, s%nx
           write (20,'(2(A,'//xfmt//'))') '# location: x=',s%x(j),' y=',s%y(j)
           if (s%deriv) then
@@ -935,7 +935,7 @@ contains
        close(20)
 
        write(*,'(/A)') '***********************************************************'
-       write(*,'(2A)') 'gnuplot style output written to ', trim(s%outfname)
+       write(*,'(2A)') 'GnuPlot style output written to ', trim(s%outfname)
        write(*,'(A)') '***********************************************************'
 
        !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -967,11 +967,11 @@ contains
        !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     case (4)
 
-       ! ** pathline gnuplot-style output **
+       ! ** pathline GnuPlot-style output **
        ! columns of time values for starting locations
        ! particles separated by blank lines
        open(unit=20, file=s%outfname, status='replace', action='write')
-       write (20,'(A)') '# ltaem particle tracking output  -*-auto-revert-*-'
+       write (20,'(A)') '# LT-AEM particle tracking output  -*-auto-revert-*-'
        do i = 1, size(p,dim=1) 
 !!$          write (20,'(A,I0)') '# particle: ',i
           write (20,'(A)')   &
@@ -992,7 +992,7 @@ contains
        !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     case (5)
 
-       ! ** streakline gnuplot-style output **
+       ! ** streakline GnuPlot-style output **
        ! this requires constant time steps (can't use adaptive integration)
        ! each block is a requested time, each row a particle
 

@@ -62,7 +62,7 @@ contains
     integer :: nc, ne, ntot, i, j, bigM, bigN, rr,cc, ierr
 
     ! only needed for LAPACK routine
-    ! size(work) should be ~ 33xbigN? (32- & 64-bit linux)
+    ! size(work) should be ~ 33xbigN? (32- & 64-bit Linux)
     complex(DP), allocatable :: WORK(:)
 
     nc = size(c,dim=1)

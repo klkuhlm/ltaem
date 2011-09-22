@@ -22,7 +22,7 @@
 
 module bessel_functions
 
-  ! this module is a wrapper for the complex Bessel funcitons
+  ! this module is a wrapper for the complex Bessel functions
   ! implemented by Amos, Algorithm 644 TOMS, Vol 21, No 4, 1995
 
   implicit none
@@ -106,7 +106,7 @@ contains
     I = sum( besi_vectz([z],num), dim=1)
   end function besi_zscal
 
-  ! use recurrance relationships for derivatives
+  ! use recurrence relationships for derivatives
   !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   ! these routines do not include the derivative of the argument
   !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -75,7 +75,7 @@ contains
        vInit = L(pt,tee(lt), V(x0,s(:,lt),los,his,dom,c,e,bg), sol%INVLT)
        FwdEuler(1:2) = x0(1:2) + dt/3.0*vInit(1:2)
 
-       ! trapazoid rule 1/3-step corrector
+       ! trapezoid rule 1/3-step corrector
        call getsrange(pt + dt/3.0,lo,ns,los,his,lt)
        vTrap = L(pt+dt/3.0,tee(lt), V(FwdEuler,s(:,lt),los,his,dom,c,e,bg), sol%INVLT)
        Trap(1:2) = x0(1:2) + dt/6.0*(vInit(1:2) + vTrap(1:2))
@@ -138,7 +138,7 @@ contains
              dt = SAFETY*dt*(p%tol/error)**2.0D-1
 
           else
-             ! reduce dt to increase accurace when needed
+             ! reduce dt to increase accuracy when needed
              dt = SAFETY*dt*(p%tol/error)**2.5D-1
 
           end if
@@ -357,7 +357,7 @@ contains
        
        print *, 'i:,pt,loc',i,pt,loc
 
-       ! integration in time -> division by laplace parameter (0,t)
+       ! integration in time -> division by Laplace parameter (0,t)
        ! time shift from t=0 -> t=t0 is exp(-p*t0)
        arg(1:ns,1:2) = V(loc(1:2),s(:,lt),los,his,dom,c,e,bg)/spread(s(:,lt),2,2)
        loc(1:2) = loc(1:2) + L(pt+dt,tee(lt),arg(1:ns,1:2),sol%INVLT) - &

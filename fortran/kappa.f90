@@ -50,7 +50,7 @@ contains
        exp2z(1:np) = exp(-2.0*kap2(:)*el%aquitardb)
     end if
     
-    !! leaky-ness
+    !! leakiness
     !! ##############################
     select case(el%leakFlag)
     case(0)

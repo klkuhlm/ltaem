@@ -103,7 +103,7 @@ contains
        end if
     end do
 
-    ! compute radial distances and angles to points on the circumferece of other elements
+    ! compute radial distances and angles to points on the circumference of other elements
     ! from this element (cross-geometry), in terms of the current circle's or ellipse's
     ! coordinate system.
     do i = 1,nc
@@ -252,7 +252,7 @@ contains
           do i = 1, nc
              do j = 1, nc
                 if (i /= j) then
-                   ! all points on circumferencce must be either inside or outside
+                   ! all points on circumference must be either inside or outside
                    if (any(abs(c(i)%G(j)%Rgm(:) - c(i)%r) < spacing(1.0)) .or. &
                         & (any(c(i)%G(j)%Rgm(:) < c(i)%r) .and. &
                         &  any(c(i)%G(j)%Rgm(:) > c(i)%r))) then
@@ -263,7 +263,7 @@ contains
              end do
           end do
 
-          ! check circle-on-ellipse interesction
+          ! check circle-on-ellipse intersection
           do i = 1, nc
              do j = 1, ne
                 if (any(abs(c(i)%G(nc+j)%Rgm(:) - c(i)%r) < spacing(1.0)) .or. &
@@ -277,7 +277,7 @@ contains
        end if
        
        ! ## step 2 ####################
-       ! determine what elliptical element each circ + ellip element falls inside ...
+       ! determine what elliptical element each circular + elliptical element falls inside ...
 
        ! check centers of elements (rows = ellipses, columns = all elements)
        if (ne > 0) then
@@ -305,7 +305,7 @@ contains
              end do
           end do
 
-          ! check ellipse-on-ellipse interesction
+          ! check ellipse-on-ellipse intersection
           do i = 1, ne
              do j = 1, ne
                 if (i /= j) then
@@ -328,7 +328,7 @@ contains
        allocate(R(ntot), nest(ntot), iv(ntot))
        forall (i=1:ntot) iv(i) = i
        R(1:nc) = c(1:nc)%r
-       R(nc+1:ntot) = e(1:ne)%r  ! TODO : double-check that circ/ellip can be compared validly  
+       R(nc+1:ntot) = e(1:ne)%r  ! TODO : double-check that circle/ellipse can be compared validly  
 
        forall (i=1:ntot, j=1:ntot, i/=j .and. dom%InclIn(i,j).and.dom%InclIn(j,i) .and. R(i)<R(j))
           dom%InclIn(i,j) = .false.
@@ -410,7 +410,7 @@ contains
        dom%InclBg(1,1) = .false.       
     end if
 
-    ! echo results of heirarchy calcs to file
+    ! echo results of hierarchy calculations to file
     open(unit=57, file=sol%elemhfname, status='replace', action='write', iostat=ierr)
     if (ierr /= 0) then
        ! non-fatal error

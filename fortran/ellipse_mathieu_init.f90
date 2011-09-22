@@ -91,7 +91,7 @@ contains
     ! estimate required matrix size to achieve accuracy ~ 1.0E-12,
     ! based on rational approximation due to  Shirts, R.B., 1993.
     ! "The Computation of Eigenvalues and Solutions of Mathieu's
-    ! Differential Equation for Noninteger Order", ACM TOMS 19(3) pp377-390.
+    ! Differential Equation for Noninteger Order", ACM TOMS 19(3) p377-390.
 
     C = (8.46_DP +   0.444_DP*n)/(1.0_DP + 0.085_DP*n)
     D = (0.240_DP + 0.0214_DP*n)/(1.0_DP + 0.059_DP*n)
