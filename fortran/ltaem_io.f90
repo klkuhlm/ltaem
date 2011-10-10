@@ -125,9 +125,14 @@ contains
 
     read(15,*,iostat=ierr) bg%Sy, bg%kz, bg%unconfinedFlag, bg%b
     if (ierr /= 0) stop 'error on line 3 of input file'
-    if (any([bg%Sy, bg%kz,bg%b] < spacing(0.0))) then
-       write(*,*) 'input file (line 3) bg%Sy, bg%kz, bg%b must all be > 0.0 ', &
-            & bg%Sy,', ',bg%kz,', ',bg%b
+    if (any([bg%kz,bg%b] < spacing(0.0))) then
+       write(*,*) 'input file (line 3) bg%kz, bg%b must all be > 0.0 ', &
+            & bg%kz,', ',bg%b
+       stop 207
+    end if
+
+    if (bg%Sy < 0.0) then
+       write(*,*) 'input file (line 3) bg%Sy must be non-negative',bg%Sy
        stop 207
     end if
 

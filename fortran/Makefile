@@ -25,7 +25,7 @@ KKLOW=type_definitions.o utility.o bessel_functions.o mathieu_functions2.o
 
 # provide a link to the static lapack/blas libraries in the source directory
 LAPACKLIB=lapack.a
-BLASLIB=gotoblas.a -lpthread
+BLASLIB=blas.a 
 
 # main-program related
 ####################################
@@ -60,7 +60,7 @@ BFLAGS=$(PFLAGS)
 PFLAGS+=$(PFLAGEXTRA) $(OMP)
 
 # switch between performance or debugging flags
-FLAGS=$(DFLAGS)
+FLAGS=$(PFLAGS)
 
 LINKFLAG=$(FLAGS) -fbacktrace $(OMP)
 
