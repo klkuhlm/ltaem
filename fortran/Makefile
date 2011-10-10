@@ -60,7 +60,7 @@ BFLAGS=$(PFLAGS)
 PFLAGS+=$(PFLAGEXTRA) $(OMP)
 
 # switch between performance or debugging flags
-FLAGS=$(PFLAGS)
+FLAGS=$(DFLAGS)
 
 LINKFLAG=$(FLAGS) -fbacktrace $(OMP)
 
