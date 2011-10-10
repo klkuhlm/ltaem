@@ -104,7 +104,7 @@ True  False  False  False  11  sdi  dump-sdi.out  sdi.elem  sdi.geom    ::  re-c
 2.9479344e+10
 3.4100904e+10
 3.9447000e+10
-1.0D-6  1.0D-8  20 :: alpha, tolerance, M
+1.0D-7  1.0D-8  80 :: alpha, tolerance, M
 5  sdi_circles.in     :: number of circular elements, circular elements input file
 0  file_not_used    :: number of elliptical elements, elliptical elements input file
 file_not_used     :: particle inputs file

@@ -68,7 +68,7 @@ contains
        mult(1:np) = exp(-par(1)*p)/p
     case(2)
        ! step on at time=par1, off at time=par2
-       mult(1:np) = exp(-par(1)*p)/p - exp(-par(2)*p)/p
+       mult(1:np) = (exp(-par(1)*p) - exp(-par(2)*p))/p
     case(3)
        ! instantaneous at t=par1
        mult(1:np) = exp(-par(1)*p)
