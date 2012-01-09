@@ -14,8 +14,9 @@ Module Complex_Bessel
   INTEGER, PARAMETER, private  :: dp = SELECTED_REAL_KIND(15, 307)
 
   PRIVATE
-  PUBLIC  :: cbesh, cbesi, cbesj, cbesk, cbesy, gamln, cairy, cbiry
+  PUBLIC  :: cbesh, cbesi, cbesj, cbesk, cbesy, cairy, cbiry 
 
+  ! Oct 2011: replaced function gamln() with Fortran2008 built-in log_gamma()
 
 CONTAINS
 
@@ -2493,6 +2494,8 @@ CONTAINS
     COMPLEX (dp), PARAMETER  :: czero = (0.0_dp,0.0_dp), cone = (1.0_dp,0.0_dp), &
          ctwo = (2.0_dp,0.0_dp)
 
+    intrinsic :: log_gamma
+
     scle = 1.0E+3 * TINY(0.0_dp) / tol
     nz = 0
     az = ABS(z)
@@ -2569,7 +2572,7 @@ CONTAINS
     p2 = CMPLX(scle, 0.0_dp, KIND=dp)
     fnf = fnu - ifnu
     tfnf = fnf + fnf
-    bk = gamln(fkk+tfnf+1.0_dp) - gamln(fkk+1.0_dp) - gamln(tfnf+1.0_dp)
+    bk = log_gamma(fkk+tfnf+1.0_dp) - log_gamma(fkk+1.0_dp) - log_gamma(tfnf+1.0_dp)
     bk = EXP(bk)
     sum = czero
     km = kk - inu
@@ -2613,7 +2616,7 @@ CONTAINS
     pt = z
     IF (kode == 2) pt = pt - x
     p1 = -fnf * LOG(rz) + pt
-    ap = gamln(1.0_dp+fnf)
+    ap = log_gamma(1.0_dp+fnf)
     pt = p1 - ap
     !-----------------------------------------------------------------------
     !     THE DIVISION EXP(PT)/(SUM+P2) IS ALTERED TO AVOID OVERFLOW
@@ -3174,6 +3177,8 @@ CONTAINS
     INTEGER       :: i, ib, iflag, il, k, l, m, nn, nw
     complex (dp), PARAMETER  :: czero = (0.0_dp,0.0_dp), cone = (1.0_dp,0.0_dp)
 
+    intrinsic :: log_gamma
+
     nz = 0
     az = ABS(z)
     IF (az /= 0.0_dp) THEN
@@ -3196,7 +3201,7 @@ CONTAINS
           !     UNDERFLOW TEST
           !-----------------------------------------------------------------------
           ak1 = ck * dfnu
-          ak = gamln(fnup)
+          ak = log_gamma(fnup)
           ak1 = ak1 - ak
           IF (kode == 2) ak1 = ak1 - x
           rak1 = REAL(ak1, KIND=dp)
@@ -5087,6 +5092,8 @@ CONTAINS
          -2.15241674114950973D-04, -2.01348547807882387D-05, 1.13302723198169588D-06, &
          6.11609510448141582D-09 /)
 
+    intrinsic :: log_gamma
+
     xx = REAL(z, KIND=dp)
     yy = AIMAG(z)
     caz = ABS(z)
@@ -5127,7 +5134,7 @@ CONTAINS
           !-----------------------------------------------------------------------
           !     GAM(1-Z)*GAM(1+Z)=PI*Z/SIN(PI*Z), T1=1/GAM(1-DNU), T2=1/GAM(1+DNU)
           !-----------------------------------------------------------------------
-          t2 = EXP(-gamln(a2))
+          t2 = EXP(-log_gamma(a2))
           t1 = 1.0_dp / (t2*fc)
           IF (ABS(dnu) <= 0.1_dp) THEN
              !-----------------------------------------------------------------------
@@ -5907,170 +5914,6 @@ CONTAINS
     IF (nw == -2) nz = -2
     RETURN
   END SUBROUTINE cbinu
-
-
-
-  FUNCTION gamln(z) RESULT(fn_val)
-
-    ! N.B. Argument IERR has been removed.
-
-    !***BEGIN PROLOGUE  GAMLN
-    !***DATE WRITTEN   830501   (YYMMDD)
-    !***REVISION DATE  830501   (YYMMDD)
-    !***CATEGORY NO.  B5F
-    !***KEYWORDS  GAMMA FUNCTION,LOGARITHM OF GAMMA FUNCTION
-    !***AUTHOR  AMOS, DONALD E., SANDIA NATIONAL LABORATORIES
-    !***PURPOSE  TO COMPUTE THE LOGARITHM OF THE GAMMA FUNCTION
-    !***DESCRIPTION
-
-    !   GAMLN COMPUTES THE NATURAL LOG OF THE GAMMA FUNCTION FOR Z > 0.
-    !   THE ASYMPTOTIC EXPANSION IS USED TO GENERATE VALUES GREATER THAN ZMIN
-    !   WHICH ARE ADJUSTED BY THE RECURSION G(Z+1)=Z*G(Z) FOR Z <= ZMIN.
-    !   THE FUNCTION WAS MADE AS PORTABLE AS POSSIBLE BY COMPUTIMG ZMIN FROM THE
-    !   NUMBER OF BASE 10 DIGITS IN A WORD,
-    !   RLN = MAX(-LOG10(EPSILON(0.0_dp)), 0.5E-18)
-    !   LIMITED TO 18 DIGITS OF (RELATIVE) ACCURACY.
-
-    !   SINCE INTEGER ARGUMENTS ARE COMMON, A TABLE LOOK UP ON 100
-    !   VALUES IS USED FOR SPEED OF EXECUTION.
-
-    !  DESCRIPTION OF ARGUMENTS
-
-    !      INPUT
-    !        Z      - REAL ARGUMENT, Z > 0.0_dp
-
-    !      OUTPUT
-    !        GAMLN  - NATURAL LOG OF THE GAMMA FUNCTION AT Z
-    !        IERR   - ERROR FLAG
-    !                 IERR=0, NORMAL RETURN, COMPUTATION COMPLETED
-    !                 IERR=1, Z <= 0.0_dp,    NO COMPUTATION
-
-    !***REFERENCES  COMPUTATION OF BESSEL FUNCTIONS OF COMPLEX ARGUMENT
-    !                 BY D. E. AMOS, SAND83-0083, MAY 1983.
-    !***ROUTINES CALLED  I1MACH,R1MACH
-    !***END PROLOGUE  GAMLN
-
-    REAL (dp), INTENT(IN)  :: z
-    REAL (dp)              :: fn_val
-
-    INTEGER    :: i, i1m, k, mz, nz
-    REAL (dp)  :: fln, fz, rln, s, tlg, trm, tst, t1, wdtol,  &
-         zdmy, zinc, zm, zmin, zp, zsq
-
-    !           LNGAMMA(N), N=1,100
-    REAL (dp), PARAMETER  :: gln(100) = (/ 0.00000000000000000_dp,  &
-         0.00000000000000000_dp, 6.93147180559945309D-01, 1.79175946922805500_dp,   &
-         3.17805383034794562_dp, 4.78749174278204599_dp, 6.57925121201010100_dp,    &
-         8.52516136106541430_dp, 1.06046029027452502D+01, 1.28018274800814696D+01,  &
-         1.51044125730755153D+01, 1.75023078458738858D+01, 1.99872144956618861D+01, &
-         2.25521638531234229D+01, 2.51912211827386815D+01, 2.78992713838408916D+01, &
-         3.06718601060806728D+01, 3.35050734501368889D+01, 3.63954452080330536D+01, &
-         3.93398841871994940D+01, 4.23356164607534850D+01, 4.53801388984769080D+01, &
-         4.84711813518352239D+01, 5.16066755677643736D+01, 5.47847293981123192D+01, &
-         5.80036052229805199D+01, 6.12617017610020020D+01, 6.45575386270063311D+01, &
-         6.78897431371815350D+01, 7.12570389671680090D+01, 7.46582363488301644D+01, &
-         7.80922235533153106D+01, 8.15579594561150372D+01, 8.50544670175815174D+01, &
-         8.85808275421976788D+01, 9.21361756036870925D+01, 9.57196945421432025D+01, &
-         9.93306124547874269D+01, 1.02968198614513813D+02, 1.06631760260643459D+02, &
-         1.10320639714757395D+02, 1.14034211781461703D+02, 1.17771881399745072D+02, &
-         1.21533081515438634D+02, 1.25317271149356895D+02, 1.29123933639127215D+02, &
-         1.32952575035616310D+02, 1.36802722637326368D+02, 1.40673923648234259D+02, &
-         1.44565743946344886D+02, 1.48477766951773032D+02, 1.52409592584497358D+02, &
-         1.56360836303078785D+02, 1.60331128216630907D+02, 1.64320112263195181D+02, &
-         1.68327445448427652D+02, 1.72352797139162802D+02, 1.76395848406997352D+02, &
-         1.80456291417543771D+02, 1.84533828861449491D+02, 1.88628173423671591D+02, &
-         1.92739047287844902D+02, 1.96866181672889994D+02, 2.01009316399281527D+02, &
-         2.05168199482641199D+02, 2.09342586752536836D+02, 2.13532241494563261D+02, &
-         2.17736934113954227D+02, 2.21956441819130334D+02, 2.26190548323727593D+02, &
-         2.30439043565776952D+02, 2.34701723442818268D+02, 2.38978389561834323D+02, &
-         2.43268849002982714D+02, 2.47572914096186884D+02, 2.51890402209723194D+02, &
-         2.56221135550009525D+02, 2.60564940971863209D+02, 2.64921649798552801D+02, &
-         2.69291097651019823D+02, 2.73673124285693704D+02, 2.78067573440366143D+02, &
-         2.82474292687630396D+02, 2.86893133295426994D+02, 2.91323950094270308D+02, &
-         2.95766601350760624D+02, 3.00220948647014132D+02, 3.04686856765668715D+02, &
-         3.09164193580146922D+02, 3.13652829949879062D+02, 3.18152639620209327D+02, &
-         3.22663499126726177D+02, 3.27185287703775217D+02, 3.31717887196928473D+02, &
-         3.36261181979198477D+02, 3.40815058870799018D+02, 3.45379407062266854D+02, &
-         3.49954118040770237D+02, 3.54539085519440809D+02, 3.59134205369575399D+02 /)
-
-    !             COEFFICIENTS OF ASYMPTOTIC EXPANSION
-    REAL (dp), PARAMETER  :: cf(22) = (/  &
-         8.33333333333333333D-02, -2.77777777777777778D-03,  &
-         7.93650793650793651D-04, -5.95238095238095238D-04,  &
-         8.41750841750841751D-04, -1.91752691752691753D-03,  &
-         6.41025641025641026D-03, -2.95506535947712418D-02,  &
-         1.79644372368830573D-01, -1.39243221690590112_dp,   &
-         1.34028640441683920D+01, -1.56848284626002017D+02,  &
-         2.19310333333333333D+03, -3.61087712537249894D+04,  &
-         6.91472268851313067D+05, -1.52382215394074162D+07,  &
-         3.82900751391414141D+08, -1.08822660357843911D+10,  &
-         3.47320283765002252D+11, -1.23696021422692745D+13,  &
-         4.88788064793079335D+14, -2.13203339609193739D+16 /)
-
-    !             LN(2*PI)
-    REAL (dp), PARAMETER  :: con = 1.83787706640934548_dp
-
-    !***FIRST EXECUTABLE STATEMENT  GAMLN
-    IF (z > 0.0_dp) THEN
-       IF (z <= 101.0_dp) THEN
-          nz = int(z)
-          fz = z - nz
-          IF (fz <= 0.0_dp) THEN
-             IF (nz <= 100) THEN
-                fn_val = gln(nz)
-                RETURN
-             END IF
-          END IF
-       END IF
-       wdtol = EPSILON(0.0_dp)
-       wdtol = MAX(wdtol, 0.5D-18)
-       i1m = DIGITS(0.0_dp)
-       rln = LOG10( REAL( RADIX(0.0_dp), KIND=dp) ) * i1m
-       fln = MIN(rln,20.0_dp)
-       fln = MAX(fln,3.0_dp)
-       fln = fln - 3.0_dp
-       zm = 1.8000_dp + 0.3875_dp * fln
-       mz = int(zm + 1)
-       zmin = mz
-       zdmy = z
-       zinc = 0.0_dp
-       IF (z < zmin) THEN
-          zinc = zmin - nz
-          zdmy = z + zinc
-       END IF
-       zp = 1.0_dp / zdmy
-       t1 = cf(1) * zp
-       s = t1
-       IF (zp >= wdtol) THEN
-          zsq = zp * zp
-          tst = t1 * wdtol
-          DO  k = 2, 22
-             zp = zp * zsq
-             trm = cf(k) * zp
-             IF (ABS(trm) < tst) EXIT
-             s = s + trm
-          END DO
-       END IF
-
-       IF (zinc == 0.0_dp) THEN
-          tlg = LOG(z)
-          fn_val = z * (tlg-1.0_dp) + 0.5_dp * (con-tlg) + s
-          RETURN
-       END IF
-       zp = 1.0_dp
-       nz = int(zinc)
-       DO  i = 1, nz
-          zp = zp * (z + (i-1))
-       END DO
-       tlg = LOG(zdmy)
-       fn_val = zdmy * (tlg-1.0_dp) - LOG(zp) + 0.5_dp * (con-tlg) + s
-       RETURN
-    END IF
-
-    WRITE(*, *) '** ERROR: Zero or -ve argument for function GAMLN **'
-    RETURN
-  END FUNCTION gamln
-
 
 
   SUBROUTINE cuchk(y, nz, ascle, tol)

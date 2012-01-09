@@ -106,16 +106,20 @@ contains
     use constants, only : DP
     complex(DP), intent(in), dimension(:) :: ca
     real(DP), intent(in), dimension(:) :: db
+    complex(DP), dimension(size(db,1)) :: cb
     complex(DP), dimension(size(ca),size(db)) :: c
-    c = spread(ca,dim=2,ncopies=size(db))*spread(db,dim=1,ncopies=size(ca))
+    cb = cmplx(db,kind=DP)
+    c = spread(ca,dim=2,ncopies=size(db))*spread(cb,dim=1,ncopies=size(ca))
   end function outerprod_dz
 
   pure function outerprod_zd(da,cb) result(c)
     use constants, only : DP
     real(DP), intent(in), dimension(:) :: da
+    complex(DP), dimension(size(da,1)) :: ca
     complex(DP), intent(in), dimension(:) :: cb
     complex(DP), dimension(size(da),size(cb)) :: c
-    c = spread(da,dim=2,ncopies=size(cb))*spread(cb,dim=1,ncopies=size(da))
+    ca = cmplx(da,kind=DP)
+    c = spread(ca,dim=2,ncopies=size(cb))*spread(cb,dim=1,ncopies=size(da))
   end function outerprod_zd
   
   ! ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  
