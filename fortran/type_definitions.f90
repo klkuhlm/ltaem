@@ -224,6 +224,7 @@ module type_definitions
      
      ! x-spacing vector, y-spacing vector, time vector
      integer :: nx = -999, ny = -999, nt = -999
+     real(DP) :: xshift = -999., yshift = -999.
      real(DP), allocatable :: x(:), y(:), t(:)
 
      ! compute log-derivative of solution?

@@ -53,7 +53,7 @@ CPP=-cpp
 DFLAGS=-O0 -Wall -Wextra -g3 -fno-realloc-lhs -std=f2008 
 DFLAGS+=-frange-check -fbounds-check -fcheck=all 
 ##DFLAGS+=-fdump-rtl-expand
-PFLAGS=-Ofast -march=native -fno-realloc-lhs -flto  -msse2
+PFLAGS=-Ofast -march=native -fno-realloc-lhs  -msse2
 #################################
 
 BFLAGS=$(PFLAGS) 

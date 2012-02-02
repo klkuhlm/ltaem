@@ -147,7 +147,6 @@ contains
     write(16,'(2(ES12.5,1X),L1,1X,ES12.5,A)') bg%Sy, bg%kz, bg%unconfinedFlag, &
          & bg%b, '  || background props: Sy, Kz, unconfined?, BGb'
     
-
     ! desired solution points/times
     read(15,*,iostat=ierr) sol%nx, sol%ny, sol%nt
     if (ierr /= 0) stop 'error on line 4 of input file'
@@ -165,6 +164,13 @@ contains
     if (ierr /= 0) stop 'error on line 5 (sol%x(:)) of input file'
     read(15,*,iostat=ierr) sol%y(:)
     if (ierr /= 0) stop 'error on line 6 (sol%y(:)) of input file'
+
+    ! shift xy values (usefull when x and y are something like UTM coordinates)
+    sol%xshift = minval(sol%x)
+    sol%yshift = minval(sol%y)
+    sol%x(:) = sol%x(:) - sol%xshift
+    sol%y(:) = sol%y(:) - sol%yshift
+
     do j=1,sol%nt  !! modified to accommidate pest (make time a column)
        read(15,*,iostat=ierr) sol%t(j)
        if (ierr /= 0 .or. sol%t(j) < epsilon(0.0))  then
@@ -172,13 +178,16 @@ contains
           stop 999
        end if
     end do
+
     if (.not. sol%particle) then
        fmt(1) = '(    (ES12.5,1X),A) '
        write(16,'(3(I0,1X),A)') sol%nx, sol%ny, sol%nt, '  ||    numX, numY, numt'
        write(fmt(1)(2:5),'(I4.4)') sol%nx
-       write(16,fmt(1)) sol%x(:), '  ||    x Vector'
+       write(16,'(ES21.14,A)') sol%xshift,'  ||    xshift'
+       write(16,fmt(1)) sol%x(:), '  ||    shifted x Vector'
        write(fmt(1)(2:5),'(I4.4)') sol%ny
-       write(16,fmt(1)) sol%y(:), '  ||    y Vector'
+       write(16,'(ES21.14,A)') sol%yshift,'  ||    yshift'
+       write(16,fmt(1)) sol%y(:), '  ||    shifted y Vector'
        write(fmt(1)(2:5),'(I4.4)') sol%nt
        write(16,fmt(1)) sol%t(:), '  ||    t Vector'
     endif
@@ -238,7 +247,7 @@ contains
 
        read(22,*) c(:)%x ! any real number is ok
        read(22,*) c(:)%y
-       c(:)%z = cmplx(c%x,c%y,DP)
+       c(:)%z = cmplx(c%x-sol%xshift, c%y-sol%yshift, DP)
 
        read(22,*) c(:)%k
        if (any(c%k < spacing(0.0))) then
@@ -369,8 +378,8 @@ contains
        write(16,fmt(2)) c(:)%calcin,         '  ||    calculate inside this circle?'
        write(16,fmt(2)) c(:)%storin,         '  ||    calculate free-water storage effects of circle?'
        write(16,fmt(3)) c(:)%r,              '  ||    circle radius'
-       write(16,fmt(3)) c(:)%x,              '  ||    circle center x'
-       write(16,fmt(3)) c(:)%y,              '  ||    circle center y'
+       write(16,fmt(3)) c(:)%x,              '  ||    shifted circle center x'
+       write(16,fmt(3)) c(:)%y,              '  ||    shifted circle center y'
        write(16,fmt(3)) c(:)%k,              '  ||    circle aquifer k'
        write(16,fmt(3)) c(:)%ss,             '  ||    circle aquifer Ss'
        write(16,fmt(3)) c(:)%por,            '  ||    circle aquifer porosity'
@@ -452,7 +461,7 @@ contains
 
        read(33,*) e(:)%x
        read(33,*) e(:)%y
-       e(:)%z = cmplx(e%x,e%y,DP)
+       e(:)%z = cmplx(e%x-sol%xshift, e%y-sol%yshift, DP)
 
        read(33,*) e(:)%f
        if (any(e%f < spacing(0.0))) then
@@ -597,8 +606,8 @@ contains
        ! TODO free-water storage for ellipses not handled yet
        write(16,fmt(2)) e(:)%storin,         '  ||   calculate free-water storage for this ellipse?' 
        write(16,fmt(3)) e(:)%r,              '  ||   ellipse radius (eta)'
-       write(16,fmt(3)) e(:)%x,              '  ||   ellipse center x'
-       write(16,fmt(3)) e(:)%y,              '  ||   ellipse center y'
+       write(16,fmt(3)) e(:)%x,              '  ||   shifted ellipse center x'
+       write(16,fmt(3)) e(:)%y,              '  ||   shifted ellipse center y'
        write(16,fmt(3)) e(:)%f,              '  ||   ellipse semi-focal length'
        write(16,fmt(3)) e(:)%theta,          '  ||   ellipse angle rotation with +x axis'
        write(16,fmt(3)) e(:)%k,              '  ||   ellipse aquifer k' 
@@ -690,6 +699,8 @@ contains
 
        read(44,*) p(:)%x
        read(44,*) p(:)%y
+       p(:)%x = p(:)%x - sol%xshift
+       p(:)%y = p(:)%y - sol%yshift
 
        read(44,*) p(:)%ti ! particle start time
        if (any(p%ti < spacing(1.0))) then
@@ -711,7 +722,6 @@ contains
           write(*,*) 'p%tf must be < p%ti  for backward tracking ti:',p%ti,' tf:',p%tf
           stop 251
        end if
-       
 
        read(44,*) p(:)%int
        if (any(p%int < 1 .or. p%int > 4)) then
@@ -729,10 +739,10 @@ contains
 
        write(16,fmt(3)) p(:)%tol,    '  ||    particle solution tolerances (RKM only)'
        write(16,fmt(3)) p(:)%dt,     '  ||    particle time step (RKM initial step)'
-       write(16,fmt(3)) p(:)%maxL,   '  ||   particle max step length (RKM only)'
-       write(16,fmt(3)) p(:)%mindt,  '  ||   particle min time step size (RKM only)'
-       write(16,fmt(3)) p(:)%x,      '  ||    particle initial x'
-       write(16,fmt(3)) p(:)%y,      '  ||    particle initial y'
+       write(16,fmt(3)) p(:)%maxL,   '  ||    particle max step length (RKM only)'
+       write(16,fmt(3)) p(:)%mindt,  '  ||    particle min time step size (RKM only)'
+       write(16,fmt(3)) p(:)%x,      '  ||    shifted particle initial x'
+       write(16,fmt(3)) p(:)%y,      '  ||    shifted particle initial y'
        write(16,fmt(3)) p(:)%ti,     '  ||    particle initial t'
        write(16,fmt(3)) p(:)%tf,     '  ||    particle maximum t'
        write(16,fmt(1)) p(:)%int,    '  ||    particle integration method'
@@ -749,8 +759,8 @@ contains
   subroutine writeResults(s,p)
     use type_definitions, only : solution, particle
 
-    type(solution), intent(in) :: s
-    type(particle), dimension(:), intent(in) :: p
+    type(solution), intent(inout) :: s
+    type(particle), dimension(:), intent(inout) :: p
 
     character(4), dimension(2) :: chint
     integer :: i, j, k, nt
@@ -758,6 +768,13 @@ contains
     ! adjust the formats of time, location, and results here
     character(6) :: tfmt = 'ES13.5', xfmt = 'ES12.4'
     character(9) :: hfmt = 'ES22.14e3'
+
+    ! remove shift applied at beginning
+    s%x = s%x + s%xshift
+    s%y = s%y + s%yshift
+    do i=1,s%nPart
+       p(i)%r(2:3) = p(i)%r(2:3) + [s%xshift,s%yshift]
+    end do
 
     select case (s%output)
     case (1) 
@@ -1035,13 +1052,18 @@ contains
 
   !##################################################
   subroutine writeGeometry(c,e,s)
+    use constants, only : DP
     use type_definitions, only : circle, ellipse, solution
     
     type(circle),  dimension(:), intent(in) :: c
     type(ellipse), dimension(:), intent(in) :: e
     type(solution), intent(in) :: s
     integer :: nc, ne, i, j, ierr
+    complex(DP) :: origin
     character(14) :: fmt
+
+    ! remove shift originally applied to coordinates
+    origin = cmplx(s%xshift,s%yshift,DP)
 
     nc = size(c,dim=1)
     ne = size(e,dim=1)
@@ -1057,20 +1079,20 @@ contains
        write(40,'(A)') '# points along circumference of circular and elliptical elements  -*-auto-revert-*-'
        do i = 1,nc
           write(40,'(A,I0)') '# circular element ',i
-          write(40,fmt)  (c(i)%Zom(j), j=1,c(i)%M)
+          write(40,fmt)  (origin + c(i)%Zom(j), j=1,c(i)%M)
           if (c(i)%M > 1) then
              ! joins circle back up with beginning for plotting
-             write(40,fmt)  c(i)%Zom(1)
+             write(40,fmt)  origin + c(i)%Zom(1)
           end if
           write(40,'(/)')    
        end do
 
        do i = 1,ne
           write(40,'(A,I0)') '# elliptical element ',i
-          write(40,fmt)  (e(i)%Zom(j), j=1,e(i)%M)
+          write(40,fmt)  (origin + e(i)%Zom(j), j=1,e(i)%M)
           if (e(i)%M > 1) then
              ! joins ellipse back up with beginning for plotting
-             write(40,fmt)  e(i)%Zom(1)
+             write(40,fmt)  origin + e(i)%Zom(1)
           end if
           write(40,'(/)')    
        end do
