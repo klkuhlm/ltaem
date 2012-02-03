@@ -757,6 +757,7 @@ contains
 
   !******************************************************
   subroutine writeResults(s,p)
+
     use type_definitions, only : solution, particle
 
     type(solution), intent(inout) :: s
@@ -770,15 +771,16 @@ contains
     character(9) :: hfmt = 'ES22.14e3'
 
     ! remove shift applied at beginning
-    s%x = s%x + s%xshift
-    s%y = s%y + s%yshift
+    s%x(:) = s%x(:) + s%xshift
+    s%y(:) = s%y(:) + s%yshift
     do i=1,s%nPart
-       p(i)%r(2:3) = p(i)%r(2:3) + [s%xshift,s%yshift]
+       p(i)%r(:,2) = p(i)%r(:,2) + s%xshift
+       p(i)%r(:,3) = p(i)%r(:,3) + s%yshift
     end do
 
     select case (s%output)
     case (1) 
-       ! ** GnuPlot contour map friendly output **
+       ! ** Gnuplot contour map friendly output **
        ! print results as x,y,{h,v,dh} "triplets" with the given times separated by double blank lines
 
        open(unit=20, file=s%outfname, status='replace', action='write')
@@ -815,7 +817,7 @@ contains
        close(20)
 
        write(*,'(/A)') '***********************************************************'
-       write(*,'(2A)') ' GnuPlot contour map style output written to ', trim(s%outfname)
+       write(*,'(2A)') ' Gnuplot contour map style output written to ', trim(s%outfname)
        write(*,'(A)')  '***********************************************************'
 
        !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -894,7 +896,7 @@ contains
        !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     case (3)
 
-       ! ** GnuPlot-friendly time series output **
+       ! ** Gnuplot-friendly time series output **
        ! column of time values at a location through time
        ! locations separated by blank lines
        open(unit=20, file=s%outfname, status='replace', action='write')
@@ -924,13 +926,13 @@ contains
        close(20)
 
        write(*,'(/A)') '***********************************************************'
-       write(*,'(2A)') 'GnuPlot style output written to ', trim(s%outfname)
+       write(*,'(2A)') 'Gnuplot style output written to ', trim(s%outfname)
        write(*,'(A)') '***********************************************************'
 
        !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     case (11)
 
-       ! ** GnuPlot-friendly time series output **
+       ! ** Gnuplot-friendly time series output **
        ! column of time values at a location through time
        ! locations separated by blank lines (no velocity)
        open(unit=20, file=s%outfname, status='replace', action='write')
@@ -957,7 +959,7 @@ contains
        close(20)
 
        write(*,'(/A)') '***********************************************************'
-       write(*,'(2A)') 'GnuPlot style output written to ', trim(s%outfname)
+       write(*,'(2A)') 'Gnuplot style output written to ', trim(s%outfname)
        write(*,'(A)') '***********************************************************'
 
        !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -989,7 +991,7 @@ contains
        !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     case (4)
 
-       ! ** pathline GnuPlot-style output **
+       ! ** pathline Gnuplot-style output **
        ! columns of time values for starting locations
        ! particles separated by blank lines
        open(unit=20, file=s%outfname, status='replace', action='write')
@@ -1014,7 +1016,7 @@ contains
        !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     case (5)
 
-       ! ** streakline GnuPlot-style output **
+       ! ** streakline Gnuplot-style output **
        ! this requires constant time steps (can't use adaptive integration)
        ! each block is a requested time, each row a particle
 

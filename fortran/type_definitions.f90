@@ -262,8 +262,8 @@ module type_definitions
      logical :: InclIn = .false.
      
      ! results from particle tracking (for each particle)
-     ! first dimension is always 5 (t,x,y,velx,vely)
-     ! second dimension is long enough to hold all needed times
+     ! first dimension is long enough to hold all needed times
+     ! second dimension is always 5 (t,x,y,velx,vely)
      real(DP), allocatable :: r(:,:)
 
      ! number of time steps actuall used (some algorithms are adaptive)
