@@ -46,6 +46,7 @@ contains
 
     character(4) :: chint
     character(20), dimension(3) :: fmt
+    character(512)  :: input
     character(46) :: lfmt = '(I0,1X,    (ES12.5,1X),A,    (ES12.5,1X),A,I0)'
     character(lenFN+5) :: echofname
     character(lenFN) :: circleFname, ellipseFname, particleFname
@@ -160,10 +161,21 @@ contains
        stop 2080
     end if
     allocate(sol%x(sol%nx), sol%y(sol%ny), sol%t(sol%nt))
+    if (.not. sol%contour) then
+       allocate(sol%obsname(sol%nx))
+       read(15,'(512A)') input
+       do j=1,sol%nx
+          sol%obsname(j) = input(8*(j-1)+1:8*j)
+       end do
+       print *, input
+    else 
+       allocate(sol%obsname(0))
+       read(15)
+    end if
     read(15,*,iostat=ierr) sol%x(:)
-    if (ierr /= 0) stop 'error on line 5 (sol%x(:)) of input file'
+    if (ierr /= 0) stop 'error on (sol%x(:)) of input file'
     read(15,*,iostat=ierr) sol%y(:)
-    if (ierr /= 0) stop 'error on line 6 (sol%y(:)) of input file'
+    if (ierr /= 0) stop 'error on (sol%y(:)) of input file'
 
     ! shift xy values (usefull when x and y are something like UTM coordinates)
     sol%xshift = minval(sol%x)
@@ -902,7 +914,7 @@ contains
        open(unit=20, file=s%outfname, status='replace', action='write')
        write (20,'(A)') '# LT-AEM time series output   -*-auto-revert-*-'      
        do i = 1, s%nx
-          write (20,'(2(A,'//xfmt//'))') '# location: x=',s%x(i),' y=',s%y(i)
+          write (20,'(2(A,'//xfmt//'),3X,A)') '# location: x=',s%x(i),' y=',s%y(i),s%obsname(i)
           write (20,'(A)',advance='no')  '#     time              head'//&
                & '                  velx                vely'
           if (s%deriv) then
@@ -938,7 +950,7 @@ contains
        open(unit=20, file=s%outfname, status='replace', action='write')
        write (20,'(A)') '# LT-AEM time series output    -*-auto-revert-*-'
        do j = 1, s%nx
-          write (20,'(2(A,'//xfmt//'))') '# location: x=',s%x(j),' y=',s%y(j)
+          write (20,'(2(A,'//xfmt//'),3X,A)') '# location: x=',s%x(j),' y=',s%y(j),s%obsname(j)
           if (s%deriv) then
              write (20,'(A)')   '#     time              head             deriv'
           else

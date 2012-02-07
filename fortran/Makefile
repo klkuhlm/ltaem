@@ -53,7 +53,7 @@ CPP=-cpp
 DFLAGS=-O0 -Wall -Wextra -g3 -fno-realloc-lhs -std=f2008 
 DFLAGS+=-frange-check -fbounds-check -fcheck=all 
 ##DFLAGS+=-fdump-rtl-expand
-PFLAGS=-Ofast -march=native -fno-realloc-lhs  -msse2
+PFLAGS=-Ofast -march=native -fno-realloc-lhs -msse2
 #################################
 
 BFLAGS=$(PFLAGS) 
@@ -62,7 +62,7 @@ PFLAGS+=$(PFLAGEXTRA) $(OMP)
 # switch between performance or debugging flags
 FLAGS=$(DFLAGS)
 
-LINKFLAG=$(FLAGS) -fbacktrace $(OMP) -flto-report
+LINKFLAG=$(FLAGS) -fbacktrace $(OMP)
 
 # the link step
 main: $(OBJS) $(MAIN)

@@ -226,6 +226,7 @@ module type_definitions
      integer :: nx = -999, ny = -999, nt = -999
      real(DP) :: xshift = -999., yshift = -999.
      real(DP), allocatable :: x(:), y(:), t(:)
+     character(8), allocatable :: obsname(:)
 
      ! compute log-derivative of solution?
      logical :: deriv = .false.
