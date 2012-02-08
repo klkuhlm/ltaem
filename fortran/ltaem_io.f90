@@ -102,7 +102,7 @@ contains
             &output is selected ',sol%output,', ',sol%contour
        stop 203
     elseif ((sol%output /= 3 .and. sol%output /= 11) .and. .not. sol%contour) then
-       write(*,*) 'input file (line 1) sol%output should be in {3,11} when hydrograph &
+       write(*,*) 'input file (line 1) sol%output should be in {3,11} when time-series &
             &(non-contour) output is selected ',sol%output,', ',sol%contour
        stop 204
     end if
@@ -157,7 +157,7 @@ contains
        stop 208
     end if
     if (.not. sol%contour .and. sol%nx /= sol%ny) then
-       write(*,*) 'for hydrograph-type output nx==ny.  nx=',sol%nx,' ny=',sol%ny
+       write(*,*) 'for time series output nx==ny.  nx=',sol%nx,' ny=',sol%ny
        stop 2080
     end if
     allocate(sol%x(sol%nx), sol%y(sol%ny), sol%t(sol%nt))
@@ -167,7 +167,6 @@ contains
        do j=1,sol%nx
           sol%obsname(j) = input(8*(j-1)+1:8*j)
        end do
-       print *, input
     else 
        allocate(sol%obsname(0))
        read(15)
@@ -186,7 +185,7 @@ contains
     do j=1,sol%nt  !! modified to accommidate pest (make time a column)
        read(15,*,iostat=ierr) sol%t(j)
        if (ierr /= 0 .or. sol%t(j) < epsilon(0.0))  then
-          print *, 'error reading non-zero time from input (> line 6); time row',j,'t:',sol%t(j)
+          write(*,*) 'error reading non-zero time from input (> line 6); time row',j,'t:',sol%t(j)
           stop 999
        end if
     end do

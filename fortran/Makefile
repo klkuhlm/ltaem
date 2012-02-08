@@ -47,13 +47,13 @@ OBJS=$(EXTERNAL) constants.o $(KKLOW) geometryUtil.o $(KKHIGH)
 ###########################################
 
 ## gfortran #################
-F90=gfortran-4.7 # must be >= 4.7 (development version)
+F90=gfortran-4.6 # must be >= 4.6.1
 OMP=-fopenmp 
 CPP=-cpp
-DFLAGS=-O0 -Wall -Wextra -g3 -fno-realloc-lhs -std=f2008 
+DFLAGS=-O0 -Wall -Wextra -g -std=f2008 
 DFLAGS+=-frange-check -fbounds-check -fcheck=all 
 ##DFLAGS+=-fdump-rtl-expand
-PFLAGS=-Ofast -march=native -fno-realloc-lhs -msse2
+PFLAGS=-O3 -march=native -msse2
 #################################
 
 BFLAGS=$(PFLAGS) 

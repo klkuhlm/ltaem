@@ -22,7 +22,7 @@
 
 ! this is the driver routine for LT-AEM programs, which 
 ! can compute a time-domain solution either on a grid of locations and times,
-! at a single point through time (i.e., hydrograph), or at a particle location through
+! at a single point through time (i.e., time series), or at a particle location through
 ! space and time.  The solution depends on the given properties of circular and 
 ! elliptical elements.  Wells or points are treated as special case circles, and lines are
 ! treated as special case ellipses.
@@ -331,7 +331,7 @@ program ltaem_main
      end do
      !$OMP END PARALLEL DO
 
-  else ! hydrograph output (x,y locations are in pairs; e.g. inner product)
+  else ! time-series output (x,y locations are in pairs; e.g. inner product)
 
      write(*,'(A)') 'compute solution for plotting time series'
      allocate(sol%h(sol%nx,1,sol%nt), hp(tnp), sol%v(sol%nx,1,sol%nt,2), vp(tnp,2), stmp(tnp))
@@ -341,7 +341,7 @@ program ltaem_main
      
      !$OMP PARALLEL DO PRIVATE(calcZ,hp,vp,lot,hit,lop,hip,stmp) SHARED(sol)
      do i = 1,sol%nx
-        write(*,'(A,2(1X,ES14.7E1))') 'location:',sol%x(i),sol%y(i)
+        write(*,'(A,2(3X,ES14.7E1))') sol%obsname(i),sol%xshift+sol%x(i),sol%yshift+sol%y(i)
 
         stmp(1:tnp) = reshape(s,[tnp])
 

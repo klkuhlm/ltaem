@@ -203,7 +203,7 @@ module type_definitions
      ! (only one value for all particles)
      integer :: streakSkip = -999
 
-     ! calculate contours (thru space) vs. calculate hydrographs (thru time)
+     ! calculate contours (thru space) vs. calculate time series
      logical :: contour = .false.
      ! re-calculate coefficient matrix, or load saved file (BGcoefffname)
      logical :: calc = .false.
@@ -212,13 +212,13 @@ module type_definitions
      character(lenFN) :: outfname='unset', infname='unset'
      character(lenFN) :: coefffname='unset', elemHfName='unset', geomFname='unset'
      
-     ! output index (1= Gnuplot map (x,y,z triplets; times separated by blank lines);
+     ! output index  1= Gnuplot map (x,y,z triplets; times separated by blank lines);
      !               2= Matlab map (matrix output separate files);
-     !               3= Gnuplot hydrograph with velocity (column of times; locs sep. by blank lines);
+     !               3= Gnuplot time series with velocity (column of times; locs sep. by blank lines);
      !               4= pathline Gnuplot (column of times, particles separated by blank lines);
      !               5= streakline Gnuplot (each block a requested time, each row a particle);
      !               10= Matlab for SCEM-UA inverse (column of times, locs sep. by blank lines);
-     !               11= Gnuplot hydrograph no velocity (same as 3 no vel);)
+     !               11= Gnuplot time serires no velocity (same as 3 no vel);
      ! aquitardLeak and unconfined
      integer :: output = -999, aquitardLeak = -999, unconfined= -999
      
