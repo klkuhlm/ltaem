@@ -98,6 +98,10 @@ module type_definitions
      logical ::  unconfinedFlag = .false.
      real(DP) :: Sy = -999., Kz = -999.
 
+     ! dual-porosity related (flag, matrix storativity, matrix/fracture exchange param)
+     logical :: dualPorosityFlag = .false.
+     real(DP) :: matrixSs = -999., lambda = -999.
+
      ! specified value across area of element (including background)
      real(DP) :: areaQ = -999.   
 

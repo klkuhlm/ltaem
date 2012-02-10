@@ -72,10 +72,15 @@ contains
     !! unconfined-ness (if confined do nothing)
     !! ##############################
     if(el%unconfinedFlag) then
-
        ! results of integrating Neuman 1972 unconfined solution from 0 -> b in z
-!!$       q(1:np) = q(:) + el%Sy*p(:)/(el%b*el%K)
        q(1:np) = q(:) + el%Kz*p(:)/(el%K*el%b*(el%Kz/el%Sy + p(:)))
+    end if
+    
+    !! dual porosity (if single porosity do nothing)
+    if(el%dualPorosityFlag) then
+       ! solution adapted from Dougherty and Babu (1984, WRR)
+       q(1:np) = q(:) + &
+            & (1.0 - el%lambda/(el%matrixSs*p(:) + el%lambda))*el%lambda/el%K 
     end if
     
     !! sources are only additive under the square root

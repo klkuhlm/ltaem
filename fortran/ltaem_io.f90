@@ -137,6 +137,14 @@ contains
        stop 207
     end if
 
+    read(15,*,iostat=ierr) bg%matrixSs, bg%lambda, bg%dualPorosityFlag
+    if (ierr /= 0) stop 'error on dual-porosity line of input'
+    if (any([bg%matrixSs,bg%lambda] < spacing(0.0))) then
+       write(*,*) 'dual porosity line of input: matrixSs and lambda must be > 0.0',&
+            & bg%matrixSs, ', ',bg%lambda
+       stop 2070
+    end if
+    
     ! echo input from first 3 lines to file
     write(16,'(4(L1,1X),I0,5(1X,A))') sol%calc, sol%particle, sol%contour, sol%deriv, &
          & sol%output, trim(sol%outFname), trim(sol%coeffFName), trim(sol%elemHfName), &
@@ -147,6 +155,8 @@ contains
          & '  ||   background props: por, k, Ss, leaky flag, K2, Ss2, b2, ellipse MS, ellipse cutoff'
     write(16,'(2(ES12.5,1X),L1,1X,ES12.5,A)') bg%Sy, bg%kz, bg%unconfinedFlag, &
          & bg%b, '  || background props: Sy, Kz, unconfined?, BGb'
+    write(16,'(2(ES12.5,1X),L1,A)') bg%matrixSs, bg%lambda, bg%unconfinedFlag, &
+         & bg%b, '  || background props: matrixSs, matrix/fracture lambda, dual porosity?'
     
     ! desired solution points/times
     read(15,*,iostat=ierr) sol%nx, sol%ny, sol%nt
@@ -355,6 +365,20 @@ contains
           stop 223
        end if      
 
+       read(22,*) c(:)%dualPorosityFlag
+       read(22,*) c(:)%matrixSs
+       if (any(c%matrixSs < spacing(0.0))) then
+          write(*,*) 'c%matrixSs must be > 0.0', c%matrixSs
+          stop 2230
+       end if
+
+       read(22,*) c(:)%lambda
+       if (any(c%lambda < 0.0)) then
+          write(*,*) 'c%lambda (matrix/fracture connection)'//&
+               &' must be non-negative', c%lambda
+          stop 2231
+       end if
+
        read(22,*) c(:)%dskin ! dimensionless skin
        if (any(c%dskin < spacing(0.0))) then
           write(*,*) 'c%Dskin must be > 0.0 ',c%dskin
@@ -404,7 +428,10 @@ contains
        write(16,fmt(3)) c(:)%Sy,             '  ||     circle aquifer specific yield'
        write(16,fmt(3)) c(:)%Kz,             '  ||     circle aquifer vertical K'
        write(16,fmt(3)) c(:)%b,              '  ||    circle aquifer thickness'
-       write(16,fmt(3)) c(:)%dskin,          '  ||    circle boundary dimensionless skin factor'
+       write(16,fmt(2)) c(:)%dualPorosityFlag,'  ||     circle dual porosity flag'
+       write(16,fmt(3)) c(:)%matrixSs,        '  ||     circle matrix Ss'
+       write(16,fmt(3)) c(:)%lambda,          '  ||     circle matrix/fracture connection lambda'
+       write(16,fmt(3)) c(:)%dskin,           '  ||    circle boundary dimensionless skin factor'
 
 
        ! minor checking / correcting
@@ -582,6 +609,20 @@ contains
           stop 241
        end if
 
+       read(22,*) e(:)%dualPorosityFlag
+       read(22,*) e(:)%matrixSs
+       if (any(e%matrixSs < spacing(0.0))) then
+          write(*,*) 'e%matrixSs must be > 0.0', e%matrixSs
+          stop 2410
+       end if
+
+       read(22,*) e(:)%lambda
+       if (any(e%lambda < 0.0)) then
+          write(*,*) 'e%lambda (matrix/fracture connection)'//&
+               &' must be non-negative', e%lambda
+          stop 2411
+       end if
+
        read(33,*) e(:)%dskin
        if (any(e%dskin < spacing(0.0))) then
           write(*,*) 'e%dskin must be > 0.0 ',e%dskin
@@ -634,7 +675,10 @@ contains
        write(16,fmt(3)) e(:)%Sy,             '  ||   ellipse aquifer specific yield'
        write(16,fmt(3)) e(:)%Kz,             '  ||   ellipse aquifer vertical K'
        write(16,fmt(3)) e(:)%b,              '  ||   ellipse aquifer thickness'
-       write(16,fmt(3)) e(:)%dskin,          '  ||   ellipse boundary dimensionless skin factor'
+       write(16,fmt(2)) e(:)%dualPorosityFlag,'  ||     ellipse dual porosity flag'
+       write(16,fmt(3)) e(:)%matrixSs,        '  ||     ellipse matrix Ss'
+       write(16,fmt(3)) e(:)%lambda,          '  ||     ellipse matrix/fracture connection lambda'
+       write(16,fmt(3)) e(:)%dskin,           '  ||   ellipse boundary dimensionless skin factor'
     else
        ! no elliptical elements
        allocate(e(0))
