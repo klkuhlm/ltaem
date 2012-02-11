@@ -155,8 +155,8 @@ contains
          & '  ||   background props: por, k, Ss, leaky flag, K2, Ss2, b2, ellipse MS, ellipse cutoff'
     write(16,'(2(ES12.5,1X),L1,1X,ES12.5,A)') bg%Sy, bg%kz, bg%unconfinedFlag, &
          & bg%b, '  || background props: Sy, Kz, unconfined?, BGb'
-    write(16,'(2(ES12.5,1X),L1,A)') bg%matrixSs, bg%lambda, bg%unconfinedFlag, &
-         & bg%b, '  || background props: matrixSs, matrix/fracture lambda, dual porosity?'
+    write(16,'(2(ES12.5,1X),L1,A)') bg%matrixSs, bg%lambda, bg%dualPorosityFlag, &
+         & '  || background props: matrixSs, matrix/fracture lambda, dual porosity?'
     
     ! desired solution points/times
     read(15,*,iostat=ierr) sol%nx, sol%ny, sol%nt
@@ -179,7 +179,7 @@ contains
        end do
     else 
        allocate(sol%obsname(0))
-       read(15)
+       read(15,*)
     end if
     read(15,*,iostat=ierr) sol%x(:)
     if (ierr /= 0) stop 'error on (sol%x(:)) of input file'
@@ -187,8 +187,8 @@ contains
     if (ierr /= 0) stop 'error on (sol%y(:)) of input file'
 
     ! shift xy values (usefull when x and y are something like UTM coordinates)
-    sol%xshift = minval(sol%x)
-    sol%yshift = minval(sol%y)
+    sol%xshift = (maxval(sol%x) - minval(sol%x))/2.0
+    sol%yshift = (maxval(sol%y) - minval(sol%y))/2.0
     sol%x(:) = sol%x(:) - sol%xshift
     sol%y(:) = sol%y(:) - sol%yshift
 
