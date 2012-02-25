@@ -1,16 +1,16 @@
 !
 ! Copyright (c) 2011 Kristopher L. Kuhlman (klkuhlm at sandia dot gov)
-! 
+!
 ! Permission is hereby granted, free of charge, to any person obtaining a copy
 ! of this software and associated documentation files (the "Software"), to deal
 ! in the Software without restriction, including without limitation the rights
 ! to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 ! copies of the Software, and to permit persons to whom the Software is
 ! furnished to do so, subject to the following conditions:
-! 
+!
 ! The above copyright notice and this permission notice shall be included in
 ! all copies or substantial portions of the Software.
-! 
+!
 ! THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 ! IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 ! FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -20,7 +20,7 @@
 ! THE SOFTWARE.
 !
 
-! this module contains the basic functions defining the head or flux 
+! this module contains the basic functions defining the head or flux
 ! effects of a circular element.
 
 module circular_elements
@@ -32,7 +32,7 @@ module circular_elements
   interface circle_match
      module procedure circle_match_self, circle_match_other
   end interface
-    
+
 contains
   function circle_match_self(c,p) result(r)
     use constants, only : DP, PI
@@ -67,7 +67,7 @@ contains
        ! simple well has no unknowns
        ! only appears on RHS of other elements
        loM = 1
-       hiM = M       
+       hiM = M
        if (c%storIn) then
           nrows = M ! one unknown, one? matching point
           ncols = 1
@@ -81,7 +81,7 @@ contains
           ! then need to compute solutions on both sides (even if
           ! only computing on the inside -- just to be safe)
           nrows = M
-          ncols = 4*N-2 
+          ncols = 4*N-2
           ! only flux or head matching, so loM:him = 1:M
           loM = 1
           hiM = M
@@ -112,11 +112,11 @@ contains
           r%LHS(1:M,3*N:4*N-2) = -smat(:,1:N-1)/c%K ! d_n head
        end if
     end if
-    
+
     ! matching or specified total flux
     if (c%ibnd == 0 .or. c%ibnd == +1 .or. (c%ibnd == 2 .and. c%storIn)) then
        allocate(Bn(0:N-1), dBn(0:N-1))
-       kap = kappa(p,c%parent) 
+       kap = kappa(p,c%parent)
        call dBK(kap*c%r,N,Bn(0:N-1),dBn(0:N-1))
        dBn(0:N-1) = kap*dBn(0:N-1)
 
@@ -127,13 +127,13 @@ contains
           kap = kappa(p,c%element)
           call dBI(kap*c%r,N,Bn(0:N-1),dBn(0:N-1))
           dBn(0:N-1) = kap*dBn(0:N-1)
-          
+
           r%LHS(loM:hiM,2*N:3*N-1) = -spread(dBn(0:N-1)/Bn(0:N-1),1,M)*cmat(:,0:N-1) ! c_n flux
           r%LHS(loM:hiM,3*N:4*N-2) = -spread(dBn(1:N-1)/Bn(1:N-1),1,M)*smat(:,1:N-1) ! d_n flux
        end if
        deallocate(Bn,dBn)
     end if
-    
+
     ! setup RHS
     select case(c%ibnd)
     case(-1)
@@ -225,7 +225,7 @@ contains
        ! specified flux/head w/o calc inside
        ncols = 2*N-1
     end if
-    
+
     allocate(r%LHS(nrows,ncols), r%RHS(nrows))
     r%LHS = 0.0
     r%RHS = 0.0
@@ -238,7 +238,7 @@ contains
           cmat(1:M,0:N-1) = cos(outer(c%G(targ)%Pgm(:),vi(0:N-1)))
           smat(1:M,1:N-1) = sin(outer(c%G(targ)%Pgm(:),vi(1:N-1)))
 
-          ! setup LHS 
+          ! setup LHS
           ! $$$$$$$$$$ head effects of source (c) on target (el) $$$$$$$$$$
           ! for matching or specified total head target elements
           if (el%ibnd == 0 .or. el%ibnd == -1) then
@@ -305,7 +305,7 @@ contains
              ! flux effects of source circle on target element
              if (dom%inclBg(src,targ)) then
                 ! use exterior Bessel functions (Kn)
-                kap = kappa(p,c%parent) 
+                kap = kappa(p,c%parent)
                 call dBK(kap*c%G(targ)%Rgm(:),N,Bn(:,0:N-1),dBn(:,0:N-1))
                 dBn(1:M,0:N-1) = kap*dBn(:,0:N-1)
                 Bn0(0:N-1) = bK(kap*c%r,N)
@@ -363,10 +363,10 @@ contains
                    ! need head effects too
                    r%LHS(1:M,loN:loN+N-1) = Bn(:,0:N-1)/spread(Bn0(0:N-1),1,M)*cmat/K
                    r%LHS(1:M,loN+N:hiN) =   Bn(:,1:N-1)/spread(Bn0(1:N-1),1,M)*smat(:,1:N-1)/K
-                   
+
                    ! head effects of element
                    r%LHS(1:M,loN:hiN) = -(el%r*p/el%parent%T)*r%LHS(1:M,loN:hiN)
-                   
+
                    ! radial flux effects of element
                    r%LHS(1:M,loN:hiN) = (r%LHS + (2.0 + el%r**2*el%dskin*p/el%parent%T)* &
                         & (dPot_dX*spread(cos(el%Pcm),2,2*N-1) + &
@@ -393,7 +393,7 @@ contains
     if (c%ibnd == 2 .and. (.not. c%storin)) then
 
        if (nrows > 0) then
-   
+
           ! save flux effects of well onto RHS
           if (dom%inclBg(src,targ)) then
              ! source well in background of target element
@@ -402,16 +402,16 @@ contains
              ! source well inside target element
              factor = 1.0_DP
           end if
-          
+
           r%RHS(loM:hiM) = factor*well(c,p)*r%LHS(loM:hiM,1)
        end if
-       
+
        if (el%ibnd == 0) then
           hiM = 2*M
        else
           hiM = M
        end if
-       
+
        deallocate(r%LHS)
        allocate(r%LHS(nrows,0))
     end if
@@ -429,13 +429,13 @@ contains
     complex(DP), intent(in) :: p
     complex(DP) :: a0, kap
     complex(DP), dimension(0:1) ::Kn
-    
+
     kap = kappa(p,c%parent)
     Kn(0:1) = bK(kap*c%r,2)
     ! TODO: should this have a factor of "b" in the denominator?
     a0 = Kn(0)*timef(p,c%time,.false.)*c%bdryQ/(2.0*PI*c%r*Kn(1)*kap)
   end function well
-  
+
   function storwell(c,p) result(a0)
     ! this function returns the a_0 coefficient for a
     ! well with wellbore storage and skin
@@ -443,13 +443,13 @@ contains
     use kappa_mod, only : kappa
     use type_definitions, only : circle
     use bessel_functions, only : bK
-    
+
     type(circle), intent(in) :: c
     complex(DP), intent(in) :: p
     complex(DP) :: a0, kap
     complex(DP), dimension(0:1) :: Kn
 
-    kap = kappa(p,c%parent)    
+    kap = kappa(p,c%parent)
     Kn(0:1) = bK(kap*c%r,2)
     ! TODO : should this have a factor of "b" in the denominator?
     ! TODO : off by a factor of 1/kappa?
@@ -466,7 +466,7 @@ contains
 
     complex(DP), dimension(:), intent(in) :: p
     type(circle), intent(in) :: c
-    integer, intent(in) :: lo,hi 
+    integer, intent(in) :: lo,hi
     real(DP), intent(in) :: Rgp, Pgp
     logical, intent(in) :: inside
     complex(DP), dimension(size(p,1)) :: H
@@ -482,16 +482,16 @@ contains
 
     if (inside) then
        if (c%ibnd == 0) then
-          n0 = 2*N ! inside of matching circle 
+          n0 = 2*N ! inside of matching circle
        else
           n0 = 1   ! inside of specified {head,flux} boundary circle
        end if
        kap(1:np) = kappa(p(:),c%element)
        BRgp(1:np,0:N-1) = bI(Rgp*kap(:),N)
        BR0(1:np,0:N-1) =  bI(c%r*kap(:),N)
-       
+
     else
-       n0 = 1 
+       n0 = 1
        kap(1:np) = kappa(p(:),c%parent)
        BRgp(1:np,0:N-1) = bK(Rgp*kap(:),N)
        BR0(1:np,0:N-1) =  bK(c%r*kap(:),N)
@@ -501,7 +501,7 @@ contains
     ! c_n for specified 1:N,      for matching 2N:3N-1
     ! d_n for specified N+1:2N-1, for matching 3N:4N-2
 
-    ! if outside >> a_n is 1:N, b_n is N+1:2N-1 
+    ! if outside >> a_n is 1:N, b_n is N+1:2N-1
 
     aa(1:np,0:N-1) = c%coeff(lo:hi,n0:n0+N-1) ! a_n or c_n
     bb(1:np,0) = 0.0 ! make odd/even conformable
@@ -522,7 +522,7 @@ contains
 
     complex(DP), dimension(:), intent(in) :: p
     type(circle), intent(in) :: c
-    integer, intent(in) :: lo,hi 
+    integer, intent(in) :: lo,hi
     real(DP), intent(in) :: Rgp, Pgp
     logical, intent(in) :: inside
     complex(DP), dimension(size(p,1),2) :: dH ! dPot_dR, dPot_dTheta
@@ -559,14 +559,14 @@ contains
     bb(1:np,1:N-1) = c%coeff(lo:hi,n0+N:n0+2*N-2)
 
     ! dPot_dR
-    dH(1:np,1) = sum(dBRgp(1:np,0:N-1)/BR0(1:np,0:N-1)* &  
+    dH(1:np,1) = sum(dBRgp(1:np,0:N-1)/BR0(1:np,0:N-1)* &
          & ( aa(1:np,0:N-1)*spread(cos(vr(0:N-1)*Pgp),1,np) + &
          &   bb(1:np,0:N-1)*spread(sin(vr(0:N-1)*Pgp),1,np) ),dim=2)
 
     ! dPot_dTheta
-    dH(1:np,2) = sum(BRgp(1:np,0:N-1)/BR0(1:np,0:N-1)*spread(vr(0:N-1),1,np)* &  
+    dH(1:np,2) = sum(BRgp(1:np,0:N-1)/BR0(1:np,0:N-1)*spread(vr(0:N-1),1,np)* &
          & ( bb(1:np,0:N-1)*spread(cos(vr(0:N-1)*Pgp),1,np) - &
-         &   aa(1:np,0:N-1)*spread(sin(vr(0:N-1)*Pgp),1,np) ),dim=2)    
+         &   aa(1:np,0:N-1)*spread(sin(vr(0:N-1)*Pgp),1,np) ),dim=2)
 
   end function circle_deriv
 end module circular_elements

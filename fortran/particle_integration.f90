@@ -1,16 +1,16 @@
 !
 ! Copyright (c) 2011 Kristopher L. Kuhlman (klkuhlm at sandia dot gov)
-! 
+!
 ! Permission is hereby granted, free of charge, to any person obtaining a copy
 ! of this software and associated documentation files (the "Software"), to deal
 ! in the Software without restriction, including without limitation the rights
 ! to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 ! copies of the Software, and to permit persons to whom the Software is
 ! furnished to do so, subject to the following conditions:
-! 
+!
 ! The above copyright notice and this permission notice shall be included in
 ! all copies or substantial portions of the Software.
-! 
+!
 ! THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 ! IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 ! FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -53,12 +53,12 @@ contains
     real(DP), parameter :: SAFETY = 0.9
 
     ns = size(s,dim=1)
-    pt = p%ti 
+    pt = p%ti
     px = p%x
     py = p%y
-    dt = p%dt       
+    dt = p%dt
     if (.not. p%forward) dt = -dt ! backwards particle tracking
-    
+
     p%r(0,1:3) = [pt,px,py]
     count = 1
 
@@ -80,7 +80,7 @@ contains
        vTrap = L(pt+dt/3.0,tee(lt), V(FwdEuler,s(:,lt),los,his,dom,c,e,bg), sol%INVLT)
        Trap(1:2) = x0(1:2) + dt/6.0*(vInit(1:2) + vTrap(1:2))
 
-       ! Adams-Bashforth 1/2-step predictor 
+       ! Adams-Bashforth 1/2-step predictor
        vAB3 = L(pt+dt/3.0,tee(lt), V(Trap,s(:,lt),los,his,dom,c,e,bg), sol%INVLT)
        halfAB(1:2) = x0(1:2) + dt/8.0*(vInit(1:2) + 3*vAB3(1:2))
 
@@ -101,7 +101,7 @@ contains
        length = abs(v2c(Simp) - v2c(x0))
 
        ! only advance to next step if error level is acceptable
-       ! _and_ resulting step is less than prescribed limit 
+       ! _and_ resulting step is less than prescribed limit
        ! _or_ we have gotten to the minimum step size (proceed anyways)
        if ((error < p%tol .and. length <= p%maxL) .or. abs(dt) <= p%mindt) then
           pt = pt + dt
@@ -109,14 +109,14 @@ contains
           py = Simp(2)
           p%r(count,1:3) = [pt,px,py]
           ! velocity associated with previous step
-          p%r(count-1,4:5) = vSF(1:2) 
+          p%r(count-1,4:5) = vSF(1:2)
           count = count + 1
 
           partEnd = sinkCheck(px,py,c,e)
-          
+
           if (partEnd) then
              write(*,'(A,I0,A,ES13.6E2)') 'particle ',p%id,' entered a sink at t=',pt
-          else 
+          else
              if (count == ubound(p%r,dim=1)) then
                 ! if out of space in results array double the size
                 call reallocate(p,ubound(p%r,dim=1)*2)
@@ -124,7 +124,7 @@ contains
           end if
        end if
 
-       ! new step size based on error estimate: 
+       ! new step size based on error estimate:
        ! Numerical Recipes, Press et al 1992, eqn 16.2.10, p 712
        if ((.not. partEnd) .and. (.not. trackDone(p%forward,pt,p%tf))) then
 
@@ -192,7 +192,7 @@ contains
     numdt = ceiling((p%tf - pt)/abs(dt))
     write(*,'(A,ES12.5,A,I0)') 'step size=',dt,' number steps needed=',numdt
 
-    rk: do i = 1,numdt   
+    rk: do i = 1,numdt
        if (mod(i,20) == 0) write(*,'(I0,A,ES13.6E2)') i,' t=',pt
 
        ! see if particle will reach end this step
@@ -226,14 +226,14 @@ contains
        pt = pt + dt
        px = Simp(1)
        py = Simp(2)
-       
+
        p%r(i,1:3) = [pt,px,py]
        p%r(i-1,4:5) = vSimp(1:2)
-       
+
        if (sinkCheck(px,py,c,e)) then
           write(*,'(A,I0,A,ES13.6E2)') 'particle ',p%id,' entered a sink at t=',pt
-          exit rk             
-       end if      
+          exit rk
+       end if
     end do rk
     p%numt = i-1
   end subroutine rungekutta
@@ -272,10 +272,10 @@ contains
 
     ! 1st order fwd Euler
     numdt = ceiling((p%tf - pt)/abs(dt))
-    
+
     write(*,'(A,I0)') '** fwd Euler integration, particle ', p%id
 
-    fe: do i = 1,numdt   
+    fe: do i = 1,numdt
        if(mod(i,100) == 0) write(*,'(I0,A,ES13.6E2)') i,' t=',pt
 
        ! see if particle will reach end this step
@@ -302,7 +302,7 @@ contains
        end if
     end do fe
     p%numt = i - 1
-          
+
   end subroutine fwdEuler
 
   !$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
@@ -339,10 +339,10 @@ contains
 
     ! 1st order fwd Euler
     numdt = ceiling((p%tf - pt)/abs(dt))
-    
+
     write(*,'(A,I0)') '** analytic Laplace space integration, particle ', p%id
 
-    an: do i = 1,numdt   
+    an: do i = 1,numdt
        if(mod(i,100) == 0) write(*,'(I0,A,ES13.6E2)') i,' t=',pt
 
        ! see if particle will reach end this step
@@ -354,7 +354,7 @@ contains
 
        ! analytic time integration in Laplace space (divide by p)
        call getsrange(pt,lo,ns,los,his,lt)
-       
+
        print *, 'i:,pt,loc',i,pt,loc
 
        ! integration in time -> division by Laplace parameter (0,t)
@@ -374,7 +374,7 @@ contains
        end if
     end do an
     p%numt = i - 1
-          
+
   end subroutine analytic
 
 
@@ -402,19 +402,19 @@ contains
           done = .false.
        end if
     end if
-    
+
   end function trackDone
-  
+
 
   !###########################################################################
   ! some common range-computing code
-  
+
   subroutine getSRange(t,lo,ns,los,his,lt)
     use constants, only : DP
     real(DP), intent(in) :: t
     integer, intent(in) :: lo,ns
     integer, intent(out) :: los,his,lt
-    
+
     lt = ceiling(log10(t))  ! what log-cycle does time fall into?
     los = (lt-lo)*ns + 1    ! low and high indices on p or s
     his = los + ns - 1
@@ -437,7 +437,7 @@ contains
 
     allocate(tmp(0:newub,5))
     tmp(0:ubound(p%r,dim=1),1:5) = p%r(0:,1:5)
-    
+
     ! see section 17.5.3 of Metcalf, Reid & Cohen
     call move_alloc(tmp,p%r)
 
@@ -482,7 +482,7 @@ contains
 
     ! TODO dealing with area-sinks is more complex, will be dealt with later
 
-999 continue      
+999 continue
   end function sinkCheck
 
 end module particle_integrate

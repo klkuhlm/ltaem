@@ -1,16 +1,16 @@
 !
 ! Copyright (c) 2011 Kristopher L. Kuhlman (klkuhlm at sandia dot gov)
-! 
+!
 ! Permission is hereby granted, free of charge, to any person obtaining a copy
 ! of this software and associated documentation files (the "Software"), to deal
 ! in the Software without restriction, including without limitation the rights
 ! to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 ! copies of the Software, and to permit persons to whom the Software is
 ! furnished to do so, subject to the following conditions:
-! 
+!
 ! The above copyright notice and this permission notice shall be included in
 ! all copies or substantial portions of the Software.
-! 
+!
 ! THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 ! IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 ! FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -20,7 +20,7 @@
 ! THE SOFTWARE.
 !
 
-! this module contains the basic functions defining the head or flux 
+! this module contains the basic functions defining the head or flux
 ! effects of a elliptical element.
 
 module elliptical_elements
@@ -40,7 +40,7 @@ contains
     use time_mod, only : timef
     use type_definitions, only : ellipse, match_result, element
     use mathieu_functions, only : ce, se, Ke, Ko, dKe, dKo, Ie, Io, dIe, dIo
-    use utility, only : ynot 
+    use utility, only : ynot
     implicit none
 
     type(ellipse), intent(in) :: e
@@ -160,10 +160,10 @@ contains
     type(domain), intent(in) :: dom
     complex(DP), intent(in) :: p
     integer, intent(in) :: idx
-    type(match_result) :: r 
+    type(match_result) :: r
 
     integer :: j, s, t, N, M, loN, hiN, loM, hiM, nrows, ncols
-    complex(DP), allocatable :: cemat(:,:), semat(:,:), dcemat(:,:), dsemat(:,:) 
+    complex(DP), allocatable :: cemat(:,:), semat(:,:), dcemat(:,:), dsemat(:,:)
     integer, dimension(0:e%N-1) :: vi
     complex(DP), allocatable :: RMn(:,:,:), dRMn(:,:,:), RMn0(:,:)
     complex(DP), allocatable :: dPot_dR(:,:), dPot_dP(:,:), dPot_dX(:,:), dPot_dY(:,:)
@@ -208,7 +208,7 @@ contains
 
           allocate(RMn(M,0:N-1,0:1), RMn0(0:N-1,0:1), cemat(M,0:N-1), semat(M,N-1))
 
-          ! setup LHS 
+          ! setup LHS
           ! for matching or specified total head target elements
           if (el%ibnd == 0 .or. el%ibnd == -1) then
 
@@ -327,7 +327,7 @@ contains
              dPot_dR(1:M,1:N) =       dRMn(:,0:N-1,0)/spread(RMn0(0:N-1,0),1,M)*cemat(:,0:N-1)
              dPot_dR(1:M,N+1:2*N-1) = dRMn(:,1:N-1,1)/spread(RMn0(1:N-1,1),1,M)*semat(:,1:N-1)
 
-             ! derivative with respect to angle of source element 
+             ! derivative with respect to angle of source element
              dPot_dP(1:M,1:N) =       RMn(:,0:N-1,0)/spread(RMn0(0:N-1,0),1,M)*dcemat(:,0:N-1)
              dPot_dP(1:M,N+1:2*N-1) = RMn(:,1:N-1,1)/spread(RMn0(1:N-1,1),1,M)*dsemat(:,1:N-1)
 
@@ -335,7 +335,7 @@ contains
              allocate(hsq(size(e%G(t)%Rgm),2*N-1))
 
              ! squared metric factor -- less a common f
-             hsq = spread(e%f/2.0*(cosh(2.0*e%G(t)%Rgm) - cos(2.0*e%G(t)%Pgm)),2,2*N-1) 
+             hsq = spread(e%f/2.0*(cosh(2.0*e%G(t)%Rgm) - cos(2.0*e%G(t)%Pgm)),2,2*N-1)
              dPot_dX = (dPot_dR*spread(sinh(e%G(t)%Rgm)*cos(e%G(t)%Pgm),2,2*N-1) - &
                       & dPot_dP*spread(cosh(e%G(t)%Rgm)*sin(e%G(t)%Pgm),2,2*N-1))/hsq
              dPot_dY = (dPot_dR*spread(cosh(e%G(t)%Rgm)*sin(e%G(t)%Pgm),2,2*N-1) + &
@@ -362,35 +362,35 @@ contains
                         & (dPot_dX*spread(cos(el%Pcm),2,2*N-1) + &
                         &  dPot_dY*spread(sin(el%Pcm),2,2*N-1))
                 else
-                   ! other element is a standard circle 
+                   ! other element is a standard circle
                    r%LHS(loM:hiM,loN:hiN) = dPot_dX*spread(cos(el%Pcm),2,2*N-1) + &
                         & dPot_dY*spread(sin(el%Pcm),2,2*N-1)
                 end if
              else
                 ! rotate to compensate for arbitrary target ellipse
                 call rotate_vel_mat(dPot_dX,dPot_dY,-el%theta)
-                
+
                 ! other element is a different ellipse
                 r%LHS(loM:hiM,loN:hiN) = dPot_dX*spread(el%f*sinh(el%r)*cos(el%Pcm(:)),2,2*N-1) + &
                      & dPot_dY*spread(el%f*cosh(el%r)*sin(el%Pcm(:)),2,2*N-1)
 
              end if
-             deallocate(dRMn,dcemat,dsemat,dPot_dR,dPot_dP,dPot_dX,dPot_dY)            
+             deallocate(dRMn,dcemat,dsemat,dPot_dR,dPot_dP,dPot_dX,dPot_dY)
           end if
           deallocate(RMn,RMn0,cemat,semat)
-          
+
           if (e%ibnd == 2) then
              ! sum line source effects and move to RHS, re-setting LHS to 0 unknowns
              ! only uses even-order even coefficients (~1/4 of 2N-1)
              r%RHS(1:hiM) = -sum(spread(line(e,p,idx),1,hiM)*r%LHS(1:hiM,1:N:2))
-             deallocate(r%LHS)            
+             deallocate(r%LHS)
              allocate(r%LHS(hiM,0))
           end if
        end if
     end if
-    
+
   end function ellipse_match_other
-  
+
   function ellipse_calc(p,e,lo,hi,Rgp,Pgp,inside) result(H)
     use constants, only : DP
     use type_definitions, only : ellipse
@@ -399,7 +399,7 @@ contains
 
     complex(DP), dimension(:), intent(in) :: p
     type(ellipse), intent(in) :: e
-    integer, intent(in) :: lo,hi 
+    integer, intent(in) :: lo,hi
     real(DP), intent(in) :: Rgp, Pgp
     logical, intent(in) :: inside
     complex(DP), dimension(size(p,1)) :: H
@@ -460,7 +460,7 @@ contains
 
     complex(DP), dimension(:), intent(in) :: p
     type(ellipse), intent(in) :: e
-    integer, intent(in) :: lo,hi 
+    integer, intent(in) :: lo,hi
     real(DP), intent(in) :: Rgp, Pgp
     logical, intent(in) :: inside
     complex(DP), dimension(size(p,1),2) :: dH ! dPot_dEta, dPot_dPsi
@@ -540,7 +540,7 @@ contains
     integer, dimension(0:e%ms-1) :: vi
     integer :: i, N, MS, nmax
 
-    N = e%N 
+    N = e%N
     MS = e%ms
     nmax = ceiling(e%N/2.0)
     forall (i=0:MS-1) vi(i) = i ! integer vector
@@ -548,13 +548,13 @@ contains
     where (mod(vi,2)==0) vs = 1.0
 
     arg(1:MS,1:nmax) = spread(vs(0:MS-1)/real(1-(2*vi(0:MS-1))**2,DP),2,nmax)
-    
+
     ! factor of 4 different from Kuhlman & Neuman (J. Eng. Mathematics) paper
     ! include Radial/dRadial MF here to balance with those in general solution
     a2n(1:nmax) = timef(p,e%time,.false.)*e%bdryQ/(2.0*PI)* &
             & Ke(e%parent%mat(idx), vi(0:N-1:2), e%r) / dKe(e%parent%mat(idx), vi(0:N-1:2), e%r)* &
             & (-vs(0:N-1:2))*sum(arg(1:MS,1:nmax)*conjg(e%parent%mat(idx)%A(1:MS,0:nmax-1,0)),dim=1)
-    
+
   end function line
 
 end module elliptical_elements

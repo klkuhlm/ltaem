@@ -1,16 +1,16 @@
 !
 ! Copyright (c) 2011 Kristopher L. Kuhlman (klkuhlm at sandia dot gov)
-! 
+!
 ! Permission is hereby granted, free of charge, to any person obtaining a copy
 ! of this software and associated documentation files (the "Software"), to deal
 ! in the Software without restriction, including without limitation the rights
 ! to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 ! copies of the Software, and to permit persons to whom the Software is
 ! furnished to do so, subject to the following conditions:
-! 
+!
 ! The above copyright notice and this permission notice shall be included in
 ! all copies or substantial portions of the Software.
-! 
+!
 ! THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 ! IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 ! FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -27,17 +27,17 @@
 
 module inverse_Laplace_Transform
   implicit none
-  
+
   private
   public :: deHoog_invlap, deHoog_pvalues
-  
+
   interface deHoog_invlap
      module procedure deHoog_invlap_vect, deHoog_invlap_scalt, &
           & deHoog_invlap_vel_scalt, deHoog_invlap_vel
   end interface
-  
+
 contains
-  
+
   !! an implementation of the de Hoog et al. method
   !! assumes proper f(p) have been computed for the p
   !! required for the vector of t passed to this function
@@ -71,7 +71,7 @@ contains
        ! Re(p) -- this is the de Hoog parameter c
        gamma = lap%alpha - log(lap%tol)/(2.0*tee)
 
-       ! initialize Q-D table 
+       ! initialize Q-D table
        e(0:2*M,0) = cmplx(0.0,0.0,DP)
        q(0,1) = fp(1)/(fp(0)/2.0) ! half first term
        q(1:2*M-1,1) = fp(2:2*M)/fp(1:2*M-1)
@@ -133,11 +133,11 @@ contains
   function deHoog_invLap_scalt(t,tee,fp,lap) result(ft)
     use constants, only : DP
     use type_definitions, only : INVLT
-    real(DP), intent(in) ::  t, tee 
+    real(DP), intent(in) ::  t, tee
     type(INVLT), intent(in) :: lap
     complex(DP), intent(in), dimension(0:2*lap%M) :: fp
     real(DP) :: ft ! output
-    
+
     ft = sum(deHoog_invLap_vect([t],tee,fp,lap))
   end function deHoog_invLap_scalt
 
@@ -168,7 +168,7 @@ contains
     ft(1) = sum(deHoog_invLap_vect([t],tee,fp(:,1),lap)) ! x vel
     ft(2) = sum(deHoog_invLap_vect([t],tee,fp(:,2),lap)) ! y vel
   end function deHoog_invLap_vel_scalt
-  
+
   pure function deHoog_pvalues(tee,lap) result(p)
     use constants, only : DP, PI
     use type_definitions, only : INVLT

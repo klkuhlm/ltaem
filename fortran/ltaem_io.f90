@@ -1,16 +1,16 @@
 !
 ! Copyright (c) 2011 Kristopher L. Kuhlman (klkuhlm at sandia dot gov)
-! 
+!
 ! Permission is hereby granted, free of charge, to any person obtaining a copy
 ! of this software and associated documentation files (the "Software"), to deal
 ! in the Software without restriction, including without limitation the rights
 ! to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 ! copies of the Software, and to permit persons to whom the Software is
 ! furnished to do so, subject to the following conditions:
-! 
+!
 ! The above copyright notice and this permission notice shall be included in
 ! all copies or substantial portions of the Software.
-! 
+!
 ! THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 ! IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 ! FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -23,15 +23,15 @@
 ! this module contains most of the I/O associated with LT-AEM
 
 module file_ops
-  implicit none  
-  
+  implicit none
+
   private
   public :: readInput, writeResults, writeGeometry
 
 contains
 
   !##################################################
-  ! this routine read the main input file, and allocates the main 
+  ! this routine read the main input file, and allocates the main
   ! data structures used to store data.
   subroutine readInput(sol,dom,bg,c,e,p)
     use constants, only : DP, lenFN, PI
@@ -66,7 +66,7 @@ contains
     else
        ! add a file variable at top of file to set Emacs to auto-revert mode
        write(16,'(A)') '-*-auto-revert-*-'
-    endif   
+    endif
 
     ! solution-specific and background aquifer parameters
     read(15,*,iostat=ierr) sol%calc, sol%particle, sol%contour, sol%deriv, sol%output, &
@@ -91,7 +91,7 @@ contains
     if ((sol%output < 4 .or. sol%output > 5) .and. sol%particle) then
        write(*,*) 'input file (line 1) if sol%particle==.True., sol%output should &
             &be in {4,5} ',sol%output,' :: ',sol%particle
-       stop 201 
+       stop 201
     elseif (.not. sol%particle .and. (sol%output == 4 .or. sol%output == 5)) then
        write(*,*) 'input file (line 1) sol%output should only be in {4,5} if &
             &sol%particle==.True. ',sol%output,', ',sol%particle
@@ -111,7 +111,7 @@ contains
     read(15,*,iostat=ierr) bg%por, bg%k, bg%ss, bg%leakFlag, &
          & bg%aquitardK, bg%aquitardSs, bg%aquitardb, bg%ms, bg%cutoff
     if (ierr /= 0) stop 'error on line 2 of input file'
-    
+
     ! reals checked here, bg%ms checked in ellipse section, leakflag checked elsewhere
     if (any([bg%por,bg%k,bg%ss] < spacing(0.0))) then
        write(*,*) 'input file (line 2) bg%por, bg%k, bg%ss &
@@ -120,7 +120,7 @@ contains
     end if
     if (any([bg%aquitardK,bg%aquitardSs,bg%aquitardb] < spacing(0.0))) then
        write(*,*) 'input file (line 2) bg%aquitardK, bg%aquitardSs, bg%aquitardb &
-            &must all be > 0.0 ',bg%aquitardK,', ',bg%aquitardSs,', ',bg%aquitardb 
+            &must all be > 0.0 ',bg%aquitardK,', ',bg%aquitardSs,', ',bg%aquitardb
        stop 206
     end if
 
@@ -144,20 +144,20 @@ contains
             & bg%matrixSs, ', ',bg%lambda
        stop 2070
     end if
-    
+
     ! echo input from first 3 lines to file
     write(16,'(4(L1,1X),I0,5(1X,A))') sol%calc, sol%particle, sol%contour, sol%deriv, &
          & sol%output, trim(sol%outFname), trim(sol%coeffFName), trim(sol%elemHfName), &
          & trim(sol%geomFname),'  ||    re-calculate coefficients?, particle?, &
          & contour?, deriv?, output flag, out/coeff/hierarchy/geometry file names'
     write(16,'(3(ES12.5,1X),L1,3(1X,ES12.5),1X,I0,ES11.4,A)') bg%por, bg%k, bg%ss, &
-         & bg%leakFlag, bg%aquitardK, bg%aquitardSs, bg%aquitardb, bg%ms, bg%cutoff, & 
+         & bg%leakFlag, bg%aquitardK, bg%aquitardSs, bg%aquitardb, bg%ms, bg%cutoff, &
          & '  ||   background props: por, k, Ss, leaky flag, K2, Ss2, b2, ellipse MS, ellipse cutoff'
     write(16,'(2(ES12.5,1X),L1,1X,ES12.5,A)') bg%Sy, bg%kz, bg%unconfinedFlag, &
          & bg%b, '  || background props: Sy, Kz, unconfined?, BGb'
     write(16,'(2(ES12.5,1X),L1,A)') bg%matrixSs, bg%lambda, bg%dualPorosityFlag, &
          & '  || background props: matrixSs, matrix/fracture lambda, dual porosity?'
-    
+
     ! desired solution points/times
     read(15,*,iostat=ierr) sol%nx, sol%ny, sol%nt
     if (ierr /= 0) stop 'error on line 4 of input file'
@@ -177,7 +177,7 @@ contains
        do j=1,sol%nx
           sol%obsname(j) = input(8*(j-1)+1:8*j)
        end do
-    else 
+    else
        allocate(sol%obsname(0))
        read(15,*)
     end if
@@ -222,7 +222,7 @@ contains
     end if
     if (sol%tol < epsilon(sol%tol)) then ! epsilon(1) ~ 1.0E-8
        sol%tol = epsilon(sol%tol)
-       write(*,'(A,ES12.5)') 'WARNING: increased INVLAP solution tolerance to ',sol%tol 
+       write(*,'(A,ES12.5)') 'WARNING: increased INVLAP solution tolerance to ',sol%tol
     end if
     write(16,'(2(ES12.5,1X),I0,A)') sol%alpha, sol%tol, sol%m,'  ||    alpha, tol, M'
 
@@ -256,7 +256,7 @@ contains
           write(*,*) 'c%ibnd must be in {-1,0,1,2} ',c%ibnd
           stop 213
        end if
-          
+
        read(22,*) c(:)%CalcIn ! calculate inside this element?
        read(22,*) c(:)%StorIn ! account for free-water storage effects inside element?
 
@@ -274,24 +274,24 @@ contains
        if (any(c%k < spacing(0.0))) then
           write(*,*) 'c%K must be > 0.0 ',c%k
           stop 215
-       end if      
+       end if
 
        read(22,*) c(:)%Ss
        if (any(c%ss < spacing(0.0))) then
           write(*,*) 'c%Ss must be > 0.0 ',c%Ss
           stop 216
-       end if      
+       end if
 
        read(22,*) c(:)%por
        if (any(c%por < spacing(0.0))) then
           write(*,*) 'c%por must be > 0.0 ',c%por
           stop 217
-       end if      
+       end if
 
        read(22,*) c(:)%areaQ ! area source strength (flux)
-       read(22,*) c(:)%bdryQ ! strength of specified value on boundary (head or flux) 
+       read(22,*) c(:)%bdryQ ! strength of specified value on boundary (head or flux)
        do j=1,size(c,dim=1)
-          read(22,'(I3)', advance='no') c(j)%AreaTime 
+          read(22,'(I3)', advance='no') c(j)%AreaTime
           if (c(j)%AreaTime > -1) then
              ! functional time behavior
              allocate(c(j)%ATPar(2))
@@ -299,7 +299,7 @@ contains
              write(16,'(I0,2(1X,ES12.5),A,I0)') c(j)%AreaTime,c(j)%ATPar(:),&
                   &'  ||  Area time behavior, par1, par2 for circle ',j
           else
-             ! piecewise-constant time behavior 
+             ! piecewise-constant time behavior
              allocate(c(j)%ATPar(-2*c(j)%AreaTime+1))
              read(22,*) c(j)%ATPar(:)
              lfmt = '(I0,1X,    (ES12.5,1X),A,    (ES12.5,1X),A,I0)'
@@ -332,38 +332,38 @@ contains
        if (any(c%aquitardK < spacing(0.0))) then
           write(*,*) 'c%aquitardK must be > 0.0 ',c%aquitardk
           stop 218
-       end if      
+       end if
 
        read(22,*) c(:)%aquitardSs
        if (any(c%aquitardSS < spacing(0.0))) then
           write(*,*) 'c%aquitardSs must be > 0.0 ',c%aquitardSs
           stop 219
-       end if      
+       end if
 
        read(22,*) c(:)%aquitardb  !aquitard thickness
        if (any(c%aquitardB < spacing(0.0))) then
           write(*,*) 'c%aquitardB must be > 0.0 ',c%aquitardB
           stop 220
-       end if      
+       end if
 
        read(22,*) c(:)%unconfinedFlag ! checking handled elsewhere
        read(22,*) c(:)%Sy
        if (any(c%sy < spacing(0.0))) then
           write(*,*) 'c%Sy must be > 0.0 ',c%sy
           stop 221
-       end if      
+       end if
 
        read(22,*) c(:)%Kz
        if (any(c%kz < spacing(0.0))) then
           write(*,*) 'c%Kz must be > 0.0 ',c%kz
           stop 222
-       end if      
+       end if
 
        read(22,*) c(:)%b  ! aquifer thickness
        if (any(c%b < spacing(0.0))) then
           write(*,*) 'c%B must be > 0.0 ',c%b
           stop 223
-       end if      
+       end if
 
        read(22,*) c(:)%dualPorosityFlag
        read(22,*) c(:)%matrixSs
@@ -383,16 +383,16 @@ contains
        if (any(c%dskin < spacing(0.0))) then
           write(*,*) 'c%Dskin must be > 0.0 ',c%dskin
           stop 224
-       end if            
+       end if
 
        close(22)
-   
+
        where (c(:)%ibnd == -1 .or. c(:)%ibnd == 0 .or. c(:)%ibnd == +1)
           c(:)%match = .true.
        elsewhere !( currently just 2)
-          c(:)%match = .false.       
+          c(:)%match = .false.
        end where
-       
+
        if(any(c%match .and. c%storin)) then
           write(*,*) 'WARNING: wellbore (free-water) storage only handled yet for ibnd==2'
           where(c%match .and. c%storin)
@@ -402,7 +402,7 @@ contains
 
        write(chint,'(I4.4)') dom%num(1)
        fmt(1) = '('//chint//'(I0,1X),A)     ' ! integer
-       fmt(2) = '('//chint//'(L1,1X),A)     ' ! logical 
+       fmt(2) = '('//chint//'(L1,1X),A)     ' ! logical
        fmt(3) = '('//chint//'(ES13.5,1X),A) ' ! real
 
        write(16,'(I0,A)') dom%num(1),        '  ||   number of circular elements (including wells)'
@@ -441,7 +441,7 @@ contains
              c(j)%N = 1
           end if
        end do
-       
+
     else
        ! no circular elements
        allocate(c(0))
@@ -480,7 +480,7 @@ contains
        if (any(e%cutoff < spacing(0.0))) then
           write(*,*) 'e%cutoff must be > 0.0 ',e%cutoff
           stop 227
-       end if      
+       end if
 
        read(33,*) e(:)%ibnd
        if (any(e%ibnd < -1 .or. e%ibnd > 2)) then
@@ -490,7 +490,7 @@ contains
 
        read(33,*) e(:)%CalcIn
        read(33,*) e(:)%StorIn
-       
+
        read(33,*) e(:)%r   ! eta
        if (any(e%r < 0.0)) then
           write(*,*) 'e%r must be >= 0.0 ',e%r
@@ -507,7 +507,7 @@ contains
           stop 231
        end if
 
-       read(33,*) e(:)%theta      
+       read(33,*) e(:)%theta
        if (any(e%theta < -PI) .or. any(e%theta > PI)) then
           write(*,*) 'e%theta must be -pi <= theta <= PI ',e%theta
           stop 232
@@ -535,7 +535,7 @@ contains
        read(33,*) e(:)%bdryQ
 
        do j=1,size(e,dim=1)
-          read(33,'(I3)', advance='no') e(j)%AreaTime 
+          read(33,'(I3)', advance='no') e(j)%AreaTime
           if (e(j)%AreaTime > -1) then
              allocate(e(j)%ATPar(2))
              read(33,*) e(j)%ATPar(:)
@@ -583,7 +583,7 @@ contains
           stop 237
        end if
 
-       read(33,*) e(:)%aquitardb  
+       read(33,*) e(:)%aquitardb
        if (any(e%aquitardb < spacing(0.0))) then
           write(*,*) 'e%aquitardb must be > 0.0 ',e%aquitardb
           stop 238
@@ -628,13 +628,13 @@ contains
           write(*,*) 'e%dskin must be > 0.0 ',e%dskin
           stop 242
        end if
-       
+
        close(33)
-       
+
        where (e(:)%ibnd == -1 .or. e(:)%ibnd == 0 .or. e(:)%ibnd == +1)
           e(:)%match = .true.
        elsewhere
-          e(:)%match = .false.       
+          e(:)%match = .false.
        end where
 
        if(any(e%storin)) then
@@ -644,7 +644,7 @@ contains
 
        write(chint,'(I4.4)') dom%num(2)
        fmt(1) = '('//chint//'(I0,1X),A)     ' ! integer
-       fmt(2) = '('//chint//'(L1,1X),A)     ' ! logical 
+       fmt(2) = '('//chint//'(L1,1X),A)     ' ! logical
        fmt(3) = '('//chint//'(ES13.5,1X),A) ' ! real
 
        write(16,'(I0,A)') dom%num(2),        '  ||   number of elliptical elements (including lines)'
@@ -656,13 +656,13 @@ contains
        write(16,fmt(2)) e(:)%match,          '  ||   ellipse matching array'
        write(16,fmt(2)) e(:)%calcin,         '  ||   calculate inside this ellipse?'
        ! TODO free-water storage for ellipses not handled yet
-       write(16,fmt(2)) e(:)%storin,         '  ||   calculate free-water storage for this ellipse?' 
+       write(16,fmt(2)) e(:)%storin,         '  ||   calculate free-water storage for this ellipse?'
        write(16,fmt(3)) e(:)%r,              '  ||   ellipse radius (eta)'
        write(16,fmt(3)) e(:)%x,              '  ||   shifted ellipse center x'
        write(16,fmt(3)) e(:)%y,              '  ||   shifted ellipse center y'
        write(16,fmt(3)) e(:)%f,              '  ||   ellipse semi-focal length'
        write(16,fmt(3)) e(:)%theta,          '  ||   ellipse angle rotation with +x axis'
-       write(16,fmt(3)) e(:)%k,              '  ||   ellipse aquifer k' 
+       write(16,fmt(3)) e(:)%k,              '  ||   ellipse aquifer k'
        write(16,fmt(3)) e(:)%ss,             '  ||   ellipse aquifer Ss'
        write(16,fmt(3)) e(:)%por,            '  ||   ellipse aquifer porosity'
        write(16,fmt(3)) e(:)%areaQ,          '  ||   ellipse area rch rate'
@@ -683,7 +683,7 @@ contains
        ! no elliptical elements
        allocate(e(0))
     end if
-    
+
     ntot = sum(dom%num) ! total number of circular and elliptical elements
     if (ntot < 1) stop 'READINPUT: Need at least one circular (including well) or&
             & elliptical (including line) element.'
@@ -732,20 +732,20 @@ contains
        if (any(p%tol < spacing(1.0D0))) then
           write(*,*) 'p%tol must be > 0.0 ',p%tol
           stop 244
-       end if      
+       end if
 
        read(44,*) p(:)%maxL  ! max step length for rkm
        if (any(p%maxL < spacing(1.0))) then
           write(*,*) 'p%maxL must be > 0.0 ',p%maxL
           stop 245
-       end if      
+       end if
 
        read(44,*) p(:)%mindt  ! min step size for rkm
        if (any(p%mindt < spacing(1.0))) then
           write(*,*) 'p%mindt must be > 0.0 ',p%mindt
           stop 246
        end if
-       
+
        read(44,*) p(:)%dt    ! time step (initial timestep for rkm)
        if (any(p%dt < spacing(1.0))) then
           write(*,*) 'p%dt must be > 0.0 ',p%dt
@@ -783,7 +783,7 @@ contains
           write(*,*) 'p%int must be {1,2,3,4} ',p%int
           stop 252
        end if
-       
+
        read(44,*) p(:)%InclIn
        close(44)
 
@@ -834,7 +834,7 @@ contains
     end do
 
     select case (s%output)
-    case (1) 
+    case (1)
        ! ** Gnuplot contour map friendly output **
        ! print results as x,y,{h,v,dh} "triplets" with the given times separated by double blank lines
 
@@ -843,7 +843,7 @@ contains
        write(20,'(A,I0)') ' # t: ', s%nt
        write(20,'(A,I0)') ' # x: ', s%nx
        write(20,'(A,I0)') ' # y: ', s%ny
-       write(20,'(A,I0)') ' # xy:', s%nx*s%ny     
+       write(20,'(A,I0)') ' # xy:', s%nx*s%ny
 
        do i = 1, s%nt
           write(20,'(A,'//tfmt//')') ' # t= ',s%t(i)
@@ -867,7 +867,7 @@ contains
              end do
           end do
           write(20,'(/)')
-       end do       
+       end do
        write(20,'(A)') '# EOF'
        close(20)
 
@@ -877,11 +877,11 @@ contains
 
        !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     case (2)
-       
+
        ! ** Matlab-friendly output **
        ! print results as matrices, with each variable (at each time) going to a separate file
        ! x and y matrices - similar to results from Matlab function meshgrid()
-       
+
        ! x-matrix has same row repeated numy times
        open(unit=20, file=trim(s%outfname)//'_x.dat', status='replace', &
             & action='write')
@@ -898,7 +898,7 @@ contains
           write (20,'('//chint(1)//'(1x,'//hfmt//'))') (s%y(i), j=1,s%nx)
        end do
        close(20)
-       
+
        do k = 1, s%nt
           write(chint(2),'(i4.4)') k
 
@@ -919,7 +919,7 @@ contains
              end do
              close(20)
           end if
-          
+
           ! velx-matrix
           open(unit=20, file=trim(s%outfname)//'_velx_'//chint(2)//'.dat', &
                & status='replace', action='write')
@@ -947,7 +947,7 @@ contains
        write(*,'(3A)') 'matlab output written to ', trim(s%outfname), &
               & '{x,y,t,{d,}head{1-n},velx{1-n},vely{1-n}}.dat'
        write(*,'(A)') '*********************************************************************'
-       
+
        !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     case (3)
 
@@ -955,7 +955,7 @@ contains
        ! column of time values at a location through time
        ! locations separated by blank lines
        open(unit=20, file=s%outfname, status='replace', action='write')
-       write (20,'(A)') '# LT-AEM time series output   -*-auto-revert-*-'      
+       write (20,'(A)') '# LT-AEM time series output   -*-auto-revert-*-'
        do i = 1, s%nx
           write (20,'(2(A,'//xfmt//'),3X,A)') '# location: x=',s%x(i),' y=',s%y(i),s%obsname(i)
           write (20,'(A)',advance='no')  '#     time              head'//&
@@ -965,7 +965,7 @@ contains
           else
              write(20,'(A)') ''
           end if
-          
+
           do k = 1, s%nt
              if (s%deriv) then
                 write (20,'(1X,'//tfmt//',4(1X,'//hfmt//'))') &
@@ -976,7 +976,7 @@ contains
              end if
           end do
           write (20,'(/)')
-       end do       
+       end do
        write(20,*) '# EOF'
        close(20)
 
@@ -1037,7 +1037,7 @@ contains
           end do
           write(20,'(/)')
           close(20)
-       end do       
+       end do
 
        write(*,'(/A)') '***********************************************************'
        write(*,'(4A)') 'inverse output written to ',trim(s%outfname),'0000-',chint(1)
@@ -1051,7 +1051,7 @@ contains
        ! particles separated by blank lines
        open(unit=20, file=s%outfname, status='replace', action='write')
        write (20,'(A)') '# LT-AEM particle tracking output  -*-auto-revert-*-'
-       do i = 1, size(p,dim=1) 
+       do i = 1, size(p,dim=1)
 !!$          write (20,'(A,I0)') '# particle: ',i
           write (20,'(A)')   &
           & '#     time              x                    y                  velx                 vely '
@@ -1060,14 +1060,14 @@ contains
                   & p(i)%r(k,1:5)
           end do
           write (20,'(/)')
-       end do       
+       end do
        write(20,'(A)') '# EOF'
        close(20)
 
        write(*,'(/A)') '***********************************************************'
        write(*,'(2A)') 'particle tracking output written to ', trim(s%outfname)
        write(*,'(A)') '***********************************************************'
-       
+
        !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     case (5)
 
@@ -1083,7 +1083,7 @@ contains
 
        do i = 1, nt, s%streakSkip
           ! use maxval to ensure a non-zero time is reported
-          write (90,'(A'//tfmt//')') '# time:', maxval(p(i)%r(:,1)) 
+          write (90,'(A'//tfmt//')') '# time:', maxval(p(i)%r(:,1))
           write (90,'(A)') '#  particle       x            y&
                &           velx         vely'
           do j = 1, size(p,dim=1)
@@ -1093,7 +1093,7 @@ contains
              end if
           end do
           write (90,'(/)')
-       end do       
+       end do
        write(90,'(A)') '# EOF'
        close(90)
 
@@ -1105,13 +1105,13 @@ contains
        write(*,'(A,I0)')  'invalid output code ',s%output
        stop 300
     end select
-  end subroutine writeResults  
+  end subroutine writeResults
 
   !##################################################
   subroutine writeGeometry(c,e,s)
     use constants, only : DP
     use type_definitions, only : circle, ellipse, solution
-    
+
     type(circle),  dimension(:), intent(in) :: c
     type(ellipse), dimension(:), intent(in) :: e
     type(solution), intent(in) :: s
@@ -1132,7 +1132,7 @@ contains
        ! non-fatal error
        write(*,'(2A)') 'WARNING: ltaem_io.f90 error opening output file for writing &
             &element matching locations ',s%geomFname
-    else    
+    else
        write(40,'(A)') '# points along circumference of circular and elliptical elements  -*-auto-revert-*-'
        do i = 1,nc
           write(40,'(A,I0)') '# circular element ',i
@@ -1141,7 +1141,7 @@ contains
              ! joins circle back up with beginning for plotting
              write(40,fmt)  origin + c(i)%Zom(1)
           end if
-          write(40,'(/)')    
+          write(40,'(/)')
        end do
 
        do i = 1,ne
@@ -1151,7 +1151,7 @@ contains
              ! joins ellipse back up with beginning for plotting
              write(40,fmt)  origin + e(i)%Zom(1)
           end if
-          write(40,'(/)')    
+          write(40,'(/)')
        end do
        write(40,'(A)') '# EOF'
        close(40)
@@ -1160,3 +1160,4 @@ contains
   end subroutine writeGeometry
 
 end module file_ops
+

@@ -1,16 +1,16 @@
 !
 ! Copyright (c) 2011 Kristopher L. Kuhlman (klkuhlm at sandia dot gov)
-! 
+!
 ! Permission is hereby granted, free of charge, to any person obtaining a copy
 ! of this software and associated documentation files (the "Software"), to deal
 ! in the Software without restriction, including without limitation the rights
 ! to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 ! copies of the Software, and to permit persons to whom the Software is
 ! furnished to do so, subject to the following conditions:
-! 
+!
 ! The above copyright notice and this permission notice shall be included in
 ! all copies or substantial portions of the Software.
-! 
+!
 ! THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 ! IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 ! FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -20,10 +20,10 @@
 ! THE SOFTWARE.
 !
 
-! this is the driver routine for LT-AEM programs, which 
+! this is the driver routine for LT-AEM programs, which
 ! can compute a time-domain solution either on a grid of locations and times,
 ! at a single point through time (i.e., time series), or at a particle location through
-! space and time.  The solution depends on the given properties of circular and 
+! space and time.  The solution depends on the given properties of circular and
 ! elliptical elements.  Wells or points are treated as special case circles, and lines are
 ! treated as special case ellipses.
 
@@ -62,7 +62,7 @@ program ltaem_main
   complex(DP) :: calcZ                        ! calc-point-complex-coordinates
   character(6) :: elType                      ! element-type {CIRCLE,ELLIPS}
   complex(DP), allocatable :: hp(:), vp(:,:)  ! Laplace-space head and velocity vectors
-  
+
   ! some constants that shouldn't really need to be adjusted too often
   real(DP), parameter :: EARLIEST_PARTICLE = 1.0E-5, MOST_LOGT = 0.999
   real(DP), parameter :: TMAX_MULT = 2.0_DP  ! traditionally 2.0, but 4.0 could work (Mark Bakker)...
@@ -81,7 +81,7 @@ program ltaem_main
   call readInput(sol,dom,bg,c,e,part)
   nc = size(c,dim=1)
   ne = size(e,dim=1)
-  
+
   ! compute element geometry from input
   ! read in element hierarchy data from file
   call DistanceAngleCalcs(c,e,bg,dom,sol)
@@ -91,14 +91,14 @@ program ltaem_main
   ! calculate the values of p needed for inverse LT
   if (sol%calc) then
      if (sol%particle) then   ! particle tracking
-        
+
         where (part(:)%ti < EARLIEST_PARTICLE)
            part(:)%ti = EARLIEST_PARTICLE
         end where
-        
+
         minlt = floor(  minval(log10(part(:)%ti)))
         maxlt = ceiling(maxval(log10(part(:)%tf)))
-        
+
         allocate(s(2*sol%m+1,minlt:maxlt), nt(minlt:maxlt), tee(minlt:maxlt))
 
         nt(minlt:maxlt) = 1
@@ -110,11 +110,11 @@ program ltaem_main
 
         ! to make it possible for particles / contours to share code...
         maxlt = maxlt + 1
-        
+
      !^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
      else   ! contour maps / time-series plots
         allocate(logt(1:sol%nt))
-        
+
         lo = 1
         logt(:) = log10(sol%t(:))
         minlt =   floor(minval(logt(:)))
@@ -139,7 +139,7 @@ program ltaem_main
 
      ! calculate coefficients for each value of Laplace parameter
      ! ** common between particle tracking and contours/time-series plots **
-     
+
      ! initialize Mathieu function matrices
      if (ne > 0) then
         write(*,'(A)') 'Computing Mathieu coefficients ...'
@@ -161,9 +161,9 @@ program ltaem_main
      do lt = minlt,maxlt-1
         if (nt(lt) > 0) then
            do j = 1,2*sol%m+1
-              !$ write (*,'(I2,1X)',advance="no") OMP_get_thread_num() 
+              !$ write (*,'(I2,1X)',advance="no") OMP_get_thread_num()
               write(*,'(I4,1X,I4,1X,2(A,ES10.3),A)') lt,j, '(',&
-                   & real(s(j,lt)),',',aimag(s(j,lt)),')'  
+                   & real(s(j,lt)),',',aimag(s(j,lt)),')'
               call matrix_solution(c,e,dom,sol,s(j,lt),idxmat(j,lt))
            end do
         end if
@@ -286,7 +286,7 @@ program ltaem_main
 
      end do
      !$OMP END PARALLEL DO
-  
+
   !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   elseif(sol%contour) then ! contour output (x,y locations outer product of x,y vectors)
 
@@ -299,24 +299,24 @@ program ltaem_main
 
      !$OMP PARALLEL DO PRIVATE(calcZ,hp,vp,lot,hit,lop,hip,stmp) SHARED(sol)
      do j = 1,sol%nx
-        !$ write (*,'(I0,1X)',advance="no") OMP_get_thread_num() 
-        write (*,'(A,ES13.5)') 'x: ',sol%x(j) 
+        !$ write (*,'(I0,1X)',advance="no") OMP_get_thread_num()
+        write (*,'(A,ES13.5)') 'x: ',sol%x(j)
         do i = 1,sol%ny
 
            calcZ = cmplx(sol%x(j),sol%y(i),DP)
-           stmp(1:tnp) = reshape(s,[tnp]) 
+           stmp(1:tnp) = reshape(s,[tnp])
 
-           !! compute f(p) for all values of p at this location 
+           !! compute f(p) for all values of p at this location
            hp(1:tnp) =    headCalc(calcZ,stmp,1,tnp,dom,c,e,bg)
            vp(1:tnp,1:2) = velCalc(calcZ,stmp,1,tnp,dom,c,e,bg)
 
            !! invert solutions one log-cycle of t at a time
            do lt = minlt,maxlt-1
-              
+
               !! group of times in current log cycle
               lot = 1 + sum(nt(minlt:lt-1))
               hit = sum(nt(minlt:lt))
-              
+
               !! group of Laplace parameters corresponding to this logcycle
               lop = (lt - minlt)*size(s,dim=1) + 1
               hip = lop + size(s,dim=1) - 1
@@ -338,7 +338,7 @@ program ltaem_main
      if (sol%deriv) then
         allocate(sol%dh(sol%nx,1,sol%nt))
      end if
-     
+
      !$OMP PARALLEL DO PRIVATE(calcZ,hp,vp,lot,hit,lop,hip,stmp) SHARED(sol)
      do i = 1,sol%nx
         write(*,'(A,2(3X,ES14.7E1))') sol%obsname(i),sol%xshift+sol%x(i),sol%yshift+sol%y(i)
@@ -348,7 +348,7 @@ program ltaem_main
         calcZ = cmplx(sol%x(i),sol%y(i),DP)
         hp(1:tnp) =    headCalc(calcZ,stmp,1,tnp,dom,c,e,bg)
         vp(1:tnp,1:2) = velCalc(calcZ,stmp,1,tnp,dom,c,e,bg)
-        
+
         do lt = minlt,maxlt-1
            lot = 1 + sum(nt(minlt:lt-1))
            hit = sum(nt(minlt:lt))

@@ -1,16 +1,16 @@
 !
 ! Copyright (c) 2011 Kristopher L. Kuhlman (klkuhlm at sandia dot gov)
-! 
+!
 ! Permission is hereby granted, free of charge, to any person obtaining a copy
 ! of this software and associated documentation files (the "Software"), to deal
 ! in the Software without restriction, including without limitation the rights
 ! to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 ! copies of the Software, and to permit persons to whom the Software is
 ! furnished to do so, subject to the following conditions:
-! 
+!
 ! The above copyright notice and this permission notice shall be included in
 ! all copies or substantial portions of the Software.
-! 
+!
 ! THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 ! IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 ! FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -31,13 +31,13 @@ contains
     use constants, only : DP
     use mathieu_functions, only : mathieu_init
     use type_definitions, only : ellipse, element
-    use kappa_mod, only : kappa 
+    use kappa_mod, only : kappa
 
     type(ellipse), dimension(:), intent(inout) :: e
     type(element), intent(inout) :: bg
     complex(DP), dimension(:,:), intent(in) :: s
     complex(DP), dimension(product(shape(s))) :: p
-    
+
     integer :: tnp, i, j
     integer, dimension(size(p,1)) :: dim
     complex(DP), dimension(size(p,1)) :: kap
@@ -53,7 +53,7 @@ contains
     dim(:) = shirts(maxval(e(:)%N), kap)
 
     ! TODO: make a decision about matrix size here and
-    ! either bail out if too large, or potentially use an 
+    ! either bail out if too large, or potentially use an
     ! asymptotic expansion (needs investigation)
 
     write(*,'(A)',advance='no') 'bg: q-MS '
@@ -80,14 +80,14 @@ contains
        end if
     end do
   end subroutine ellipse_init
-  
+
   elemental function shirts(n,q) result(dim)
     use constants, only : DP
     integer, intent(in) :: n
     complex(DP), intent(in) :: q
     integer :: dim
     real(DP) :: C,D
-    
+
     ! estimate required matrix size to achieve accuracy ~ 1.0E-12,
     ! based on rational approximation due to  Shirts, R.B., 1993.
     ! "The Computation of Eigenvalues and Solutions of Mathieu's
@@ -99,3 +99,4 @@ contains
 
   end function shirts
 end module ellipse_mathieu_init
+

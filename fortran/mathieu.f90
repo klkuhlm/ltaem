@@ -1,16 +1,16 @@
 !
 ! Copyright (c) 2011 Kristopher L. Kuhlman (klkuhlm at sandia dot gov)
-! 
+!
 ! Permission is hereby granted, free of charge, to any person obtaining a copy
 ! of this software and associated documentation files (the "Software"), to deal
 ! in the Software without restriction, including without limitation the rights
 ! to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 ! copies of the Software, and to permit persons to whom the Software is
 ! furnished to do so, subject to the following conditions:
-! 
+!
 ! The above copyright notice and this permission notice shall be included in
 ! all copies or substantial portions of the Software.
-! 
+!
 ! THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 ! IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 ! FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -21,11 +21,14 @@
 !
 
 module mathieu_functions
-  use constants, only : DP
+
   implicit none
 
   private  !! only interfaces and mathieu_init are publicly callable
   public :: mathieu, ce, Dce, se, Dse, Ke, Ko, DKe, DKo, Ie, Io, DIe, DIo, mathieu_init
+
+  ! real with range 300 orders of mag, 15 sig figs
+  integer, parameter :: DP = selected_real_kind(p=15,r=300)
 
   type :: mathieu
      ! things required to compute mathieu functions
@@ -91,8 +94,8 @@ contains
        end subroutine ZGEEV
     end interface
 
-    interface  ! level-1 BLAS routine for vector norm-1 (absolute sum) 
-       real(KIND=8) function DZASUM(N,ZX,INCX) 
+    interface  ! level-1 BLAS routine for vector norm-1 (absolute sum)
+       real(KIND=8) function DZASUM(N,ZX,INCX)
          integer, intent(in) :: N,INCX
          complex(KIND=8), intent(in), dimension(n) :: ZX
        end function DZASUM
@@ -109,7 +112,7 @@ contains
 
     ! just one matrix of recursion coefficients (used 4 times)
     complex(DP), allocatable :: coeff(:,:)
-    
+
     ! parameters for lapack routine
     complex(DP), allocatable :: work(:) ! 1:lwork
     complex(DP), dimension(1) :: dc
@@ -137,7 +140,7 @@ contains
     elsewhere
        vi = -1.0_DP
     end where
-    
+
     if (present(CUTOFF)) then
        mat%CUTOFF = CUTOFF
     else
@@ -146,10 +149,10 @@ contains
 
     ! A/B 1st dimension: subscript in McLachlan notation,
     ! i.e., the position in the infinite sum
-    
+
     ! A/B 2nd dimension: superscript in McLachlan notation,
     ! i.e., the n in the order 2n+1 of the Mathieu function which it is associated with
-    
+
     ! A/B 3rd dimension: 0(even) or 1(odd) cases of the second dimension
 
     lwork = 2*M+1
@@ -161,14 +164,14 @@ contains
 
     !$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
     ! even coefficients (a) of even order
-    ! De_{2n} in eq 3.12 of Stamnes & Spjelkavik, 
+    ! De_{2n} in eq 3.12 of Stamnes & Spjelkavik,
     ! Pure and Applied Optics, 4(3), 251-262, 1995
     !$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 
     ! main diagonal/ r counting from 0:m-1 like McLachlan
     Coeff(:,:) = 0.0
     forall(i=1:M-1) Coeff(i+1,i+1) = cmplx((2*i)**2, 0, DP)
-    
+
     ! off diagonals
     forall(i=1:m, j=1:m, j==i+1 .or. j==i-1) Coeff(i,j) = q
 
@@ -193,14 +196,14 @@ contains
 
     Coeff(:,:) = 0.0
     Coeff(1,1) = 1.0_DP + q
-    
+
     forall(i=1:m-1) Coeff(i+1,i+1) = cmplx((2*i+1)**2, 0, DP)
     forall(i=1:m, j=1:m, j==i+1 .or. j==i-1) Coeff(i,j) = q
 
     call ZGEEV(JOBVL='N', JOBVR='V', N=M, A=Coeff, LDA=M, W=mat%mcn(m+1:2*m),&
          & VL=dc, LDVL=di, VR=mat%A(1:m,0:m-1,1), LDVR=M, &
          & WORK=work, LWORK=lwork, RWORK=rwork, INFO=info)
-         
+
     if (info /= 0) write(*,'(A,I0,A)') "ZGEEV ERROR ",info, &
          &" calculating even coefficients of odd order"
 
@@ -212,8 +215,8 @@ contains
     ! odd coefficients (b) of even order
     ! Do_{2n+2} in eq 3.16 of St&Sp
     !$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
-    
-    ! this one not shifted by one, since 2n+2 -> 2n 
+
+    ! this one not shifted by one, since 2n+2 -> 2n
     !! (but starting from one, rather than zero)
     Coeff(:,:) = 0.0
 
@@ -272,7 +275,7 @@ contains
            stop 'increase M or decrease CUTOFF in mathieu_init'
         end if
      end do bufcheck
-     
+
   end function mathieu_init
 
   !############################################################
@@ -302,12 +305,12 @@ contains
     nje = size(EV)
     njo = size(OD)
     j = floor(n/2.0)
-    
+
     ce(:,EV) = sum(spread(mf%A(:,j(EV),0),2,nz)* &
          & spread(cos(outer(2*v,PIOV2-z)),3,nje),dim=1)
 
     ce(:,OD) = sum(spread(mf%B(:,j(OD),1),2,nz)* &
-         & spread(sin(outer(2*v+1,PIOV2-z)),3,njo),dim=1)   
+         & spread(sin(outer(2*v+1,PIOV2-z)),3,njo),dim=1)
 
   end function ce_vect_nz
 
@@ -685,7 +688,7 @@ contains
     DKe(:,EV) = sqrtq*sum(spread(mf%A(:,j(EV),0),2,nz)* &
          & spread(epz*I(0:m-1,:)*DK(0:m-1,:) - enz*DI(0:m-1,:)*K(0:m-1,:),3,nje),dim=1)/&
          & spread(mf%A(1,j(EV),0),1,nz)
-    
+
     DKe(:,OD) = sqrtq*sum(spread(mf%B(:,j(OD),1),2,nz)* &
          & spread(epz*I(0:m-1,:)*DK(1:m,:) - enz*DI(0:m-1,:)*K(1:m,:) - &
          &        epz*I(1:m,:)*DK(0:m-1,:) - epz*DI(1:m,:)*K(0:m-1,:),3,njo),dim=1)/ &
@@ -1059,7 +1062,7 @@ contains
        write(*,*) 'CHECK_CUTOFF1: order of Mathieu functions must be >= 0',n
        stop 'CHECK_CUTOFF1: only non-negative Mathieu function orders'
     end if
-    
+
     if (nn > 1) then
        ! since vectors of integer indexing vectors are used on the LHS of
        ! expressions, we must test for many-to-one conditions, since it is a no-no
@@ -1094,7 +1097,7 @@ contains
 
     ! compute vector of integers counting up
     forall (j=0:mf%m-1) i(j+1) = j
-    v = real(i,DP) 
+    v = real(i,DP)
 
     ! compute the "sign" vector
     vi = 1.0_DP
@@ -1218,7 +1221,7 @@ contains
              stop "CBESI: overflow, z or order too large for unscaled output"
 !!$          case(3)
 !!$             fmt = '(A, (ES11.3E3,1X,ES11.3E3,3X),I0)'
-!!$             write(fmt(4:4),'(I1)') min(ubound(arg,1),NPRINT)   
+!!$             write(fmt(4:4),'(I1)') min(ubound(arg,1),NPRINT)
 !!$             write(*,fmt) "CBESI: loss of precision, z=",arg(1:min(ubound(arg,1),NPRINT)),numzero
           case(4)
              write(*,*) "CBESI: overflow, z or order too &

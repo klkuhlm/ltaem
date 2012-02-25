@@ -1,16 +1,16 @@
 !
 ! Copyright (c) 2011 Kristopher L. Kuhlman (klkuhlm at sandia dot gov)
-! 
+!
 ! Permission is hereby granted, free of charge, to any person obtaining a copy
 ! of this software and associated documentation files (the "Software"), to deal
 ! in the Software without restriction, including without limitation the rights
 ! to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 ! copies of the Software, and to permit persons to whom the Software is
 ! furnished to do so, subject to the following conditions:
-! 
+!
 ! The above copyright notice and this permission notice shall be included in
 ! all copies or substantial portions of the Software.
-! 
+!
 ! THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 ! IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 ! FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -23,7 +23,7 @@
 module time_mod
   implicit none
 
-  private 
+  private
   public :: timef
 
   interface timef
@@ -48,7 +48,7 @@ contains
     integer :: n, np, flag
     real(DP), allocatable :: ti(:), y(:), dy(:), W(:), par(:)
     real(DP) :: tf
-    
+
     np = size(p,1)
 
     ! consolidate area and boundary time functions
@@ -72,8 +72,8 @@ contains
     case(3)
        ! instantaneous at t=par1
        mult(1:np) = exp(-par(1)*p)
-    case(4)  
-       ! "step test": increasing by integer multiples of Q each 
+    case(4)
+       ! "step test": increasing by integer multiples of Q each
        ! integer multiple of par1 time, off at par2
        mult(1:np) = 1.0/(p - p*exp(-par(1)*p)) * &
                       & (1.0 - exp(-par(2)*p))/p
@@ -155,3 +155,4 @@ contains
 
   end function Time_pscal
 end module time_mod
+

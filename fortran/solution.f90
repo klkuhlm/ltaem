@@ -1,16 +1,16 @@
 !
 ! Copyright (c) 2011 Kristopher L. Kuhlman (klkuhlm at sandia dot gov)
-! 
+!
 ! Permission is hereby granted, free of charge, to any person obtaining a copy
 ! of this software and associated documentation files (the "Software"), to deal
 ! in the Software without restriction, including without limitation the rights
 ! to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 ! copies of the Software, and to permit persons to whom the Software is
 ! furnished to do so, subject to the following conditions:
-! 
+!
 ! The above copyright notice and this permission notice shall be included in
 ! all copies or substantial portions of the Software.
-! 
+!
 ! THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 ! IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 ! FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -117,7 +117,7 @@ contains
     b = 0.0
 
     if (any(c%match) .or. any(e%match)) then
-       allocate(work(33*bigN))       
+       allocate(work(33*bigN))
     end if
 
     forall (i=1:ntot)
@@ -129,7 +129,7 @@ contains
 
     ! convert structures into single matrix for solution via least squares
     do rr=1,ntot
-       do cc=1,ntot          
+       do cc=1,ntot
           A(row(rr,0):row(rr,2),col(cc,0):col(cc,2)) = res(rr,cc)%LHS
           b(row(rr,0):row(rr,2)) = b(row(rr,0):row(rr,2)) + res(rr,cc)%RHS
        end do
@@ -191,7 +191,7 @@ contains
              allocate(e(i)%coeff(sol%totalnP,2*e(i)%N-1))
           end if
           ! get coefficients from line routine (only even-order, even coeff used)
-          e(i)%coeff(idx,:) = 0.0 
+          e(i)%coeff(idx,:) = 0.0
           e(i)%coeff(idx,1:e(i)%N:2) = line(e(i),p,idx) ! a_(2n)
        end if
     end do

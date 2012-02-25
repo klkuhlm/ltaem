@@ -1,16 +1,16 @@
 !
 ! Copyright (c) 2011 Kristopher L. Kuhlman (klkuhlm at sandia dot gov)
-! 
+!
 ! Permission is hereby granted, free of charge, to any person obtaining a copy
 ! of this software and associated documentation files (the "Software"), to deal
 ! in the Software without restriction, including without limitation the rights
 ! to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 ! copies of the Software, and to permit persons to whom the Software is
 ! furnished to do so, subject to the following conditions:
-! 
+!
 ! The above copyright notice and this permission notice shall be included in
 ! all copies or substantial portions of the Software.
-! 
+!
 ! THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 ! IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 ! FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -32,15 +32,15 @@ module utility
   interface diag
      module procedure diagonal_z, diagonal_d
   end interface
-  
+
   interface logspace
      module procedure logspace_int, logspace_r, logspace_d
   end interface
-  
+
   interface outer
      module procedure outerprod_r, outerprod_d, outerprod_z, outerprod_dz, outerprod_zd
   end interface
-  
+
 contains
 
   function cos_recurrence(x,n) result(c)
@@ -74,13 +74,13 @@ contains
   end function sin_recurrence
 
   ! ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  pure function v2c(v) result(z) 
+  pure function v2c(v) result(z)
     use constants, only : DP
     real(DP), intent(in), dimension(2) :: v
     complex(DP) :: z
     z = cmplx(v(1),v(2),DP)
   end function v2c
-  
+
   ! ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   pure function outerprod_d(a,b) result(c)
     use constants, only : DP
@@ -121,8 +121,8 @@ contains
     ca = cmplx(da,kind=DP)
     c = spread(ca,dim=2,ncopies=size(cb))*spread(cb,dim=1,ncopies=size(da))
   end function outerprod_zd
-  
-  ! ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  
+
+  ! ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   elemental function ccosh(z) result(f)
     use constants, only : DP
     complex(DP), intent(in) :: z
@@ -137,7 +137,7 @@ contains
     use constants, only : DP
     complex(DP), intent(in) :: z
     complex(DP) :: f
-    
+
     ! compared ~10^-15 against acosh() in Matlab
     ! branch cut is left of +1, along x axis
     ! -pi <= aimag(f) <= +pi
@@ -158,7 +158,7 @@ contains
     real(DP) :: rnum, range, sgn
 
     rnum = real(num - 1,DP)
-    range = abs(hi - lo) 
+    range = abs(hi - lo)
     sgn = sign(1.0_DP,hi-lo) ! if lo > high, count backwards
     forall (i=0:num-1) v(i+1) = lo + sgn*real(i,DP)*range/rnum
   end function linspace
@@ -202,7 +202,7 @@ contains
         forall (i=1:size(A,dim=1)+n) d(i) = A(i,i-n)
      end if
    end function diagonal_z
-   
+
    pure function diagonal_d(A,n) result(d)
      use constants, only : DP
      integer, intent(in) :: n
@@ -219,7 +219,7 @@ contains
    end function diagonal_d
 
   ! return the approximate circumference of an ellipse
-  ! given the radius in elliptical coordinates, and 
+  ! given the radius in elliptical coordinates, and
   ! the semi-focal distance (YNOT formula)
   elemental function ynot(eta,f) result(P)
     use constants, only : DP, LN2, LNPIOV2
@@ -250,7 +250,7 @@ contains
 
     w = v
     call zdrot(size(v,dim=1),w(:,1),1,w(:,2),1,cos(-theta),sin(-theta))
-    
+
   end function rotate_vel
 
   subroutine rotate_vel_mat(u,v,theta)
@@ -277,6 +277,7 @@ contains
     call zdrot(nel,uu,1,vv,1,cos(-theta),sin(-theta))
     u = reshape(uu,[n,m])
     v = reshape(vv,[n,m])
-    
+
   end subroutine rotate_vel_mat
 end module utility
+

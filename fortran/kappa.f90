@@ -1,16 +1,16 @@
 !
 ! Copyright (c) 2011 Kristopher L. Kuhlman (klkuhlm at sandia dot gov)
-! 
+!
 ! Permission is hereby granted, free of charge, to any person obtaining a copy
 ! of this software and associated documentation files (the "Software"), to deal
 ! in the Software without restriction, including without limitation the rights
 ! to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 ! copies of the Software, and to permit persons to whom the Software is
 ! furnished to do so, subject to the following conditions:
-! 
+!
 ! The above copyright notice and this permission notice shall be included in
 ! all copies or substantial portions of the Software.
-! 
+!
 ! THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 ! IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 ! FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -49,7 +49,7 @@ contains
        kap2(1:np) = sqrt(p(:)*el%aquitardSs/el%aquitardK)
        exp2z(1:np) = exp(-2.0*kap2(:)*el%aquitardb)
     end if
-    
+
     !! leakiness
     !! ##############################
     select case(el%leakFlag)
@@ -75,21 +75,22 @@ contains
        ! results of integrating Neuman 1972 unconfined solution from 0 -> b in z
        q(1:np) = q(:) + el%Kz*p(:)/(el%K*el%b*(el%Kz/el%Sy + p(:)))
     end if
-    
+
     !! dual porosity (if single porosity do nothing)
+    !! ##############################
     if(el%dualPorosityFlag) then
        ! solution adapted from Dougherty and Babu (1984, WRR)
        q(1:np) = q(:) + &
-            & (1.0 - el%lambda/(el%matrixSs*p(:) + el%lambda))*el%lambda/el%K 
+            & (1.0 - el%lambda/(el%matrixSs*p(:) + el%lambda))*el%lambda/el%K
     end if
-    
+
     !! sources are only additive under the square root
     q = sqrt(q)
 
     if (el%leakFlag /= 0) deallocate(kap2,exp2z)
-   
+
   end function kappa_pVect
-  
+
   !! scalar version useful in matching
   function kappa_pscal(p,el) result(q)
     use constants, only : DP
@@ -103,3 +104,4 @@ contains
 
   end function kappa_pscal
 end module kappa_mod
+

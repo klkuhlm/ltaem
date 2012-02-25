@@ -1,16 +1,16 @@
 !
 ! Copyright (c) 2011 Kristopher L. Kuhlman (klkuhlm at sandia dot gov)
-! 
+!
 ! Permission is hereby granted, free of charge, to any person obtaining a copy
 ! of this software and associated documentation files (the "Software"), to deal
 ! in the Software without restriction, including without limitation the rights
 ! to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 ! copies of the Software, and to permit persons to whom the Software is
 ! furnished to do so, subject to the following conditions:
-! 
+!
 ! The above copyright notice and this permission notice shall be included in
 ! all copies or substantial portions of the Software.
-! 
+!
 ! THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 ! IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 ! FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -20,16 +20,16 @@
 ! THE SOFTWARE.
 !
 
-module geomConv  
+module geomConv
   implicit none
 
-  private 
-  public :: xy2cR,xy2cA, xy2eR,xy2eA, c2xyR,c2xyA, e2xyR,e2xyA 
-  
+  private
+  public :: xy2cR,xy2cA, xy2eR,xy2eA, c2xyR,c2xyA, e2xyR,e2xyA
+
 contains
 
   ! ****************************************
-  elemental function xy2cR(z) result(zeta) 
+  elemental function xy2cR(z) result(zeta)
     ! polar coordinate from local complex Cartesian with respect to circle
     use constants, only : DP
     complex(DP), intent(in) :: z
@@ -45,7 +45,7 @@ contains
     complex(DP) :: zeta
     zeta = xy2cR(z - c%z)
   end function xy2cA
-  
+
   elemental function xy2eR(z,e) result(zeta)
     ! elliptical coordinate from unrotated local complex Cartesian with respect to ellipse
     use constants, only : DP, EYE
@@ -67,7 +67,7 @@ contains
   end function xy2eA
 
   elemental function c2xyR(zeta) result(z)
-    ! local Cartesian from elemental polar 
+    ! local Cartesian from elemental polar
     use constants, only : DP, EYE
     complex(DP), intent(in) :: zeta
     complex(DP) :: z
@@ -82,7 +82,7 @@ contains
     complex(DP) :: z
     z = c%z + c2xyR(zeta)
   end function c2xyA
-  
+
   elemental function e2xyR(zeta,e) result(z)
     ! local unrotated Cartesian from elemental elliptical
     use constants, only : DP, EYE

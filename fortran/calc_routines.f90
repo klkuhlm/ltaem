@@ -1,16 +1,16 @@
 !
 ! Copyright (c) 2011 Kristopher L. Kuhlman (klkuhlm at sandia dot gov)
-! 
+!
 ! Permission is hereby granted, free of charge, to any person obtaining a copy
 ! of this software and associated documentation files (the "Software"), to deal
 ! in the Software without restriction, including without limitation the rights
 ! to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 ! copies of the Software, and to permit persons to whom the Software is
 ! furnished to do so, subject to the following conditions:
-! 
+!
 ! The above copyright notice and this permission notice shall be included in
 ! all copies or substantial portions of the Software.
-! 
+!
 ! THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 ! IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 ! FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -34,11 +34,11 @@ module calc_routines
   interface headCalc
      module procedure headCalcZ, headCalcV
   end interface
-  
+
   interface velCalc
      module procedure velCalcZ, velCalcV
   end interface
-  
+
 contains
 
   !##################################################
@@ -57,7 +57,7 @@ contains
     type(circle),  target, dimension(:), intent(in) :: c
     type(ellipse), target, dimension(:), intent(in) :: e
     type(element), intent(in) :: bg
-    complex(DP), dimension(size(p,1)) :: H  
+    complex(DP), dimension(size(p,1)) :: H
 
     real(DP), dimension(sum(dom%num)) :: Rgp, Pgp
     type(element), pointer :: elin => null()
@@ -71,11 +71,11 @@ contains
     np = size(p,dim=1)
 
     ! determine which inclusion this point is in, and related geometry
-    call CalcLocation(Z,c,e,dom,Rgp,Pgp,in) 
-   
+    call CalcLocation(Z,c,e,dom,Rgp,Pgp,in)
+
     H(:) = 0.0
 
-    ! TODO there should be a way to combine the two branches of this 
+    ! TODO there should be a way to combine the two branches of this
     ! if statement into a more general single branch.
 
     !##################################################
@@ -86,7 +86,7 @@ contains
              H(1:np) = H(:) + circle_calc(p,c(j),lo,hi,Rgp(j),Pgp(j),.false.)
           end if
        end do
-       
+
        do j = nc+1,ntot
           if (dom%InclUp(j) == 0) then  ! ellipse is also in background
              H(1:np) = H(:) + ellipse_calc(p,e(j-nc),lo,hi,Rgp(j),Pgp(j),.false.)
@@ -103,7 +103,7 @@ contains
           if (c(in)%calcin) then
              H(1:np) = H(:) + circle_calc(p,c(in),lo,hi,Rgp(in),Pgp(in),.true.)
           end if
-       else 
+       else
           ! calculation point is inside (or on boundary of) an elliptical element
           if (e(in-nc)%calcin) then
              H(1:np) = H(:) + ellipse_calc(p,e(in-nc),lo,hi,Rgp(in),Pgp(in),.true.)
@@ -123,13 +123,13 @@ contains
              H(1:np) = H(:) + ellipse_calc(p,e(oth-nc),lo,hi,Rgp(oth),Pgp(oth),.false.)
           end if
        end do
-       
+
        if (in <= nc) then
-          elin => c(in)%element     ! circle 
+          elin => c(in)%element     ! circle
        else
           elin => e(in-nc)%element  ! ellipse
        end if
-       
+
        ! apply potential source term on inside of element
        H(1:np) = H(:) - elin%areaQ*elin%Ss*timef(p,elin%time,.true.)/kappa(p,elin)**2
        H(1:np) = H(:)/elin%K ! convert to head
@@ -141,7 +141,7 @@ contains
 
   !##################################################
   function velCalcZ(Z,p,lo,hi,dom,c,e,bg) result(v)
-   
+
     use type_definitions, only : element, domain, circle, ellipse
     use constants, only : DP
     use circular_elements, only : circle_deriv
@@ -172,12 +172,12 @@ contains
     np = size(p,dim=1)
 
     ! determine which inclusion this point is in, and related geometry
-    call CalcLocation(Z,c,e,dom,Rgp,Pgp,in) 
+    call CalcLocation(Z,c,e,dom,Rgp,Pgp,in)
 
     v(1:np,1:2) = 0.0
 
     ! TODO
-    ! there should be a way to combine the two branches of this 
+    ! there should be a way to combine the two branches of this
     ! if statement into a more general single branch.
 
     !##################################################
@@ -191,10 +191,10 @@ contains
              v(1:np,2) = v(:,2) + sin(Pgp(j))*dH(:,1) + cos(Pgp(j))*dH(:,2)/Rgp(j) ! y
           end if
        end do
-       
+
        do j = nc+1,ntot
           if (dom%InclUp(j) == 0) then  ! ellipse is also in background
-             
+
              ! eta and psi components of gradient
              dH(1:np,1:2) = ellipse_deriv(p,e(j-nc),lo,hi,Rgp(j),Pgp(j),.false.)
              dH(1:np,1:2) = rotate_vel(dH(:,1:2),e(j-nc)%theta)
@@ -207,7 +207,7 @@ contains
           end if
        end do
        v(1:np,1:2) = -v(1:np,1:2)/bg%por ! return velocity (gradient points uphill)
-       
+
     !##################################################
     else
        if (in <= nc) then
@@ -217,12 +217,12 @@ contains
              v(1:np,1) = v(:,1) + cos(Pgp(in))*dH(:,1) - sin(Pgp(in))*dH(:,2)/Rgp(in)
              v(1:np,2) = v(:,2) + sin(Pgp(in))*dH(:,1) + cos(Pgp(in))*dH(:,2)/Rgp(in)
           end if
-       else 
+       else
           ! calculation point is inside or on the boundary of an elliptical element
           if (e(in-nc)%calcin) then
              dH(1:np,1:2) = ellipse_deriv(p,e(in-nc),lo,hi,Rgp(in),Pgp(in),.true.)
              dH(1:np,1:2) = rotate_vel(dH(:,1:2),e(in-nc)%theta)
-             
+
              hsq = e(in-nc)%f/2.0*(cosh(2*Rgp(in)) - cos(2*Pgp(in)))
              v(1:np,1) = v(:,1) + (sinh(Rgp(in))*cos(Pgp(in))*dH(:,1) - &
                                 &  cosh(Rgp(in))*sin(Pgp(in))*dH(:,2))/hsq
@@ -244,7 +244,7 @@ contains
           ! other element is an ellipse
           if (dom%InclIn(in,oth)) then
              dH(1:np,1:2) = ellipse_deriv(p,e(oth-nc),lo,hi,Rgp(oth),Pgp(oth),.false.)
-             dH(1:np,1:2) = rotate_vel(dH(:,1:2),e(oth-nc)%theta) 
+             dH(1:np,1:2) = rotate_vel(dH(:,1:2),e(oth-nc)%theta)
 
              hsq = e(oth-nc)%f/2.0*(cosh(2*Rgp(oth)) - cos(2*Pgp(oth)))
              v(1:np,1) = v(:,1) + (sinh(Rgp(oth))*cos(Pgp(oth))*dH(:,1) - &
@@ -253,9 +253,9 @@ contains
                                 &  sinh(Rgp(oth))*cos(Pgp(oth))*dH(:,2))/hsq
           end if
        end do
-       
+
        if (in <= nc) then
-          elin => c(in)%element     ! circle 
+          elin => c(in)%element     ! circle
        else
           elin => e(in-nc)%element  ! ellipse
        end if
@@ -278,12 +278,12 @@ contains
     type(circle),  target, dimension(:), intent(in) :: c
     type(ellipse), target, dimension(:), intent(in) :: e
     type(element), intent(in) :: bg
-    complex(DP), dimension(size(p,1)) :: H  
+    complex(DP), dimension(size(p,1)) :: H
 
     H(:) = headCalcZ(cmplx(vec(1),vec(2),DP),p,lo,hi,dom,c,e,bg)
 
   end function headCalcV
-  
+
   function velCalcV(vec,p,lo,hi,dom,c,e,bg) result(v)
     use type_definitions, only : element, domain, circle, ellipse
     use constants, only : DP
@@ -328,7 +328,7 @@ contains
 
     ! components of vector from center of circle to observation point
     Zgp(1:nc) = xy2cA(Z,c(:))
-    Rgp(1:nc) = abs(Zgp(1:nc))   ! r 
+    Rgp(1:nc) = abs(Zgp(1:nc))   ! r
     Pgp(1:nc) = aimag(Zgp(1:nc)) ! theta
     do j = 1, nc
        if (Rgp(j) < c(j)%r) then    ! inside (not including on boundary)
@@ -367,7 +367,7 @@ contains
                    do third = 1,3
                       if ((third /= first) .and. (third /= second)) then
                          if (dom%InclIn(inout(first),inout(second))  .and. &
-                              & dom%InclIn(inout(third),inout(first))) then 
+                              & dom%InclIn(inout(third),inout(first))) then
                             inside = inout(second)
                          end if
                       end if
@@ -377,7 +377,7 @@ contains
           end do
        case default
           write(*,*) 'CALCLOCATION ERROR: more than triply-nested inclusions', dom%InclIn
-          stop 
+          stop
        end select
     else
        ! no matching elements
@@ -404,5 +404,5 @@ contains
        stop
     end if
   end subroutine check_np
-  
+
 end module calc_routines
