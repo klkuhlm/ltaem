@@ -55,7 +55,7 @@ CPP=-cpp
 DFLAGS=-O0 -Wall -Wextra -g -std=f2008
 DFLAGS+=-frange-check -fbounds-check -fcheck=all
 ##DFLAGS+=-fdump-rtl-expand
-PFLAGS=-O3 -march=native -msse2
+PFLAGS=-Ofast -march=native 
 #################################
 
 BFLAGS=$(PFLAGS)
