@@ -31,4 +31,7 @@ f      f      f      f     :: unconfined?
 1.0D0  1.0D0  1.0D0  1.0D0 :: Sy
 1.0D0  1.0D0  1.0D0  1.0D0 :: Kz
 1.0D0  1.0D0  1.0D0  1.0D0 :: b
+F      F      F      F     :: dual porosity flag
+1.0D0  1.0D0  1.0D0  1.0D0 :: dual porosity matrix Ss
+1.0D0  1.0D0  1.0D0  1.0D0 :: dual porosity lambda
 1.0D0  1.0D0  1.0D0  1.0D0 :: dimensionless skin

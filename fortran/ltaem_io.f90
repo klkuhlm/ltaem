@@ -609,14 +609,14 @@ contains
           stop 241
        end if
 
-       read(22,*) e(:)%dualPorosityFlag
-       read(22,*) e(:)%matrixSs
+       read(33,*) e(:)%dualPorosityFlag
+       read(33,*) e(:)%matrixSs
        if (any(e%matrixSs < spacing(0.0))) then
           write(*,*) 'e%matrixSs must be > 0.0', e%matrixSs
           stop 2410
        end if
 
-       read(22,*) e(:)%lambda
+       read(33,*) e(:)%lambda
        if (any(e%lambda < 0.0)) then
           write(*,*) 'e%lambda (matrix/fracture connection)'//&
                &' must be non-negative', e%lambda
