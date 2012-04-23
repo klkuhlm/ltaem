@@ -49,14 +49,14 @@ OBJS=$(EXTERNAL) constants.o $(KKLOW) geometryUtil.o $(KKHIGH)
 ###########################################
 
 ## gfortran #################
-#F90=gfortran-4.7 # must be >= 4.6.1
-F90=/opt/local/bin/dragonegg-3.0-gfortran 
-#OMP=-fopenmp
+F90=gfortran-4.6 # must be >= 4.6.1
+#F90=/opt/local/bin/dragonegg-3.0-gfortran 
+OMP=-fopenmp
 CPP=-cpp
 DFLAGS=-O0 -Wall -Wextra -g -std=f2008
 DFLAGS+=-frange-check -fbounds-check -fcheck=all
 ##DFLAGS+=-fdump-rtl-expand
-PFLAGS=-O3 -march=native 
+PFLAGS=-Ofast -march=native -flto
 #################################
 
 BFLAGS=$(PFLAGS)
