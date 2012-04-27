@@ -25,7 +25,7 @@ KKLOW=type_definitions.o utility.o bessel_functions.o mathieu_functions2.o
 
 # provide a link to the static lapack/blas libraries in the source directory
 LAPACKLIB=lapack.a
-BLASLIB=blas.a
+BLASLIB=blas.a -lpthread
 
 # main-program related
 ####################################
@@ -49,14 +49,14 @@ OBJS=$(EXTERNAL) constants.o $(KKLOW) geometryUtil.o $(KKHIGH)
 ###########################################
 
 ## gfortran #################
-F90=gfortran-4.6 # must be >= 4.6.1
+F90=gfortran-4.7 # must be >= 4.6.1
 #F90=/opt/local/bin/dragonegg-3.0-gfortran 
 OMP=-fopenmp
 CPP=-cpp
 DFLAGS=-O0 -Wall -Wextra -g -std=f2008
 DFLAGS+=-frange-check -fbounds-check -fcheck=all
 ##DFLAGS+=-fdump-rtl-expand
-PFLAGS=-Ofast -march=native -flto
+PFLAGS=-Ofast -march=native #-flto
 #################################
 
 BFLAGS=$(PFLAGS)

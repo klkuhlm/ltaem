@@ -63,9 +63,9 @@ program ltaem_main
   character(6) :: elType                      ! element-type {CIRCLE,ELLIPS}
   complex(DP), allocatable :: hp(:), vp(:,:)  ! Laplace-space head and velocity vectors
 
-  ! some constants that shouldn't really need to be adjusted too often
+  ! some ad-hoc constants that shouldn't really need to be adjusted too often
   real(DP), parameter :: EARLIEST_PARTICLE = 1.0E-5, MOST_LOGT = 0.999
-  real(DP), parameter :: TMAX_MULT = 2.0_DP  ! traditionally 2.0, but 4.0 could work (Mark Bakker)...
+  real(DP), parameter :: TMAX_MULT = 2.0_DP  
 
   intrinsic :: get_command_argument
   call get_command_argument(1,sol%inFName)
