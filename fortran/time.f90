@@ -46,7 +46,7 @@ contains
     complex(DP), dimension(size(p,1)) :: mult
 
     integer :: n, np, flag
-    real(DP), allocatable :: ti(:), y(:), dy(:), W(:), par(:)
+    real(DP), allocatable :: ti(:), y(:), dy(:), W(:), par(:), denom(:)
     real(DP) :: tf
 
     np = size(p,1)
@@ -131,7 +131,7 @@ contains
        denom = [ti(2:n),tf] - ti(1:n)
        if (any(abs(denom) < epsilon(1.0))) then
           ! TODO: convert a vertical slope to a step, rather than die?
-          stop 'no vertical sloped lines in piecewise linear pumping rate'
+          !stop 'no vertical sloped lines in piecewise linear pumping rate'
        end if
        W(1:n) = (y(2:n+1) - y(1:n))/denom ! rise/run
 
