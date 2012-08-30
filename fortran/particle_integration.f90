@@ -315,7 +315,7 @@ contains
 
     integer, intent(in) :: lo
     real(DP), intent(in) :: tee(lo:)
-    complex(DP), intent(in) :: s(1:,lo:) !! matrix of Laplace parameter np by nlogcycles
+    complex(DP), intent(in) :: s(1:,lo:) 
     type(particle), intent(inout) :: p
     type(circle),  dimension(:), intent(in) :: c
     type(ellipse), dimension(:), intent(in) :: e
@@ -323,57 +323,82 @@ contains
     type(domain), intent(in) :: dom
     type(element), intent(in) :: bg
 
-    integer :: i, numdt, lt, los, his, ns
-    real(DP) :: pt, px, py, dt
-    complex(DP), dimension(size(s),2) :: arg
-    real(DP), dimension(2) :: loc
+    integer :: i, lt, los, his, ns
+    real(DP), dimension(3) :: t
+    real(DP), dimension(2) :: loc, vel
+    real(DP), dimension(2,3) :: ploc     ! location guesses
+    ! f(x) and f(y) for root-finding
+    complex(DP), dimension(size(s),2,3) :: fpv
+    complex(DP), dimension(size(s),2) :: vv, fx3x2, fx3x1, fx2x1, fx3x2x1, w, r
+    real(DP), parameter :: DTFRAC = 1.1, ITERTOL = 1.0E-3
+    integer, parameter :: MAXITER = 100
 
     ns = size(s,dim=1)
-    pt = p%ti
+    ! assume particles start at t=0?
     loc(1:2) = [p%x,p%y] ! starting position
-    dt = p%dt
-    if (.not. p%forward) dt = -dt
 
     ! initialize with starting position
-    p%r(0,1:3) = [pt,px,py]
+    p%r(0,1:3) = [0.0_DP,loc(:)]
 
-    ! 1st order fwd Euler
-    numdt = ceiling((p%tf - pt)/abs(dt))
+    ! compute particle location at time t,
+    ! given initial location at t=0, and desired time t=dt
 
-    write(*,'(A,I0)') '** analytic Laplace space integration, particle ', p%id
+    ! solution at t=dt is a root-finding exercise in x and y
+    ! use fwd euler to solve for initial guesses in where particle will be
+    
+    t = [p%dt, p%dt/DTFRAC, p%dt*DTFRAC]
 
-    an: do i = 1,numdt
-       if(mod(i,100) == 0) write(*,'(I0,A,ES13.6E2)') i,' t=',pt
+    call getsrange(t(1),lo,ns,los,his,lt)
+    vv = V(loc,s(:,lt),los,his,dom,c,e,bg)
 
-       ! see if particle will reach end this step
-       if (trackDone(p%forward,pt+dt,p%tf)) then
-          write(*,'(A,I0,A,ES13.6E2)') &
-               &'particle',p%id,' reached specified ending time:',p%tf
-          exit an
+    do i = 1, 3
+       ! full step forward Euler to three slightly
+       ! different times, re-using v(p) estimate, vv
+       vel = L(t(i),tee(lt),vv,sol%INVLT)
+       ! estimated coordinates
+       ploc(1:2,i) = loc(:) + t(i)*vel(:)
+       ! laplace-space velocity at estimated location
+       fpv(1:ns,1:2,i) = V(ploc(:,i),s(:,lt),los,his,dom,c,e,bg)
+    end do
+    
+    ! Muller's algorithm for roots (Good for complex roots)
+    ! compute roots for x & y, for each value of laplace parameter
+
+    mul: do i = 1, MAXITER
+       ! calculate divided differences
+       fx3x2 = (fpv(:,:,2)-fpv(:,:,3))/spread(ploc(:,2)-ploc(:,3),1,ns)
+       fx3x1 = (fpv(:,:,1)-fpv(:,:,3))/spread(ploc(:,1)-ploc(:,3),1,ns)
+       fx3x1 = (fpv(:,:,1)-fpv(:,:,2))/spread(ploc(:,1)-ploc(:,2),1,ns)
+
+       w = fx3x2 + fx3x1 - fx2x1
+       fx3x2x1 = (fx2x1-fx3x2)/spread(ploc(:,1)-ploc(:,3),1,ns)
+
+       if (any(abs(w) < epsilon(0.0) .and. &
+             & abs(fx3x2x1) < epsilon(0.0))) then
+          print *, 'cancelled with',t,ploc
+          stop
        end if
+       
+       ploc(:,1) = ploc(:,2)
+       fpv(:,:,1) = fpv(:,:,2)
+       ploc(:,2) = ploc(:,3)
+       fpv(:,:,2) = fpv(:,:,3)
 
-       ! analytic time integration in Laplace space (divide by p)
-       call getsrange(pt,lo,ns,los,his,lt)
-
-       print *, 'i:,pt,loc',i,pt,loc
-
-       ! integration in time -> division by Laplace parameter (0,t)
-       ! time shift from t=0 -> t=t0 is exp(-p*t0)
-       arg(1:ns,1:2) = V(loc(1:2),s(:,lt),los,his,dom,c,e,bg)/spread(s(:,lt),2,2)
-       loc(1:2) = loc(1:2) + L(pt+dt,tee(lt),arg(1:ns,1:2),sol%INVLT) - &
-                           & L(pt,   tee(lt),arg(1:ns,1:2),sol%INVLT)
-
-       pt = pt + dt
-
-       p%r(i,1:3) = [pt,loc(1),loc(2)]
-       p%r(i-1,4:5) = [-999., -999.]  ! velocity not directly computed
-
-       if (sinkCheck(px,py,c,e)) then
-          write(*,'(A,I0,A,ES13.6E2)') 'particle ',p%id,' entered a sink at t=',pt
-          exit an
+       ! denominator should be as large as possible => choose sign
+       r = sqrt(w**2 - 4.0*spread(ploc(:,3),1,ns)*fx3x2x1)
+       where (abs(w - r) > abs(w + r))
+          r = -r
+       end where 
+       ploc(:,3) = ploc(:,3) - 2.0*L(t(i),tee(lt),fpv(:,:,3)/(w+r),sol%INVLT)
+       fpv(:,:,3) = V(ploc(:,3),s(:,lt),los,his,dom,c,e,bg)
+       if (all(abs(ploc(:,3) - ploc(:,2)) < ITERTOL)) then
+          ! compute inverse Laplace transform of optimized location
+          vel = L(t(i),tee(lt),fpv(:,:,3),sol%INVLT)
+          p%r(1,1) = p%dt
+          p%r(1,2:3) = p%r(0,2:3) + p%dt*vel(:)
+          exit mul
        end if
-    end do an
-    p%numt = i - 1
+    end do mul
 
   end subroutine analytic
 
