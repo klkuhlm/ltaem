@@ -308,6 +308,7 @@ contains
   !$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
   subroutine analytic(s,tee,c,e,bg,sol,dom,p,lo)
     use constants, only : DP
+    use utility, only : outer
     use inverse_laplace_transform, only : L => deHoog_invlap
     use type_definitions, only : circle, ellipse, element, solution, particle, domain
     use calc_routines, only : V => velCalc
@@ -357,8 +358,9 @@ contains
        vel = L(t(i),tee(lt),vv,sol%INVLT)
        ! estimated coordinates
        ploc(1:2,i) = loc(:) + t(i)*vel(:)
-       ! laplace-space velocity at estimated location
-       fpv(1:ns,1:2,i) = V(ploc(:,i),s(:,lt),los,his,dom,c,e,bg)
+       ! equation which is set to zero, and used for root-finding (p*x - x0) = V(x)
+       fpv(1:ns,1:2,i) = V(ploc(:,i),s(:,lt),los,his,dom,c,e,bg) - &
+            & (outer(s(:,lt),ploc(:,i)) - spread(loc(:),1,ns))
     end do
     
     ! Muller's algorithm for roots (Good for complex roots)
@@ -390,7 +392,8 @@ contains
           r = -r
        end where 
        ploc(:,3) = ploc(:,3) - 2.0*L(t(i),tee(lt),fpv(:,:,3)/(w+r),sol%INVLT)
-       fpv(:,:,3) = V(ploc(:,3),s(:,lt),los,his,dom,c,e,bg)
+       fpv(:,:,3) = V(ploc(:,3),s(:,lt),los,his,dom,c,e,bg)  - &
+            & (outer(s(:,lt),ploc(:,3)) - spread(loc(:),1,ns))
        if (all(abs(ploc(:,3) - ploc(:,2)) < ITERTOL)) then
           ! compute inverse Laplace transform of optimized location
           vel = L(t(i),tee(lt),fpv(:,:,3),sol%INVLT)
