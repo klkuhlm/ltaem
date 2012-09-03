@@ -196,9 +196,10 @@ contains
 
   !##################################################
   subroutine ComputeElementHierarchy(dom,sol,c,e)
-    use constants, only : DP, EYE
+    use constants, only : DP
     use type_definitions, only : domain, solution, circle, ellipse
     use utility, only : cacosh
+    use geomConv, only : xy2eR
 
     type(domain), intent(inout) :: dom
     type(solution), intent(in) :: sol
@@ -213,11 +214,14 @@ contains
     integer, allocatable :: iv(:), nest(:), val(:)
     integer :: i, j, n, parent
     character(4) :: chint
+    logical, parameter :: debug = .false.
 
     nc = dom%num(1)
     ne = dom%num(2)
     ntot = sum(dom%num)
 
+    if (debug)  print *, 'nc,ne,ntot',nc,ne,ntot
+    
     if (ntot > 1) then
 
        allocate(nondiag(ntot,ntot))
@@ -229,6 +233,13 @@ contains
        dom%InclUp = -huge(1) !! dom%InclUp(1:ntot)       integer
        dom%InclBg = .false. !! dom%InclBg(1:ntot,1:ntot) logical
 
+       if (debug) then
+          print *, 'step 0'
+          print *, 'nondiag,InclIn,InclUp,InclBg',nondiag,'::',&
+               &dom%Inclin,'::',dom%inclup,'::',dom%inclbg
+       end if
+       
+
        ! ## step 1 ####################
        ! determine what circular element each circular + elliptical element falls inside
        ! possibly multiple elements, if multiply nested.  Determine if elements intersect.
@@ -236,7 +247,10 @@ contains
        ! check centers of elements (rows = circles, columns = all elements)
        if (nc > 0) then
           allocate(Rcg(nc,ntot))
-          Rcg(1:nc,1:nc) =      abs(spread(c%z,1,nc) - spread(c%z,2,nc))
+          where (nondiag(1:nc,1:nc))
+             ! don't compute distance to self
+             Rcg(1:nc,1:nc) = abs(spread(c%z,1,nc) - spread(c%z,2,nc))
+          end where
           Rcg(1:nc,nc+1:ntot) = abs(spread(e%z,1,nc) - spread(c%z,2,ne))
 
           ! nondiag handles zero distance-to-self case
@@ -245,6 +259,8 @@ contains
              ! inside radius of source element (1st dim)?
              dom%InclIn(1:nc,1:ntot) = .true.
           end where
+
+          if (debug) print *, 'Step 1: inclIn',dom%inclin
 
           ! two cases where one element center is inside another
           !  1) elements intersect (2 pts) or touch (1 point) = BAD
@@ -284,16 +300,31 @@ contains
        ! check centers of elements (rows = ellipses, columns = all elements)
        if (ne > 0) then
           allocate(Eeg(ne,ntot),Z(ne,ntot))
-          Z(1:ne,1:nc) =      spread(c%z,1,ne) - spread(e%z,2,nc)
-          Eeg(1:ne,1:nc) =      real(cacosh(Z(1:ne,1:nc)*spread(exp(-EYE*e%theta)/e%f,2,nc)))
+          Z(1:ne,ne+1:ntot) = spread(c%z,1,ne) - spread(e%z,2,nc) 
+          Eeg(1:ne,ne+1:ntot) = real(xy2eR(Z(1:ne,1:nc),spread(e,2,nc)))
 
-          Z(1:ne,nc+1:ntot) = spread(e%z,1,ne) - spread(e%z,2,ne)
-          Eeg(1:ne,nc+1:ntot) = real(cacosh(Z(1:ne,nc+1:ntot)*spread(exp(-EYE*e%theta)/e%f,2,ne)))
+          Z(1:ne,1:ne) = spread(e%z,1,ne) - spread(e%z,2,ne)
+          Eeg(1:ne,1:ne) = real(xy2eR(Z(1:ne,nc+1:ntot),spread(e,2,ne)))
           deallocate(Z)
 
-          where (Eeg(1:ne,1:ntot) < spread(e%r,2,ntot) .and. nondiag(1:ne,1:ntot))
-             dom%InclIn(nc+1:ntot,1:ntot) = .true.
-          end where
+          if (debug) then
+             print *, 'Eeg(1:ne,1:ntot),spread(e%r),nondiag',Eeg(1:ne,1:ntot),'::',&
+                  & spread(e%r,2,ntot),'::',nondiag(1:ne,1:ntot)
+          end if
+
+          do i = 1,ne
+             do j = 1,ntot
+                if ((Eeg(i,j) < e(i)%r) .and. (i /= j-nc)) then
+                   dom%InclIn(nc+i,j) = .true.
+                end if
+             end do
+          end do
+
+          deallocate(Eeg)
+
+          if (debug) then
+             print *, 'step 2: inclIn',dom%inclin
+          end if
 
           ! check ellipse-on-circle intersection
           do i = 1, ne
@@ -330,22 +361,31 @@ contains
        allocate(R(ntot), nest(ntot), iv(ntot))
        forall (i=1:ntot) iv(i) = i
        R(1:nc) = c(1:nc)%r
-       R(nc+1:ntot) = e(1:ne)%r  ! TODO : double-check that circle/ellipse can be compared validly
+       ! TODO : double-check that circle/ellipse can be compared validly in this manner
+       R(nc+1:ntot) = e(1:ne)%r  
+
+       if (debug) print *, 'step 3.1: R(c),R(e)',R(1:nc),'::',R(nc+1:ntot)
 
        forall (i=1:ntot, j=1:ntot, i/=j .and. dom%InclIn(i,j).and.dom%InclIn(j,i) .and. R(i)<R(j))
           dom%InclIn(i,j) = .false.
        end forall
+
+       if (debug) print *, 'inclIn',dom%inclin
 
        deallocate(R)
 
        ! number of True values in each column
        nest(1:ntot) = count(dom%InclIn(1:ntot,1:ntot),dim=1)
 
+       if (debug) print *, 'nest',nest
+
        ! ## 3.2 if a column has no T entries, it is in background (level 1 of tree)
        where (nest(1:ntot) == 0)
           dom%InclIn(0,1:ntot) = .true.
           dom%InclUp(1:ntot) = 0
        end where
+
+       if (debug) print *, 'step 3.2: dom%inclIn, dom%inclUp',dom%inclin,'::',dom%inclup
 
        ! ## 3.3 if a column has one T entry, it is inside a background element (level 2 of tree)
        if (any(nest == 1)) then
@@ -378,6 +418,8 @@ contains
           end do
        end if
 
+       if (debug) print *, 'step 3.3: dom%inclIn, dom%inclUp',dom%inclin,'::',dom%inclup
+
        deallocate(nest)
        allocate(nest(0:ntot))
 
@@ -398,6 +440,8 @@ contains
           end if
        end do
 
+       if (debug) print *, 'step 3.4: inclBg',dom%inclbg
+
        ! an element isn't in its own background (by convention)
        forall (i=1:ntot)
           dom%InclBg(i,i) = .false.
@@ -406,7 +450,8 @@ contains
        deallocate(nest,iv)
 
     else
-       ! special case of only one element, no matching -- it is in background
+       ! special case of only one element, no matching 
+       ! it is in background by convention
        dom%InclIn(0:1,1) = [.true.,.false.]
        dom%InclUp(1) = 0
        dom%InclBg(1,1) = .false.
