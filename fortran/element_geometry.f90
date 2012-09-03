@@ -153,7 +153,7 @@ contains
 
     call ComputeElementHierarchy(dom,sol,c,e)
 
-    ! create listing of points on circumference of circles for plotting
+    ! listing of points on circumference of circles for plotting/debugging
     call writeGeometry(c,e,sol)
 
     ! setup pointers to parent elements
@@ -191,7 +191,6 @@ contains
        end if
     end do
 
-
   end subroutine DistanceAngleCalcs
 
   !##################################################
@@ -214,14 +213,11 @@ contains
     integer, allocatable :: iv(:), nest(:), val(:)
     integer :: i, j, n, parent
     character(4) :: chint
-    logical, parameter :: debug = .false.
 
     nc = dom%num(1)
     ne = dom%num(2)
     ntot = sum(dom%num)
 
-    if (debug)  print *, 'nc,ne,ntot',nc,ne,ntot
-    
     if (ntot > 1) then
 
        allocate(nondiag(ntot,ntot))
@@ -232,13 +228,6 @@ contains
        dom%InclIn = .false. !! dom%InclIn(0:ntot,1:ntot) logical
        dom%InclUp = -huge(1) !! dom%InclUp(1:ntot)       integer
        dom%InclBg = .false. !! dom%InclBg(1:ntot,1:ntot) logical
-
-       if (debug) then
-          print *, 'step 0'
-          print *, 'nondiag,InclIn,InclUp,InclBg',nondiag,'::',&
-               &dom%Inclin,'::',dom%inclup,'::',dom%inclbg
-       end if
-       
 
        ! ## step 1 ####################
        ! determine what circular element each circular + elliptical element falls inside
@@ -259,8 +248,6 @@ contains
              ! inside radius of source element (1st dim)?
              dom%InclIn(1:nc,1:ntot) = .true.
           end where
-
-          if (debug) print *, 'Step 1: inclIn',dom%inclin
 
           ! two cases where one element center is inside another
           !  1) elements intersect (2 pts) or touch (1 point) = BAD
@@ -307,11 +294,7 @@ contains
           Eeg(1:ne,1:ne) = real(xy2eR(Z(1:ne,nc+1:ntot),spread(e,2,ne)))
           deallocate(Z)
 
-          if (debug) then
-             print *, 'Eeg(1:ne,1:ntot),spread(e%r),nondiag',Eeg(1:ne,1:ntot),'::',&
-                  & spread(e%r,2,ntot),'::',nondiag(1:ne,1:ntot)
-          end if
-
+          ! no straightforward way to do this with where and a mask.
           do i = 1,ne
              do j = 1,ntot
                 if ((Eeg(i,j) < e(i)%r) .and. (i /= j-nc)) then
@@ -321,10 +304,6 @@ contains
           end do
 
           deallocate(Eeg)
-
-          if (debug) then
-             print *, 'step 2: inclIn',dom%inclin
-          end if
 
           ! check ellipse-on-circle intersection
           do i = 1, ne
@@ -364,28 +343,20 @@ contains
        ! TODO : double-check that circle/ellipse can be compared validly in this manner
        R(nc+1:ntot) = e(1:ne)%r  
 
-       if (debug) print *, 'step 3.1: R(c),R(e)',R(1:nc),'::',R(nc+1:ntot)
-
        forall (i=1:ntot, j=1:ntot, i/=j .and. dom%InclIn(i,j).and.dom%InclIn(j,i) .and. R(i)<R(j))
           dom%InclIn(i,j) = .false.
        end forall
-
-       if (debug) print *, 'inclIn',dom%inclin
 
        deallocate(R)
 
        ! number of True values in each column
        nest(1:ntot) = count(dom%InclIn(1:ntot,1:ntot),dim=1)
 
-       if (debug) print *, 'nest',nest
-
        ! ## 3.2 if a column has no T entries, it is in background (level 1 of tree)
        where (nest(1:ntot) == 0)
           dom%InclIn(0,1:ntot) = .true.
           dom%InclUp(1:ntot) = 0
        end where
-
-       if (debug) print *, 'step 3.2: dom%inclIn, dom%inclUp',dom%inclin,'::',dom%inclup
 
        ! ## 3.3 if a column has one T entry, it is inside a background element (level 2 of tree)
        if (any(nest == 1)) then
@@ -418,8 +389,6 @@ contains
           end do
        end if
 
-       if (debug) print *, 'step 3.3: dom%inclIn, dom%inclUp',dom%inclin,'::',dom%inclup
-
        deallocate(nest)
        allocate(nest(0:ntot))
 
@@ -439,8 +408,6 @@ contains
              deallocate(val)
           end if
        end do
-
-       if (debug) print *, 'step 3.4: inclBg',dom%inclbg
 
        ! an element isn't in its own background (by convention)
        forall (i=1:ntot)
