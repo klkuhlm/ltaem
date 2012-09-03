@@ -1135,7 +1135,7 @@ contains
     else
        write(40,'(A)') '# points along circumference of circular and elliptical elements  -*-auto-revert-*-'
        do i = 1,nc
-          write(40,'(A,I0)') '# circular element ',i
+          write(40,'(2(A,I0),A)') '# circular element ',i,' = ',c(i)%M,' points'
           write(40,fmt)  (origin + c(i)%Zom(j), j=1,c(i)%M)
           if (c(i)%M > 1) then
              ! joins circle back up with beginning for plotting
@@ -1145,7 +1145,7 @@ contains
        end do
 
        do i = 1,ne
-          write(40,'(A,I0)') '# elliptical element ',i
+          write(40,'(2(A,I0),A)') '# elliptical element ',i,' = ',e(i)%M,' points'
           write(40,fmt)  (origin + e(i)%Zom(j), j=1,e(i)%M)
           if (e(i)%M > 1) then
              ! joins ellipse back up with beginning for plotting

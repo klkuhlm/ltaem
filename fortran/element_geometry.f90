@@ -208,8 +208,7 @@ contains
 
     real(DP), allocatable :: Rcg(:,:), Eeg(:,:), R(:)
     complex(DP), allocatable :: Z(:,:)
-    ! single-byte integer representation of logical
-    logical(1), allocatable :: nondiag(:,:)
+    logical, allocatable :: nondiag(:,:)
     integer, allocatable :: iv(:), nest(:), val(:)
     integer :: i, j, n, parent
     character(4) :: chint
