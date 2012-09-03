@@ -1,6 +1,0 @@
-T   :: InclIn(0:ntot,1:ntot)
-F  
-0  :: InclUp(1:ntot)
-F  :: InclBg(1:ntot,1:ntot)
-
-
