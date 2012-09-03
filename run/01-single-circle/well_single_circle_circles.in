@@ -23,4 +23,7 @@ False  False :: unconfined?
 1.5D-1  1.5D-1  :: Sy
 2.0D-2  2.0D-2  :: Kz
 1.0D0  1.0D0  :: b
+False  False :: dual porosity flag
+1.0D-5  1.0D-5  :: matrix Ss
+2.0D0  2.0D0    :: fracture/matrix lambda
 1.0D0  1.0D0 :: dimensionless skin

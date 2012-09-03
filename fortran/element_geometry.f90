@@ -153,6 +153,9 @@ contains
 
     call ComputeElementHierarchy(dom,sol,c,e)
 
+    ! create listing of points on circumference of circles for plotting
+    call writeGeometry(c,e,sol)
+
     ! setup pointers to parent elements
     bg%parent => null()  ! background has no parent
     do i=1,nc
@@ -188,8 +191,7 @@ contains
        end if
     end do
 
-    ! create listing of points on circumference of circles for plotting
-    call writeGeometry(c,e,sol)
+
   end subroutine DistanceAngleCalcs
 
   !##################################################

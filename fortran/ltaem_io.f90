@@ -479,7 +479,7 @@ contains
        read(33,*) e(:)%cutoff
        if (any(e%cutoff < spacing(0.0))) then
           write(*,*) 'e%cutoff must be > 0.0 ',e%cutoff
-          stop 227
+          stop 228
        end if
 
        read(33,*) e(:)%ibnd
@@ -1130,7 +1130,7 @@ contains
     open(unit=40, file=s%geomfname, status='replace', action='write', iostat=ierr)
     if (ierr /= 0) then
        ! non-fatal error
-       write(*,'(2A)') 'WARNING: ltaem_io.f90 error opening output file for writing &
+       write(*,'(2A)') 'WARNING: writeGeometry error opening output file for writing &
             &element matching locations ',s%geomFname
     else
        write(40,'(A)') '# points along circumference of circular and elliptical elements  -*-auto-revert-*-'
