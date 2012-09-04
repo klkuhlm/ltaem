@@ -1159,5 +1159,12 @@ contains
 
   end subroutine writeGeometry
 
+  function writeDefaultInput()
+    ! write a default input file, to get someone started.
+
+    
+
+  end function writeDefaultInput
+  
 end module file_ops
 

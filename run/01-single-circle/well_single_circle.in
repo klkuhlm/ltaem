@@ -1,4 +1,4 @@
-True  False  True  False  1  well_single_circle_out  dump.out  well_single_circle.elem  well_single_circle.geom    ::  recalculate coeff?, particle?, contour?, derivative?, output flag, outputFN, coeffFN (out), elementHierarchy (out), geometryFN (out)
+True  False  True  False  1  well_single_circle_out  dump.out  well_single_circle.elem  well_single_circle.geom    ::  1=calc_coeff?, 2=particle?, 3=contour?, 4=log(t)_derivative?, 5=output_flag, 6=outputFN, 7=coeffFN(out), 8=elementHierarchy(out), 9=geometryFN(out)
 1.0D0   2.0D0   1.0D-4   0   1.0D0   1.0D-4   1.0D0   20  1.0D-10  ::  por, k, Ss, leakFlag, K2, Ss2, b2, ellipse MS, ellipse cutoff
 1.5D-1  2.0D0  False  1.0  :: Sy, Kz, unconfined?, b
 1.0D-5  2.0D0  False  :: matrixSs, matrix/fracture lambda, dualPorosityFlag?
@@ -15,8 +15,8 @@ DUMMY OBS NAME
 0.85 
 0.9  :: t
 1.0D-6  1.0D-8  10  :: alpha, tolerance, M
-2  well_single_circle_circles.in     :: number of circular elements, circle data file
-1  well_single_circle_ellipses.in    :: number of elliptical elements, ellipse data file
+1  well_single_circle_circles.in     :: number of circular elements, circle data file
+0  not_used    :: number of elliptical elements, ellipse data file
 not_used   ::  particle data file
 
      

@@ -1,6 +1,6 @@
-1  8  :: N
-1  18 :: M
-2  0  :: ibnd
+4  8  :: N
+10  18 :: M
+-1  0  :: ibnd
 F  T  :: calcin?
 F  F  :: storin?
 1.0D-2  2.25D-1  :: r
@@ -12,8 +12,6 @@ F  F  :: storin?
 0.0D0  0.0D-1  :: area source strength
 -2.5D-1  0.0D-1  :: boundary source strength
 001  0.0D0  0.0D0  :: area time flag, tpar1, tpar2
-001  0.0D0  0.0D0  :: area time flag, tpar1, tpar2
-001  0.0D0  0.0D0  :: boundary time flag, tpar1, tpar2
 001  0.0D0  0.0D0  :: boundary time flag, tpar1, tpar2
 0  0  :: leaky type flag
 1.0D0  1.0D0 :: K2
