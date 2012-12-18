@@ -1,13 +1,13 @@
 4  8  :: N
 10  18 :: M
--1  0  :: ibnd
+2  0  :: ibnd
 F  T  :: calcin?
 F  F  :: storin?
 1.0D-2  2.25D-1  :: r
 1.01D0  3.0D-1  :: x0
 3.01D-1  4.0D-1  :: y0
-1.0D0  1.0D0  :: K
-1.0D0  1.0D-3  :: Ss
+1.0D0  2.0D0  :: K
+1.0D0  1.0D-4  :: Ss
 1.0D0  1.0D0   :: porosity
 0.0D0  0.0D-1  :: area source strength
 -2.5D-1  0.0D-1  :: boundary source strength
