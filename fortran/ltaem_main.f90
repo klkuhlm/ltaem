@@ -64,7 +64,7 @@ program ltaem_main
   complex(DP), allocatable :: hp(:), vp(:,:)  ! Laplace-space head and velocity vectors
 
   ! some ad-hoc constants that shouldn't really need to be adjusted too often
-  real(DP), parameter :: EARLIEST_PARTICLE = 1.0E-5, MOST_LOGT = 0.999
+  real(DP), parameter :: EARLIEST_PARTICLE = 1.0E-10, MOST_LOGT = 0.999
   real(DP), parameter :: TMAX_MULT = 2.0_DP  
 
   intrinsic :: get_command_argument

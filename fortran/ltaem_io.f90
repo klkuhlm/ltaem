@@ -101,7 +101,7 @@ contains
        write(*,*) 'input file (line 1) sol%output should not be in {3,11} when contour &
             &output is selected ',sol%output,', ',sol%contour
        stop 203
-    elseif ((sol%output /= 3 .and. sol%output /= 11) .and. .not. sol%contour) then
+    elseif ((sol%output /= 3 .and. sol%output /= 11) .and. .not. (sol%contour .or. sol%particle)) then
        write(*,*) 'input file (line 1) sol%output should be in {3,11} when time-series &
             &(non-contour) output is selected ',sol%output,', ',sol%contour
        stop 204
