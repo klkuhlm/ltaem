@@ -64,7 +64,7 @@ program ltaem_main
   complex(DP), allocatable :: hp(:), vp(:,:)  ! Laplace-space head and velocity vectors
 
   ! some ad-hoc constants that shouldn't really need to be adjusted too often
-  real(DP), parameter :: EARLIEST_PARTICLE = 1.0E-10, MOST_LOGT = 0.999
+  real(DP), parameter :: EARLIEST_PARTICLE = 1.0E-5, MOST_LOGT = 0.999
   real(DP), parameter :: TMAX_MULT = 2.0_DP  
 
   intrinsic :: get_command_argument
@@ -292,7 +292,7 @@ program ltaem_main
 
      write(*,'(A)') 'compute solution for plotting contours'
      allocate(sol%h(sol%nx,sol%ny,sol%nt),   hp(tnP), &
-          &   sol%v(sol%nx,sol%ny,sol%nt,2), vp(tnP,2), stmp(tnp))
+          &   sol%v(sol%nx,sol%ny,sol%nt,2), vp(tnP,2), stmp(tnP))
      if (sol%deriv) then
         allocate(sol%dh(sol%nx,sol%ny,sol%nt))
      end if
@@ -304,11 +304,11 @@ program ltaem_main
         do i = 1,sol%ny
 
            calcZ = cmplx(sol%x(j),sol%y(i),DP)
-           stmp(1:tnp) = reshape(s,[tnp])
+           stmp(1:tnP) = reshape(s,[tnP])
 
            !! compute f(p) for all values of p at this location
-           hp(1:tnp) =    headCalc(calcZ,stmp,1,tnp,dom,c,e,bg)
-           vp(1:tnp,1:2) = velCalc(calcZ,stmp,1,tnp,dom,c,e,bg)
+           hp(1:tnP) =    headCalc(calcZ,stmp,1,tnP,dom,c,e,bg)
+           vp(1:tnP,1:2) = velCalc(calcZ,stmp,1,tnP,dom,c,e,bg)
 
            !! invert solutions one log-cycle of t at a time
            do lt = minlt,maxlt-1
@@ -334,7 +334,7 @@ program ltaem_main
   else ! time-series output (x,y locations are in pairs; e.g. inner product)
 
      write(*,'(A)') 'compute solution for plotting time series'
-     allocate(sol%h(sol%nx,1,sol%nt), hp(tnp), sol%v(sol%nx,1,sol%nt,2), vp(tnp,2), stmp(tnp))
+     allocate(sol%h(sol%nx,1,sol%nt), hp(tnP), sol%v(sol%nx,1,sol%nt,2), vp(tnP,2), stmp(tnP))
      if (sol%deriv) then
         allocate(sol%dh(sol%nx,1,sol%nt))
      end if
@@ -346,8 +346,8 @@ program ltaem_main
         stmp(1:tnp) = reshape(s,[tnp])
 
         calcZ = cmplx(sol%x(i),sol%y(i),DP)
-        hp(1:tnp) =    headCalc(calcZ,stmp,1,tnp,dom,c,e,bg)
-        vp(1:tnp,1:2) = velCalc(calcZ,stmp,1,tnp,dom,c,e,bg)
+        hp(1:tnP) =    headCalc(calcZ,stmp,1,tnP,dom,c,e,bg)
+        vp(1:tnP,1:2) = velCalc(calcZ,stmp,1,tnP,dom,c,e,bg)
 
         do lt = minlt,maxlt-1
            lot = 1 + sum(nt(minlt:lt-1))
@@ -369,7 +369,7 @@ program ltaem_main
   end if
 
   !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-  ! cleanup memory and write output to file
+  ! write output to file
   call writeResults(sol,part)
 
 end program ltaem_main

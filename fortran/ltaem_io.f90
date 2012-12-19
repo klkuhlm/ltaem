@@ -166,12 +166,12 @@ contains
              & sol%nx,', ',sol%ny,', ',sol%nt
        stop 208
     end if
-    if (.not. sol%contour .and. sol%nx /= sol%ny) then
+    if (.not. sol%contour .and. .not. sol%particle .and. sol%nx /= sol%ny) then
        write(*,*) 'for time series output nx==ny.  nx=',sol%nx,' ny=',sol%ny
        stop 2080
     end if
     allocate(sol%x(sol%nx), sol%y(sol%ny), sol%t(sol%nt))
-    if (.not. sol%contour) then
+    if (.not. sol%contour .and. .not. sol%particle) then
        allocate(sol%obsname(sol%nx))
        read(15,'(512A)') input
        do j=1,sol%nx
@@ -179,7 +179,7 @@ contains
        end do
     else
        allocate(sol%obsname(0))
-       read(15,*)
+       read(15,*) ! read line anyway
     end if
     read(15,*,iostat=ierr) sol%x(:)
     if (ierr /= 0) stop 'error on (sol%x(:)) of input file'
@@ -192,7 +192,7 @@ contains
     sol%x(:) = sol%x(:) - sol%xshift
     sol%y(:) = sol%y(:) - sol%yshift
 
-    do j=1,sol%nt  !! modified to accommidate pest (make time a column)
+    do j=1,sol%nt  !! modified to accommodate pest (make time a column)
        read(15,*,iostat=ierr) sol%t(j)
        if (ierr /= 0 .or. sol%t(j) < epsilon(0.0))  then
           write(*,*) 'error reading non-zero time from input (> line 6); time row',j,'t:',sol%t(j)
@@ -828,11 +828,13 @@ contains
     ! remove shift applied at beginning
     s%x(:) = s%x(:) + s%xshift
     s%y(:) = s%y(:) + s%yshift
-    do i=1,s%nPart
-       p(i)%r(:,2) = p(i)%r(:,2) + s%xshift
-       p(i)%r(:,3) = p(i)%r(:,3) + s%yshift
-    end do
-
+    if (s%particle) then
+       do i=1,s%nPart
+          p(i)%r(:,2) = p(i)%r(:,2) + s%xshift
+          p(i)%r(:,3) = p(i)%r(:,3) + s%yshift
+       end do
+    end if
+    
     select case (s%output)
     case (1)
        ! ** Gnuplot contour map friendly output **
