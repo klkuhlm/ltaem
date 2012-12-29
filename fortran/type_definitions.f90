@@ -209,6 +209,8 @@ module type_definitions
 
      ! calculate contours (thru space) vs. calculate time series
      logical :: contour = .false.
+     ! calculate values at few locations through time
+     logical :: timeseries = .false.
      ! re-calculate coefficient matrix, or load saved file (BGcoefffname)
      logical :: calc = .false.
 
@@ -230,7 +232,7 @@ module type_definitions
      integer :: nx = -999, ny = -999, nt = -999
      real(DP) :: xshift = -999., yshift = -999.
      real(DP), allocatable :: x(:), y(:), t(:)
-     character(8), allocatable :: obsname(:)
+     character(32), allocatable :: obsname(:)
 
      ! compute log-derivative of solution?
      logical :: deriv = .false.

@@ -37,7 +37,7 @@ contains
     use constants, only : DP, lenFN, PI
     use type_definitions, only : solution, particle, domain, element, circle, ellipse
 
-    type(solution), intent(inout) :: sol
+    type(solution), intent(inout) :: s
     type(particle), intent(out), allocatable :: p(:)
     type(domain),   intent(out) :: dom
     type(element),  intent(out) :: bg
@@ -46,19 +46,19 @@ contains
 
     character(4) :: chint
     character(20), dimension(3) :: fmt
-    character(512)  :: input
+    character(512)  :: input ! a "big enough" buffer to contain all location names?
     character(46) :: lfmt = '(I0,1X,    (ES12.5,1X),A,    (ES12.5,1X),A,I0)'
     character(lenFN+5) :: echofname
     character(lenFN) :: circleFname, ellipseFname, particleFname
-    integer :: ierr, j, ntot, nC, nE  ! #elements, #circles, #ellipses
+    integer :: ierr, j, ntot, nC, nE, line = 1, s1,s2,slen
 
-    open(unit=15, file=trim(sol%infname), status='old', action='read', iostat=ierr)
+    open(unit=15, file=trim(s%infname), status='old', action='read', iostat=ierr)
     if (ierr /= 0) then
-       write(*,'(2A)') 'READINPUT: error opening input file ',trim(sol%infname)
+       write(*,'(2A)') 'READINPUT: error opening input file ',trim(s%infname)
        stop 100
     endif
 
-    echofname = trim(sol%infname)//'.echo'
+    echofname = trim(s%infname)//'.echo'
     open(unit=16, file=echofname, status='replace', action='write', iostat=ierr)
     if (ierr /= 0) then
        write(*,'(2A)') 'READINPUT: error opening echo file ',echofname
@@ -68,88 +68,43 @@ contains
        write(16,'(A)') '-*-auto-revert-*-'
     endif
 
-    ! solution-specific and background aquifer parameters
-    read(15,*,iostat=ierr) sol%calc, sol%particle, sol%contour, sol%deriv, sol%output, &
-         & sol%outFname, sol%coeffFName, sol%elemHfName, sol%geomfName
-    if (ierr /= 0) stop 'error on line 1 of input file'
-
-    ! if sol%output > 100, then don't dump matching results to file for restart (a minor speedup?)
-    if (sol%output > 100) then
-       sol%skipdump = .true.
-       sol%output = sol%output - 100
-    else
-       sol%skipdump = .false.
-    end if
-
-    ! types:: 4*logical, integer, 4*string
-    ! some simple debugging of problem-type / output-type combinations
-    if (sol%output < 1 .or. (sol%output > 5 .and. sol%output /= 10 &
-         & .and. sol%output /= 11)) then
-       write(*,*) 'input file (line 1) sol%output must be in {1,2,3,4,5,10,11} ',sol%output
-       stop 200
-    end if
-    if ((sol%output < 4 .or. sol%output > 5) .and. sol%particle) then
-       write(*,*) 'input file (line 1) if sol%particle==.True., sol%output should &
-            &be in {4,5} ',sol%output,' :: ',sol%particle
-       stop 201
-    elseif (.not. sol%particle .and. (sol%output == 4 .or. sol%output == 5)) then
-       write(*,*) 'input file (line 1) sol%output should only be in {4,5} if &
-            &sol%particle==.True. ',sol%output,', ',sol%particle
-       stop 202
-    end if
-    if ((sol%output == 3 .or. sol%output == 11) .and. sol%contour) then
-       write(*,*) 'input file (line 1) sol%output should not be in {3,11} when contour &
-            &output is selected ',sol%output,', ',sol%contour
-       stop 203
-    elseif ((sol%output /= 3 .and. sol%output /= 11) .and. .not. (sol%contour .or. sol%particle)) then
-       write(*,*) 'input file (line 1) sol%output should be in {3,11} when time-series &
-            &(non-contour) output is selected ',sol%output,', ',sol%contour
-       stop 204
-    end if
-
-
-    read(15,*,iostat=ierr) bg%por, bg%k, bg%ss, bg%leakFlag, &
-         & bg%aquitardK, bg%aquitardSs, bg%aquitardb, bg%ms, bg%cutoff
-    if (ierr /= 0) stop 'error on line 2 of input file'
-
-    ! reals checked here, bg%ms checked in ellipse section, leakflag checked elsewhere
-    if (any([bg%por,bg%k,bg%ss] < spacing(0.0))) then
-       write(*,*) 'input file (line 2) bg%por, bg%k, bg%ss &
-            &must all be > 0.0 ',bg%por,', ',bg%k,', ',bg%ss
-       stop 205
-    end if
-    if (any([bg%aquitardK,bg%aquitardSs,bg%aquitardb] < spacing(0.0))) then
-       write(*,*) 'input file (line 2) bg%aquitardK, bg%aquitardSs, bg%aquitardb &
-            &must all be > 0.0 ',bg%aquitardK,', ',bg%aquitardSs,', ',bg%aquitardb
+    ! sution-specific and background aquifer parameters
+    read(15,*,iostat=ierr) s%calc, s%particle, s%contour, s%deriv, s%output, &
+         & s%outFname, s%coeffFName, s%elemHfName, s%geomfName
+    if (ierr /= 0) then
+       write(*,*) 'error reading line ',line,' (unconfined) of input'
        stop 206
     end if
-
-    read(15,*,iostat=ierr) bg%Sy, bg%kz, bg%unconfinedFlag, bg%b
-    if (ierr /= 0) stop 'error on line 3 of input file'
+    
     if (any([bg%kz,bg%b] < spacing(0.0))) then
-       write(*,*) 'input file (line 3) bg%kz, bg%b must all be > 0.0 ', &
-            & bg%kz,', ',bg%b
+       write(*,*) 'input (line ',line,') bg%kz, bg%b must all be > 0.0 ', &
+            & [bg%kz,bg%b]
        stop 207
     end if
 
     if (bg%Sy < 0.0) then
-       write(*,*) 'input file (line 3) bg%Sy must be non-negative',bg%Sy
-       stop 207
+       write(*,*) 'input (line ',line,') bg%Sy must be non-negative',bg%Sy
+       stop 2071
     end if
 
-    read(15,*,iostat=ierr) bg%matrixSs, bg%lambda, bg%dualPorosityFlag
-    if (ierr /= 0) stop 'error on dual-porosity line of input'
+
+    read(15,*,iostat=ierr) bg%matrixSs, bg%lambda, bg%dualPorosityFlag; line=line+1
+    if (ierr /= 0) then
+       write(*,*) 'error reading line ',line,' (dual porosity) of input'
+       stop 2072
+    end if
+    
     if (any([bg%matrixSs,bg%lambda] < spacing(0.0))) then
-       write(*,*) 'dual porosity line of input: matrixSs and lambda must be > 0.0',&
-            & bg%matrixSs, ', ',bg%lambda
-       stop 2070
+       write(*,*) 'line ',line,' of input: matrixSs and lambda must be > 0.0',&
+            & [bg%matrixSs,bg%lambda]
+       stop 2072
     end if
 
-    ! echo input from first 3 lines to file
-    write(16,'(4(L1,1X),I0,5(1X,A))') sol%calc, sol%particle, sol%contour, sol%deriv, &
-         & sol%output, trim(sol%outFname), trim(sol%coeffFName), trim(sol%elemHfName), &
-         & trim(sol%geomFname),'  ||    re-calculate coefficients?, particle?, &
-         & contour?, deriv?, output flag, out/coeff/hierarchy/geometry file names'
+    ! echo input from first 4 lines to file
+    write(16,'(5(L1,1X),I0,5(1X,A))') s%calc, s%particle, s%contour, s%timeseries, s%deriv, &
+         & s%output, trim(s%outFname), trim(s%coeffFName), trim(s%elemHfName), &
+         & trim(s%geomFname),'  ||    re-calculate coefficients?, particle?, &
+         & contour?, timeseries?, deriv?, output flag, out/coeff/hierarchy/geometry file names'
     write(16,'(3(ES12.5,1X),I0,3(1X,ES12.5),1X,I0,ES11.4,A)') bg%por, bg%k, bg%ss, &
          & bg%leakFlag, bg%aquitardK, bg%aquitardSs, bg%aquitardb, bg%ms, bg%cutoff, &
          & '  ||   background props: por, k, Ss, leaky flag, K2, Ss2, b2, ellipse MS, ellipse cutoff'
@@ -158,138 +113,288 @@ contains
     write(16,'(2(ES12.5,1X),L1,A)') bg%matrixSs, bg%lambda, bg%dualPorosityFlag, &
          & '  || background props: matrixSs, matrix/fracture lambda, dual porosity?'
 
-    ! desired solution points/times
-    read(15,*,iostat=ierr) sol%nx, sol%ny, sol%nt
-    if (ierr /= 0) stop 'error on line 4 of input file'
-    if (any([sol%nx,sol%ny,sol%nt] < 1)) then
-       write(*,*) 'input file (line 4) sol%nx, sol%ny & sol%nt must be > 0 ',&
-             & sol%nx,', ',sol%ny,', ',sol%nt
+    ! desired sution points/times
+    read(15,*,iostat=ierr) s%nx, s%ny, s%nt; line=line+1
+    if (ierr /= 0) then
+       write(*,*) 'error reading line ',line,' (nx,ny,nt) of input'
+       stop 2073
+    end if
+    
+    if (any([s%nx,s%ny,s%nt] < 1)) then
+       write(*,*) 'input file (line ',line,') s%nx, s%ny & s%nt must be > 0 ',&
+             & [s%nx,s%ny,s%nt]
        stop 208
     end if
-    if (.not. sol%contour .and. .not. sol%particle .and. sol%nx /= sol%ny) then
-       write(*,*) 'for time series output nx==ny.  nx=',sol%nx,' ny=',sol%ny
+    if (.not. s%contour .and. .not. s%particle .and. s%nx /= s%ny) then
+       write(*,*) 'for time series output nx==ny.  nx=',s%nx,' ny=',s%ny
        stop 2080
     end if
-    allocate(sol%x(sol%nx), sol%y(sol%ny), sol%t(sol%nt))
-    if (.not. sol%contour .and. .not. sol%particle) then
-       allocate(sol%obsname(sol%nx))
-       read(15,'(512A)') input
-       do j=1,sol%nx
-          sol%obsname(j) = input(8*(j-1)+1:8*j)
+    allocate(s%x(s%nx), s%y(s%ny), s%t(s%nt))
+    if (.not. s%contour .and. .not. s%particle) then
+       allocate(s%obsname(s%nx))
+       read(15,*,iostat=ierr) input; line=line+1
+       if (ierr /= 0) then
+          write(*,*) 'error reading line ',line,' (location names) of input'
+          stop 2081
+       end if
+       
+       s1 = 1
+       slen = len_trim(input) ! don't include trailing blanks
+       do j=1,s%nx
+          ! location names are separated by "|" character
+          s2 = index(input(s1:),'|')
+          if (s2 == 0) then
+             ! no "|" separator character found
+             if (j == 1 .and. slen > 1) then
+                s%obsname(1) = trim(input)
+                s1 = slen
+             else
+                write(chint,'(I4.4)') j
+                s%obsname(j) = 'LOC-'//chint ! generic name
+             end if
+          else
+             s%obsname(j) = input(s1:s2-1)
+          end if
+          s1 = s2+1
        end do
     else
-       allocate(sol%obsname(0))
-       read(15,*) ! read line anyway
+       allocate(s%obsname(0))
+       read(15,*); line=line+1 ! read placeholder name line anyway
     end if
-    read(15,*,iostat=ierr) sol%x(:)
-    if (ierr /= 0) stop 'error on (sol%x(:)) of input file'
-    read(15,*,iostat=ierr) sol%y(:)
-    if (ierr /= 0) stop 'error on (sol%y(:)) of input file'
+    read(15,*,iostat=ierr) s%x(:); line=line+1
+    if (ierr /= 0) then
+       write(*,*) 'error reading line ',line,' (x calc locations) of input'
+       stop 2082
+    end if
+    
+    read(15,*,iostat=ierr) s%y(:); line=line+1
+    if (ierr /= 0) then
+       write(*,*) 'error reading line',line,' (y calc locations) of input'
+       stop 2083
+    end if
 
     ! shift xy values (usefull when x and y are something like UTM coordinates)
-    sol%xshift = (maxval(sol%x) + minval(sol%x))/2.0
-    sol%yshift = (maxval(sol%y) + minval(sol%y))/2.0
-    sol%x(:) = sol%x(:) - sol%xshift
-    sol%y(:) = sol%y(:) - sol%yshift
+    s%xshift = (maxval(s%x) + minval(s%x))/2.0
+    s%yshift = (maxval(s%y) + minval(s%y))/2.0
+    s%x(:) = s%x(:) - s%xshift
+    s%y(:) = s%y(:) - s%yshift
 
-    do j=1,sol%nt  !! modified to accommodate pest (make time a column)
-       read(15,*,iostat=ierr) sol%t(j)
-       if (ierr /= 0 .or. sol%t(j) < epsilon(0.0))  then
-          write(*,*) 'error reading non-zero time from input (> line 6); time row',j,'t:',sol%t(j)
-          stop 999
-       end if
-    end do
+    read(15,*,iostat=ierr) s%t(:); line=line+1
+    if (ierr /= 0)  then
+       write(*,*) 'error reading line ',line,' (calc time) of input' 
+       stop 2081
+    end if
 
-    if (.not. sol%particle) then
+    if (any(s%t <= 0.0)) then
+       write(*,*) 'all times (line ',line,') must be positive values',s%t
+       stop 2082
+    end if
+
+    if (.not. s%particle) then
        fmt(1) = '(    (ES12.5,1X),A) '
-       write(16,'(3(I0,1X),A)') sol%nx, sol%ny, sol%nt, '  ||    numX, numY, numt'
-       write(fmt(1)(2:5),'(I4.4)') sol%nx
-       write(16,'(ES21.14,A)') sol%xshift,'  ||    xshift'
-       write(16,fmt(1)) sol%x(:), '  ||    shifted x Vector'
-       write(fmt(1)(2:5),'(I4.4)') sol%ny
-       write(16,'(ES21.14,A)') sol%yshift,'  ||    yshift'
-       write(16,fmt(1)) sol%y(:), '  ||    shifted y Vector'
-       write(fmt(1)(2:5),'(I4.4)') sol%nt
-       write(16,fmt(1)) sol%t(:), '  ||    t Vector'
+       write(16,'(3(I0,1X),A)') s%nx, s%ny, s%nt, '  ||    numX, numY, numt'
+       write(fmt(1)(2:5),'(I4.4)') s%nx
+       write(16,'(ES21.14,A)') s%xshift,'  ||    xshift'
+       write(16,fmt(1)) s%x(:)+s%xshift,'  ||    original x Vector'
+       write(16,fmt(1)) s%x(:),         '  ||    shifted x Vector'
+       write(fmt(1)(2:5),'(I4.4)') s%ny
+       write(16,'(ES21.14,A)') s%yshift,'  ||    yshift'
+       write(16,fmt(1)) s%y(:)+s%yshift, '  ||    original y Vector'
+       write(16,fmt(1)) s%y(:),          '  ||    shifted y Vector'
+       write(fmt(1)(2:5),'(I4.4)') s%nt
+       write(16,fmt(1)) s%t(:), '  ||    t Vector'
     endif
 
-    ! inverse Laplace transform parameters
-    read(15,*,iostat=ierr) sol%alpha, sol%tol, sol%m
-    if (ierr /= 0) stop 'error on line 7 of input file'
-    if (sol%M < 1) then
-       write(*,*) 'input file (line 7) sol%M must be > 0 ',sol%M
+    ! deHoog et al. inverse Laplace transform parameters
+    read(15,*,iostat=ierr) s%alpha, s%tol, s%m; line=line+1
+    if (ierr /= 0) then
+       write(*,*) 'error reading line ',line,' (deHoog invlap) of input'
        stop 209
     end if
-    if (sol%tol < epsilon(sol%tol)) then ! epsilon(1) ~ 1.0E-8
-       sol%tol = epsilon(sol%tol)
-       write(*,'(A,ES12.5)') 'WARNING: increased INVLAP solution tolerance to ',sol%tol
+
+    if (s%M < 1) then
+       write(*,*) 's%M (line ',line,') must be > 0 (typically >= 10) ',s%M
+       stop 2090
     end if
-    write(16,'(2(ES12.5,1X),I0,A)') sol%alpha, sol%tol, sol%m,'  ||    alpha, tol, M'
+    if (s%tol < epsilon(s%tol)) then ! epsilon(1) ~ 1.0E-8
+       s%tol = epsilon(s%tol)
+       write(*,'(A,ES12.5)') 'WARNING: increased INVLAP solution tolerance to ',s%tol
+    end if
+    write(16,'(2(ES12.5,1X),I0,A)') s%alpha, s%tol, s%m,'  ||    deHoog: alpha, tol, M'
 
     ! circular (includes wells)
-    read(15,*) dom%num(1),circleFname
+    read(15,*,iostat=ierr) dom%num(1),circleFname; line=line+1
+    if (ierr /= 0) then
+       write(*,*) 'error reading line ',line,' (circles) of main input'
+       stop 2091
+    end if
+    
     nc = dom%num(1)
     if (nc > 0) then
+       line = 1
        open(unit=22, file=trim(circleFname), status='old', action='read',iostat=ierr)
        if (ierr /= 0) then
           write(*,'(2A)') 'READINPUT: error opening circular data file for reading ',trim(circleFname)
           stop 210
        else
-          write(16,'(A)') trim(circleFname)//' opened for reading circular data'
+          write(16,'(A)') trim(circleFname)//' opened for circular input data'
        end if
 
        allocate(c(nc))
-       read(22,*) c(:)%n
-       if (any(c%n < 1)) then
-          write(*,*) 'c%N must not be < 1 ',c%N
+       read(22,*,iostat=ierr) c(:)%n
+       if (iostat /= 0 .or. any(c%n < 1)) then
+          write(*,*) 'error reading line ',line,' of circle input; c%N must not be < 1 ',c%N
           stop 211
        end if
 
-       read(22,*) c(:)%m
-       if (any(c%M < 1)) then
-          write(*,*) 'c%M must not be < 1 ',c%M
+       read(22,*,iostat=ierr) c(:)%m; line=line+1
+       if (iostat /= 0 .or. any(c%M < 1)) then
+          write(*,*) 'error reading line ',line,' of circle input; c%M must not be < 1 ',c%M
           stop 212
        end if
 
-       read(22,*) c(:)%ibnd
-       if (any(c%ibnd < -1 .or. c%ibnd > 2)) then
-          write(*,*) 'c%ibnd must be in {-1,0,1,2} ',c%ibnd
+       read(22,*,iostat=ierr) c(:)%ibnd; line=line+1
+       if (ierr /= 0 .or. any(c%ibnd < -1 .or. c%ibnd > 2)) then
+          write(*,*) 'error reading line ',line,' of circle input; c%ibnd must be in {-1,0,1,2} ',c%ibnd
           stop 213
        end if
 
-       read(22,*) c(:)%CalcIn ! calculate inside this element?
-       read(22,*) c(:)%StorIn ! account for free-water storage effects inside element?
+       read(22,*,iostat=ierr) c(:)%CalcIn; line=line+1 
+       if (ierr /= 0) then
+          write(*,*) 'error reading line ',line,' (CalcIn) of circle input'
+          stop 2130
+       end if
+       
+       read(22,*,iostat=ierr) c(:)%StorIn; line=line+1 
+       if (ierr /= 0) then
+          write(*,*) 'error reading line ',line,' (StorIn) of circle input'
+          stop 2131
+       end if       
 
-       read(22,*) c(:)%r
-       if (any(c%r < spacing(0.0))) then
-          write(*,*) 'c%r must be > 0.0 ',c%r
+       read(22,*,iostat=ierr) c(:)%r; line=line+1
+       if (ierr /= 0 .or. any(c%r < spacing(0.0))) then
+          write(*,*) 'error reading line ',line,' of cirlce input; c%r must be > 0.0 ',c%r
           stop 214
        end if
 
-       read(22,*) c(:)%x ! any real number is ok
-       read(22,*) c(:)%y
-       c(:)%z = cmplx(c%x-sol%xshift, c%y-sol%yshift, DP)
+       read(22,*,iostat=ierr) c(:)%x; line=line+1
+       if (ierr /= 0) then
+          write(*,*) 'error reading line ',line,' (center x) of circle input'
+          stop 2140
+       end if       
 
-       read(22,*) c(:)%k
-       if (any(c%k < spacing(0.0))) then
-          write(*,*) 'c%K must be > 0.0 ',c%k
+       read(22,*,iostat=ierr) c(:)%y; line=line+1
+       if (ierr /= 0) then
+          write(*,*) 'error reading line ',line,' (center y) of circle input'
+          stop 2141
+       end if       
+
+       c(:)%z = cmplx(c%x-s%xshift, c%y-s%yshift, DP)
+
+       read(22,*,iostat=ierr) c(:)%k; line=line+1
+       if (ierr /=0 .or. any(c%k < spacing(0.0))) then
+          write(*,*) 'error reading line ',line,' of circle input; c%K must be > 0.0 ',c%k
           stop 215
        end if
 
-       read(22,*) c(:)%Ss
-       if (any(c%ss < spacing(0.0))) then
-          write(*,*) 'c%Ss must be > 0.0 ',c%Ss
+       read(22,*,iostat=ierr) c(:)%Ss; line=line+1
+       if (ierr /= 0 .or. any(c%ss < spacing(0.0))) then
+          write(*,*) 'error reading line ',line,' of circle input; c%Ss must be > 0.0 ',c%Ss
           stop 216
        end if
 
-       read(22,*) c(:)%por
-       if (any(c%por < spacing(0.0))) then
-          write(*,*) 'c%por must be > 0.0 ',c%por
+       read(22,*,iostat=ierr) c(:)%por; line=line+1
+       if (ierr /= 0 .or. any(c%por < spacing(0.0))) then
+          write(*,*) 'error reading line ',line,' of circle input; c%por must be > 0.0 ',c%por
           stop 217
        end if
 
-       read(22,*) c(:)%areaQ ! area source strength (flux)
-       read(22,*) c(:)%bdryQ ! strength of specified value on boundary (head or flux)
+       read(22,*,iostat=ierr) c(:)%leakFlag; line=line+1
+       if (ierr /= 0) then
+          write(*,*) 'error reading line ',line,' (leak flag) of circle input'
+          stop 2170
+       end if       
+
+       read(22,*,iostat=ierr) c(:)%aquitardK; line=line+1
+       if (ierr /= 0 .or. any(c%aquitardK < spacing(0.0))) then
+          write(*,*) 'error reading line ',line,' of circle input; c%aquitardK must be > 0.0 ',c%aquitardk
+          stop 218
+       end if
+
+       read(22,*,iostat=ierr) c(:)%aquitardSs; line=line+1
+       if (ierr /= 0 .or. any(c%aquitardSS < spacing(0.0))) then
+          write(*,*) 'error reading line ',line,' of circle input; c%aquitardSs must be > 0.0 ',c%aquitardSs
+          stop 219
+       end if
+
+       read(22,*,iostat=ierr) c(:)%aquitardb; line=line+1  
+       if (ierr /= 0 .or. any(c%aquitardB < spacing(0.0))) then
+          write(*,*) 'error reading line ',line,' of circle input; c%aquitardB must be > 0.0 ',c%aquitardB
+          stop 220
+       end if
+
+       read(22,*,iostat=ierr) c(:)%unconfinedFlag; line=line+1
+       if (ierr /= 0) then
+          write(*,*) 'error reading line ',line,' (unconfined flag) of circle input'
+          stop 2200
+       end if       
+
+       read(22,*,iostat=ierr) c(:)%Sy; line=line+1
+       if (ierr /= 0 .or. any(c%sy < spacing(0.0))) then
+          write(*,*) 'error reading line ',line,' of circle input; c%Sy must be > 0.0 ',c%sy
+          stop 221
+       end if
+
+       read(22,*,iostat=ierr) c(:)%Kz; line=line+1
+       if (ierr /= 0 .or. any(c%kz < spacing(0.0))) then
+          write(*,*) 'error reading line ',line,' of circle input; c%Kz must be > 0.0 ',c%kz
+          stop 222
+       end if
+
+       read(22,*,iostat=ierr) c(:)%b; line=line+1
+       if (ierr /= 0 .or. any(c%b < spacing(0.0))) then
+          write(*,*) 'error reading line ',line,' of circle input; c%B must be > 0.0 ',c%b
+          stop 223
+       end if
+
+       read(22,*,iostat=ierr) c(:)%dualPorosityFlag; line=line+1
+       if (ierr /= 0) then
+          write(*,*) 'error reading line ',line,' (dual porosity flag) of circle input'
+          stop 2200
+       end if       
+
+       read(22,*,iostat=ierr) c(:)%matrixSs; line=line+1
+       if (ierr /= 0 .or. any(c%matrixSs < spacing(0.0))) then
+          write(*,*) 'error reading line ',line,' of circle input; c%matrixSs must be > 0.0', c%matrixSs
+          stop 2230
+       end if
+
+       read(22,*,iostat=ierr) c(:)%lambda; line=line+1
+       if (ierr /= 0 .or. any(c%lambda < 0.0)) then
+          write(*,*) 'error reading line ',line,' of circle input; &
+               & c%lambda (matrix/fracture connection) must be non-negative', c%lambda
+          stop 2231
+       end if
+
+       read(22,*,iostat=ierr) c(:)%dskin; line=line+1
+       if (ierr /= 0 .or. any(c%dskin < spacing(0.0))) then
+          write(*,*) 'error reading line ',line,' of circle input; c%Dskin must be > 0.0 ',c%dskin
+          stop 224
+       end if
+
+       ! area source strength (flux)
+       read(22,*,iostat=ierr) c(:)%areaQ; line=line+1 
+       if (ierr /= 0) then
+          write(*,*) 'error reading line ',line,' (area source) of circle input'
+          stop 2200
+       end if       
+
+       ! strength of specified value on boundary (head or flux)
+       read(22,*,iostat=ierr) c(:)%bdryQ; line=line+1 
+       if (ierr /= 0) then
+          write(*,*) 'error reading line ',line,' (boundary source) of circle input'
+          stop 2200
+       end if       
 
        write(chint,'(I4.4)') dom%num(1)
        fmt(1) = '('//chint//'(I0,1X),A)     ' ! integer
@@ -304,26 +409,57 @@ contains
        write(16,fmt(2)) c(:)%calcin,         '  ||    calculate inside this circle?'
        write(16,fmt(2)) c(:)%storin,         '  ||    calculate free-water storage effects of circle?'
        write(16,fmt(3)) c(:)%r,              '  ||    circle radius'
+       write(16,fmt(3)) c(:)%x+s%xshift,     '  ||    original circle center x'
        write(16,fmt(3)) c(:)%x,              '  ||    shifted circle center x'
+       write(16,fmt(3)) c(:)%y+s%yshift,     '  ||    original circle center y'
        write(16,fmt(3)) c(:)%y,              '  ||    shifted circle center y'
        write(16,fmt(3)) c(:)%k,              '  ||    circle aquifer k'
        write(16,fmt(3)) c(:)%ss,             '  ||    circle aquifer Ss'
        write(16,fmt(3)) c(:)%por,            '  ||    circle aquifer porosity'
+       write(16,fmt(1)) c(:)%leakFlag,       '  ||     circle leaky type'
+       write(16,fmt(3)) c(:)%aquitardK,      '  ||     circle leaky aquitard K'
+       write(16,fmt(3)) c(:)%aquitardSs,     '  ||     circle leaky aquitard Ss'
+       write(16,fmt(3)) c(:)%aquitardb,      '  ||     circle leaky aquitard thickness'
+       write(16,fmt(2)) c(:)%unconfinedFlag, '  ||     circle unconfined flag'
+       write(16,fmt(3)) c(:)%Sy,             '  ||     circle aquifer specific yield'
+       write(16,fmt(3)) c(:)%Kz,             '  ||     circle aquifer vertical K'
+       write(16,fmt(3)) c(:)%b,              '  ||    circle aquifer thickness'
+       write(16,fmt(2)) c(:)%dualPorosityFlag,'  ||     circle dual porosity flag'
+       write(16,fmt(3)) c(:)%matrixSs,        '  ||     circle matrix Ss'
+       write(16,fmt(3)) c(:)%lambda,          '  ||     circle matrix/fracture connection lambda'
+       write(16,fmt(3)) c(:)%dskin,           '  ||    circle boundary dimensionless skin factor'
        write(16,fmt(3)) c(:)%areaQ,          '  ||    circle area rch rate'
        write(16,fmt(3)) c(:)%bdryQ,          '  ||    circle boundary rch rate or head'
-
+       
+       ! area source behavior
        do j=1,size(c,dim=1)
-          read(22,'(I3)', advance='no') c(j)%AreaTime
+          read(22,*,iostat=ierr) c(j)%AreaTime; line=line+1
+             if (ierr /= 0) then
+                write(*,*) 'error reading line ',line,' (area time behavior) &
+                     &of circle ',j,' input'
+                stop 2201
+             end if
+          backspace(22)
           if (c(j)%AreaTime > -1) then
              ! functional time behavior
              allocate(c(j)%ATPar(2))
-             read(22,*) c(j)%ATPar(:)
+             read(22,*,iostat=ierr) c(j)%AreaTime,c(j)%ATPar(:)
+             if (ierr /= 0) then
+                write(*,*) 'error reading line ',line,' (area functional time behavior) &
+                     &of circle ',j,' input'
+                stop 2202
+             end if
              write(16,'(I0,2(1X,ES12.5),A,I0)') c(j)%AreaTime,c(j)%ATPar(:),&
                   &'  ||  Area time behavior, par1, par2 for circle ',j
           else
              ! piecewise-constant time behavior
              allocate(c(j)%ATPar(-2*c(j)%AreaTime+1))
-             read(22,*) c(j)%ATPar(:)
+             read(22,*,iostat=ierr) c(j)%AreaTime,c(j)%ATPar(:)
+             if (ierr /= 0) then
+                write(*,*) 'error reading line ',line,' (area piecewise-constant time behavior) &
+                     &of circle ',j,'input'
+                stop 2203
+             end if
              lfmt = '(I0,1X,    (ES12.5,1X),A,    (ES12.5,1X),A,I0)'
              write(lfmt(8:11),'(I4.4)')  size(c(j)%ATPar(:-c(j)%AreaTime+1),1)
              write(lfmt(26:29),'(I4.4)') size(c(j)%ATPar(-c(j)%AreaTime+2:),1)
@@ -332,16 +468,34 @@ contains
                   &'  ||    Area ti, tf | strength for circle ',j
           end if
        end do
+
+       ! boundary source behavior
        do j=1,size(c,dim=1)
-          read(22,'(I3)', advance='no') c(j)%BdryTime
+          read(22,*,iostat=ierr) c(j)%BdryTime; line=line+1
+          if (ierr /= 0) then
+                write(*,*) 'error reading line ',line,' (boundary time behavior) &
+                     &of circle ',j,' input'
+                stop 2204
+             end if
+          backspace(22)
           if (c(j)%BdryTime > -1) then
              allocate(c(j)%BTPar(2))
-             read(22,*) c(j)%BTPar(:)
+             read(22,*,iostat=ierr) c(j)%BdryTime,c(j)%BTPar(:)
+             if (ierr /= 0) then
+                write(*,*) 'error reading line ',line,' (boundary functional time behavior) &
+                     &of circle ',j,' input'
+                stop 2205
+             end if
              write(16,'(I0,2(1X,ES12.5),A,I0)') c(j)%BdryTime,c(j)%BTPar(:),&
                   &'  ||  Bdry time behavior, par1, par2 for circle ',j
           else
              allocate(c(j)%BTPar(-2*c(j)%BdryTime+1))
-             read(22,*) c(j)%BTPar(:)
+             read(22,*,iostat=ierr) c(j)%BdryTime,c(j)%BTPar(:)
+             if (ierr /= 0) then
+                write(*,*) 'error reading line ',line,' (boundary piecewise-constant time behavior) &
+                     &of circle ',j,'input'
+                stop 2203
+             end if
              write(lfmt(8:11),'(I4.4)')  size(c(j)%BTPar(:-c(j)%BdryTime+1),1)
              write(lfmt(26:29),'(I4.4)') size(c(j)%BTPar(-c(j)%BdryTime+2:),1)
              write(16,lfmt) c(j)%BdryTime,c(j)%BTPar(:-c(j)%BdryTime+1),' | ',&
@@ -349,63 +503,6 @@ contains
                   &'  ||    Bdry ti, tf | strength for circle ',j
           end if
        end do
-       read(22,*) c(:)%leakFlag  ! checking handled elsewhere
-       read(22,*) c(:)%aquitardK
-       if (any(c%aquitardK < spacing(0.0))) then
-          write(*,*) 'c%aquitardK must be > 0.0 ',c%aquitardk
-          stop 218
-       end if
-
-       read(22,*) c(:)%aquitardSs
-       if (any(c%aquitardSS < spacing(0.0))) then
-          write(*,*) 'c%aquitardSs must be > 0.0 ',c%aquitardSs
-          stop 219
-       end if
-
-       read(22,*) c(:)%aquitardb  !aquitard thickness
-       if (any(c%aquitardB < spacing(0.0))) then
-          write(*,*) 'c%aquitardB must be > 0.0 ',c%aquitardB
-          stop 220
-       end if
-
-       read(22,*) c(:)%unconfinedFlag ! checking handled elsewhere
-       read(22,*) c(:)%Sy
-       if (any(c%sy < spacing(0.0))) then
-          write(*,*) 'c%Sy must be > 0.0 ',c%sy
-          stop 221
-       end if
-
-       read(22,*) c(:)%Kz
-       if (any(c%kz < spacing(0.0))) then
-          write(*,*) 'c%Kz must be > 0.0 ',c%kz
-          stop 222
-       end if
-
-       read(22,*) c(:)%b  ! aquifer thickness
-       if (any(c%b < spacing(0.0))) then
-          write(*,*) 'c%B must be > 0.0 ',c%b
-          stop 223
-       end if
-
-       read(22,*) c(:)%dualPorosityFlag
-       read(22,*) c(:)%matrixSs
-       if (any(c%matrixSs < spacing(0.0))) then
-          write(*,*) 'c%matrixSs must be > 0.0', c%matrixSs
-          stop 2230
-       end if
-
-       read(22,*) c(:)%lambda
-       if (any(c%lambda < 0.0)) then
-          write(*,*) 'c%lambda (matrix/fracture connection)'//&
-               &' must be non-negative', c%lambda
-          stop 2231
-       end if
-
-       read(22,*) c(:)%dskin ! dimensionless skin
-       if (any(c%dskin < spacing(0.0))) then
-          write(*,*) 'c%Dskin must be > 0.0 ',c%dskin
-          stop 224
-       end if
 
        close(22)
 
@@ -422,19 +519,6 @@ contains
           end where
        end if
 
-       write(16,fmt(1)) c(:)%leakFlag,       '  ||     circle leaky type'
-       write(16,fmt(3)) c(:)%aquitardK,      '  ||     circle leaky aquitard K'
-       write(16,fmt(3)) c(:)%aquitardSs,     '  ||     circle leaky aquitard Ss'
-       write(16,fmt(3)) c(:)%aquitardb,      '  ||     circle leaky aquitard thickness'
-       write(16,fmt(2)) c(:)%unconfinedFlag, '  ||     circle unconfined flag'
-       write(16,fmt(3)) c(:)%Sy,             '  ||     circle aquifer specific yield'
-       write(16,fmt(3)) c(:)%Kz,             '  ||     circle aquifer vertical K'
-       write(16,fmt(3)) c(:)%b,              '  ||    circle aquifer thickness'
-       write(16,fmt(2)) c(:)%dualPorosityFlag,'  ||     circle dual porosity flag'
-       write(16,fmt(3)) c(:)%matrixSs,        '  ||     circle matrix Ss'
-       write(16,fmt(3)) c(:)%lambda,          '  ||     circle matrix/fracture connection lambda'
-       write(16,fmt(3)) c(:)%dskin,           '  ||    circle boundary dimensionless skin factor'
-
        ! minor checking / correcting
        do j = 1,size(c,dim=1)
           if (c(j)%ibnd == 2 .and. c(j)%N /= 1) then
@@ -449,7 +533,12 @@ contains
     end if
 
     ! elliptical (includes line sources/sinks)
-    read(15,*) dom%num(2), ellipseFname
+    read(15,*,iostat=ierr) dom%num(2), ellipseFname
+    if (ierr /= 0) then
+       write(*,*) 'error reading line 12 (circles) of main input'
+       stop 2092
+    end if
+
     ne = dom%num(2)
     if (ne > 0) then
        open(unit=33, file=trim(ellipseFname), status='old', action='read',iostat=ierr)
@@ -500,7 +589,7 @@ contains
 
        read(33,*) e(:)%x
        read(33,*) e(:)%y
-       e(:)%z = cmplx(e%x-sol%xshift, e%y-sol%yshift, DP)
+       e(:)%z = cmplx(e%x-s%xshift, e%y-s%yshift, DP)
 
        read(33,*) e(:)%f
        if (any(e%f < spacing(0.0))) then
@@ -531,70 +620,6 @@ contains
           write(*,*) 'e%por must be > 0.0 ',e%por
           stop 235
        end if
-
-       read(33,*) e(:)%areaQ
-       read(33,*) e(:)%bdryQ
-
-       write(chint,'(I4.4)') dom%num(2)
-       fmt(1) = '('//chint//'(I0,1X),A)     ' ! integer
-       fmt(2) = '('//chint//'(L1,1X),A)     ' ! logical
-       fmt(3) = '('//chint//'(ES13.5,1X),A) ' ! real
-
-       write(16,'(I0,A)') dom%num(2),        '  ||   number of elliptical elements (including lines)'
-       write(16,fmt(1)) e(:)%n,              '  ||   number of elliptical free parameter (Fourier coeffs)'
-       write(16,fmt(1)) e(:)%m,              '  ||   number of ellipse matching locations'
-       write(16,fmt(1)) e(:)%ms,             '  ||   size of "infinite" Mathieu matrices'
-       write(16,fmt(3)) e(:)%cutoff,         '  ||   desired accuracy cutoff for Mathieu function matrices'
-       write(16,fmt(1)) e(:)%ibnd,           '  ||   ellipse ibnd array'
-       write(16,fmt(2)) e(:)%match,          '  ||   ellipse matching array'
-       write(16,fmt(2)) e(:)%calcin,         '  ||   calculate inside this ellipse?'
-       ! TODO free-water storage for ellipses not handled yet
-       write(16,fmt(2)) e(:)%storin,         '  ||   calculate free-water storage for this ellipse?'
-       write(16,fmt(3)) e(:)%r,              '  ||   ellipse radius (eta)'
-       write(16,fmt(3)) e(:)%x,              '  ||   shifted ellipse center x'
-       write(16,fmt(3)) e(:)%y,              '  ||   shifted ellipse center y'
-       write(16,fmt(3)) e(:)%f,              '  ||   ellipse semi-focal length'
-       write(16,fmt(3)) e(:)%theta,          '  ||   ellipse angle rotation with +x axis'
-       write(16,fmt(3)) e(:)%k,              '  ||   ellipse aquifer k'
-       write(16,fmt(3)) e(:)%ss,             '  ||   ellipse aquifer Ss'
-       write(16,fmt(3)) e(:)%por,            '  ||   ellipse aquifer porosity'
-       write(16,fmt(3)) e(:)%areaQ,          '  ||   ellipse area rch rate'
-       write(16,fmt(3)) e(:)%bdryQ,          '  ||   ellipse boundary rch rate or head'
-
-       do j=1,size(e,dim=1)
-          read(33,'(I3)', advance='no') e(j)%AreaTime
-          if (e(j)%AreaTime > -1) then
-             allocate(e(j)%ATPar(2))
-             read(33,*) e(j)%ATPar(:)
-             write(16,'(I0,2(1X,ES12.5),A,I0)') e(j)%AreaTime,e(j)%ATPar(:),&
-                  &'  ||  Area time behavior, par1, par2 for ellipse ',j
-          else
-             allocate(e(j)%ATPar(-2*e(j)%AreaTime+1))
-             read(33,*) e(j)%ATPar(:)
-             write(lfmt(8:11),'(I3.3)')  size(e(j)%ATPar(:-e(j)%AreaTime+1),1)
-             write(lfmt(26:29),'(I3.3)') size(e(j)%ATPar(-e(j)%AreaTime+2:),1)
-             write(16,lfmt) e(j)%AreaTime,e(j)%ATPar(:-e(j)%AreaTime+1),' | ',&
-                  & e(j)%ATPar(-e(j)%AreaTime+2:), &
-                  &'  ||    Area ti, tf | strength for ellipse ',j
-          end if
-       end do
-       do j=1,size(e,dim=1)
-          read(33,'(I3)', advance='no') e(j)%BdryTime
-          if (e(j)%BdryTime > -1) then
-             allocate(e(j)%BTPar(2))
-             read(33,*) e(j)%BTPar(:)
-             write(16,'(I0,2(1X,ES12.5),A,I0)') e(j)%BdryTime,e(j)%BTPar(:),&
-                  &'  ||  Boundary time behavior, par1, par2 for ellipse ',j
-          else
-             allocate(e(j)%BTPar(-2*e(j)%BdryTime+1))
-             read(33,*) e(j)%BTPar(:)
-             write(lfmt(8:11),'(I3.3)')  size(e(j)%BTPar(:-e(j)%BdryTime+1),1)
-             write(lfmt(26:29),'(I3.3)') size(e(j)%BTPar(-e(j)%BdryTime+2:),1)
-             write(16,lfmt) e(j)%BdryTime,e(j)%BTPar(:-e(j)%BdryTime+1),' | ',&
-                  & e(j)%BTPar(-e(j)%BdryTime+2:), &
-                  &'  ||    Boundary ti, tf | strength for ellipse ',j
-          end if
-       end do
 
        read(33,*) e(:)%leakFlag  ! checking handled elsewhere
 
@@ -656,6 +681,71 @@ contains
           stop 242
        end if
 
+       read(33,*) e(:)%areaQ
+       read(33,*) e(:)%bdryQ
+
+       write(chint,'(I4.4)') dom%num(2)
+       fmt(1) = '('//chint//'(I0,1X),A)     ' ! integer
+       fmt(2) = '('//chint//'(L1,1X),A)     ' ! logical
+       fmt(3) = '('//chint//'(ES13.5,1X),A) ' ! real
+
+       write(16,'(I0,A)') dom%num(2),        '  ||   number of elliptical elements (including lines)'
+       write(16,fmt(1)) e(:)%n,              '  ||   number of elliptical free parameter (Fourier coeffs)'
+       write(16,fmt(1)) e(:)%m,              '  ||   number of ellipse matching locations'
+       write(16,fmt(1)) e(:)%ms,             '  ||   size of "infinite" Mathieu matrices'
+       write(16,fmt(3)) e(:)%cutoff,         '  ||   desired accuracy cutoff for Mathieu function matrices'
+       write(16,fmt(1)) e(:)%ibnd,           '  ||   ellipse ibnd array'
+       write(16,fmt(2)) e(:)%match,          '  ||   ellipse matching array'
+       write(16,fmt(2)) e(:)%calcin,         '  ||   calculate inside this ellipse?'
+       ! TODO free-water storage for ellipses not handled yet
+       write(16,fmt(2)) e(:)%storin,         '  ||   calculate free-water storage for this ellipse?'
+       write(16,fmt(3)) e(:)%r,              '  ||   ellipse radius (eta)'
+       write(16,fmt(3)) e(:)%x,              '  ||   shifted ellipse center x'
+       write(16,fmt(3)) e(:)%y,              '  ||   shifted ellipse center y'
+       write(16,fmt(3)) e(:)%f,              '  ||   ellipse semi-focal length'
+       write(16,fmt(3)) e(:)%theta,          '  ||   ellipse angle rotation with +x axis'
+       write(16,fmt(3)) e(:)%k,              '  ||   ellipse aquifer k'
+       write(16,fmt(3)) e(:)%ss,             '  ||   ellipse aquifer Ss'
+       write(16,fmt(3)) e(:)%por,            '  ||   ellipse aquifer porosity'
+
+       write(16,fmt(3)) e(:)%areaQ,          '  ||   ellipse area rch rate'
+       write(16,fmt(3)) e(:)%bdryQ,          '  ||   ellipse boundary rch rate or head'
+
+       do j=1,size(e,dim=1)
+          read(33,'(I3)', advance='no') e(j)%AreaTime
+          if (e(j)%AreaTime > -1) then
+             allocate(e(j)%ATPar(2))
+             read(33,*) e(j)%ATPar(:)
+             write(16,'(I0,2(1X,ES12.5),A,I0)') e(j)%AreaTime,e(j)%ATPar(:),&
+                  &'  ||  Area time behavior, par1, par2 for ellipse ',j
+          else
+             allocate(e(j)%ATPar(-2*e(j)%AreaTime+1))
+             read(33,*) e(j)%ATPar(:)
+             write(lfmt(8:11),'(I3.3)')  size(e(j)%ATPar(:-e(j)%AreaTime+1),1)
+             write(lfmt(26:29),'(I3.3)') size(e(j)%ATPar(-e(j)%AreaTime+2:),1)
+             write(16,lfmt) e(j)%AreaTime,e(j)%ATPar(:-e(j)%AreaTime+1),' | ',&
+                  & e(j)%ATPar(-e(j)%AreaTime+2:), &
+                  &'  ||    Area ti, tf | strength for ellipse ',j
+          end if
+       end do
+       do j=1,size(e,dim=1)
+          read(33,'(I3)', advance='no') e(j)%BdryTime
+          if (e(j)%BdryTime > -1) then
+             allocate(e(j)%BTPar(2))
+             read(33,*) e(j)%BTPar(:)
+             write(16,'(I0,2(1X,ES12.5),A,I0)') e(j)%BdryTime,e(j)%BTPar(:),&
+                  &'  ||  Boundary time behavior, par1, par2 for ellipse ',j
+          else
+             allocate(e(j)%BTPar(-2*e(j)%BdryTime+1))
+             read(33,*) e(j)%BTPar(:)
+             write(lfmt(8:11),'(I3.3)')  size(e(j)%BTPar(:-e(j)%BdryTime+1),1)
+             write(lfmt(26:29),'(I3.3)') size(e(j)%BTPar(-e(j)%BdryTime+2:),1)
+             write(16,lfmt) e(j)%BdryTime,e(j)%BTPar(:-e(j)%BdryTime+1),' | ',&
+                  & e(j)%BTPar(-e(j)%BdryTime+2:), &
+                  &'  ||    Boundary ti, tf | strength for ellipse ',j
+          end if
+       end do
+
        close(33)
 
        where (e(:)%ibnd == -1 .or. e(:)%ibnd == 0 .or. e(:)%ibnd == +1)
@@ -715,7 +805,7 @@ contains
     write(16,'(ES12.5,A)') bg%T,    '  ||    background transmissivity'
 
     ! particles
-    if (sol%particle) then
+    if (s%particle) then
        read(15,*) particleFname
        open(unit=44, file=particleFname, status='old', action='read',iostat=ierr)
        if (ierr /= 0) then
@@ -725,8 +815,8 @@ contains
           write(16,'(A)') trim(particleFname)//' opened for reading particle data'
        end if
 
-       read(44,*) sol%nPart,  sol%streakSkip
-       allocate(p(sol%nPart))
+       read(44,*) s%nPart,  s%streakSkip
+       allocate(p(s%nPart))
 
        read(44,*) p(:)%forward ! true=forward tracking, false=backwards tracking
 
@@ -756,8 +846,8 @@ contains
 
        read(44,*) p(:)%x
        read(44,*) p(:)%y
-       p(:)%x = p(:)%x - sol%xshift
-       p(:)%y = p(:)%y - sol%yshift
+       p(:)%x = p(:)%x - s%xshift
+       p(:)%y = p(:)%y - s%yshift
 
        read(44,*) p(:)%ti ! particle start time
        if (any(p%ti < spacing(1.0))) then
@@ -789,12 +879,12 @@ contains
        read(44,*) p(:)%InclIn
        close(44)
 
-       write(chint,'(I4.4)') sol%nPart
+       write(chint,'(I4.4)') s%nPart
        fmt(1) = '('//chint//'(I0,1X),A)     ' ! integer
        fmt(2) = '('//chint//'(L1,1X),A)     ' ! logical
        fmt(3) = '('//chint//'(ES13.5,1X),A) ' ! real
 
-       write(16,fmt(3)) p(:)%tol,    '  ||    particle solution tolerances (RKM only)'
+       write(16,fmt(3)) p(:)%tol,    '  ||    particle sution tolerances (RKM only)'
        write(16,fmt(3)) p(:)%dt,     '  ||    particle time step (RKM initial step)'
        write(16,fmt(3)) p(:)%maxL,   '  ||    particle max step length (RKM only)'
        write(16,fmt(3)) p(:)%mindt,  '  ||    particle min time step size (RKM only)'

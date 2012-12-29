@@ -248,6 +248,9 @@ contains
              dom%InclIn(1:nc,1:ntot) = .true.
           end where
 
+          ! TODO: steps 1 and 2 should be done by solving the equations for the circles/ellipses
+          ! but it is easier to do it with a discrete representation of the boundaries 
+
           ! two cases where one element center is inside another
           !  1) elements intersect (2 pts) or touch (1 point) = BAD
           !  2) smaller element inside larger element         = OK
