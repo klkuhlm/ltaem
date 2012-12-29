@@ -290,6 +290,28 @@ contains
 
        read(22,*) c(:)%areaQ ! area source strength (flux)
        read(22,*) c(:)%bdryQ ! strength of specified value on boundary (head or flux)
+
+       write(chint,'(I4.4)') dom%num(1)
+       fmt(1) = '('//chint//'(I0,1X),A)     ' ! integer
+       fmt(2) = '('//chint//'(L1,1X),A)     ' ! logical
+       fmt(3) = '('//chint//'(ES13.5,1X),A) ' ! real
+
+       write(16,'(I0,A)') dom%num(1),        '  ||   number of circular elements (including wells)'
+       write(16,fmt(1)) c(:)%n,              '  ||   number of circular free parameter (Fourier coefficients)'
+       write(16,fmt(1)) c(:)%m,              '  ||   number of circular matching locations'
+       write(16,fmt(1)) c(:)%ibnd,           '  ||    circle ibnd array'
+       write(16,fmt(2)) c(:)%match,          '  ||    circle matching array'
+       write(16,fmt(2)) c(:)%calcin,         '  ||    calculate inside this circle?'
+       write(16,fmt(2)) c(:)%storin,         '  ||    calculate free-water storage effects of circle?'
+       write(16,fmt(3)) c(:)%r,              '  ||    circle radius'
+       write(16,fmt(3)) c(:)%x,              '  ||    shifted circle center x'
+       write(16,fmt(3)) c(:)%y,              '  ||    shifted circle center y'
+       write(16,fmt(3)) c(:)%k,              '  ||    circle aquifer k'
+       write(16,fmt(3)) c(:)%ss,             '  ||    circle aquifer Ss'
+       write(16,fmt(3)) c(:)%por,            '  ||    circle aquifer porosity'
+       write(16,fmt(3)) c(:)%areaQ,          '  ||    circle area rch rate'
+       write(16,fmt(3)) c(:)%bdryQ,          '  ||    circle boundary rch rate or head'
+
        do j=1,size(c,dim=1)
           read(22,'(I3)', advance='no') c(j)%AreaTime
           if (c(j)%AreaTime > -1) then
@@ -400,27 +422,7 @@ contains
           end where
        end if
 
-       write(chint,'(I4.4)') dom%num(1)
-       fmt(1) = '('//chint//'(I0,1X),A)     ' ! integer
-       fmt(2) = '('//chint//'(L1,1X),A)     ' ! logical
-       fmt(3) = '('//chint//'(ES13.5,1X),A) ' ! real
-
-       write(16,'(I0,A)') dom%num(1),        '  ||   number of circular elements (including wells)'
-       write(16,fmt(1)) c(:)%n,              '  ||   number of circular free parameter (Fourier coefficients)'
-       write(16,fmt(1)) c(:)%m,              '  ||   number of circular matching locations'
-       write(16,fmt(1)) c(:)%ibnd,           '  ||    circle ibnd array'
-       write(16,fmt(2)) c(:)%match,          '  ||    circle matching array'
-       write(16,fmt(2)) c(:)%calcin,         '  ||    calculate inside this circle?'
-       write(16,fmt(2)) c(:)%storin,         '  ||    calculate free-water storage effects of circle?'
-       write(16,fmt(3)) c(:)%r,              '  ||    circle radius'
-       write(16,fmt(3)) c(:)%x,              '  ||    shifted circle center x'
-       write(16,fmt(3)) c(:)%y,              '  ||    shifted circle center y'
-       write(16,fmt(3)) c(:)%k,              '  ||    circle aquifer k'
-       write(16,fmt(3)) c(:)%ss,             '  ||    circle aquifer Ss'
-       write(16,fmt(3)) c(:)%por,            '  ||    circle aquifer porosity'
-       write(16,fmt(3)) c(:)%areaQ,          '  ||    circle area rch rate'
-       write(16,fmt(3)) c(:)%bdryQ,          '  ||    circle boundary rch rate or head'
-       write(16,fmt(2)) c(:)%leakFlag,       '  ||     circle leaky type'
+       write(16,fmt(1)) c(:)%leakFlag,       '  ||     circle leaky type'
        write(16,fmt(3)) c(:)%aquitardK,      '  ||     circle leaky aquitard K'
        write(16,fmt(3)) c(:)%aquitardSs,     '  ||     circle leaky aquitard Ss'
        write(16,fmt(3)) c(:)%aquitardb,      '  ||     circle leaky aquitard thickness'
@@ -432,7 +434,6 @@ contains
        write(16,fmt(3)) c(:)%matrixSs,        '  ||     circle matrix Ss'
        write(16,fmt(3)) c(:)%lambda,          '  ||     circle matrix/fracture connection lambda'
        write(16,fmt(3)) c(:)%dskin,           '  ||    circle boundary dimensionless skin factor'
-
 
        ! minor checking / correcting
        do j = 1,size(c,dim=1)
@@ -533,6 +534,32 @@ contains
 
        read(33,*) e(:)%areaQ
        read(33,*) e(:)%bdryQ
+
+       write(chint,'(I4.4)') dom%num(2)
+       fmt(1) = '('//chint//'(I0,1X),A)     ' ! integer
+       fmt(2) = '('//chint//'(L1,1X),A)     ' ! logical
+       fmt(3) = '('//chint//'(ES13.5,1X),A) ' ! real
+
+       write(16,'(I0,A)') dom%num(2),        '  ||   number of elliptical elements (including lines)'
+       write(16,fmt(1)) e(:)%n,              '  ||   number of elliptical free parameter (Fourier coeffs)'
+       write(16,fmt(1)) e(:)%m,              '  ||   number of ellipse matching locations'
+       write(16,fmt(1)) e(:)%ms,             '  ||   size of "infinite" Mathieu matrices'
+       write(16,fmt(3)) e(:)%cutoff,         '  ||   desired accuracy cutoff for Mathieu function matrices'
+       write(16,fmt(1)) e(:)%ibnd,           '  ||   ellipse ibnd array'
+       write(16,fmt(2)) e(:)%match,          '  ||   ellipse matching array'
+       write(16,fmt(2)) e(:)%calcin,         '  ||   calculate inside this ellipse?'
+       ! TODO free-water storage for ellipses not handled yet
+       write(16,fmt(2)) e(:)%storin,         '  ||   calculate free-water storage for this ellipse?'
+       write(16,fmt(3)) e(:)%r,              '  ||   ellipse radius (eta)'
+       write(16,fmt(3)) e(:)%x,              '  ||   shifted ellipse center x'
+       write(16,fmt(3)) e(:)%y,              '  ||   shifted ellipse center y'
+       write(16,fmt(3)) e(:)%f,              '  ||   ellipse semi-focal length'
+       write(16,fmt(3)) e(:)%theta,          '  ||   ellipse angle rotation with +x axis'
+       write(16,fmt(3)) e(:)%k,              '  ||   ellipse aquifer k'
+       write(16,fmt(3)) e(:)%ss,             '  ||   ellipse aquifer Ss'
+       write(16,fmt(3)) e(:)%por,            '  ||   ellipse aquifer porosity'
+       write(16,fmt(3)) e(:)%areaQ,          '  ||   ellipse area rch rate'
+       write(16,fmt(3)) e(:)%bdryQ,          '  ||   ellipse boundary rch rate or head'
 
        do j=1,size(e,dim=1)
           read(33,'(I3)', advance='no') e(j)%AreaTime
@@ -642,32 +669,7 @@ contains
           e%storin = .false.
        end if
 
-       write(chint,'(I4.4)') dom%num(2)
-       fmt(1) = '('//chint//'(I0,1X),A)     ' ! integer
-       fmt(2) = '('//chint//'(L1,1X),A)     ' ! logical
-       fmt(3) = '('//chint//'(ES13.5,1X),A) ' ! real
-
-       write(16,'(I0,A)') dom%num(2),        '  ||   number of elliptical elements (including lines)'
-       write(16,fmt(1)) e(:)%n,              '  ||   number of elliptical free parameter (Fourier coeffs)'
-       write(16,fmt(1)) e(:)%m,              '  ||   number of ellipse matching locations'
-       write(16,fmt(1)) e(:)%ms,             '  ||   size of "infinite" Mathieu matrices'
-       write(16,fmt(3)) e(:)%cutoff,         '  ||   desired accuracy cutoff for Mathieu function matrices'
-       write(16,fmt(1)) e(:)%ibnd,           '  ||   ellipse ibnd array'
-       write(16,fmt(2)) e(:)%match,          '  ||   ellipse matching array'
-       write(16,fmt(2)) e(:)%calcin,         '  ||   calculate inside this ellipse?'
-       ! TODO free-water storage for ellipses not handled yet
-       write(16,fmt(2)) e(:)%storin,         '  ||   calculate free-water storage for this ellipse?'
-       write(16,fmt(3)) e(:)%r,              '  ||   ellipse radius (eta)'
-       write(16,fmt(3)) e(:)%x,              '  ||   shifted ellipse center x'
-       write(16,fmt(3)) e(:)%y,              '  ||   shifted ellipse center y'
-       write(16,fmt(3)) e(:)%f,              '  ||   ellipse semi-focal length'
-       write(16,fmt(3)) e(:)%theta,          '  ||   ellipse angle rotation with +x axis'
-       write(16,fmt(3)) e(:)%k,              '  ||   ellipse aquifer k'
-       write(16,fmt(3)) e(:)%ss,             '  ||   ellipse aquifer Ss'
-       write(16,fmt(3)) e(:)%por,            '  ||   ellipse aquifer porosity'
-       write(16,fmt(3)) e(:)%areaQ,          '  ||   ellipse area rch rate'
-       write(16,fmt(3)) e(:)%bdryQ,          '  ||   ellipse boundary rch rate or head'
-       write(16,fmt(2)) e(:)%leakFlag,       '  ||   ellipse leaky type'
+       write(16,fmt(1)) e(:)%leakFlag,       '  ||   ellipse leaky type'
        write(16,fmt(3)) e(:)%aquitardK,      '  ||   ellipse leaky aquitard K'
        write(16,fmt(3)) e(:)%aquitardSs,     '  ||   ellipse leaky aquitard Ss'
        write(16,fmt(3)) e(:)%aquitardb,      '  ||   ellipse leaky aquitard thickness'
