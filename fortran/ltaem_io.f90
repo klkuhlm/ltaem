@@ -150,7 +150,7 @@ contains
          & sol%output, trim(sol%outFname), trim(sol%coeffFName), trim(sol%elemHfName), &
          & trim(sol%geomFname),'  ||    re-calculate coefficients?, particle?, &
          & contour?, deriv?, output flag, out/coeff/hierarchy/geometry file names'
-    write(16,'(3(ES12.5,1X),L1,3(1X,ES12.5),1X,I0,ES11.4,A)') bg%por, bg%k, bg%ss, &
+    write(16,'(3(ES12.5,1X),I0,3(1X,ES12.5),1X,I0,ES11.4,A)') bg%por, bg%k, bg%ss, &
          & bg%leakFlag, bg%aquitardK, bg%aquitardSs, bg%aquitardb, bg%ms, bg%cutoff, &
          & '  ||   background props: por, k, Ss, leaky flag, K2, Ss2, b2, ellipse MS, ellipse cutoff'
     write(16,'(2(ES12.5,1X),L1,1X,ES12.5,A)') bg%Sy, bg%kz, bg%unconfinedFlag, &
@@ -162,7 +162,7 @@ contains
     read(15,*,iostat=ierr) sol%nx, sol%ny, sol%nt
     if (ierr /= 0) stop 'error on line 4 of input file'
     if (any([sol%nx,sol%ny,sol%nt] < 1)) then
-       write(*,*) 'input file (line 4) sol%nx, sol%ny, sol%nt must be > 0 ',&
+       write(*,*) 'input file (line 4) sol%nx, sol%ny & sol%nt must be > 0 ',&
              & sol%nx,', ',sol%ny,', ',sol%nt
        stop 208
     end if
@@ -187,8 +187,8 @@ contains
     if (ierr /= 0) stop 'error on (sol%y(:)) of input file'
 
     ! shift xy values (usefull when x and y are something like UTM coordinates)
-    sol%xshift = (maxval(sol%x) - minval(sol%x))/2.0
-    sol%yshift = (maxval(sol%y) - minval(sol%y))/2.0
+    sol%xshift = (maxval(sol%x) + minval(sol%x))/2.0
+    sol%yshift = (maxval(sol%y) + minval(sol%y))/2.0
     sol%x(:) = sol%x(:) - sol%xshift
     sol%y(:) = sol%y(:) - sol%yshift
 
