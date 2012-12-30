@@ -218,13 +218,18 @@ module type_definitions
      character(lenFN) :: outfname='unset', infname='unset'
      character(lenFN) :: coefffname='unset', elemHfName='unset', geomFname='unset'
 
-     ! output index  1= Gnuplot map (x,y,z triplets; times separated by blank lines);
-     !               2= Matlab map (matrix output separate files);
-     !               3= Gnuplot time series with velocity (column of times; locs sep. by blank lines);
-     !               4= pathline Gnuplot (column of times, particles separated by blank lines);
-     !               5= streakline Gnuplot (each block a requested time, each row a particle);
-     !               10= Matlab for SCEM-UA inverse (column of times, locs sep. by blank lines);
-     !               11= Gnuplot time serires no velocity (same as 3 no vel);
+     ! output index
+     ! ------------------- <10 = contour map output --------------------
+     !  1= Gnuplot map (x,y,z triplets; times separated by blank lines);
+     !  2= Matlab map (matrix output separate files);
+     ! --------------->=10 <20 = time series output --------------------
+     ! 10= Gnuplot time series with velocity (column of times; locs sep. by blank lines);
+     ! 11= Matlab for SCEM-UA inverse (column of times, locs sep. by blank lines);
+     ! 12= Gnuplot time serires no velocity (same as 10 no vel);
+     ! --------------->=20 = particle track output ---------------------
+     ! 20= pathline Gnuplot (column of times, particles separated by blank lines);
+     ! 21= streakline Gnuplot (each block a requested time, each row a particle);
+
      ! aquitardLeak and unconfined
      integer :: output = -999, aquitardLeak = -999, unconfined= -999
 

@@ -76,13 +76,15 @@ contains
        stop 110
     end if
 
-    if (.not. s%particle .and. .not. s%contour) then
+    if ((.not. s%particle) .and. (.not. s%contour)) then
        s%timeseries = .true.
     else
        s%timeseries = .false.
     end if
+    print *, 'DEBUG:',s%particle,s%contour,s%timeseries
 
-    ! if s%output > 100, then don't dump matching results to file for restart (a minor speedup?)
+    ! if s%output > 100, then don't dump matching results to
+    ! file for restart (a minor speedup?)
     if (s%output > 100) then
        s%skipdump = .true.
        s%output = s%output - 100
@@ -91,36 +93,48 @@ contains
     end if
 
     ! some simple debugging of problem-type / output-type combinations
-    if (s%output < 1 .or. (s%output > 5 .and. s%output /= 10 &
-         & .and. s%output /= 11)) then
-       write(*,*) 'input file (line ',ln,') s%output must be in {1,2,3,4,5,10,11} ',s%output
+    if (.not.(s%output == 1 .or. s%output == 2 .or. &
+         & s%output == 10 .or. s%output == 11 .or. s%output == 12 .or. &
+         & s%output == 20 .or. s%output == 21)) then
+       write(*,*) 'input file (line ',ln,') s%output must be in '&
+            &//'{1,2,10,11,12,20,21} ',s%output
        stop 200
     end if
-    if ((s%output < 4 .or. s%output > 5) .and. s%particle) then
-       write(*,*) 'input file (line ',ln,') if s%particle==.True., s%output should &
-            &be in {4,5} ',s%output,' :: ',s%particle
-       stop 201
-    elseif (.not. s%particle .and. (s%output == 4 .or. s%output == 5)) then
-       write(*,*) 'input file (line ',ln,') s%output should only be in {4,5} if &
-            &s%particle==.True. ',s%output,', ',s%particle
-       stop 202
-    end if
-    if ((s%output == 3 .or. s%output == 11) .and. s%contour) then
-       write(*,*) 'input file (line ',ln,') s%output should not be in {3,11} when contour &
-            &output is selected ',s%output,', ',s%contour
-       stop 203
-    elseif ((s%output /= 3 .and. s%output /= 11) .and. s%timeseries) then
-       write(*,*) 'input file (line ',ln,') s%output should be in {3,11} when time-series &
-            &(non-contour) output is selected ',s%output,', ',s%contour
-       stop 204
+    if (s%output >= 10  .and. s%contour) then
+       write(*,*) 'input file (line ',ln,') s%output should be in {1,2} '&
+            &//'when contour output is selected ',s%output,s%contour
+       stop 2010
+    elseif (s%output < 10 .and. .not. s%contour) then
+       write(*,*) 'input file (line ',ln,') s%output should be only in '&
+            &//'{1,2} when contour output is selected ',s%output,s%contour
+       stop 2011
     end if
 
+    if ((s%output < 10 .or. s%output >= 20) .and. s%timeseries) then
+       write(*,*) 'input file (line ',ln,') s%output should be in {10,11,12}'&
+            &//' when timeseries output is selected ',s%output,s%timeseries
+       stop 2020
+    elseif (s%output >= 10 .and. s%output < 20 .and. .not. s%timeseries) then
+       write(*,*) 'input file (line ',ln,') s%output should only be in {10,'&
+            &//'11,12} when contour output is selected ',s%output,s%timeseries
+       stop 2021
+    end if
+
+    if (s%output < 20 .and. s%particle) then
+       write(*,*) 'input file (line ',ln,') if s%particle==.True., '&
+            &//'s%output should be in {20,21} ',s%output,s%particle
+       stop 2030
+    elseif (s%output >= 20  .and. .not. s%particle) then
+       write(*,*) 'input file (line ',ln,') s%output should only be in '&
+            &//'{20,21} if s%particle==.True. ',s%output,s%particle
+       stop 2031
+    end if    
 
     read(15,*,iostat=ierr) bg%por, bg%k, bg%ss, bg%leakFlag, &
          & bg%aquitardK, bg%aquitardSs, bg%aquitardb, bg%ms, bg%cutoff; ln=ln+1
     if (ierr /= 0) then
        write(*,*) 'error on line ',ln,' of input file (background props)'
-       stop 2040
+       stop 204
     end if
     
     ! reals checked here, bg%ms checked in ellipse section
@@ -1169,7 +1183,8 @@ contains
     select case (s%output)
     case (1)
        ! ** Gnuplot contour map friendly output **
-       ! print results as x,y,{h,v,dh} "triplets" with the given times separated by double blank lines
+       ! print results as x,y,{h,v,dh} "triplets" with the
+       ! times separated by double blank lines
 
        open(unit=20, file=s%outfname, status='replace', action='write')
        write(20,*) '# LT-AEM contour map output     -*-auto-revert-*-'
@@ -1204,16 +1219,17 @@ contains
        write(20,'(A)') '# EOF'
        close(20)
 
-       write(*,'(/A)') '***********************************************************'
-       write(*,'(2A)') ' Gnuplot contour map style output written to ', trim(s%outfname)
-       write(*,'(A)')  '***********************************************************'
+       write(*,'(/A)') '**************************************************'
+       write(*,'(2A)') ' Gnuplot contour output => ', trim(s%outfname)
+       write(*,'(A)')  '**************************************************'
 
        !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     case (2)
 
-       ! ** Matlab-friendly output **
-       ! print results as matrices, with each variable (at each time) going to a separate file
-       ! x and y matrices - similar to results from Matlab function meshgrid()
+       ! ** Matlab-friendly contour output **
+       ! print results as matrices, with each variable (at each time) going
+       ! to a separate file x and y matrices - similar to results from Matlab
+       ! function meshgrid()
 
        ! x-matrix has same row repeated numy times
        open(unit=20, file=trim(s%outfname)//'_x.dat', status='replace', &
@@ -1276,13 +1292,13 @@ contains
        write (20,'('//tfmt//')') (s%t(j), j=1,s%nt)
        close(20)
 
-       write(*,'(/A)') '*********************************************************************'
-       write(*,'(3A)') 'matlab output written to ', trim(s%outfname), &
+       write(*,'(/A)') '*********************************************************'
+       write(*,'(3A)') 'Matlab output => ', trim(s%outfname), &
               & '{x,y,t,{d,}head{1-n},velx{1-n},vely{1-n}}.dat'
-       write(*,'(A)') '*********************************************************************'
+       write(*,'(A)') '**********************************************************'
 
        !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    case (3)
+    case (10)
 
        ! ** Gnuplot-friendly time series output **
        ! column of time values at a location through time
@@ -1290,7 +1306,8 @@ contains
        open(unit=20, file=s%outfname, status='replace', action='write')
        write (20,'(A)') '# LT-AEM time series output   -*-auto-revert-*-'
        do i = 1, s%nx
-          write (20,'(2(A,'//xfmt//'),3X,A)') '# location: x=',s%x(i),' y=',s%y(i),s%obsname(i)
+          write (20,'(2(A,'//xfmt//'),3X,A)') '# location: x=',s%x(i),' y=',&
+               & s%y(i),s%obsname(i)
           write (20,'(A)',advance='no')  '#     time              head'//&
                & '                  velx                vely'
           if (s%deriv) then
@@ -1313,9 +1330,9 @@ contains
        write(20,*) '# EOF'
        close(20)
 
-       write(*,'(/A)') '***********************************************************'
-       write(*,'(2A)') 'Gnuplot style output written to ', trim(s%outfname)
-       write(*,'(A)') '***********************************************************'
+       write(*,'(/A)') '*****************************************************'
+       write(*,'(2A)') 'Gnuplot timeseries output => ', trim(s%outfname)
+       write(*,'(A)')  '*****************************************************'
 
        !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     case (11)
@@ -1326,7 +1343,8 @@ contains
        open(unit=20, file=s%outfname, status='replace', action='write')
        write (20,'(A)') '# LT-AEM time series output    -*-auto-revert-*-'
        do j = 1, s%nx
-          write (20,'(2(A,'//xfmt//'),3X,A)') '# location: x=',s%x(j),' y=',s%y(j),s%obsname(j)
+          write (20,'(2(A,'//xfmt//'),3X,A)') '# location: x=',s%x(j),' y=',&
+               &s%y(j),s%obsname(j)
           if (s%deriv) then
              write (20,'(A)')   '#     time              head             deriv'
           else
@@ -1346,12 +1364,12 @@ contains
        write(20,*) '# EOF'
        close(20)
 
-       write(*,'(/A)') '***********************************************************'
-       write(*,'(2A)') 'Gnuplot style output written to ', trim(s%outfname)
-       write(*,'(A)') '***********************************************************'
+       write(*,'(/A)') '*****************************************************'
+       write(*,'(2A)') 'Gnuplot timeseries output (no v) => ', trim(s%outfname)
+       write(*,'(A)')  '*****************************************************'
 
        !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    case (10)
+    case (12)
 
        ! ** output for inverse in Matlab
        ! column of time values at a location through time
@@ -1372,12 +1390,12 @@ contains
           close(20)
        end do
 
-       write(*,'(/A)') '***********************************************************'
-       write(*,'(4A)') 'inverse output written to ',trim(s%outfname),'0000-',chint(1)
-       write(*,'(A)') '***********************************************************'
+       write(*,'(/A)') '*****************************************************'
+       write(*,'(4A)') 'inverse output => ',trim(s%outfname),'0000-',chint(1)
+       write(*,'(A)')  '*****************************************************'
 
        !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    case (4)
+    case (20)
 
        ! ** pathline Gnuplot-style output **
        ! columns of time values for starting locations
@@ -1396,12 +1414,12 @@ contains
        write(20,'(A)') '# EOF'
        close(20)
 
-       write(*,'(/A)') '***********************************************************'
-       write(*,'(2A)') 'particle tracking output written to ', trim(s%outfname)
-       write(*,'(A)') '***********************************************************'
+       write(*,'(/A)') '*****************************************************'
+       write(*,'(2A)') 'particle tracking output => ', trim(s%outfname)
+       write(*,'(A)')  '*****************************************************'
 
        !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    case (5)
+    case (21)
 
        ! ** streakline Gnuplot-style output **
        ! this requires constant time steps (can't use adaptive integration)
@@ -1429,9 +1447,9 @@ contains
        write(90,'(A)') '# EOF'
        close(90)
 
-       write(*,'(/A)') '***********************************************************'
-       write(*,'(2A)') 'particle tracking streakfile written to ', trim(s%outfname)
-       write(*,'(A)') '***********************************************************'
+       write(*,'(/A)') '*****************************************************'
+       write(*,'(2A)') 'particle tracking streakfile => ', trim(s%outfname)
+       write(*,'(A)')  '*****************************************************'
 
     case default
        write(*,'(A,I0)')  'invalid output code ',s%output
@@ -1465,7 +1483,8 @@ contains
        write(*,'(2A)') 'WARNING: writeGeometry error opening output file for writing &
             &element matching locations ',s%geomFname
     else
-       write(40,'(A)') '# points along circumference of circular and elliptical elements  -*-auto-revert-*-'
+       write(40,'(A)') '# points along circumference of circular '//&
+            &'and elliptical elements  -*-auto-revert-*-'
        do i = 1,nc
           write(40,'(2(A,I0),A)') '# circular element ',i,' = ',c(i)%M,' points'
           write(40,fmt)  (origin + c(i)%Zom(j), j=1,c(i)%M)
