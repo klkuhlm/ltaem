@@ -1,4 +1,4 @@
-8  -999          :: #particles, streakSkip
+8  1          :: #particles, streakSkip
 T  T  T  T  T T T T     :: forward or backward tracking?
 1.0D-2 1.0D-2 1.0D-2 1.0D-2  1.0D-2 1.0D-2 1.0D-2 1.0D-2  :: RKM tolerance
 0.02 0.02 0.02 0.02  0.02 0.02 0.02 0.02 :: RKM max step length

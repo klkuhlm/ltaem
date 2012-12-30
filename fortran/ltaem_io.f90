@@ -52,6 +52,7 @@ contains
     character(lenFN) :: circleFname, ellipseFname, particleFname
     integer :: ierr, j, ntot, nC, nE, ln = 1, sln, s1,s2,slen
 
+
     open(unit=15, file=trim(s%infname), status='old', action='read', iostat=ierr)
     if (ierr /= 0) then
        write(*,'(2A)') 'READINPUT: error opening input file ',trim(s%infname)
@@ -81,7 +82,6 @@ contains
     else
        s%timeseries = .false.
     end if
-    print *, 'DEBUG:',s%particle,s%contour,s%timeseries
 
     ! if s%output > 100, then don't dump matching results to
     ! file for restart (a minor speedup?)
@@ -147,7 +147,7 @@ contains
        write(*,*) 'error on line',ln,' of input; leak flag (bg%leakFlag) must be in {0,1,2,3}'
        stop 2050
     end if
-    if (any([bg%aquitardK,bg%aquitardSs,bg%aquitardb] <= 0.0)) then
+    if (any([bg%aquitardK,bg%aquitardSs,bg%aquitardb] <= 0.0) .and. bg%leakFlag > 0) then
        write(*,*) 'input file (line ',ln,') bg%aquitardK, bg%aquitardSs, bg%aquitardb &
             &must all be > 0.0 ',[bg%aquitardK,bg%aquitardSs,bg%aquitardb]
        stop 206
@@ -160,13 +160,13 @@ contains
     end if
     
 
-    if (any([bg%kz,bg%b] <= 0.0)) then
+    if (any([bg%kz,bg%b] <= 0.0) .and. bg%unconfinedFlag) then
        write(*,*) 'input (line ',ln,') vertical K (bg%kz), thickness (bg%b) must be > 0.0 ', &
             & [bg%kz,bg%b]
        stop 207
     end if
 
-    if (bg%Sy < 0.0) then
+    if (bg%Sy < 0.0 .and. bg%unconfinedFlag) then
        write(*,*) 'input (line ',ln,') specific yield (bg%Sy) must be non-negative',bg%Sy
        stop 2071
     end if
@@ -178,7 +178,7 @@ contains
        stop 2072
     end if
     
-    if (any([bg%matrixSs,bg%lambda] <= 0.0)) then
+    if (any([bg%matrixSs,bg%lambda] <= 0.0) .and. bg%dualPorosityFlag) then
        write(*,*) 'line ',ln,' of input: matrix specific storage (bg%matrixSs) and '//&
             & 'matrix/fracture connection factor (bg%lambda) must be > 0.0',&
             & [bg%matrixSs,bg%lambda]
@@ -189,10 +189,10 @@ contains
     write(16,'(5(L1,1X),I0,5(1X,A))') s%calc, s%particle, s%contour, s%timeseries, s%deriv, &
          & s%output, trim(s%outFname), trim(s%coeffFName), trim(s%elemHfName), &
          & trim(s%geomFname),'  ||    re-calculate coefficients?, particle?, '//&
-         & 'contour?, timeseries?, deriv?, output flag, out/coeff/hierarchy/geometry file names'
+         & 'contour?, timeseries?, deriv?, output, out/coeff/hierarchy/geometry file names'
     write(16,'(3(ES12.5,1X),I0,3(1X,ES12.5),1X,I0,ES11.4,A)') bg%por, bg%k, bg%ss, &
          & bg%leakFlag, bg%aquitardK, bg%aquitardSs, bg%aquitardb, bg%ms, bg%cutoff, &
-         & '  ||   background props: por, k, Ss, leaky flag, K2, Ss2, b2, ellipse MS, ellipse cutoff'
+         & '  ||   background props: por, k, Ss, leaky flag, K2, Ss2, b2, MS, cutoff'
     write(16,'(2(ES12.5,1X),L1,1X,ES12.5,A)') bg%Sy, bg%kz, bg%unconfinedFlag, &
          & bg%b, '  || background props: Sy, Kz, unconfined?, BGb'
     write(16,'(2(ES12.5,1X),L1,A)') bg%matrixSs, bg%lambda, bg%dualPorosityFlag, &
@@ -217,7 +217,7 @@ contains
     allocate(s%x(s%nx), s%y(s%ny), s%t(s%nt))
     if (s%timeseries) then
        allocate(s%obsname(s%nx))
-       read(15,*,iostat=ierr) input; ln=ln+1
+       read(15,'(512A)',iostat=ierr) input; ln=ln+1
        if (ierr /= 0) then
           write(*,*) 'error reading line ',ln,' (location names) of input'
           stop 2081
@@ -231,16 +231,20 @@ contains
           if (s2 == 0) then
              ! no "|" separator character found
              if (j == 1 .and. slen > 1) then
+                ! first name no separator 
                 s%obsname(1) = trim(input)
                 s1 = slen
+             elseif(j == s%nx .and. s1 > 1) then
+                ! last name no separator (normal)
+                s%obsname(s%nx) = trim(input(s1:))
              else
                 write(chint,'(I4.4)') j
                 s%obsname(j) = 'LOC-'//chint ! generic name
              end if
           else
-             s%obsname(j) = input(s1:s2-1)
+             s%obsname(j) = input(s1:s1+s2-2)
           end if
-          s1 = s2+1
+          s1 = s1+s2
        end do
     else
        allocate(s%obsname(0))
@@ -412,21 +416,21 @@ contains
        end if       
 
        read(22,*,iostat=ierr) c(:)%aquitardK; sln=sln+1
-       if (ierr /= 0 .or. any(c%aquitardK <= 0.0)) then
+       if (ierr /= 0 .or. any(c%aquitardK <= 0.0 .and. c%leakFlag > 0)) then
           write(*,*) 'error reading line ',sln,' of circle input; aquitard vertical K '//&
                &'(c%aquitardK) must be > 0.0 ',c%aquitardk
           stop 218
        end if
 
        read(22,*,iostat=ierr) c(:)%aquitardSs; sln=sln+1
-       if (ierr /= 0 .or. any(c%aquitardSS <= 0.0)) then
+       if (ierr /= 0 .or. any(c%aquitardSS <= 0.0 .and. c%leakFlag > 0)) then
           write(*,*) 'error reading line ',sln,' of circle input; aquitard specific storage '//&
                &'(c%aquitardSs) must be > 0.0 ',c%aquitardSs
           stop 219
        end if
 
        read(22,*,iostat=ierr) c(:)%aquitardb; sln=sln+1  
-       if (ierr /= 0 .or. any(c%aquitardB <= 0.0)) then
+       if (ierr /= 0 .or. any(c%aquitardB <= 0.0 .and. c%leakFlag > 0)) then
           write(*,*) 'error reading line ',sln,' of circle input; aquitard thickness '//&
                &'(c%aquitardB) must be > 0.0 ',c%aquitardB
           stop 220
@@ -440,21 +444,21 @@ contains
        end if       
 
        read(22,*,iostat=ierr) c(:)%Sy; sln=sln+1
-       if (ierr /= 0 .or. any(c%sy <= 0.0)) then
+       if (ierr /= 0 .or. any(c%sy <= 0.0 .and. c%unconfinedFlag)) then
           write(*,*) 'error reading line ',sln,' of circle input; specific yield (c%Sy) '//&
                &'must be > 0.0 ',c%sy
           stop 221
        end if
 
        read(22,*,iostat=ierr) c(:)%Kz; sln=sln+1
-       if (ierr /= 0 .or. any(c%kz <= 0.0)) then
+       if (ierr /= 0 .or. any(c%kz <= 0.0 .and. c%unconfinedFlag)) then
           write(*,*) 'error reading line ',sln,' of circle input; aquifer vertical K '//&
                &'(c%Kz) must be > 0.0 ',c%kz
           stop 222
        end if
 
        read(22,*,iostat=ierr) c(:)%b; sln=sln+1
-       if (ierr /= 0 .or. any(c%b <= 0.0)) then
+       if (ierr /= 0 .or. any(c%b <= 0.0 .and. c%unconfinedFlag)) then
           write(*,*) 'error reading line ',sln,' of circle input; aquifer thickness '//&
                &'(c%B) must be > 0.0 ',c%b
           stop 223
@@ -468,14 +472,14 @@ contains
        end if       
 
        read(22,*,iostat=ierr) c(:)%matrixSs; sln=sln+1
-       if (ierr /= 0 .or. any(c%matrixSs <= 0.0)) then
+       if (ierr /= 0 .or. any(c%matrixSs <= 0.0 .and. c%dualPorosityFlag)) then
           write(*,*) 'error reading line ',sln,' of circle input; matrix specific storage '//&
                &'(c%matrixSs) must be > 0.0', c%matrixSs
           stop 2230
        end if
 
        read(22,*,iostat=ierr) c(:)%lambda; sln=sln+1
-       if (ierr /= 0 .or. any(c%lambda < 0.0)) then
+       if (ierr /= 0 .or. any(c%lambda < 0.0 .and. c%dualPorosityFlag)) then
           write(*,*) 'error reading line ',sln,' of circle input; '//&
                & 'matrix/fracture connection (c%lambda) must be non-negative', c%lambda
           stop 2231
@@ -510,32 +514,32 @@ contains
        write(16,'(I0,A)') dom%num(1),        '  ||   # of circular elements (including wells)'
        write(16,fmt(1)) c(:)%n,              '  ||   # of circular free parameter (Fourier coefficients)'
        write(16,fmt(1)) c(:)%m,              '  ||   # of circular matching locations'
-       write(16,fmt(1)) c(:)%ibnd,           '  ||    circle ibnd array'
-       write(16,fmt(2)) c(:)%match,          '  ||    circle matching array'
-       write(16,fmt(2)) c(:)%calcin,         '  ||    calculate inside this circle?'
-       write(16,fmt(2)) c(:)%storin,         '  ||    calculate free-water storage effects of circle?'
-       write(16,fmt(3)) c(:)%r,              '  ||    circle radius'
-       write(16,fmt(3)) c(:)%x+s%xshift,     '  ||    original circle center x'
-       write(16,fmt(3)) c(:)%x,              '  ||    shifted circle center x'
-       write(16,fmt(3)) c(:)%y+s%yshift,     '  ||    original circle center y'
-       write(16,fmt(3)) c(:)%y,              '  ||    shifted circle center y'
-       write(16,fmt(3)) c(:)%k,              '  ||    circle aquifer k'
-       write(16,fmt(3)) c(:)%ss,             '  ||    circle aquifer Ss'
-       write(16,fmt(3)) c(:)%por,            '  ||    circle aquifer porosity'
-       write(16,fmt(1)) c(:)%leakFlag,       '  ||     circle leaky type'
-       write(16,fmt(3)) c(:)%aquitardK,      '  ||     circle leaky aquitard K'
-       write(16,fmt(3)) c(:)%aquitardSs,     '  ||     circle leaky aquitard Ss'
-       write(16,fmt(3)) c(:)%aquitardb,      '  ||     circle leaky aquitard thickness'
-       write(16,fmt(2)) c(:)%unconfinedFlag, '  ||     circle unconfined flag'
-       write(16,fmt(3)) c(:)%Sy,             '  ||     circle aquifer specific yield'
-       write(16,fmt(3)) c(:)%Kz,             '  ||     circle aquifer vertical K'
-       write(16,fmt(3)) c(:)%b,              '  ||    circle aquifer thickness'
-       write(16,fmt(2)) c(:)%dualPorosityFlag,'  ||     circle dual porosity flag'
-       write(16,fmt(3)) c(:)%matrixSs,        '  ||     circle matrix Ss'
-       write(16,fmt(3)) c(:)%lambda,          '  ||     circle matrix/fracture connection lambda'
-       write(16,fmt(3)) c(:)%dskin,           '  ||    circle boundary dimensionless skin factor'
-       write(16,fmt(3)) c(:)%areaQ,          '  ||    circle area rch rate'
-       write(16,fmt(3)) c(:)%bdryQ,          '  ||    circle boundary rch rate or head'
+       write(16,fmt(1)) c(:)%ibnd,           '  ||   circle ibnd array'
+       write(16,fmt(2)) c(:)%match,          '  ||   circle matching array'
+       write(16,fmt(2)) c(:)%calcin,         '  ||   calculate inside this circle?'
+       write(16,fmt(2)) c(:)%storin,         '  ||   calculate free-water storage effects of circle?'
+       write(16,fmt(3)) c(:)%r,              '  ||   circle radius'
+       write(16,fmt(3)) c(:)%x+s%xshift,     '  ||   original circle center x'
+       write(16,fmt(3)) c(:)%x,              '  ||   shifted circle center x'
+       write(16,fmt(3)) c(:)%y+s%yshift,     '  ||   original circle center y'
+       write(16,fmt(3)) c(:)%y,              '  ||   shifted circle center y'
+       write(16,fmt(3)) c(:)%k,              '  ||   circle aquifer k'
+       write(16,fmt(3)) c(:)%ss,             '  ||   circle aquifer Ss'
+       write(16,fmt(3)) c(:)%por,            '  ||   circle aquifer porosity'
+       write(16,fmt(1)) c(:)%leakFlag,       '  ||   circle leaky type'
+       write(16,fmt(3)) c(:)%aquitardK,      '  ||   circle leaky aquitard K'
+       write(16,fmt(3)) c(:)%aquitardSs,     '  ||   circle leaky aquitard Ss'
+       write(16,fmt(3)) c(:)%aquitardb,      '  ||   circle leaky aquitard thickness'
+       write(16,fmt(2)) c(:)%unconfinedFlag, '  ||   circle unconfined flag'
+       write(16,fmt(3)) c(:)%Sy,             '  ||   circle aquifer specific yield'
+       write(16,fmt(3)) c(:)%Kz,             '  ||   circle aquifer vertical K'
+       write(16,fmt(3)) c(:)%b,              '  ||   circle aquifer thickness'
+       write(16,fmt(2)) c(:)%dualPorosityFlag,'  ||   circle dual porosity flag'
+       write(16,fmt(3)) c(:)%matrixSs,        '  ||   circle matrix Ss'
+       write(16,fmt(3)) c(:)%lambda,          '  ||   circle matrix/fracture connection lambda'
+       write(16,fmt(3)) c(:)%dskin,           '  ||   circle boundary dimensionless skin factor'
+       write(16,fmt(3)) c(:)%areaQ,          '  ||   circle area rch rate'
+       write(16,fmt(3)) c(:)%bdryQ,          '  ||   circle boundary rch rate or head'
        
        ! area source behavior
        do j=1,size(c,dim=1)
@@ -629,7 +633,8 @@ contains
        ! minor checking / correcting
        do j = 1,size(c,dim=1)
           if (c(j)%ibnd == 2 .and. c(j)%N /= 1) then
-             write(*,'(A,I0,A)') '** wells (ibnd==2) must have N=1, fixing circle #',j,' to N=1'
+             write(*,'(A,I0,A)') '** wells (ibnd==2) must have N=1, fixing circle #',&
+                  & j,' to N=1'
              c(j)%N = 1
           end if
        end do
@@ -773,21 +778,21 @@ contains
        end if       
 
        read(33,*,iostat=ierr) e(:)%aquitardK; sln=sln+1
-       if (ierr /= 0 .or. any(e%aquitardK <= 0.0)) then
+       if (ierr /= 0 .or. any(e%aquitardK <= 0.0 .and. e%leakFlag > 0)) then
           write(*,*) 'error reading line ',sln,' of ellipse input; aquitard vertical K '//&
                      &'(e%aquitardK) must be > 0.0 ',e%aquitardK
           stop 236
        end if
 
        read(33,*,iostat=ierr) e(:)%aquitardSs; sln=sln+1
-       if (ierr /= 0 .or. any(e%aquitardSs <= 0.0)) then
+       if (ierr /= 0 .or. any(e%aquitardSs <= 0.0 .and. e%leakFlag > 0)) then
           write(*,*) 'error reading line ',sln,' of ellipse input; aquitard specific '//&
                      &'storage (e%aquitardSs) must be > 0.0 ',e%aquitardSs
           stop 237
        end if
 
        read(33,*,iostat=ierr) e(:)%aquitardb; sln=sln+1
-       if (ierr /= 0 .or. any(e%aquitardb <= 0.0)) then
+       if (ierr /= 0 .or. any(e%aquitardb <= 0.0 .and. e%leakFlag > 0)) then
           write(*,*) 'error reading line ',sln,' of ellipse input; aquitard thickness '//&
                      &'(e%aquitardB) must be > 0.0 ',e%aquitardb
           stop 238
@@ -801,21 +806,21 @@ contains
        end if       
 
        read(33,*,iostat=ierr) e(:)%Sy; sln=sln+1
-       if (ierr /= 0 .or. any(e%Sy <= 0.0)) then
+       if (ierr /= 0 .or. any(e%Sy <= 0.0 .and. e%unconfinedFlag)) then
           write(*,*) 'error reading line ',sln,' of ellipse input; specific storage '//&
                      &'(e%Sy) must be > 0.0 ',e%Sy
           stop 239
        end if
 
        read(33,*,iostat=ierr) e(:)%Kz; sln=sln+1
-       if (ierr /= 0 .or. any(e%Kz <= 0.0)) then
+       if (ierr /= 0 .or. any(e%Kz <= 0.0 .and. e%unconfinedFlag)) then
           write(*,*) 'error reading line ',sln,' of ellipse input; aquifer vertical K '//&
                      &'(e%Kz) must be > 0.0 ',e%Kz
           stop 240
        end if
 
        read(33,*,iostat=ierr) e(:)%b; sln=sln+1
-       if (ierr /= 0 .or. any(e%b <= 0.0)) then
+       if (ierr /= 0 .or. any(e%b <= 0.0 .and. e%unconfinedFlag)) then
           write(*,*) 'error reading line ',sln,' of ellipse input; aquifer thickness '//&
                      &'(e%b) must be > 0.0 ',e%b
           stop 241
@@ -829,14 +834,14 @@ contains
        end if       
 
        read(33,*,iostat=ierr) e(:)%matrixSs; sln=sln+1
-       if (ierr /= 0 .or. any(e%matrixSs <= 0.0)) then
+       if (ierr /= 0 .or. any(e%matrixSs <= 0.0 .and. e%dualPorosityFlag)) then
           write(*,*) 'error reading line ',sln,' of ellipse input; matrix specific '//&
                      &'storage (e%matrixSs) must be > 0.0', e%matrixSs
           stop 2411
        end if
 
        read(33,*,iostat=ierr) e(:)%lambda; sln=sln+1
-       if (ierr /= 0 .or. any(e%lambda < 0.0)) then
+       if (ierr /= 0 .or. any(e%lambda < 0.0 .and. e%dualPorosityFlag)) then
           write(*,*) 'error reading line ',sln,' of ellipse input; matrix/fracture '//&
                      &'connection (e%lambda)'//&
                &' must be non-negative', e%lambda
@@ -1027,14 +1032,15 @@ contains
        end if
        open(unit=44, file=particleFname, status='old', action='read',iostat=ierr)
        if (ierr /= 0) then
-          write(*,'(2A)') 'READINPUT: error opening particle data file for reading ',particleFname
+          write(*,'(2A)') 'READINPUT: error opening particle data file for reading ',&
+               & particleFname
           stop 243
        else
           write(16,'(A)') trim(particleFname)//' opened for particle input data'
        end if
 
        read(44,*,iostat=ierr) s%nPart,  s%streakSkip
-       if (ierr /= 0 .or. any([s%nPart,s%streakSkip] < 1)) then
+       if (ierr /= 0 .or. (s%nPart < 1) .or. (s%streakSkip < 0 .and. s%output == 21)) then
           write(*,*) 'error reading line ',sln,' of particle input; s%nPart and &
                &s%streakSkip must be >0',[s%nPart,s%streakSkip]
           stop 2430
@@ -1307,7 +1313,7 @@ contains
        write (20,'(A)') '# LT-AEM time series output   -*-auto-revert-*-'
        do i = 1, s%nx
           write (20,'(2(A,'//xfmt//'),3X,A)') '# location: x=',s%x(i),' y=',&
-               & s%y(i),s%obsname(i)
+               & s%y(i),trim(s%obsname(i))
           write (20,'(A)',advance='no')  '#     time              head'//&
                & '                  velx                vely'
           if (s%deriv) then
@@ -1344,7 +1350,7 @@ contains
        write (20,'(A)') '# LT-AEM time series output    -*-auto-revert-*-'
        do j = 1, s%nx
           write (20,'(2(A,'//xfmt//'),3X,A)') '# location: x=',s%x(j),' y=',&
-               &s%y(j),s%obsname(j)
+               &s%y(j),trim(s%obsname(j))
           if (s%deriv) then
              write (20,'(A)')   '#     time              head             deriv'
           else
@@ -1404,7 +1410,8 @@ contains
        write (20,'(A)') '# LT-AEM particle tracking output  -*-auto-revert-*-'
        do i = 1, size(p,dim=1)
           write (20,'(A)')   &
-          & '#     time              x                    y                  velx                 vely '
+          & '#     time              x                    y                  '//&
+          &'velx                 vely '
           do k=1,p(i)%numt
              write (20,'('//tfmt//',4(1X,'//hfmt//'))') &
                   & p(i)%r(k,1:5)

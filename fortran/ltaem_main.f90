@@ -323,7 +323,8 @@ program ltaem_main
 
               sol%h(j,i,lot:hit) =     L(sol%t(lot:hit), tee(lt), hp(lop:hip), sol%INVLT)
               if (sol%deriv) then
-                 sol%dh(j,i,lot:hit) = L(sol%t(lot:hit), tee(lt), hp(lop:hip)*stmp(lop:hip), sol%INVLT)*sol%t(lot:hit)
+                 sol%dh(j,i,lot:hit) = L(sol%t(lot:hit), tee(lt), hp(lop:hip)*stmp(lop:hip), &
+                      & sol%INVLT)*sol%t(lot:hit)
               end if
               sol%v(j,i,lot:hit,1:2) = L(sol%t(lot:hit), tee(lt), vp(lop:hip,1:2), sol%INVLT)
            end do
@@ -341,7 +342,8 @@ program ltaem_main
 
      !$OMP PARALLEL DO PRIVATE(calcZ,hp,vp,lot,hit,lop,hip,stmp) SHARED(sol)
      do i = 1,sol%nx
-        write(*,'(A,2(3X,ES14.7E1))') sol%obsname(i),sol%xshift+sol%x(i),sol%yshift+sol%y(i)
+        write(*,'(A,2(3X,ES14.7E1))') trim(sol%obsname(i)),sol%xshift+sol%x(i),&
+             & sol%yshift+sol%y(i)
 
         stmp(1:tnp) = reshape(s,[tnp])
 
