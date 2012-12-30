@@ -64,8 +64,7 @@ program ltaem_main
   complex(DP), allocatable :: hp(:), vp(:,:)  ! Laplace-space head and velocity vectors
 
   ! some ad-hoc constants that shouldn't really need to be adjusted too often
-  real(DP), parameter :: EARLIEST_PARTICLE = 1.0E-5, MOST_LOGT = 0.999
-  real(DP), parameter :: TMAX_MULT = 2.0_DP  
+  real(DP), parameter :: MOST_LOGT = 0.999, TMAX_MULT = 2.0_DP  
 
   intrinsic :: get_command_argument
   call get_command_argument(1,sol%inFName)
@@ -91,10 +90,6 @@ program ltaem_main
   ! calculate the values of p needed for inverse LT
   if (sol%calc) then
      if (sol%particle) then   ! particle tracking
-
-        where (part(:)%ti < EARLIEST_PARTICLE)
-           part(:)%ti = EARLIEST_PARTICLE
-        end where
 
         minlt = floor(  minval(log10(part(:)%ti)))
         maxlt = ceiling(maxval(log10(part(:)%tf)))
@@ -211,7 +206,7 @@ program ltaem_main
            goto 111
         end if
 
-        read(77,*) !! TODO not doing anything with input file, but should I check inputs are same?
+        read(77,*) !! TODO not doing anything with input file, should I check inputs are same?
         read(77,*) minlt,maxlt,nc,ne ! scalars
         allocate(s(2*sol%m+1,minlt:maxlt-1), nt(minlt:maxlt-1), tee(minlt:maxlt-1))
         read(77,*) nt(:)
