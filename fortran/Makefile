@@ -58,7 +58,7 @@ DFLAGS+=-frange-check -fbounds-check -fcheck=all
 PFLAGS=-Ofast -march=native
 #################################
 
-BFLAGS=$(PFLAGS)
+BFLAGS=$(DFLAGS) # $(PFLAGS)
 PFLAGS+=$(PFLAGEXTRA) $(OMP)
 
 # switch between performance or debugging flags

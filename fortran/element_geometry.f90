@@ -33,7 +33,7 @@ contains
   ! ##################################################
   ! initializes / calculates geometry
   subroutine DistanceAngleCalcs(c,e,bg,dom,sol)
-    use constants, only: DP, PI
+    use constants, only: DP, PI, TWOPI
     use type_definitions, only : domain, circle, ellipse, element, solution, matching
     use file_ops, only : writeGeometry
     use geomConv, only : c2xyA, e2xyA, xy2cA, xy2eA
@@ -61,7 +61,7 @@ contains
     do i=1,nc
        allocate(c(i)%Pcm(c(i)%M))
        forall(j = 1:c(i)%M)
-          c(i)%Pcm(j) = -PI + 2.0*PI/c(i)%M*real(j-1,DP)
+          c(i)%Pcm(j) = -PI + TWOPI/c(i)%M*real(j-1,DP)
        end forall
 
        c(i)%id = i ! global ID
@@ -69,7 +69,7 @@ contains
     do i=1,ne
        allocate(e(i)%Pcm(e(i)%M))
        forall (j = 1:e(i)%M)
-          e(i)%Pcm(j) = -PI + 2.0*PI/e(i)%M*real(j-1,DP)
+          e(i)%Pcm(j) = -PI + TWOPI/e(i)%M*real(j-1,DP)
        end forall
 
        e(i)%id = i+nc ! global ID

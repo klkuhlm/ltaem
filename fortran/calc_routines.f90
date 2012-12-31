@@ -30,7 +30,7 @@ module calc_routines
   private
   public :: headCalc, velCalc
 
-  ! overloaded to accept complex point or 2-element vector as location
+  ! accepts complex point or 2-element vector as location
   interface headCalc
      module procedure headCalcZ, headCalcV
   end interface
@@ -322,7 +322,11 @@ contains
     ne = dom%num(2)
     ntot = nc+ne
 
-    ! determine if observation point is inside an inclusion
+    ! TODO: this should handle geometry more generally like 
+    ! in the element_geometry.f90 ComputeElementHierarchy() subroutine
+    ! or at least use the resutls from that here.
+
+    ! determine if calc point is inside an inclusion
     inout(1:ntot) = 0
     k = 0
 

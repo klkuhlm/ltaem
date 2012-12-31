@@ -1,4 +1,4 @@
-True  False  True  False  1  well_single_circle_out  dump.out  well_single_circle.elem  well_single_circle.geom    ::  1=calc_coeff?, 2=particle?, 3=contour?, 4=log(t)_derivative?, 5=output_flag, 6=outputFN, 7=coeffFN(out), 8=elementHierarchy(out), 9=geometryFN(out)
+T  F  T  F  1  well_single_circle_out  dump.out  well_single_circle.elem  well_single_circle.geom    ::  1=calc?, 2=particle?, 3=contour?, 4=log(t)_deriv?, 5=output, 6=outputFN, 7=coeffFN(out), 8=elementHierarchy(out), 9=geometryFN(out)
 1.0D0   2.0D0   1.0D-4   0   1.0D0   1.0D-4   1.0D0   20  1.0D-10  ::  por, k, Ss, leakFlag, K2, Ss2, b2, ellipse MS, ellipse cutoff
 1.5D-1  2.0D0  False  1.0  :: Sy, Kz, unconfined?, b
 1.0D-5  2.0D0  False  :: matrixSs, matrix/fracture lambda, dualPorosityFlag?
@@ -6,14 +6,7 @@ True  False  True  False  1  well_single_circle_out  dump.out  well_single_circl
 DUMMY OBS NAME  
  0.00000E+00  2.82051E-02  5.64103E-02  8.46154E-02  1.12821E-01  1.41026E-01  1.69231E-01  1.97436E-01  2.25641E-01  2.53846E-01  2.82051E-01  3.10256E-01  3.38462E-01  3.66667E-01  3.94872E-01  4.23077E-01  4.51282E-01  4.79487E-01  5.07692E-01  5.35897E-01  5.64103E-01  5.92308E-01  6.20513E-01  6.48718E-01  6.76923E-01  7.05128E-01  7.33333E-01  7.61538E-01  7.89744E-01  8.17949E-01  8.46154E-01  8.74359E-01  9.02564E-01  9.30769E-01  9.58974E-01  9.87179E-01  1.01538E+00  1.04359E+00  1.07179E+00  1.10000E+00   ::    x Vector
  0.00000E+00  2.82051E-02  5.64103E-02  8.46154E-02  1.12821E-01  1.41026E-01  1.69231E-01  1.97436E-01  2.25641E-01  2.53846E-01  2.82051E-01  3.10256E-01  3.38462E-01  3.66667E-01  3.94872E-01  4.23077E-01  4.51282E-01  4.79487E-01  5.07692E-01  5.35897E-01  5.64103E-01  5.92308E-01  6.20513E-01  6.48718E-01  6.76923E-01  7.05128E-01  7.33333E-01  7.61538E-01  7.89744E-01  8.17949E-01  8.46154E-01  8.74359E-01  9.02564E-01  9.30769E-01  9.58974E-01  9.87179E-01  1.01538E+00  1.04359E+00  1.07179E+00  1.10000E+00   ::    y Vector
-0.125  
-0.2  
-0.25  
-0.35 
-0.45 
-0.67
-0.85 
-0.9  :: t
+0.125   0.2   0.25   0.35  0.45  0.67 0.85  0.9  :: t
 1.0D-6  1.0D-8  10  :: alpha, tolerance, M
 1  well_single_circle_circles.in     :: number of circular elements, circle data file
 0  not_used    :: number of elliptical elements, ellipse data file
