@@ -299,14 +299,15 @@ program ltaem_main
         allocate(sol%dh(sol%nx,sol%ny,sol%nt))
      end if
 
-     !$OMP PARALLEL DO PRIVATE(calcZ,hp,vp,lot,hit,lop,hip,stmp) SHARED(sol)
+     stmp(1:tnP) = reshape(s,[tnP])
+
+     !$OMP PARALLEL DO PRIVATE(calcZ,hp,vp,lot,hit,lop,hip) SHARED(sol)
      do j = 1,sol%nx
         !$ write (*,'(I0,1X)',advance="no") OMP_get_thread_num()
         write (*,'(A,ES13.5)') 'x: ',sol%x(j)
         do i = 1,sol%ny
 
            calcZ = cmplx(sol%x(j),sol%y(i),DP)
-           stmp(1:tnP) = reshape(s,[tnP])
 
            !!print *, 'DEBUG x,y,z:',j,sol%x(j),'::',i,sol%y(i),'::',calcZ
 
@@ -347,12 +348,12 @@ program ltaem_main
         allocate(sol%dh(sol%nx,1,sol%nt))
      end if
 
-     !$OMP PARALLEL DO PRIVATE(calcZ,hp,vp,lot,hit,lop,hip,stmp) SHARED(sol)
+     stmp(1:tnp) = reshape(s,[tnp])
+
+     !$OMP PARALLEL DO PRIVATE(calcZ,hp,vp,lot,hit,lop,hip) SHARED(sol)
      do i = 1,sol%nx
         write(*,'(A,2(3X,ES14.7E1))') trim(sol%obsname(i)),sol%xshift+sol%x(i),&
              & sol%yshift+sol%y(i)
-
-        stmp(1:tnp) = reshape(s,[tnp])
 
         calcZ = cmplx(sol%x(i),sol%y(i),DP)
         hp(1:tnP) =    headCalc(calcZ,stmp,1,tnP,dom,c,e,bg)

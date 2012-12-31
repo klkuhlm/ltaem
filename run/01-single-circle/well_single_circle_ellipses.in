@@ -27,5 +27,5 @@ F    :: dual porosity flag
 1.0D0 :: dimensionless skin
 0.0D-1  :: area source strength
 0.0D-1  :: boundary source strength
-001  0.0D0  0.0D0 :: area time flag, tpar1, tpar2
-001  0.0D0  0.0D0 :: boundary time flag, tpar1, tpar2
+1  0.0D0  0.0D0 :: area time flag, tpar1, tpar2
+1  0.0D0  0.0D0 :: boundary time flag, tpar1, tpar2
