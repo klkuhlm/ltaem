@@ -1,6 +1,7 @@
 \documentclass{article}
 \usepackage{amsmath}
 \usepackage{fullpage}
+\usepackage{natbib}
 
 \begin{document}
 \section{kappa}
@@ -9,8 +10,8 @@
 The LT-AEM is able to compute the solution to different PDEs that can
 be cast into a similar form as the Laplace-transformed diffusion
 equation.  Of most concern for groundwater is the inclusion of various
-homogeneous source terms, like the effects of neighboring leaky
-aquifers, unconfinedness, and dual porosity.
+homogeneous source terms, like the effects of leaky aquitards, aquifer
+unconfinedness, and dual porosity.
 
 The original diffusion equation is defined in terms of 
 \begin{equation}
@@ -26,9 +27,9 @@ In the case of leakiness, the three cases considerd are:
 \item[II] no-flow condition at opposite side of finite aquitard
 \item[III] aquitard thickness is semi-infinite
 \end{enumerate}
-Two leaky aquitards could be included, simply by including the two
-types of terms required (and keeping track of both sets of
-parameters).  These three source terms are:
+Two leaky aquitards can be included, simply by including the two types
+of terms required (and keeping track of both sets of parameters).
+These three source terms are:
 \begin{align}
   q_{\mathrm{I}}^2 &= \frac{p}{\alpha} + \frac{p K_2}{\alpha_2 Kb} \frac{1 + \exp\left(-2 \frac{p b_2}{\alpha_2}\right)}{1 - \exp\left(-2 \frac{p b_2}{\alpha_2}\right)} \\
   q_{\mathrm{II}}^2 &= \frac{p}{\alpha} + \frac{p K_2}{\alpha_2 Kb} \frac{1 - \exp\left(-2 \frac{p b_2}{\alpha_2}\right)}{1 + \exp\left(-2 \frac{p b_2}{\alpha_2}\right)} \\
@@ -36,23 +37,25 @@ parameters).  These three source terms are:
 \end{align}
 where a subscript $2$ indicates a property of the aquitard.  These
 solutions are taken directly from the modified theory of leaky
-aquifers. (Hantush, 1960).
+aquifers \cite{hantush1960modification}.
 
 \subsection{Unconfined}
-Unconfined behavior analogous to Neuman (1972), can be obtained by
-computing an integrated response (since Neuman's solution has an
-explict $z$-coordinate), or by using the Boulton (1955) solution that
-has no $z$ dependence.
+Unconfined behavior analogous to \cite{neuman1972theory}, can be
+obtained by computing an integrated response (since Neuman's solution
+has an explict $z$-coordinate), or by using the
+\cite{boulton1954drawdown} solution that has no $z$ dependence.
 
 \subsection{Dual Porosity}
 Dual-porosity response assumes there are two overlapping domains, the
 fractures and the matrix, each most generally with a diffusion-type
-solution (Douherty and Babu, 1984).  Under the assumtion that $K_f \gg
+solution \cite{dougherty1984flow}.  Under the assumtion that $K_f \gg
 K_m$ the 3D diffusion in the matrix reduces to just
 \begin{equation}
   \label{eq:2}
   \frac{\partial h_m}{\partial t} = \lambda \left( h_m - h_f\right)
 \end{equation}
 
+\bibliographystyle{plainnat}
+\bibliography{design}
 
 \end{document}
