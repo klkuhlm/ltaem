@@ -1,5 +1,5 @@
 !
-! Copyright (c) 2011 Kristopher L. Kuhlman (klkuhlm at sandia dot gov)
+! Copyright (c) 2011,2012,2013 Kristopher L. Kuhlman (klkuhlm at sandia dot gov)
 !
 ! Permission is hereby granted, free of charge, to any person obtaining a copy
 ! of this software and associated documentation files (the "Software"), to deal
@@ -61,8 +61,7 @@ contains
     integer, allocatable :: row(:,:), col(:,:) ! row/column trackers
     integer :: nc, ne, ntot, i, j, bigM, bigN, rr,cc, ierr
 
-    ! only needed for LAPACK routine
-    ! size(work) should be ~ 33xbigN? (32- & 64-bit Linux)
+    ! only needed for LAPACK routine; size(work) = 33*bigN
     complex(DP), allocatable :: WORK(:)
 
     nc = size(c,dim=1)
@@ -90,7 +89,7 @@ contains
        end do
     end do
 
-    do i = 1, ne
+    do i=1,ne
        ! ellipse on self
        res(nc+i,nc+i) = ellipse_match(e(i),p,idx)
        row(i+nc,1) = size(res(nc+i,nc+i)%RHS,1)

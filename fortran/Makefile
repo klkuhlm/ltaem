@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011 Kristopher L. Kuhlman (klkuhlm at sandia dot gov)
+# Copyright (c) 2011,2012,2013 Kristopher L. Kuhlman (klkuhlm at sandia dot gov)
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -25,7 +25,7 @@ KKLOW=type_definitions.o utility.o bessel_functions.o mathieu_functions2.o
 
 # provide a link to the static lapack/blas libraries in the source directory
 LAPACKLIB=lapack.a
-BLASLIB=blas.a -lpthread
+BLASLIB=blas.a #-lpthread
 
 # main-program related
 ####################################
@@ -49,21 +49,21 @@ OBJS=$(EXTERNAL) constants.o $(KKLOW) geometryUtil.o $(KKHIGH)
 ###########################################
 
 ## gfortran #################
-F90=gfortran-4.7 # must be >= 4.6.1
-#F90=/opt/local/bin/dragonegg-3.0-gfortran 
+F90=gfortran # must be >= 4.6.1
 OMP=-fopenmp
 CPP=-cpp
 DFLAGS=-O0 -Wall -Wextra -g -std=f2008
 DFLAGS+=-frange-check -fbounds-check -fcheck=all
-##DFLAGS+=-fdump-rtl-expand
-PFLAGS=-Ofast -march=native #-flto
+##DFLAGS+=-fdump-rtl-expand 
+PFLAGS=-Ofast -march=native
 #################################
 
-BFLAGS=$(PFLAGS)
+BFLAGS=$(DFLAGS) # $(PFLAGS)
 PFLAGS+=$(PFLAGEXTRA) $(OMP)
 
 # switch between performance or debugging flags
 FLAGS=$(DFLAGS)
+#FLAGS=$(PFLAGS)
 
 LINKFLAG=$(FLAGS) -fbacktrace $(OMP)
 

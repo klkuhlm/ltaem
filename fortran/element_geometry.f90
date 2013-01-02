@@ -1,5 +1,5 @@
 !
-! Copyright (c) 2011 Kristopher L. Kuhlman (klkuhlm at sandia dot gov)
+! Copyright (c) 2011,2012,2013 Kristopher L. Kuhlman (klkuhlm at sandia dot gov)
 !
 ! Permission is hereby granted, free of charge, to any person obtaining a copy
 ! of this software and associated documentation files (the "Software"), to deal
@@ -33,7 +33,7 @@ contains
   ! ##################################################
   ! initializes / calculates geometry
   subroutine DistanceAngleCalcs(c,e,bg,dom,sol)
-    use constants, only: DP, PI
+    use constants, only: DP, PI, TWOPI
     use type_definitions, only : domain, circle, ellipse, element, solution, matching
     use file_ops, only : writeGeometry
     use geomConv, only : c2xyA, e2xyA, xy2cA, xy2eA
@@ -61,7 +61,7 @@ contains
     do i=1,nc
        allocate(c(i)%Pcm(c(i)%M))
        forall(j = 1:c(i)%M)
-          c(i)%Pcm(j) = -PI + 2.0*PI/c(i)%M*real(j-1,DP)
+          c(i)%Pcm(j) = -PI + TWOPI/c(i)%M*real(j-1,DP)
        end forall
 
        c(i)%id = i ! global ID
@@ -69,7 +69,7 @@ contains
     do i=1,ne
        allocate(e(i)%Pcm(e(i)%M))
        forall (j = 1:e(i)%M)
-          e(i)%Pcm(j) = -PI + 2.0*PI/e(i)%M*real(j-1,DP)
+          e(i)%Pcm(j) = -PI + TWOPI/e(i)%M*real(j-1,DP)
        end forall
 
        e(i)%id = i+nc ! global ID
@@ -153,6 +153,9 @@ contains
 
     call ComputeElementHierarchy(dom,sol,c,e)
 
+    ! listing of points on circumference of circles for plotting/debugging
+    call writeGeometry(c,e,sol)
+
     ! setup pointers to parent elements
     bg%parent => null()  ! background has no parent
     do i=1,nc
@@ -188,15 +191,14 @@ contains
        end if
     end do
 
-    ! create listing of points on circumference of circles for plotting
-    call writeGeometry(c,e,sol)
   end subroutine DistanceAngleCalcs
 
   !##################################################
   subroutine ComputeElementHierarchy(dom,sol,c,e)
-    use constants, only : DP, EYE
+    use constants, only : DP
     use type_definitions, only : domain, solution, circle, ellipse
     use utility, only : cacosh
+    use geomConv, only : xy2eR
 
     type(domain), intent(inout) :: dom
     type(solution), intent(in) :: sol
@@ -206,8 +208,7 @@ contains
 
     real(DP), allocatable :: Rcg(:,:), Eeg(:,:), R(:)
     complex(DP), allocatable :: Z(:,:)
-    ! single-byte integer representation of logical
-    logical(1), allocatable :: nondiag(:,:)
+    logical, allocatable :: nondiag(:,:)
     integer, allocatable :: iv(:), nest(:), val(:)
     integer :: i, j, n, parent
     character(4) :: chint
@@ -234,7 +235,10 @@ contains
        ! check centers of elements (rows = circles, columns = all elements)
        if (nc > 0) then
           allocate(Rcg(nc,ntot))
-          Rcg(1:nc,1:nc) =      abs(spread(c%z,1,nc) - spread(c%z,2,nc))
+          where (nondiag(1:nc,1:nc))
+             ! don't compute distance to self
+             Rcg(1:nc,1:nc) = abs(spread(c%z,1,nc) - spread(c%z,2,nc))
+          end where
           Rcg(1:nc,nc+1:ntot) = abs(spread(e%z,1,nc) - spread(c%z,2,ne))
 
           ! nondiag handles zero distance-to-self case
@@ -243,6 +247,9 @@ contains
              ! inside radius of source element (1st dim)?
              dom%InclIn(1:nc,1:ntot) = .true.
           end where
+
+          ! TODO: steps 1 and 2 should be done by solving the equations for the circles/ellipses
+          ! but it is easier to do it with a discrete representation of the boundaries 
 
           ! two cases where one element center is inside another
           !  1) elements intersect (2 pts) or touch (1 point) = BAD
@@ -282,16 +289,23 @@ contains
        ! check centers of elements (rows = ellipses, columns = all elements)
        if (ne > 0) then
           allocate(Eeg(ne,ntot),Z(ne,ntot))
-          Z(1:ne,1:nc) =      spread(c%z,1,ne) - spread(e%z,2,nc)
-          Eeg(1:ne,1:nc) =      real(cacosh(Z(1:ne,1:nc)*spread(exp(-EYE*e%theta)/e%f,2,nc)))
+          Z(1:ne,ne+1:ntot) = spread(c%z,1,ne) - spread(e%z,2,nc) 
+          Eeg(1:ne,ne+1:ntot) = real(xy2eR(Z(1:ne,1:nc),spread(e,2,nc)))
 
-          Z(1:ne,nc+1:ntot) = spread(e%z,1,ne) - spread(e%z,2,ne)
-          Eeg(1:ne,nc+1:ntot) = real(cacosh(Z(1:ne,nc+1:ntot)*spread(exp(-EYE*e%theta)/e%f,2,ne)))
+          Z(1:ne,1:ne) = spread(e%z,1,ne) - spread(e%z,2,ne)
+          Eeg(1:ne,1:ne) = real(xy2eR(Z(1:ne,nc+1:ntot),spread(e,2,ne)))
           deallocate(Z)
 
-          where (Eeg(1:ne,1:ntot) < spread(e%r,2,ntot) .and. nondiag(1:ne,1:ntot))
-             dom%InclIn(nc+1:ntot,1:ntot) = .true.
-          end where
+          ! no straightforward way to do this with where and a mask.
+          do i = 1,ne
+             do j = 1,ntot
+                if ((Eeg(i,j) < e(i)%r) .and. (i /= j-nc)) then
+                   dom%InclIn(nc+i,j) = .true.
+                end if
+             end do
+          end do
+
+          deallocate(Eeg)
 
           ! check ellipse-on-circle intersection
           do i = 1, ne
@@ -328,7 +342,8 @@ contains
        allocate(R(ntot), nest(ntot), iv(ntot))
        forall (i=1:ntot) iv(i) = i
        R(1:nc) = c(1:nc)%r
-       R(nc+1:ntot) = e(1:ne)%r  ! TODO : double-check that circle/ellipse can be compared validly
+       ! TODO : double-check that circle/ellipse can be compared validly in this manner
+       R(nc+1:ntot) = e(1:ne)%r  
 
        forall (i=1:ntot, j=1:ntot, i/=j .and. dom%InclIn(i,j).and.dom%InclIn(j,i) .and. R(i)<R(j))
           dom%InclIn(i,j) = .false.
@@ -404,7 +419,8 @@ contains
        deallocate(nest,iv)
 
     else
-       ! special case of only one element, no matching -- it is in background
+       ! special case of only one element, no matching 
+       ! it is in background by convention
        dom%InclIn(0:1,1) = [.true.,.false.]
        dom%InclUp(1) = 0
        dom%InclBg(1,1) = .false.

@@ -1,5 +1,5 @@
 !
-! Copyright (c) 2011 Kristopher L. Kuhlman (klkuhlm at sandia dot gov)
+! Copyright (c) 2011,2012,2013 Kristopher L. Kuhlman (klkuhlm at sandia dot gov)
 !
 ! Permission is hereby granted, free of charge, to any person obtaining a copy
 ! of this software and associated documentation files (the "Software"), to deal
@@ -49,33 +49,34 @@ program ltaem_main
   type(solution) :: sol
   type(particle), allocatable :: part(:)
   integer :: i, j, ierr
-  integer :: tnp                              ! total-number-p (product of dimensions)
-  integer :: nc, ne                           ! #-circles, #-ellipses
-  integer :: crow, ccol                       ! coeff-#-row, coeff-#-col
+  integer :: tnp                              ! total # p (product of dimensions)
+  integer :: nc, ne                           ! #circles, #ellipses
+  integer :: crow, ccol                       ! coeff #row, coeff #col
   integer :: lt, minlt, maxlt                 ! indexes related to log10 time
-  integer :: lot, hit, lop, hip, lo           ! local hi and lo indices for each log cycle
-  integer, allocatable :: nt(:)               ! #-times-each-log-cycle
+  integer :: lot, hit, lop, hip, lo           ! local hi and lo indices for log cycles
+  integer, allocatable :: nt(:)               ! # times per log cycle
   integer, allocatable :: parnumdt(:)         ! number of dt expected for each particle
   integer, allocatable :: idxmat(:,:)         ! matrix of indices for parallelization
-  real(DP), allocatable :: logt(:), tee(:)    ! log10-time(numt), Tmax-for-deHoog(num-log-cycles)
-  complex(DP), allocatable :: s(:,:), stmp(:) ! Laplace-parameter(2*M-1,num-log-cycles)
-  complex(DP) :: calcZ                        ! calc-point-complex-coordinates
-  character(6) :: elType                      ! element-type {CIRCLE,ELLIPS}
+  real(DP), allocatable :: logt(:), tee(:)    ! log10 time, deHoog T
+  complex(DP), allocatable :: s(:,:), stmp(:) ! Laplace parameter (different shapes)
+  complex(DP) :: calcZ                        ! calculation point
+  character(6) :: elType                      ! element type {CIRCLE,ELLIPS}
   complex(DP), allocatable :: hp(:), vp(:,:)  ! Laplace-space head and velocity vectors
 
-  ! some ad-hoc constants that shouldn't really need to be adjusted too often
-  real(DP), parameter :: EARLIEST_PARTICLE = 1.0E-5, MOST_LOGT = 0.999
-  real(DP), parameter :: TMAX_MULT = 2.0_DP  
+  ! constants that shouldn't be adjusted too often
+  real(DP), parameter :: MOST_LOGT = 0.999, TMAX_MULT = 2.0_DP  
 
   intrinsic :: get_command_argument
   call get_command_argument(1,sol%inFName)
   if (len_trim(sol%infname) == 0) then
-     write(*,'(A)') 'no command-line filename supplied, using default input file: input.in'
+     write(*,'(A)') 'no command-line filename supplied, '&
+          &//'using default input file: input.in'
      sol%infname = 'input.in'
   end if
 
-  !! some parallel-related statistics
-  !$ write(*,'(2(A,I0))') 'OpenMP num procs:',omp_get_num_procs(), ' OpenMP max threads:',omp_get_max_threads()
+  ! some parallel-related statistics ("!$" is special OMP directive)
+  !$write(*,'(2(A,I0))') 'OpenMP num procs:',omp_get_num_procs(), &
+  !$     & ' OpenMP max threads:', omp_get_max_threads()
 
   ! read in data, initialize variables, allocate major structs
   call readInput(sol,dom,bg,c,e,part)
@@ -92,9 +93,6 @@ program ltaem_main
   if (sol%calc) then
      if (sol%particle) then   ! particle tracking
 
-        where (part(:)%ti < EARLIEST_PARTICLE)
-           part(:)%ti = EARLIEST_PARTICLE
-        end where
 
         minlt = floor(  minval(log10(part(:)%ti)))
         maxlt = ceiling(maxval(log10(part(:)%tf)))
@@ -179,8 +177,8 @@ program ltaem_main
         if (.not. sol%skipdump) then
            open(unit=77, file=sol%coefffname, status='replace', action='write', iostat=ierr)
            if (ierr /= 0) then
-              write(*,'(2A)') 'WARNING: error opening intermediate save file ',trim(sol%coefffname), &
-                   & ' continuing without saving results'
+              write(*,'(2A)') 'WARNING: error opening intermediate save file ',&
+                   & trim(sol%coefffname), ' continuing without saving results'
            else
               write(77,'(A)') trim(sol%infname)//'.echo' ! file with all the input parameters
               write(77,'(4(I0,1X))') minlt,maxlt,nc,ne
@@ -200,7 +198,9 @@ program ltaem_main
            write(*,'(A)') '  <matching finished>  '
         end if
      end if
-  else ! do not re-calculate coefficients (this only makes sense if num matching elements > 0)
+  else 
+     ! do not re-calculate coefficients
+     ! (this only makes sense if num matching elements > 0)
 
      if(any(e(:)%match) .or. any(c(:)%match)) then
         open(unit=77, file=sol%coefffname, status='old', action='read', iostat=ierr)
@@ -211,7 +211,7 @@ program ltaem_main
            goto 111
         end if
 
-        read(77,*) !! TODO not doing anything with input file, but should I check inputs are same?
+        read(77,*) !! TODO should I check inputs are same?
         read(77,*) minlt,maxlt,nc,ne ! scalars
         allocate(s(2*sol%m+1,minlt:maxlt-1), nt(minlt:maxlt-1), tee(minlt:maxlt-1))
         read(77,*) nt(:)
@@ -224,7 +224,8 @@ program ltaem_main
            if (elType == 'CIRCLE' .and. i == j) then
               allocate(c(i)%coeff(crow,ccol))
            else
-              write(*,'(A)') 'ERROR reading in CIRCLE matching results, recalculating...'
+              write(*,'(A)') 'ERROR reading in CIRCLE matching '//&
+                   &'results, recalculating...'
               sol%calc = .true.
               goto 111
            end if
@@ -235,7 +236,8 @@ program ltaem_main
            if (elType == 'ELLIPS' .and. i == j) then
               allocate(e(i)%coeff(crow,ccol))
            else
-              write(*,'(A)') 'ERROR reading in ELLIPS matching results, recalculating...'
+              write(*,'(A)') 'ERROR reading in ELLIPS matching '//&
+                   &'results, recalculating...'
               sol%calc = .true.
               goto 111
            end if
@@ -248,7 +250,7 @@ program ltaem_main
            call ellipse_init(e,bg,s)
         end if
 
-        write(*,'(A)') ' <matching results successfully re-read from file> '
+        write(*,'(A)') 'matching results successfully re-read from file'
      end if
 
   end if
@@ -288,27 +290,30 @@ program ltaem_main
      !$OMP END PARALLEL DO
 
   !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-  elseif(sol%contour) then ! contour output (x,y locations outer product of x,y vectors)
+  elseif(sol%contour) then ! x,y locations outer product of x,y vectors
 
      write(*,'(A)') 'compute solution for plotting contours'
      allocate(sol%h(sol%nx,sol%ny,sol%nt),   hp(tnP), &
-          &   sol%v(sol%nx,sol%ny,sol%nt,2), vp(tnP,2), stmp(tnp))
+          &   sol%v(sol%nx,sol%ny,sol%nt,2), vp(tnP,2), stmp(tnP))
      if (sol%deriv) then
         allocate(sol%dh(sol%nx,sol%ny,sol%nt))
      end if
 
-     !$OMP PARALLEL DO PRIVATE(calcZ,hp,vp,lot,hit,lop,hip,stmp) SHARED(sol)
+     stmp(1:tnP) = reshape(s,[tnP])
+
+     !$OMP PARALLEL DO PRIVATE(calcZ,hp,vp,lot,hit,lop,hip) SHARED(sol)
      do j = 1,sol%nx
         !$ write (*,'(I0,1X)',advance="no") OMP_get_thread_num()
         write (*,'(A,ES13.5)') 'x: ',sol%x(j)
         do i = 1,sol%ny
 
            calcZ = cmplx(sol%x(j),sol%y(i),DP)
-           stmp(1:tnp) = reshape(s,[tnp])
+
+           !!print *, 'DEBUG x,y,z:',j,sol%x(j),'::',i,sol%y(i),'::',calcZ
 
            !! compute f(p) for all values of p at this location
-           hp(1:tnp) =    headCalc(calcZ,stmp,1,tnp,dom,c,e,bg)
-           vp(1:tnp,1:2) = velCalc(calcZ,stmp,1,tnp,dom,c,e,bg)
+           hp(1:tnP) =    headCalc(calcZ,stmp,1,tnP,dom,c,e,bg)
+           vp(1:tnP,1:2) = velCalc(calcZ,stmp,1,tnP,dom,c,e,bg)
 
            !! invert solutions one log-cycle of t at a time
            do lt = minlt,maxlt-1
@@ -321,9 +326,12 @@ program ltaem_main
               lop = (lt - minlt)*size(s,dim=1) + 1
               hip = lop + size(s,dim=1) - 1
 
+              !!print *, 'DEBUG s:',tnP,lt,'::',lot,hit,'::',lop,hip
+
               sol%h(j,i,lot:hit) =     L(sol%t(lot:hit), tee(lt), hp(lop:hip), sol%INVLT)
               if (sol%deriv) then
-                 sol%dh(j,i,lot:hit) = L(sol%t(lot:hit), tee(lt), hp(lop:hip)*stmp(lop:hip), sol%INVLT)*sol%t(lot:hit)
+                 sol%dh(j,i,lot:hit) = L(sol%t(lot:hit), tee(lt), hp(lop:hip)*&
+                      & stmp(lop:hip), sol%INVLT)*sol%t(lot:hit)
               end if
               sol%v(j,i,lot:hit,1:2) = L(sol%t(lot:hit), tee(lt), vp(lop:hip,1:2), sol%INVLT)
            end do
@@ -331,23 +339,25 @@ program ltaem_main
      end do
      !$OMP END PARALLEL DO
 
-  else ! time-series output (x,y locations are in pairs; e.g. inner product)
+  elseif(sol%timeseries) then ! x,y locations are in pairs; e.g. inner product
 
      write(*,'(A)') 'compute solution for plotting time series'
-     allocate(sol%h(sol%nx,1,sol%nt), hp(tnp), sol%v(sol%nx,1,sol%nt,2), vp(tnp,2), stmp(tnp))
+     allocate(sol%h(sol%nx,1,sol%nt), hp(tnP), sol%v(sol%nx,1,sol%nt,2), &
+          & vp(tnP,2), stmp(tnP))
      if (sol%deriv) then
         allocate(sol%dh(sol%nx,1,sol%nt))
      end if
 
-     !$OMP PARALLEL DO PRIVATE(calcZ,hp,vp,lot,hit,lop,hip,stmp) SHARED(sol)
-     do i = 1,sol%nx
-        write(*,'(A,2(3X,ES14.7E1))') sol%obsname(i),sol%xshift+sol%x(i),sol%yshift+sol%y(i)
+     stmp(1:tnp) = reshape(s,[tnp])
 
-        stmp(1:tnp) = reshape(s,[tnp])
+     !$OMP PARALLEL DO PRIVATE(calcZ,hp,vp,lot,hit,lop,hip) SHARED(sol)
+     do i = 1,sol%nx
+        write(*,'(A,2(3X,ES14.7E1))') trim(sol%obsname(i)),sol%xshift+sol%x(i),&
+             & sol%yshift+sol%y(i)
 
         calcZ = cmplx(sol%x(i),sol%y(i),DP)
-        hp(1:tnp) =    headCalc(calcZ,stmp,1,tnp,dom,c,e,bg)
-        vp(1:tnp,1:2) = velCalc(calcZ,stmp,1,tnp,dom,c,e,bg)
+        hp(1:tnP) =    headCalc(calcZ,stmp,1,tnP,dom,c,e,bg)
+        vp(1:tnP,1:2) = velCalc(calcZ,stmp,1,tnP,dom,c,e,bg)
 
         do lt = minlt,maxlt-1
            lot = 1 + sum(nt(minlt:lt-1))
@@ -359,7 +369,8 @@ program ltaem_main
            ! don't need second dimension of results matrices
            sol%h(i,1,lot:hit) =     L(sol%t(lot:hit),tee(lt),hp(lop:hip),sol%INVLT)
            if (sol%deriv) then
-              sol%dh(i,1,lot:hit) = L(sol%t(lot:hit),tee(lt),hp(lop:hip)*stmp(lop:hip),sol%INVLT)*sol%t(lot:hit)
+              sol%dh(i,1,lot:hit) = L(sol%t(lot:hit),tee(lt),hp(lop:hip)* &
+                   & stmp(lop:hip),sol%INVLT)*sol%t(lot:hit)
            end if
            sol%v(i,1,lot:hit,1:2) = L(sol%t(lot:hit),tee(lt),vp(lop:hip,1:2),sol%INVLT)
         end do
@@ -369,7 +380,7 @@ program ltaem_main
   end if
 
   !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-  ! cleanup memory and write output to file
+  ! write output to file
   call writeResults(sol,part)
 
 end program ltaem_main

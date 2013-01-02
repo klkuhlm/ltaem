@@ -1,5 +1,5 @@
 !
-! Copyright (c) 2011 Kristopher L. Kuhlman (klkuhlm at sandia dot gov)
+! Copyright (c) 2011,2012,2013 Kristopher L. Kuhlman (klkuhlm at sandia dot gov)
 !
 ! Permission is hereby granted, free of charge, to any person obtaining a copy
 ! of this software and associated documentation files (the "Software"), to deal
@@ -33,6 +33,7 @@ module constants
 
   ! useful? constants related to pi and ln
   real(DP), parameter :: PI = 4.0_DP*atan(1.0_DP) ! 3.1415926535897931...
+  real(DP), parameter :: TWOPI = 8.0_DP*atan(2.0_DP) 
   real(DP), parameter :: PIOV2 = 2.0_DP*atan(1.0_DP) ! 1.5707963267948966...
 
   ! these are both used in YNOT approximation to elliptical circumference

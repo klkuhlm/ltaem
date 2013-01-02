@@ -1,5 +1,5 @@
 !
-! Copyright (c) 2011 Kristopher L. Kuhlman (klkuhlm at sandia dot gov)
+! Copyright (c) 2011,2012,2013 Kristopher L. Kuhlman (klkuhlm at sandia dot gov)
 !
 ! Permission is hereby granted, free of charge, to any person obtaining a copy
 ! of this software and associated documentation files (the "Software"), to deal
@@ -48,7 +48,7 @@ module type_definitions
 
      ! matrix indicating if an element is inside or in the background of
      ! a current element
-     logical(1), allocatable :: InclIn(:,:), InclBg(:,:)
+     logical, allocatable :: InclIn(:,:), InclBg(:,:)
   end type domain
 
   type :: time
@@ -209,6 +209,8 @@ module type_definitions
 
      ! calculate contours (thru space) vs. calculate time series
      logical :: contour = .false.
+     ! calculate values at few locations through time
+     logical :: timeseries = .false.
      ! re-calculate coefficient matrix, or load saved file (BGcoefffname)
      logical :: calc = .false.
 
@@ -216,13 +218,18 @@ module type_definitions
      character(lenFN) :: outfname='unset', infname='unset'
      character(lenFN) :: coefffname='unset', elemHfName='unset', geomFname='unset'
 
-     ! output index  1= Gnuplot map (x,y,z triplets; times separated by blank lines);
-     !               2= Matlab map (matrix output separate files);
-     !               3= Gnuplot time series with velocity (column of times; locs sep. by blank lines);
-     !               4= pathline Gnuplot (column of times, particles separated by blank lines);
-     !               5= streakline Gnuplot (each block a requested time, each row a particle);
-     !               10= Matlab for SCEM-UA inverse (column of times, locs sep. by blank lines);
-     !               11= Gnuplot time serires no velocity (same as 3 no vel);
+     ! output index
+     ! ------------------- <10 = contour map output --------------------
+     !  1= Gnuplot map (x,y,z triplets; times separated by blank lines);
+     !  2= Matlab map (matrix output separate files);
+     ! --------------->=10 <20 = time series output --------------------
+     ! 10= Gnuplot time series with velocity (column of times; locs sep. by blank lines);
+     ! 11= Matlab for SCEM-UA inverse (column of times, locs sep. by blank lines);
+     ! 12= Gnuplot time serires no velocity (same as 10 no vel);
+     ! --------------->=20 = particle track output ---------------------
+     ! 20= pathline Gnuplot (column of times, particles separated by blank lines);
+     ! 21= streakline Gnuplot (each block a requested time, each row a particle);
+
      ! aquitardLeak and unconfined
      integer :: output = -999, aquitardLeak = -999, unconfined= -999
 
@@ -230,7 +237,7 @@ module type_definitions
      integer :: nx = -999, ny = -999, nt = -999
      real(DP) :: xshift = -999., yshift = -999.
      real(DP), allocatable :: x(:), y(:), t(:)
-     character(8), allocatable :: obsname(:)
+     character(32), allocatable :: obsname(:)
 
      ! compute log-derivative of solution?
      logical :: deriv = .false.

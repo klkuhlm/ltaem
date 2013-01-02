@@ -1,0 +1,15 @@
+True  False  True  True  1  pumping_well_contour  dump.out  pumping_well.elem  pumping_well.geom    ::  1=calc?, 2=prtcl?, 3=contour?, 4=log(t)_deriv?, 5=output_flag, 6=outputFN, 7=coeffFN(out), 8=elementHierarchy(out), 9=geometryFN(out)
+1.0D0   2.0D-2   1.0D-5   0   1.0D0   1.0D-4   1.0D0   20  1.0D-10  ::  por, k, Ss, leakFlag, K2, Ss2, b2, ellipse MS, ellipse cutoff
+1.5D-1  2.0D0  False  1.0  :: Sy, Kz, unconfined?, b
+1.0D-5  2.0D0  False  :: matrixSs, matrix/fracture lambda, dualPorosityFlag?
+40  40  4  :: nx, ny, nt
+DUMMY OBS NAME  
+-2.50000e+00 -2.37179e+00 -2.24359e+00 -2.11538e+00 -1.98718e+00 -1.85897e+00 -1.73077e+00 -1.60256e+00 -1.47436e+00 -1.34615e+00 -1.21795e+00 -1.08974e+00 -9.61538e-01 -8.33333e-01 -7.05128e-01 -5.76923e-01 -4.48718e-01 -3.20513e-01 -1.92308e-01 -6.41026e-02 6.41026e-02 1.92308e-01 3.20513e-01 4.48718e-01 5.76923e-01 7.05128e-01 8.33333e-01 9.61538e-01 1.08974e+00 1.21795e+00 1.34615e+00 1.47436e+00 1.60256e+00 1.73077e+00 1.85897e+00 1.98718e+00 2.11538e+00 2.24359e+00 2.37179e+00 2.50000e+00 :: x 
+-2.50000e+00 -2.37179e+00 -2.24359e+00 -2.11538e+00 -1.98718e+00 -1.85897e+00 -1.73077e+00 -1.60256e+00 -1.47436e+00 -1.34615e+00 -1.21795e+00 -1.08974e+00 -9.61538e-01 -8.33333e-01 -7.05128e-01 -5.76923e-01 -4.48718e-01 -3.20513e-01 -1.92308e-01 -6.41026e-02 6.41026e-02 1.92308e-01 3.20513e-01 4.48718e-01 5.76923e-01 7.05128e-01 8.33333e-01 9.61538e-01 1.08974e+00 1.21795e+00 1.34615e+00 1.47436e+00 1.60256e+00 1.73077e+00 1.85897e+00 1.98718e+00 2.11538e+00 2.24359e+00 2.37179e+00 2.50000e+00 :: y
+0.0001 0.001 0.01 0.1 :: t
+1.0D-6  1.0D-8  10  :: alpha, tolerance, M
+1  pumping_well_circles.in     :: number of circular elements, circle data file
+0  not_used    :: number of elliptical elements, ellipse data file
+not_used   ::  particle data file
+
+     
