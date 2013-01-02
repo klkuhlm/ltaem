@@ -38,9 +38,6 @@ and lapack.a, or the Makefile needs to be changed to point to them.
 
 A recent version of gfortran is required (>= 4.6.1), due to a bug in
 previous releases of this compiler regarding extended fortran types.
-A small fix can be made to the code to allow older versions of
-gfortran (>= 4.4) to work with the code (contact me if this is
-necessary for your use case).
 
 With the two libraries in place, compilation should work with just the
 simple "make" command from the source directory.  This copies the
