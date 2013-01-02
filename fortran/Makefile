@@ -23,19 +23,13 @@
 EXTERNAL=cbessel.o
 KKLOW=type_definitions.o utility.o bessel_functions.o mathieu_functions2.o
 
-# determine platform
-UNAME := $(shell uname)
-
-ifeq ($(UNAME), Linux)
-LAPACKLIB=lapack.a
-BLASLIB=blas.a
-endif
-
-ifeq ($(UNAME), Darwin)
-# on mac use system libraries 
+# use system libraries 
 LAPACKLIB=-llapack
 BLASLIB=-lblas
-endif
+
+## if no system libraries put statically linked libraries in this directory
+#LAPACKLIB=lapack.a
+#BLASLIB=blas.a
 
 # main-program related
 ####################################
