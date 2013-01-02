@@ -76,16 +76,21 @@ contains
        row(i,1) = size(res(i,i)%RHS,1)
        col(i,1) = size(res(i,i)%LHS,2)
 
+       print *, 'SOL DBG circle-self:',i,size(res(i,i)%LHS),size(res(i,i)%RHS),row(i,1),col(i,1)
+
        ! circle on other circle
        do j=1,nc
           if(i/=j) then
              res(j,i) = circle_match(c(i),c(j)%matching,dom,p)
+             print *, 'SOL DBG circle-circle:',j,size(res(j,i)%LHS),size(res(j,i)%RHS)
           end if
        end do
+
 
        ! circle on other ellipse
        do j=1,ne
           res(j+nc,i) = circle_match(c(i),e(j)%matching,dom,p)
+          print *, 'SOL DBG circle-ellipse:',j,size(res(j+nc,i)%LHS),size(res(j+nc,i)%RHS)
        end do
     end do
 
@@ -95,22 +100,27 @@ contains
        row(i+nc,1) = size(res(nc+i,nc+i)%RHS,1)
        col(i+nc,1) = size(res(nc+i,nc+i)%LHS,2)
 
+       print *, 'SOL DBG ellipse-self:',i,size(res(nc+i,nc+i)%LHS),size(res(nc+i,nc+i)%RHS),row(i+nc,1),col(i+nc,1)
 
        ! ellipse on other circle
        do j = 1, nc
           res(j,nc+i) = ellipse_match(e(i),c(j)%matching,dom,p,idx)
+          print *, 'SOL DBG ellipse-circle:',j,size(res(j,nc+i)%LHS),size(res(j,nc+i)%RHS)
        end do
 
        ! ellipse on other ellipse
        do j = 1, ne
           if (i /= j) then
              res(nc+j,nc+i) = ellipse_match(e(i),e(j)%matching,dom,p,idx)
+             print *, 'SOL DBG ellipse-ellipse:',j,size(res(j+nc,nc+i)%LHS),size(res(j+nc,nc+i)%RHS)
           end if
        end do
     end do
 
     bigM = sum(row(:,1)) ! total number rows/cols
     bigN = sum(col(:,1))
+
+    print *, 'SOL DBG:',bigM,bigN
 
     allocate(A(bigM,bigN), b(bigM))
     b = 0.0
@@ -125,6 +135,9 @@ contains
        col(i,0) = 1 + sum(col(1:i-1,1))
        col(i,2) = sum(col(1:i,1))
     end forall
+
+    print *, 'SOL DBG: row',row
+    print *, 'SOL DBG: col',col
 
     ! convert structures into single matrix for solution via least squares
     do rr=1,ntot

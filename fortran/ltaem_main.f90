@@ -93,7 +93,6 @@ program ltaem_main
   if (sol%calc) then
      if (sol%particle) then   ! particle tracking
 
-
         minlt = floor(  minval(log10(part(:)%ti)))
         maxlt = ceiling(maxval(log10(part(:)%tf)))
 
@@ -339,6 +338,7 @@ program ltaem_main
      end do
      !$OMP END PARALLEL DO
 
+  !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   elseif(sol%timeseries) then ! x,y locations are in pairs; e.g. inner product
 
      write(*,'(A)') 'compute solution for plotting time series'

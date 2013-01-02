@@ -23,9 +23,19 @@
 EXTERNAL=cbessel.o
 KKLOW=type_definitions.o utility.o bessel_functions.o mathieu_functions2.o
 
-# provide a link to the static lapack/blas libraries in the source directory
-LAPACKLIB=lapack.a
-BLASLIB=blas.a #-lpthread
+# determine platform
+UNAME := $(shell uname)
+
+ifeq ($(UNAME), Linux)
+LAPACKLIB=lapack.a	
+BLASLIB=blas.a 
+endif
+
+ifeq ($(UNAME), Darwin)
+# on mac use system libraries 
+LAPACKLIB=-llapack
+BLASLIB=-lblas
+endif
 
 # main-program related
 ####################################
