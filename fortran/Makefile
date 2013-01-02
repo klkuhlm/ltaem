@@ -27,8 +27,8 @@ KKLOW=type_definitions.o utility.o bessel_functions.o mathieu_functions2.o
 UNAME := $(shell uname)
 
 ifeq ($(UNAME), Linux)
-LAPACKLIB=lapack.a	
-BLASLIB=blas.a 
+LAPACKLIB=lapack.a
+BLASLIB=blas.a
 endif
 
 ifeq ($(UNAME), Darwin)
