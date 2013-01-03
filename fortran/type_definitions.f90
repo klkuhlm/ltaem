@@ -299,17 +299,17 @@ contains
        fmt(2) = '(7X,   (I12,12X))                       '
        write(fmt(2)(5:7),'(I3.3)') col
        write(*,fmt(2)) [(i,i=1,col)] ! headers
-       do i=1,row
+       do i = 1,row
           write(*,fmt(1)) 'LHS:',i,('(',real(r%LHS(i,j)),',',&
                & aimag(r%LHS(i,j)),') ',j=1,col)
        end do
-       do i=1,row
+       do i = 1,row
           write(*,'(A,I3,2(A,ES10.2E3),A)') 'RHS:',i,'(',&
                & real(r%RHS(i)),',',aimag(r%RHS(i)),')'
        end do
 
     elseif(row > 0) then
-       do i=1,row
+       do i = 1,row
           write(*,'(A,I3,2(A,ES10.2E3),A)') 'RHS:',i,'(',&
                & real(r%RHS(i)),',',aimag(r%RHS(i)),')'
        end do

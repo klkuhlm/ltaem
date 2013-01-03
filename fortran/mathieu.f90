@@ -134,8 +134,8 @@ contains
     M = mat%M
 
     allocate(v(0:M),vi(0:M))
-    forall (j=0:M) v(j) = j
-    where(mod([(j,j=0,M)],2)==0)
+    forall (j = 0:M) v(j) = j
+    where(mod([(j,j=0,M)],2) == 0)
        vi = 1.0_DP
     elsewhere
        vi = -1.0_DP
@@ -170,10 +170,10 @@ contains
 
     ! main diagonal/ r counting from 0:m-1 like McLachlan
     Coeff(:,:) = 0.0
-    forall(i=1:M-1) Coeff(i+1,i+1) = cmplx((2*i)**2, 0, DP)
+    forall(i = 1:M-1) Coeff(i+1,i+1) = cmplx((2*i)**2, 0, DP)
 
     ! off diagonals
-    forall(i=1:m, j=1:m, j==i+1 .or. j==i-1) Coeff(i,j) = q
+    forall(i = 1:m, j = 1:m, j == i+1 .or. j == i-1) Coeff(i,j) = q
 
     ! special case
     Coeff(2,1) = 2.0*q
@@ -197,8 +197,8 @@ contains
     Coeff(:,:) = 0.0
     Coeff(1,1) = 1.0_DP + q
 
-    forall(i=1:m-1) Coeff(i+1,i+1) = cmplx((2*i+1)**2, 0, DP)
-    forall(i=1:m, j=1:m, j==i+1 .or. j==i-1) Coeff(i,j) = q
+    forall(i = 1:m-1) Coeff(i+1,i+1) = cmplx((2*i+1)**2, 0, DP)
+    forall(i = 1:m, j = 1:m, j == i+1 .or. j == i-1) Coeff(i,j) = q
 
     call ZGEEV(JOBVL='N', JOBVR='V', N=M, A=Coeff, LDA=M, W=mat%mcn(m+1:2*m),&
          & VL=dc, LDVL=di, VR=mat%A(1:m,0:m-1,1), LDVR=M, &
@@ -220,8 +220,8 @@ contains
     !! (but starting from one, rather than zero)
     Coeff(:,:) = 0.0
 
-    forall(i=1:m) Coeff(i,i) = cmplx((2*i)**2, 0, DP)
-    forall(i=1:m, j=1:m, j==i+1 .or. j==i-1) Coeff(i,j) = q
+    forall(i = 1:m) Coeff(i,i) = cmplx((2*i)**2, 0, DP)
+    forall(i = 1:m, j = 1:m, j == i+1 .or. j == i-1) Coeff(i,j) = q
 
     call ZGEEV(JOBVL='N', JOBVR='V', N=M, A=Coeff, LDA=M, W=mat%mcn(2*m+1:3*m),&
          & VL=dc, LDVL=di, VR=mat%B(1:m,0:m-1,0),LDVR=M,&
@@ -242,8 +242,8 @@ contains
     Coeff(:,:) = 0.0
     Coeff(1,1) = 1.0_DP - q
 
-    forall(i=1:m-1) Coeff(i+1,i+1) = cmplx((2*i+1)**2, 0, DP)
-    forall(i=1:m, j=1:m, j==i+1 .or. j==i-1) Coeff(i,j) = q
+    forall(i = 1:m-1) Coeff(i+1,i+1) = cmplx((2*i+1)**2, 0, DP)
+    forall(i = 1:m, j = 1:m, j == i+1 .or. j == i-1) Coeff(i,j) = q
 
     call ZGEEV(JOBVL='N', JOBVR='V', N=M, A=Coeff, LDA=M, W=mat%mcn(3*m+1:4*m),&
          & VL=dc, LDVL=di, VR=mat%B(1:m,0:m-1,1), LDVR=M,&
@@ -261,7 +261,7 @@ contains
     ! perform some heuristic checking of max allowable order
     dg = DZASUM(N=M, ZX=diag(mat%A(:,:,0),0), INCX=1)/m ! average size of diagonal element
 
-    bufcheck: do j=1,m
+    bufcheck: do j = 1,m
        denom = dg*(m-j)
        if (DZASUM(N=M-j, ZX=diag(mat%A(:,:,0), j), INCX=1)/denom < mat%CUTOFF .and. &
          & DZASUM(N=M-j, ZX=diag(mat%A(:,:,0),-j), INCX=1)/denom < mat%CUTOFF) then
@@ -296,8 +296,8 @@ contains
     ! internal variables
     integer, dimension(size(n)) :: j
     real(DP), dimension(mf%M) :: v, vi
-    integer, dimension(count(mod(n,2)==0)) :: EV
-    integer, dimension(count(mod(n,2)==1)) :: OD
+    integer, dimension(count(mod(n,2) == 0)) :: EV
+    integer, dimension(count(mod(n,2) == 1)) :: OD
     integer :: nz, nje, njo
 
     nz = size(z)
@@ -328,8 +328,8 @@ contains
 
     integer, dimension(size(n)) :: j
     real(DP), dimension(mf%M):: v, vi
-    integer, dimension(count(mod(n,2)==0)) :: EV
-    integer, dimension(count(mod(n,2)==1)) :: OD
+    integer, dimension(count(mod(n,2) == 0)) :: EV
+    integer, dimension(count(mod(n,2) == 1)) :: OD
     integer :: nz, nje, njo
 
     nz = size(z)
@@ -337,7 +337,7 @@ contains
     nje = size(EV)
     njo = size(OD)
     j = floor((n-1)/2.0)
-    where (n==0) j = 0
+    where (n == 0) j = 0
 
     se(:,EV) = sum(spread(mf%B(:,j(EV),0),2,nz)* &
          & spread(sin(outer(2*v+2,PIOV2-z)),3,nje),dim=1)
@@ -361,8 +361,8 @@ contains
 
     integer, dimension(size(n)) :: j
     real(DP), dimension(mf%M):: v, vi
-    integer, dimension(count(mod(n,2)==0)) :: EV
-    integer, dimension(count(mod(n,2)==1)) :: OD
+    integer, dimension(count(mod(n,2) == 0)) :: EV
+    integer, dimension(count(mod(n,2) == 1)) :: OD
     integer :: nz, nje, njo
 
     nz = size(z)
@@ -392,8 +392,8 @@ contains
 
     integer, dimension(size(n)) :: j
     real(DP), dimension(mf%M):: v, vi
-    integer, dimension(count(mod(n,2)==0)) :: EV
-    integer, dimension(count(mod(n,2)==1)) :: OD
+    integer, dimension(count(mod(n,2) == 0)) :: EV
+    integer, dimension(count(mod(n,2) == 1)) :: OD
     integer :: nz, nje, njo
 
     nz = size(z)
@@ -401,7 +401,7 @@ contains
     nje = size(EV)
     njo = size(OD)
     j = floor((n-1)/2.0)
-    where (n==0) j=0
+    where (n == 0) j = 0
 
     Dse(:,EV) = -sum(spread(spread(2*v+2,2,nje)*mf%B(:,j(EV),0),2,nz)* &
          & spread(cos(outer(2*v+2,PIOV2-z)),3,nje),dim=1)
@@ -425,8 +425,8 @@ contains
     integer, dimension(size(n)) :: j
     real(DP), dimension(mf%M):: v, vi
     complex(DP), dimension(0:mf%M,size(z)) :: I1, I2
-    integer, dimension(count(mod(n,2)==0)) :: EV
-    integer, dimension(count(mod(n,2)==1)) :: OD
+    integer, dimension(count(mod(n,2) == 0)) :: EV
+    integer, dimension(count(mod(n,2) == 1)) :: OD
     complex(DP), dimension(size(z)) :: v1, v2
     complex(DP) :: sqrtq
     integer :: nje, njo, nz, M
@@ -463,8 +463,8 @@ contains
     integer, dimension(size(n)) :: j
     real(DP), dimension(mf%M):: v, vi
     complex(DP), dimension(0:mf%M+1,size(z)) :: I1, I2
-    integer, dimension(count(mod(n,2)==0)) :: EV
-    integer, dimension(count(mod(n,2)==1)) :: OD
+    integer, dimension(count(mod(n,2) == 0)) :: EV
+    integer, dimension(count(mod(n,2) == 1)) :: OD
     complex(DP), dimension(size(z)) :: v1, v2
     complex(DP) :: sqrtq
     integer :: nje, njo, nz, M
@@ -475,7 +475,7 @@ contains
     nje = size(EV)
     njo = size(OD)
     j = floor((n-1)/2.0)
-    where (n==0) j=0
+    where (n == 0) j = 0
     call BesselI_val(v1,m+2,I1(0:m+1,:))
     call BesselI_val(v2,m+2,I2(0:m+1,:))
 
@@ -503,8 +503,8 @@ contains
     integer, dimension(size(n)) :: j
     real(DP), dimension(mf%M):: v, vi
     complex(DP), dimension(0:mf%M,size(z)) :: I, K
-    integer, dimension(count(mod(n,2)==0)) :: EV
-    integer, dimension(count(mod(n,2)==1)) :: OD
+    integer, dimension(count(mod(n,2) == 0)) :: EV
+    integer, dimension(count(mod(n,2) == 1)) :: OD
     complex(DP), dimension(size(z)) :: v1, v2
     complex(DP) :: sqrtq
     integer :: nje, njo, nz, m
@@ -541,8 +541,8 @@ contains
     integer, dimension(size(n)) :: j
     real(DP), dimension(mf%M):: v, vi
     complex(DP), dimension(0:mf%M+1,size(z)) :: I, K
-    integer, dimension(count(mod(n,2)==0)) :: EV
-    integer, dimension(count(mod(n,2)==1)) :: OD
+    integer, dimension(count(mod(n,2) == 0)) :: EV
+    integer, dimension(count(mod(n,2) == 1)) :: OD
     complex(DP), dimension(size(z)) :: v1, v2
     complex(DP) :: sqrtq
     integer :: nje, njo, nz, m
@@ -553,7 +553,7 @@ contains
     nje = size(EV)
     njo = size(OD)
     j = floor((n-1)/2.0)
-    where(n==0) j=0
+    where(n == 0) j = 0
     call BesselI_val(v1,m+2,I(0:m+1,:))
     call BesselK_val(v2,m+2,K(0:m+1,:))
 
@@ -582,8 +582,8 @@ contains
     integer, dimension(size(n)) :: j
     real(DP), dimension(mf%M):: v, vi
     complex(DP), dimension(0:mf%M,size(z)) :: I1, I2, DI1, DI2
-    integer, dimension(count(mod(n,2)==0)) :: EV
-    integer, dimension(count(mod(n,2)==1)) :: OD
+    integer, dimension(count(mod(n,2) == 0)) :: EV
+    integer, dimension(count(mod(n,2) == 1)) :: OD
     complex(DP), dimension(size(z)) :: v1, v2
     complex(DP), dimension(mf%M,size(z)) :: enz, epz
     complex(DP) :: sqrtq
@@ -623,8 +623,8 @@ contains
     integer, dimension(size(n)) :: j
     real(DP), dimension(mf%M):: v, vi
     complex(DP), dimension(0:mf%M+1,size(z)) :: I1, I2, DI1, DI2
-    integer, dimension(count(mod(n,2)==0)) :: EV
-    integer, dimension(count(mod(n,2)==1)) :: OD
+    integer, dimension(count(mod(n,2) == 0)) :: EV
+    integer, dimension(count(mod(n,2) == 1)) :: OD
     complex(DP), dimension(size(z)) :: v1, v2
     complex(DP), dimension(mf%M,size(z)) :: enz, epz
     complex(DP) :: sqrtq
@@ -636,7 +636,7 @@ contains
     nje = size(EV)
     njo = size(OD)
     j = floor((n-1)/2.0)
-    where (n==0) j=0
+    where (n == 0) j = 0
     call BesselI_val_and_deriv(v1,m+2,I1(0:m+1,:),DI1(0:m+1,:))
     call BesselI_val_and_deriv(v2,m+2,I2(0:m+1,:),DI2(0:m+1,:))
 
@@ -669,8 +669,8 @@ contains
     integer, dimension(size(n)) :: j
     real(DP), dimension(mf%M):: v, vi
     complex(DP), dimension(0:mf%M,size(z)) :: I, K, DI, DK
-    integer, dimension(count(mod(n,2)==0)) :: EV
-    integer, dimension(count(mod(n,2)==1)) :: OD
+    integer, dimension(count(mod(n,2) == 0)) :: EV
+    integer, dimension(count(mod(n,2) == 1)) :: OD
     complex(DP), dimension(size(z)) :: v1, v2
     complex(DP), dimension(mf%M,size(z)) :: enz, epz
     complex(DP) :: sqrtq
@@ -711,8 +711,8 @@ contains
     integer, dimension(size(n)) :: j
     real(DP), dimension(mf%M):: v, vi
     complex(DP), dimension(0:mf%M+1,size(z)) :: I, K, DI, DK
-    integer, dimension(count(mod(n,2)==0)) :: EV
-    integer, dimension(count(mod(n,2)==1)) :: OD
+    integer, dimension(count(mod(n,2) == 0)) :: EV
+    integer, dimension(count(mod(n,2) == 1)) :: OD
     complex(DP), dimension(size(z)) :: v1, v2
     complex(DP), dimension(mf%M,size(z)) :: enz, epz
     complex(DP) :: sqrtq
@@ -724,7 +724,7 @@ contains
     nje = size(EV)
     njo = size(OD)
     j = floor((n-1)/2.0)
-    where (n==0) j=0
+    where (n == 0) j = 0
     call BesselI_val_and_deriv(v1,m+2,I(0:m+1,:),DI(0:m+1,:))
     call BesselK_val_and_deriv(v2,m+2,K(0:m+1,:),DK(0:m+1,:))
 
@@ -1087,8 +1087,8 @@ contains
     integer, intent(in), dimension(:) :: n
     type(mathieu), intent(in) :: mf
     real(DP), intent(out), dimension(mf%m) :: v,vi
-    integer, intent(out), dimension(count(mod(n,2)==0)) :: EV
-    integer, intent(out), dimension(count(mod(n,2)==1)) :: OD
+    integer, intent(out), dimension(count(mod(n,2) == 0)) :: EV
+    integer, intent(out), dimension(count(mod(n,2) == 1)) :: OD
     integer, dimension(mf%m) :: i
     integer, dimension(size(n)) :: nn
     integer :: j
@@ -1096,18 +1096,18 @@ contains
     call check_cutoff(mf,n)
 
     ! compute vector of integers counting up
-    forall (j=0:mf%m-1) i(j+1) = j
+    forall (j = 0:mf%m-1) i(j+1) = j
     v = real(i,DP)
 
     ! compute the "sign" vector
     vi = 1.0_DP
-    where (mod(i,2)==1) vi = -1.0_DP
+    where (mod(i,2) == 1) vi = -1.0_DP
 
     ! indexing vectors based on even/odd-ness of n
-    forall (j=1:size(n)) nn(j) = j
+    forall (j = 1:size(n)) nn(j) = j
 
-    EV = pack(nn,mod(n,2)==0)
-    OD = pack(nn,mod(n,2)==1)
+    EV = pack(nn,mod(n,2) == 0)
+    OD = pack(nn,mod(n,2) == 1)
 
   end subroutine angfcnsetup
 
@@ -1119,8 +1119,8 @@ contains
     real(DP), intent(out), dimension(mf%m) :: v,vi
     complex(DP), intent(out) :: sqrtq
     complex(DP), intent(out), dimension(size(z)) :: v1,v2
-    integer, intent(out), dimension(count(mod(n,2)==0)) :: EV
-    integer, intent(out), dimension(count(mod(n,2)==1)) :: OD
+    integer, intent(out), dimension(count(mod(n,2) == 0)) :: EV
+    integer, intent(out), dimension(count(mod(n,2) == 1)) :: OD
     integer, dimension(mf%m) :: i
     integer, dimension(size(n)) :: nn
     integer :: j
@@ -1128,22 +1128,22 @@ contains
     call check_cutoff(mf,n)
 
     ! compute vector of integers counting up
-    forall (j=0:mf%m-1) i(j+1) = j
+    forall (j = 0:mf%m-1) i(j+1) = j
     v = real(i,DP)
 
     ! compute the "sign" vector
     vi = 1.0_DP
-    where (mod(i,2)==1) vi = -1.0_DP
+    where (mod(i,2) == 1) vi = -1.0_DP
 
     sqrtq = sqrt(mf%q)
     v1 = sqrtq*exp(-z)
     v2 = sqrtq*exp( z)
 
     ! indexing vectors based on even/odd-ness of n
-    forall (j=1:size(n)) nn(j) = j
+    forall (j = 1:size(n)) nn(j) = j
 
-    EV = pack(nn,mod(n,2)==0)
-    OD = pack(nn,mod(n,2)==1)
+    EV = pack(nn,mod(n,2) == 0)
+    OD = pack(nn,mod(n,2) == 1)
 
   end subroutine radfcnsetup
 
@@ -1156,8 +1156,8 @@ contains
     complex(DP), intent(out) :: sqrtq
     complex(DP), intent(out), dimension(size(z)) :: v1, v2
     complex(DP), intent(out), dimension(mf%m,size(z)) :: enz, epz
-    integer, intent(out), dimension(count(mod(n,2)==0)) :: EV
-    integer, intent(out), dimension(count(mod(n,2)==1)) :: OD
+    integer, intent(out), dimension(count(mod(n,2) == 0)) :: EV
+    integer, intent(out), dimension(count(mod(n,2) == 1)) :: OD
     integer, dimension(mf%m) :: i
     integer, dimension(size(n)) :: nn
     integer :: j
@@ -1165,12 +1165,12 @@ contains
     call check_cutoff(mf,n)
 
     ! compute vector of integers counting up
-    forall (j=0:mf%m-1) i(j+1) = j
+    forall (j = 0:mf%m-1) i(j+1) = j
     v = real(i,DP)
 
     ! compute the "sign" vector
     vi = 1.0_DP
-    where (mod(i,2)==1) vi = -1.0_DP
+    where (mod(i,2) == 1) vi = -1.0_DP
 
     enz = spread(exp(-z),dim=1,ncopies=mf%m)
     epz = spread(exp( z),dim=1,ncopies=mf%m)
@@ -1179,10 +1179,10 @@ contains
     v2 = epz(1,:)*sqrtq
 
     ! indexing vectors based on even/odd-ness of n
-    forall (j=1:size(n)) nn(j) = j
+    forall (j = 1:size(n)) nn(j) = j
 
-    EV = pack(nn,mod(n,2)==0)
-    OD = pack(nn,mod(n,2)==1)
+    EV = pack(nn,mod(n,2) == 0)
+    OD = pack(nn,mod(n,2) == 1)
 
   end subroutine radderivfcnsetup
 
@@ -1207,7 +1207,7 @@ contains
     ! where z = x + iy
     ! only print up to the first 5 elements of the z vectors during error reporting
 
-    do j=1,size(arg)
+    do j = 1,size(arg)
        call cbesi(z=arg(j), fnu=0.0_DP, kode=2, n=n, cy=I(0:n-1,j), nz=numzero, ierr=ierr)
 
        if (ierr /= 0) then
@@ -1267,7 +1267,7 @@ contains
 !!$    character(33) :: fmt
 
     ! scaling for K BF :: cy = K_fnu(z)*exp(z)
-    do j=1,size(arg)
+    do j = 1,size(arg)
        call cbesk(z=arg(j), fnu=0.0_DP, kode=2, n=n, cy=K(0:n-1,j), nz=numzero, ierr=ierr)
 
        if (ierr /= 0) then

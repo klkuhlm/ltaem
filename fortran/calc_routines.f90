@@ -334,7 +334,7 @@ contains
     Zgp(1:nc) = xy2cA(Z,c(:))
     Rgp(1:nc) = abs(Zgp(1:nc))   ! r
     Pgp(1:nc) = aimag(Zgp(1:nc)) ! theta
-    do j = 1, nc
+    do j = 1,nc
        if (Rgp(j) < c(j)%r) then    ! inside (not including on boundary)
           k = k+1
           inout(k) = j
@@ -345,7 +345,7 @@ contains
     Zgp(nc+1:ntot) = xy2eA(Z,e(:))
     Rgp(nc+1:ntot) =  real(Zgp(1:ne)) ! eta
     Pgp(nc+1:ntot) = aimag(Zgp(1:ne)) ! psi
-    do j = 1, ne
+    do j = 1,ne
        if (Rgp(j+nc) < e(j)%r) then    ! inside (not including on boundary)
           k = k+1
           inout(k) = j+nc

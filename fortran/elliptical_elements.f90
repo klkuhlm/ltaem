@@ -57,7 +57,7 @@ contains
 
     N = e%N
     M = e%M
-    forall (j=0:N-1) vi(j) = j
+    forall (j = 0:N-1) vi(j) = j
 
     if (e%ibnd == 0) then
        nrows = 2*M
@@ -173,7 +173,7 @@ contains
     N = e%N ! number of coefficients in the source elliptical element
     t = el%id  ! <= target
     s = e%id   ! <= source
-    forall (j=0:N-1) vi(j) = j
+    forall (j = 0:N-1) vi(j) = j
 
     M = el%M
     ! target element determines number of rows
@@ -411,7 +411,7 @@ contains
 
     N = e%N
     np = size(p,1)
-    forall (i=0:N-1) vi(i) = i
+    forall (i = 0:N-1) vi(i) = i
 
     if (inside) then
        if (e%match) then
@@ -419,7 +419,7 @@ contains
        else
           n0 = 1   ! inside of specified boundary ellipse
        end if
-       do i=1,np
+       do i = 1,np
           j = lo+i-1
           RMRgp(i,0:N-1,0) = Ie(e%mat(j),vi(0:N-1),Rgp)
           RMRgp(i,1:N-1,1) = Io(e%mat(j),vi(1:N-1),Rgp)
@@ -432,7 +432,7 @@ contains
        end do
     else
        n0 = 1
-       do i=1,np
+       do i = 1,np
           j = lo+i-1
           RMRgp(i,0:N-1,0) = Ke(e%parent%mat(j),vi(0:N-1),Rgp)
           RMRgp(i,1:N-1,1) = Ko(e%parent%mat(j),vi(1:N-1),Rgp)
@@ -472,7 +472,7 @@ contains
 
     N = e%N
     np = size(p,1)
-    forall (i=0:N-1) vi(i) = i
+    forall (i = 0:N-1) vi(i) = i
 
     if (inside) then
        if (e%match) then
@@ -480,7 +480,7 @@ contains
        else
           n0 = 1   ! inside of specified boundary ellipse
        end if
-       do i=1,np
+       do i = 1,np
           j = lo+i-1
           ! radial Mathieu functions -> to calculation point
           RMRgp(i,0:N-1,0) =   Ie(e%mat(j),vi(0:N-1),Rgp)
@@ -498,7 +498,7 @@ contains
        end do
     else
        n0 = 1
-       do i=1,np
+       do i = 1,np
           j = lo+i-1
           RMRgp(i,0:N-1,0) =   Ke(e%parent%mat(j),vi(0:N-1),Rgp)
           RMRgp(i,1:N-1,1) =   Ko(e%parent%mat(j),vi(1:N-1),Rgp)
@@ -543,9 +543,9 @@ contains
     N = e%N
     MS = e%ms
     nmax = ceiling(e%N/2.0)
-    forall (i=0:MS-1) vi(i) = i ! integer vector
+    forall (i = 0:MS-1) vi(i) = i ! integer vector
     vs = -1.0 ! sign vector
-    where (mod(vi,2)==0) vs = 1.0
+    where (mod(vi,2) == 0) vs = 1.0
 
     arg(1:MS,1:nmax) = spread(vs(0:MS-1)/real(1-(2*vi(0:MS-1))**2,DP),2,nmax)
 

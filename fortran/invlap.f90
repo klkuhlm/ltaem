@@ -177,7 +177,7 @@ contains
     complex(DP), dimension(2*lap%M+1) :: p
     integer :: i
 
-    forall (i=0:2*lap%M)
+    forall (i = 0:2*lap%M)
        p(i+1) = cmplx(lap%alpha - log(lap%tol)/(2.0*tee), PI*i/tee, DP)
     end forall
   end function deHoog_pvalues

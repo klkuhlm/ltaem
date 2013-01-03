@@ -56,7 +56,7 @@ contains
     complex(DP), dimension(0:num-1) :: tmp
     integer :: numzero, ierr, j
 
-    do j = 1, size(z,dim=1)
+    do j = 1,size(z,dim=1)
        call cbesk(z=z(j), fnu=0.0_DP, kode=1, n=num, cy=tmp(0:num-1), nz=numzero, ierr=ierr)
        ! either 0 or 3 are acceptable return codes
        if (.not.(ierr == 0 .or. ierr == 3)) then
@@ -86,7 +86,7 @@ contains
     complex(DP), dimension(0:num-1) :: tmp
     integer :: numzero, ierr, j
 
-    do j = 1, size(z,dim=1)
+    do j = 1,size(z,dim=1)
        call cbesi(z=z(j), fnu=0.0_DP, kode=1, n=num, cy=tmp(0:num-1), nz=numzero, ierr=ierr)
        ! either 0 or 3 are acceptable return codes
        if (.not.(ierr == 0 .or. ierr == 3)) then

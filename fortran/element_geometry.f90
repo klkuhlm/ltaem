@@ -58,7 +58,7 @@ contains
     ! vector of eqi-spaced locations on perimeter of circle and ellipse
     ! each element can have a different number of matching locations
     ! starting at -PI (-x axis) continuing around the circle CCW.
-    do i=1,nc
+    do i = 1,nc
        allocate(c(i)%Pcm(c(i)%M))
        forall(j = 1:c(i)%M)
           c(i)%Pcm(j) = -PI + TWOPI/c(i)%M*real(j-1,DP)
@@ -66,7 +66,7 @@ contains
 
        c(i)%id = i ! global ID
     end do
-    do i=1,ne
+    do i = 1,ne
        allocate(e(i)%Pcm(e(i)%M))
        forall (j = 1:e(i)%M)
           e(i)%Pcm(j) = -PI + TWOPI/e(i)%M*real(j-1,DP)
@@ -158,9 +158,9 @@ contains
 
     ! setup pointers to parent elements
     bg%parent => null()  ! background has no parent
-    do i=1,nc
+    do i = 1,nc
        par = dom%InclUp(i)
-       if (par==0) then
+       if (par == 0) then
           ! circle has background as parent
           c(i)%parent => bg
        elseif (par <= nc) then
@@ -174,7 +174,7 @@ contains
           stop 200
        end if
     end do
-    do i=1,ne
+    do i = 1,ne
        par = dom%InclUp(nc+i)
        if (par == 0) then
           ! ellipse has background as parent
@@ -222,7 +222,7 @@ contains
        allocate(nondiag(ntot,ntot))
        ! logical mask for non-diagonal elements
        nondiag = .true.
-       forall(i=1:ntot) nondiag(i,i) = .false.
+       forall(i = 1:ntot) nondiag(i,i) = .false.
 
        dom%InclIn = .false. !! dom%InclIn(0:ntot,1:ntot) logical
        dom%InclUp = -huge(1) !! dom%InclUp(1:ntot)       integer
@@ -340,12 +340,12 @@ contains
        ! ## 3.1 remove bigger elements from inside
        ! smaller elements, for the case they are concentric
        allocate(R(ntot), nest(ntot), iv(ntot))
-       forall (i=1:ntot) iv(i) = i
+       forall (i = 1:ntot) iv(i) = i
        R(1:nc) = c(1:nc)%r
        ! TODO : double-check that circle/ellipse can be compared validly in this manner
        R(nc+1:ntot) = e(1:ne)%r  
 
-       forall (i=1:ntot, j=1:ntot, i/=j .and. dom%InclIn(i,j).and.dom%InclIn(j,i) .and. R(i)<R(j))
+       forall (i = 1:ntot, j = 1:ntot, i /= j .and. dom%InclIn(i,j).and.dom%InclIn(j,i) .and. R(i) < R(j))
           dom%InclIn(i,j) = .false.
        end forall
 
@@ -398,13 +398,13 @@ contains
        nest(0:ntot) = count(dom%InclIn(0:ntot,1:ntot),dim=2)
 
        ! set InclBg array up
-       do i=0,ntot
+       do i = 0,ntot
           n = nest(i)
           if (n > 1) then
              allocate(val(n))
              val(1:n) = pack(iv, mask=dom%InclIn(i,1:ntot))
 
-             do j=1,n
+             do j = 1,n
                 dom%InclBg(val(1:n),val(j)) = .true.
              end do
              deallocate(val)
@@ -412,7 +412,7 @@ contains
        end do
 
        ! an element isn't in its own background (by convention)
-       forall (i=1:ntot)
+       forall (i = 1:ntot)
           dom%InclBg(i,i) = .false.
        end forall
 

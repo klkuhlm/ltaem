@@ -225,7 +225,7 @@ contains
        
        s1 = 1
        slen = len_trim(input) ! don't include trailing blanks
-       do j=1,s%nx
+       do j = 1,s%nx
           ! location names are separated by "|" character
           s2 = index(input(s1:),'|')
           if (s2 == 0) then
@@ -388,7 +388,7 @@ contains
        c(:)%z = cmplx(c%x-s%xshift, c%y-s%yshift, DP)
 
        read(22,*,iostat=ierr) c(:)%k; sln=sln+1
-       if (ierr /=0 .or. any(c%k <= 0.0)) then
+       if (ierr /= 0 .or. any(c%k <= 0.0)) then
           write(*,*) 'error reading line ',sln,' of circle input; hydraulic conductivity '//&
                &'(c%K) must be > 0.0 ',c%k
           stop 215
@@ -542,7 +542,7 @@ contains
        write(16,fmt(3)) c(:)%bdryQ,          '  ||   circle boundary rch rate or head'
        
        ! area source behavior
-       do j=1,size(c,dim=1)
+       do j = 1,size(c,dim=1)
           read(22,*,iostat=ierr) c(j)%AreaTime; sln=sln+1
              if (ierr /= 0) then
                 write(*,*) 'error reading line ',sln,' area time behavior (c%AreaTime) &
@@ -580,7 +580,7 @@ contains
        end do
 
        ! boundary source behavior
-       do j=1,size(c,dim=1)
+       do j = 1,size(c,dim=1)
           read(22,*,iostat=ierr) c(j)%BdryTime; sln=sln+1
           if (ierr /= 0) then
                 write(*,*) 'error reading line ',sln,' boundary time behavior '//&
@@ -906,7 +906,7 @@ contains
        write(16,fmt(3)) e(:)%areaQ,          '  ||   ellipse area rch rate'
        write(16,fmt(3)) e(:)%bdryQ,          '  ||   ellipse boundary rch rate or head'
 
-       do j=1,size(e,dim=1)
+       do j = 1,size(e,dim=1)
           read(33,*,iostat=ierr) e(j)%AreaTime; sln=sln+1
              if (ierr /= 0) then
                 write(*,*) 'error reading line ',sln,' area time behavior (e%AreaTime) &
@@ -940,7 +940,7 @@ contains
                   &'  ||    Area ti, tf | strength for ellipse ',j
           end if
        end do
-       do j=1,size(e,dim=1)
+       do j = 1,size(e,dim=1)
           read(33,*,iostat=ierr) e(j)%BdryTime; sln=sln+1
              if (ierr /= 0) then
                 write(*,*) 'error reading line ',sln,' boundary time behavior '//&
@@ -1180,7 +1180,7 @@ contains
     s%x(:) = s%x(:) + s%xshift
     s%y(:) = s%y(:) + s%yshift
     if (s%particle) then
-       do i=1,s%nPart
+       do i = 1,s%nPart
           p(i)%r(:,2) = p(i)%r(:,2) + s%xshift
           p(i)%r(:,3) = p(i)%r(:,3) + s%yshift
        end do
@@ -1412,7 +1412,7 @@ contains
           write (20,'(A)')   &
           & '#     time              x                    y                  '//&
           &'velx                 vely '
-          do k=1,p(i)%numt
+          do k = 1,p(i)%numt
              write (20,'('//tfmt//',4(1X,'//hfmt//'))') &
                   & p(i)%r(k,1:5)
           end do

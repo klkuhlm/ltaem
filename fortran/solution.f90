@@ -70,7 +70,7 @@ contains
     allocate(res(ntot,ntot), row(ntot,0:2), col(ntot,0:2))
 
     ! accumulate result into matrices of structures
-    do i=1,nc
+    do i = 1,nc
        ! circle on self
        res(i,i) = circle_match(c(i),p)
        row(i,1) = size(res(i,i)%RHS,1)
@@ -79,22 +79,21 @@ contains
        print *, 'SOL DBG circle-self:',i,size(res(i,i)%LHS),size(res(i,i)%RHS),row(i,1),col(i,1)
 
        ! circle on other circle
-       do j=1,nc
-          if(i/=j) then
+       do j = 1,nc
+          if(i /= j) then
              res(j,i) = circle_match(c(i),c(j)%matching,dom,p)
              print *, 'SOL DBG circle-circle:',j,size(res(j,i)%LHS),size(res(j,i)%RHS)
           end if
        end do
 
-
        ! circle on other ellipse
-       do j=1,ne
+       do j = 1,ne
           res(j+nc,i) = circle_match(c(i),e(j)%matching,dom,p)
           print *, 'SOL DBG circle-ellipse:',j,size(res(j+nc,i)%LHS),size(res(j+nc,i)%RHS)
        end do
     end do
 
-    do i=1,ne
+    do i = 1,ne
        ! ellipse on self
        res(nc+i,nc+i) = ellipse_match(e(i),p,idx)
        row(i+nc,1) = size(res(nc+i,nc+i)%RHS,1)
@@ -103,13 +102,13 @@ contains
        print *, 'SOL DBG ellipse-self:',i,size(res(nc+i,nc+i)%LHS),size(res(nc+i,nc+i)%RHS),row(i+nc,1),col(i+nc,1)
 
        ! ellipse on other circle
-       do j = 1, nc
+       do j = 1,nc
           res(j,nc+i) = ellipse_match(e(i),c(j)%matching,dom,p,idx)
           print *, 'SOL DBG ellipse-circle:',j,size(res(j,nc+i)%LHS),size(res(j,nc+i)%RHS)
        end do
 
        ! ellipse on other ellipse
-       do j = 1, ne
+       do j = 1,ne
           if (i /= j) then
              res(nc+j,nc+i) = ellipse_match(e(i),e(j)%matching,dom,p,idx)
              print *, 'SOL DBG ellipse-ellipse:',j,size(res(j+nc,nc+i)%LHS),size(res(j+nc,nc+i)%RHS)
@@ -129,7 +128,7 @@ contains
        allocate(work(33*bigN))
     end if
 
-    forall (i=1:ntot)
+    forall (i = 1:ntot)
        row(i,0) = 1 + sum(row(1:i-1,1))  ! lower bound
        row(i,2) = sum(row(1:i,1))        ! upper bound
        col(i,0) = 1 + sum(col(1:i-1,1))
@@ -140,8 +139,8 @@ contains
     print *, 'SOL DBG: col',col
 
     ! convert structures into single matrix for solution via least squares
-    do rr=1,ntot
-       do cc=1,ntot
+    do rr = 1,ntot
+       do cc = 1,ntot
           A(row(rr,0):row(rr,2),col(cc,0):col(cc,2)) = res(rr,cc)%LHS
           b(row(rr,0):row(rr,2)) = b(row(rr,0):row(rr,2)) + res(rr,cc)%RHS
        end do
@@ -164,7 +163,7 @@ contains
     end if
 
     ! put result into local coeff variables
-    do i=1,nc
+    do i = 1,nc
        ! Circles -- ensure container for results is allocated
        ! allocation should only happen on first pass through this subroutine
        if (.not. allocated(c(i)%coeff)) then
@@ -187,7 +186,7 @@ contains
        end if
     end do
 
-    do i=1,ne
+    do i = 1,ne
        ! ellipses
        if (.not. allocated(e(i)%coeff)) then
           allocate(e(i)%coeff(sol%totalnp,col(nc+i,1)))
