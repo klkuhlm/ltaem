@@ -328,11 +328,15 @@ program ltaem_main
               !!print *, 'DEBUG s:',tnP,lt,'::',lot,hit,'::',lop,hip
 
               sol%h(j,i,lot:hit) =     L(sol%t(lot:hit), tee(lt), hp(lop:hip), sol%INVLT)
-              if (sol%deriv) then
-                 sol%dh(j,i,lot:hit) = L(sol%t(lot:hit), tee(lt), hp(lop:hip)*&
-                      & stmp(lop:hip), sol%INVLT)*sol%t(lot:hit)
-              end if
               sol%v(j,i,lot:hit,1:2) = L(sol%t(lot:hit), tee(lt), vp(lop:hip,1:2), sol%INVLT)
+
+              if (sol%deriv) then
+                 ! multiply solution by p for derivative
+                 hp(lop:hip) = hp(lop:hip)*stmp(lop:hip)
+                 sol%dh(j,i,lot:hit) = L(sol%t(lot:hit), tee(lt), hp(lop:hip), &
+                      & sol%INVLT)*sol%t(lot:hit)
+              end if
+
            end do
         end do
      end do
@@ -368,11 +372,14 @@ program ltaem_main
 
            ! don't need second dimension of results matrices
            sol%h(i,1,lot:hit) =     L(sol%t(lot:hit),tee(lt),hp(lop:hip),sol%INVLT)
-           if (sol%deriv) then
-              sol%dh(i,1,lot:hit) = L(sol%t(lot:hit),tee(lt),hp(lop:hip)* &
-                   & stmp(lop:hip),sol%INVLT)*sol%t(lot:hit)
-           end if
            sol%v(i,1,lot:hit,1:2) = L(sol%t(lot:hit),tee(lt),vp(lop:hip,1:2),sol%INVLT)
+
+           if (sol%deriv) then
+              ! multiply solution by p for derivative
+              hp(lop:hip) = hp(lop:hip)*stmp(lop:hip)
+              sol%dh(i,1,lot:hit) = L(sol%t(lot:hit),tee(lt),hp(lop:hip)&
+                   &,sol%INVLT)*sol%t(lot:hit)
+           end if
         end do
      end do
      !$OMP END PARALLEL DO

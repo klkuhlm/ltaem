@@ -43,24 +43,24 @@ TARG=ltaem
 OBJS=$(EXTERNAL) constants.o $(KKLOW) geometryUtil.o $(KKHIGH)
 
 ################## ifort >= 12.0 ##########
-##F90=ifort
-##OMP=-openmp
-##CPP=-cpp
-###DFLAGS=-O0 -g -traceback -warn all -check bounds -check pointers -check uninit -check format -check output_conversion
-##DFLAGS=-O0 -g -traceback -warn all -check all
-##PFLAGS=-xHOST -O3 $(OMP)
-##LINKFLAG=$(DFLAGS) $(OMP)
+F90=ifort
+OMP=-openmp
+CPP=-cpp
+#DFLAGS=-O0 -g -traceback -warn all -check bounds -check pointers -check uninit -check format -check output_conversion
+DFLAGS=-O0 -g -traceback -warn all -check all
+PFLAGS=-xHOST -O3 $(OMP)
+LINKFLAG=$(DFLAGS) $(OMP)
 ###########################################
 
-## gfortran #################
-F90=gfortran # must be >= 4.6.1
-OMP=-fopenmp
-CPP=-cpp
-DFLAGS=-O0 -Wall -Wextra -g -std=f2008
-DFLAGS+=-frange-check -fbounds-check -fcheck=all
-##DFLAGS+=-fdump-rtl-expand 
-PFLAGS=-Ofast -march=native
-#################################
+#### gfortran #################
+##F90=gfortran # must be >= 4.6.1
+##OMP=-fopenmp
+##CPP=-cpp
+##DFLAGS=-O0 -Wall -Wextra -g -std=f2008
+##DFLAGS+=-frange-check -fbounds-check -fcheck=all
+####DFLAGS+=-fdump-rtl-expand 
+##PFLAGS=-Ofast -march=native
+###################################
 
 BFLAGS=$(DFLAGS) # $(PFLAGS)
 PFLAGS+=$(PFLAGEXTRA) $(OMP)
