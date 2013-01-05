@@ -174,6 +174,12 @@ contains
     ! determine which inclusion this point is in, and related geometry
     call CalcLocation(Z,c,e,dom,Rgp,Pgp,in)
 
+    ! eliminate divide by zero or infinite BF errors when calculation point
+    ! is exactly at the center of an element
+    where(abs(Rgp) < epsilon(0.0))
+       Rgp = epsilon(0.0)
+    end where
+
     v(1:np,1:2) = cmplx(0,0,DP)
 
     ! TODO
