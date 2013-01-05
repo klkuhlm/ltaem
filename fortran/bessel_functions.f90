@@ -115,16 +115,18 @@ contains
     complex(DP), dimension(:), intent(in) :: z
     integer, intent(in) :: n
     complex(DP), intent(out), dimension(size(z,dim=1),0:n-1) :: I, ID
-    complex(DP), dimension(size(z,dim=1),0:max(2,n)-1) :: Itmp
+    complex(DP), dimension(size(z,dim=1),0:max(2,n)) :: Itmp
     integer :: nz, mn
     nz = size(z,dim=1)
     mn = max(n,2)
 
-    Itmp(1:nz,0:mn-1) = besi_vectz(z,mn)
+    Itmp(1:nz,0:mn) = besi_vectz(z,mn+1)
     ID(1:nz,0) = Itmp(1:nz,1)   ! low end
     if (n >= 2) then
        I(1:nz,0:n-1) = Itmp(1:nz,0:n-1)
-       ID(1:nz,n-1) = I(1:nz,n-2) - (n-1)/z(1:nz)*I(1:nz,n-1) ! high end
+       ! since I(0) is finite, wrote this to not use 1/z form
+       ! but it does require computing I of one higher order 
+       ID(1:nz,n-1) = 0.5_DP*(I(1:nz,n-2) + Itmp(1:nz,n)) ! high end
        if (n >= 3) then
           ID(1:nz,1:n-2) = 0.5_DP*(I(1:nz,0:n-3) + I(1:nz,2:n-1)) ! middle
        end if
@@ -149,16 +151,18 @@ contains
     complex(DP), dimension(:), intent(in) :: z
     integer, intent(in) :: n
     complex(DP), intent(out), dimension(size(z,dim=1),0:n-1) :: K, KD
-    complex(DP), dimension(size(z,dim=1),0:max(n,2)-1) :: Ktmp
+    complex(DP), dimension(size(z,dim=1),0:max(n,2)) :: Ktmp
     integer :: nz, mn
     nz = size(z,dim=1)
     mn = max(n,2)
 
-    Ktmp(1:nz,0:mn-1) = besk_vectz(z,mn)
+    Ktmp(1:nz,0:mn) = besk_vectz(z,mn+1)
     KD(1:nz,0) = -Ktmp(1:nz,1)  ! low end (always used)
     if (n >= 2) then
        K(1:nz,0:n-1) = Ktmp(1:nz,0:n-1)
-       KD(1:nz,n-1) = -(K(1:nz,n-2) + (n-1)/z(1:nz)*K(1:nz,n-1)) ! high end
+       ! even though K(0) is typically infinite, wrote to not use 1/z
+       ! but it does require computing K of one higher order
+       KD(1:nz,n-1) = -0.5_DP*(K(1:nz,n-2) + Ktmp(1:nz,n)) ! high end
        if (n >= 3) then
           KD(1:nz,1:n-2) = -0.5_DP*(K(1:nz,0:n-3) + K(1:nz,2:n-1)) ! middle
        end if

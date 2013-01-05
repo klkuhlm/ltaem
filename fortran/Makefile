@@ -56,13 +56,13 @@ OBJS=$(EXTERNAL) constants.o $(KKLOW) geometryUtil.o $(KKHIGH)
 F90=gfortran # must be >= 4.6.1
 OMP=-fopenmp
 CPP=-cpp
-DFLAGS=-O0 -Wall -Wextra -g -std=f2008
+DFLAGS=-O0 -Wall -Wextra -gdwarf-4 -std=f2008
 DFLAGS+=-frange-check -fbounds-check -fcheck=all -fmodule-private -pedantic -Wunderflow -finit-integer=-777 -finit-real=snan -ffpe-trap=invalid -finit-logical=false -finit-character=126
 ##DFLAGS+=-fdump-rtl-expand 
 PFLAGS=-Ofast -march=native
 ###################################
 
-BFLAGS=$(PFLAGS) # $(DFLAGS)
+BFLAGS=$(DFLAGS) # $(PFLAGS)
 PFLAGS+=$(PFLAGEXTRA) $(OMP)
 
 # switch between performance or debugging flags
