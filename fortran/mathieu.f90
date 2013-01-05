@@ -93,13 +93,6 @@ contains
        end subroutine ZGEEV
     end interface
 
-    interface  ! level-1 BLAS routine for vector norm-1 (absolute sum)
-       real(KIND=8) function DZASUM(N,ZX,INCX)
-         integer, intent(in) :: N,INCX
-         complex(KIND=8), intent(in), dimension(n) :: ZX
-       end function DZASUM
-    end interface
-
     complex(DP), intent(in) :: q
     integer, optional, intent(in) :: MM
 
