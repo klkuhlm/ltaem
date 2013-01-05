@@ -1,7 +1,6 @@
 10 :: N
 22 :: M
 18  :: ms
-1.0D-10 :: mathieu matrix cutoff
 0  :: ibnd
 T :: calcin?
 F :: storin?

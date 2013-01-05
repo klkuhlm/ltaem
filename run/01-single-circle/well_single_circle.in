@@ -1,5 +1,5 @@
 T  F  T  T  1  well_single_circle_contour  dump.out  well_single_circle.elem  well_single_circle.geom    ::  1=calc?, 2=particle?, 3=contour?, 4=log(t)_deriv?, 5=output, 6=outputFN, 7=coeffFN(out), 8=elementHierarchy(out), 9=geometryFN(out)
-1.0D0   2.0D0   1.0D-4   0   1.0D0   1.0D-4   1.0D0   20  1.0D-10  ::  por, k, Ss, leakFlag, K2, Ss2, b2, ellipse MS, ellipse cutoff
+1.0D0   2.0D0   1.0D-4   0   1.0D0   1.0D-4   1.0D0   20  ::  por, k, Ss, leakFlag, K2, Ss2, b2, ellipse MS
 1.5D-1  2.0D0  False  1.0  :: Sy, Kz, unconfined?, b
 1.0D-5  2.0D0  False  :: matrixSs, matrix/fracture lambda, dualPorosityFlag?
 40  40  8  :: nx, ny, nt

@@ -73,7 +73,7 @@ contains
     ! determine which inclusion this point is in, and related geometry
     call CalcLocation(Z,c,e,dom,Rgp,Pgp,in)
 
-    H(:) = 0.0
+    H(:) = cmplx(0,0,DP)
 
     ! TODO there should be a way to combine the two branches of this
     ! if statement into a more general single branch.
@@ -174,7 +174,7 @@ contains
     ! determine which inclusion this point is in, and related geometry
     call CalcLocation(Z,c,e,dom,Rgp,Pgp,in)
 
-    v(1:np,1:2) = 0.0
+    v(1:np,1:2) = cmplx(0,0,DP)
 
     ! TODO
     ! there should be a way to combine the two branches of this

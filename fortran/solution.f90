@@ -122,7 +122,7 @@ contains
     print *, 'SOL DBG:',bigM,bigN
 
     allocate(A(bigM,bigN), b(bigM))
-    b = 0.0
+    b = cmplx(0,0,DP)
 
     if (any(c%match) .or. any(e%match)) then
        allocate(work(33*bigN))

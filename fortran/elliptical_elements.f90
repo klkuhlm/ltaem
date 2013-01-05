@@ -199,8 +199,8 @@ contains
 
     allocate(r%LHS(nrows,ncols), r%RHS(nrows))
 
-    r%LHS = 0.0
-    r%RHS = 0.0
+    r%LHS = cmplx(0,0,DP)
+    r%RHS = cmplx(0,0,DP)
 
     if (nrows > 0) then
 

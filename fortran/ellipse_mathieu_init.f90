@@ -58,7 +58,7 @@ contains
 
     write(*,'(A)',advance='no') 'bg: q-MS '
     do i = 1, tnp
-       bg%mat(i) = mathieu_init(kap(i), MM=max(bg%ms,dim(i)), CUTOFF=bg%cutoff)
+       bg%mat(i) = mathieu_init(kap(i), MM=max(bg%ms,dim(i)))
        write(*,'(3(I0,1X))',advance='no') i,bg%MS,dim(i)
     end do
     write(*,'(/)')
@@ -73,7 +73,7 @@ contains
 
           write(*,'(A,I0,1X)',advance='no') 'el',j,': q-MS '
           do i = 1, tnp
-             e(j)%mat(i) = mathieu_init(kap(i), MM=max(e(j)%MS,dim(i)), CUTOFF=e(j)%cutoff)
+             e(j)%mat(i) = mathieu_init(kap(i), MM=max(e(j)%MS,dim(i)))
              write(*,'(3(I0,1X))',advance='no') i,e(j)%MS,dim(i)
           end do
           write(*,'(/)')

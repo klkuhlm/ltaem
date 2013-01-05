@@ -131,7 +131,7 @@ contains
     end if    
 
     read(15,*,iostat=ierr) bg%por, bg%k, bg%ss, bg%leakFlag, &
-         & bg%aquitardK, bg%aquitardSs, bg%aquitardb, bg%ms, bg%cutoff; ln=ln+1
+         & bg%aquitardK, bg%aquitardSs, bg%aquitardb, bg%ms; ln=ln+1
     if (ierr /= 0) then
        write(*,*) 'error on line ',ln,' of input file (background props)'
        stop 204
@@ -190,9 +190,9 @@ contains
          & s%output, trim(s%outFname), trim(s%coeffFName), trim(s%elemHfName), &
          & trim(s%geomFname),'  ||    re-calculate coefficients?, particle?, '//&
          & 'contour?, timeseries?, deriv?, output, out/coeff/hierarchy/geometry file names'
-    write(16,'(3(ES12.5,1X),I0,3(1X,ES12.5),1X,I0,ES11.4,A)') bg%por, bg%k, bg%ss, &
-         & bg%leakFlag, bg%aquitardK, bg%aquitardSs, bg%aquitardb, bg%ms, bg%cutoff, &
-         & '  ||   background props: por, k, Ss, leaky flag, K2, Ss2, b2, MS, cutoff'
+    write(16,'(3(ES12.5,1X),I0,3(1X,ES12.5),1X,I0,A)') bg%por, bg%k, bg%ss, &
+         & bg%leakFlag, bg%aquitardK, bg%aquitardSs, bg%aquitardb, bg%ms, &
+         & '  ||   background props: por, k, Ss, leaky flag, K2, Ss2, b2, MS'
     write(16,'(2(ES12.5,1X),L1,1X,ES12.5,A)') bg%Sy, bg%kz, bg%unconfinedFlag, &
          & bg%b, '  || background props: Sy, Kz, unconfined?, BGb'
     write(16,'(2(ES12.5,1X),L1,A)') bg%matrixSs, bg%lambda, bg%dualPorosityFlag, &
@@ -686,13 +686,6 @@ contains
           stop 2270
        end if       
 
-       read(33,*,iostat=ierr) e(:)%cutoff; sln=sln+1
-       if (ierr /= 0 .or. any(e%cutoff <= 0.0)) then
-          write(*,*) 'error reading line ',sln,' of ellipse input; matrix off-diagonal '//&
-                     &'cutoff (e%cutoff) must be > 0.0 ',e%cutoff
-          stop 228
-       end if
-
        read(33,*,iostat=ierr) e(:)%ibnd; sln=sln+1
        if (ierr /= 0 .or. any(e%ibnd < -1 .or. e%ibnd > 2)) then
           write(*,*) 'error reading line ',sln,' of ellipse input; boundary type (e%ibnd) '//&
@@ -876,7 +869,6 @@ contains
        write(16,fmt(1)) e(:)%n,              '  ||   # of elliptical free parameter (Fourier coeffs)'
        write(16,fmt(1)) e(:)%m,              '  ||   # of ellipse matching locations'
        write(16,fmt(1)) e(:)%ms,             '  ||   size of "infinite" Mathieu matrices'
-       write(16,fmt(3)) e(:)%cutoff,         '  ||   desired accuracy cutoff for Mathieu function matrices'
        write(16,fmt(1)) e(:)%ibnd,           '  ||   ellipse ibnd array'
        write(16,fmt(2)) e(:)%match,          '  ||   ellipse matching array'
        write(16,fmt(2)) e(:)%calcin,         '  ||   calculate inside this ellipse?'

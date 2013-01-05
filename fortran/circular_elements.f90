@@ -55,7 +55,7 @@ contains
 
     N = c%N
     M = c%M
-    forall (j = 0:N-1) vi(j) = j
+    forall (j = 0:N-1) vi(j) = real(j,DP)
 
     if (c%ibnd == 0) then
        nrows = 2*M
@@ -186,7 +186,7 @@ contains
     N = c%N ! number of coefficients in the source circular element
     targ = el%id
     src = c%id
-    forall (j = 0:N-1) vi(j) = j
+    forall (j = 0:N-1) vi(j) = real(j,DP)
 
     M = el%M
     ! target element determines number of rows
@@ -227,8 +227,8 @@ contains
     end if
 
     allocate(r%LHS(nrows,ncols), r%RHS(nrows))
-    r%LHS = 0.0
-    r%RHS = 0.0
+    r%LHS = cmplx(0,0,DP)
+    r%RHS = cmplx(0,0,DP)
 
     if (nrows > 0) then
        if (dom%inclBg(src,targ) .or. dom%InclIn(src,targ)) then
@@ -478,7 +478,7 @@ contains
 
     N = c%N
     np = size(p,1)
-    forall (i = 0:N-1) vr(i) = i
+    forall (i = 0:N-1) vr(i) = real(i,DP)
 
     if (inside) then
        if (c%ibnd == 0) then
@@ -534,7 +534,7 @@ contains
 
     N = c%N
     np = size(p,1)
-    forall (i = 0:N-1) vr(i) = i
+    forall (i = 0:N-1) vr(i) = real(i,DP)
 
     if (inside) then
        if (c%match) then

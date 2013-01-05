@@ -33,7 +33,6 @@ module mathieu_functions
   type :: mathieu
      ! things required to compute mathieu functions
      integer :: M = -999,  buffer = -999
-     real(DP) :: CUTOFF = -999.
      complex(DP) :: q = (-999.,-999.)
      complex(DP), allocatable :: mcn(:), A(:,:,:), B(:,:,:)  ! 4*M; 1:M, 0:M-1, 0:1
   end type mathieu
@@ -75,7 +74,7 @@ module mathieu_functions
      module procedure DKo_scalar_nz, DKo_scalar_n, DKo_scalar_z, DKo_vect_nz
   end interface
 contains
-  function mathieu_init(q,MM,CUTOFF) result(mat)
+  function mathieu_init(q,MM) result(mat)
     ! this subroutine computes the eigenvalues given at least a value for the
     ! Mathieu parameter (q), the norm and matrix size (M) are optional
 
@@ -103,7 +102,6 @@ contains
 
     complex(DP), intent(in) :: q
     integer, optional, intent(in) :: MM
-    real(DP), optional, intent(in) :: cutoff
 
     ! resulting structure defined at top of containing module
     type(mathieu) :: mat
@@ -140,12 +138,6 @@ contains
     elsewhere
        vi = -1.0_DP
     end where
-
-    if (present(CUTOFF)) then
-       mat%CUTOFF = CUTOFF
-    else
-       mat%CUTOFF = 1.0D-10
-    endif
 
     ! A/B 1st dimension: subscript in McLachlan notation,
     ! i.e., the position in the infinite sum
@@ -258,24 +250,6 @@ contains
 
     deallocate(coeff,rwork,w,work)
 
-    ! perform some heuristic checking of max allowable order
-    dg = DZASUM(N=M, ZX=diag(mat%A(:,:,0),0), INCX=1)/m ! average size of diagonal element
-
-    bufcheck: do j = 1,m
-       denom = dg*(m-j)
-       if (DZASUM(N=M-j, ZX=diag(mat%A(:,:,0), j), INCX=1)/denom < mat%CUTOFF .and. &
-         & DZASUM(N=M-j, ZX=diag(mat%A(:,:,0),-j), INCX=1)/denom < mat%CUTOFF) then
-           mat%buffer = j
-           exit bufcheck
-        end if
-        if (j >= m) then
-           write(*,'(A,I0,3(A,ES10.3E2),A)') 'MATHIEU_INIT: matrix size=',m,&
-                & ' not large enough to meet tolerance=', mat%CUTOFF,' for q=(', &
-                & real(mat%q),',',aimag(mat%q),')'
-           stop 'increase M or decrease CUTOFF in mathieu_init'
-        end if
-     end do bufcheck
-
   end function mathieu_init
 
   !############################################################
@@ -327,7 +301,7 @@ contains
     complex(DP), dimension(size(z),size(n)) :: se
 
     integer, dimension(size(n)) :: j
-    real(DP), dimension(mf%M):: v, vi
+    complex(DP), dimension(mf%M):: v, vi
     integer, dimension(count(mod(n,2) == 0)) :: EV
     integer, dimension(count(mod(n,2) == 1)) :: OD
     integer :: nz, nje, njo
@@ -360,7 +334,7 @@ contains
     complex(DP), dimension(size(z),size(n)) :: Dce
 
     integer, dimension(size(n)) :: j
-    real(DP), dimension(mf%M):: v, vi
+    complex(DP), dimension(mf%M):: v, vi
     integer, dimension(count(mod(n,2) == 0)) :: EV
     integer, dimension(count(mod(n,2) == 1)) :: OD
     integer :: nz, nje, njo
@@ -391,7 +365,7 @@ contains
     complex(DP), dimension(size(z),size(n)) :: Dse
 
     integer, dimension(size(n)) :: j
-    real(DP), dimension(mf%M):: v, vi
+    complex(DP), dimension(mf%M):: v, vi
     integer, dimension(count(mod(n,2) == 0)) :: EV
     integer, dimension(count(mod(n,2) == 1)) :: OD
     integer :: nz, nje, njo
@@ -423,7 +397,7 @@ contains
     complex(DP), dimension(size(z),size(n)) :: Ie
 
     integer, dimension(size(n)) :: j
-    real(DP), dimension(mf%M):: v, vi
+    complex(DP), dimension(mf%M):: v, vi
     complex(DP), dimension(0:mf%M,size(z)) :: I1, I2
     integer, dimension(count(mod(n,2) == 0)) :: EV
     integer, dimension(count(mod(n,2) == 1)) :: OD
@@ -461,7 +435,7 @@ contains
     complex(DP), dimension(size(z),size(n)) :: Io
 
     integer, dimension(size(n)) :: j
-    real(DP), dimension(mf%M):: v, vi
+    complex(DP), dimension(mf%M):: v, vi
     complex(DP), dimension(0:mf%M+1,size(z)) :: I1, I2
     integer, dimension(count(mod(n,2) == 0)) :: EV
     integer, dimension(count(mod(n,2) == 1)) :: OD
@@ -501,7 +475,7 @@ contains
     complex(DP), dimension(size(z),size(n)) :: Ke
 
     integer, dimension(size(n)) :: j
-    real(DP), dimension(mf%M):: v, vi
+    complex(DP), dimension(mf%M):: v, vi
     complex(DP), dimension(0:mf%M,size(z)) :: I, K
     integer, dimension(count(mod(n,2) == 0)) :: EV
     integer, dimension(count(mod(n,2) == 1)) :: OD
@@ -539,7 +513,7 @@ contains
     complex(DP), dimension(size(z),size(n)) :: Ko
 
     integer, dimension(size(n)) :: j
-    real(DP), dimension(mf%M):: v, vi
+    complex(DP), dimension(mf%M):: v, vi
     complex(DP), dimension(0:mf%M+1,size(z)) :: I, K
     integer, dimension(count(mod(n,2) == 0)) :: EV
     integer, dimension(count(mod(n,2) == 1)) :: OD
@@ -580,7 +554,7 @@ contains
     complex(DP), dimension(size(z),size(n)) :: DIe
 
     integer, dimension(size(n)) :: j
-    real(DP), dimension(mf%M):: v, vi
+    complex(DP), dimension(mf%M):: v, vi
     complex(DP), dimension(0:mf%M,size(z)) :: I1, I2, DI1, DI2
     integer, dimension(count(mod(n,2) == 0)) :: EV
     integer, dimension(count(mod(n,2) == 1)) :: OD
@@ -621,7 +595,7 @@ contains
     complex(DP), dimension(size(z),size(n)) :: DIo
 
     integer, dimension(size(n)) :: j
-    real(DP), dimension(mf%M):: v, vi
+    complex(DP), dimension(mf%M):: v, vi
     complex(DP), dimension(0:mf%M+1,size(z)) :: I1, I2, DI1, DI2
     integer, dimension(count(mod(n,2) == 0)) :: EV
     integer, dimension(count(mod(n,2) == 1)) :: OD
@@ -667,7 +641,7 @@ contains
     complex(DP), dimension(size(z),size(n)) :: DKe
 
     integer, dimension(size(n)) :: j
-    real(DP), dimension(mf%M):: v, vi
+    complex(DP), dimension(mf%M):: v, vi
     complex(DP), dimension(0:mf%M,size(z)) :: I, K, DI, DK
     integer, dimension(count(mod(n,2) == 0)) :: EV
     integer, dimension(count(mod(n,2) == 1)) :: OD
@@ -709,7 +683,7 @@ contains
     complex(DP), dimension(size(z),size(n)) :: DKo
 
     integer, dimension(size(n)) :: j
-    real(DP), dimension(mf%M):: v, vi
+    complex(DP), dimension(mf%M):: v, vi
     complex(DP), dimension(0:mf%M+1,size(z)) :: I, K, DI, DK
     integer, dimension(count(mod(n,2) == 0)) :: EV
     integer, dimension(count(mod(n,2) == 1)) :: OD
@@ -1052,56 +1026,52 @@ contains
   ! some utility routines
 
   ! possibly disable this checking subroutine for extra speed??
-  subroutine check_cutoff(mf,n)
+  subroutine check_order(mf,n)
     type(mathieu), intent(in) :: mf
     integer, dimension(:), intent(in) :: n
     integer :: nn
 
     nn = size(n)
     if (any(n < 0)) then
-       write(*,*) 'CHECK_CUTOFF1: order of Mathieu functions must be >= 0',n
-       stop 'CHECK_CUTOFF1: only non-negative Mathieu function orders'
+       write(*,*) 'CHECK_ORDER1: order of Mathieu functions must be >= 0',n
+       stop 'CHECK_ORDER1: only non-negative Mathieu function orders'
     end if
 
     if (nn > 1) then
        ! since vectors of integer indexing vectors are used on the LHS of
        ! expressions, we must test for many-to-one conditions, since it is a no-no
 
-       ! assuming they are in order, check for two adjoining integers that are the same
-       if (any(n(1:nn-1) - n(2:nn) == 0)) then
-          write(*,*) 'CHECK_CUTOFF2: cannot have repeated indices in vector order',n
-          stop 'CHECK_CUTOFF2: eliminate repeated indices to Mathieu functions'
+       ! check integer orders are monotonically increasing
+       if (any(n(2:nn) - n(1:nn-1) <= 0)) then
+          write(*,*) 'CHECK_ORDER2: cannot have out-of order or repeated '//&
+               & 'indices in vector order',n
+          stop 'CHECK_ORDER2: eliminate out-of-order or repeated indices '//&
+               &'to Mathieu functions'
        end if
     end if
 
-    if (maxval(n) > mf%m - mf%buffer) then
-       write(*,'(A,I0,3(A,ES12.4E3),2(A,I0))') 'CHECK_CUTOFF3: max order=',maxval(n), &
-            & ' too large for q=(',real(mf%q),',',aimag(mf%q), &
-            & ') given CUTOFF=',mf%CUTOFF,'; buffer =',mf%buffer, ', M=',mf%M
-       stop 'CHECK_CUTOFF3: increase Mathieu function M or decrease CUTOFF'
-    end if
-  end subroutine check_cutoff
+  end subroutine check_order
 
   subroutine angfcnsetup(mf,n,v,vi,EV,OD)
     use constants, only : DP
     integer, intent(in), dimension(:) :: n
     type(mathieu), intent(in) :: mf
-    real(DP), intent(out), dimension(mf%m) :: v,vi
+    complex(DP), intent(out), dimension(mf%m) :: v,vi
     integer, intent(out), dimension(count(mod(n,2) == 0)) :: EV
     integer, intent(out), dimension(count(mod(n,2) == 1)) :: OD
     integer, dimension(mf%m) :: i
     integer, dimension(size(n)) :: nn
     integer :: j
 
-    call check_cutoff(mf,n)
+    call check_order(mf,n)
 
     ! compute vector of integers counting up
     forall (j = 0:mf%m-1) i(j+1) = j
-    v = real(i,DP)
+    v = cmplx(i,0,DP)
 
     ! compute the "sign" vector
-    vi = 1.0_DP
-    where (mod(i,2) == 1) vi = -1.0_DP
+    vi = cmplx(1,0,DP)
+    where (mod(i,2) == 1) vi = cmplx(-1,0,DP)
 
     ! indexing vectors based on even/odd-ness of n
     forall (j = 1:size(n)) nn(j) = j
@@ -1116,7 +1086,7 @@ contains
     integer, intent(in), dimension(:) :: n
     real(DP), intent(in), dimension(:) :: z
     type(mathieu), intent(in) :: mf
-    real(DP), intent(out), dimension(mf%m) :: v,vi
+    complex(DP), intent(out), dimension(mf%m) :: v,vi
     complex(DP), intent(out) :: sqrtq
     complex(DP), intent(out), dimension(size(z)) :: v1,v2
     integer, intent(out), dimension(count(mod(n,2) == 0)) :: EV
@@ -1125,15 +1095,15 @@ contains
     integer, dimension(size(n)) :: nn
     integer :: j
 
-    call check_cutoff(mf,n)
+    call check_order(mf,n)
 
     ! compute vector of integers counting up
     forall (j = 0:mf%m-1) i(j+1) = j
-    v = real(i,DP)
+    v = cmplx(i,0,DP)
 
     ! compute the "sign" vector
-    vi = 1.0_DP
-    where (mod(i,2) == 1) vi = -1.0_DP
+    vi = cmplx(1,0,DP)
+    where (mod(i,2) == 1) vi = cmplx(-1,0,DP)
 
     sqrtq = sqrt(mf%q)
     v1 = sqrtq*exp(-z)
@@ -1152,7 +1122,7 @@ contains
     integer, intent(in), dimension(:) :: n
     real(DP), intent(in), dimension(:) :: z
     type(mathieu), intent(in) :: mf
-    real(DP), intent(out), dimension(mf%m) :: v, vi
+    complex(DP), intent(out), dimension(mf%m) :: v, vi
     complex(DP), intent(out) :: sqrtq
     complex(DP), intent(out), dimension(size(z)) :: v1, v2
     complex(DP), intent(out), dimension(mf%m,size(z)) :: enz, epz
@@ -1162,15 +1132,15 @@ contains
     integer, dimension(size(n)) :: nn
     integer :: j
 
-    call check_cutoff(mf,n)
+    call check_order(mf,n)
 
     ! compute vector of integers counting up
     forall (j = 0:mf%m-1) i(j+1) = j
-    v = real(i,DP)
+    v = cmplex(i,0,DP)
 
     ! compute the "sign" vector
-    vi = 1.0_DP
-    where (mod(i,2) == 1) vi = -1.0_DP
+    vi = cmplx(1,0,DP)
+    where (mod(i,2) == 1) vi = cmplx(-1,0,DP)
 
     enz = spread(exp(-z),dim=1,ncopies=mf%m)
     epz = spread(exp( z),dim=1,ncopies=mf%m)

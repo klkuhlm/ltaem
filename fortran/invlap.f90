@@ -97,9 +97,9 @@ contains
        end forall
 
        ! seed A and B vectors for recurrence
-       A(-1,1:nt) = 0.0
+       A(-1,1:nt) = cmplx(0,0,DP)
        A(0,1:nt) = d(0)
-       B(-1:0,1:nt) = 1.0
+       B(-1:0,1:nt) = cmplx(1,0,DP)
 
        ! base of the power series
        z(1:nt) = exp(EYE*PI*t(:)/tee)

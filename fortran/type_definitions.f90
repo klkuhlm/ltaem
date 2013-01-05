@@ -33,7 +33,6 @@ module type_definitions
   type :: mathieu
      ! things required to compute mathieu functions
      integer :: M = -999,  buffer = -999
-     real(DP) :: CUTOFF = -999.
      complex(DP) :: q = (-999.,-999.)
      complex(DP), allocatable :: mcn(:), A(:,:,:), B(:,:,:)  ! 4*M; 1:M, 0:M-1, 0:1
   end type mathieu
@@ -116,7 +115,6 @@ module type_definitions
      ! structure containing matrices of mathieu function parameters
      type(mathieu), allocatable :: mat(:)
      integer :: ms = -999 ! not used in circle
-     real(DP) :: cutoff = -999.  ! also not used in circles
 
   end type element
 

@@ -1,5 +1,5 @@
 True  False  True  True  1  pumping_well_contour  dump.out  pumping_well.elem  pumping_well.geom    ::  1=calc?, 2=prtcl?, 3=contour?, 4=log(t)_deriv?, 5=output_flag, 6=outputFN, 7=coeffFN(out), 8=elementHierarchy(out), 9=geometryFN(out)
-1.0D0   2.0D-2   1.0D-5   0   1.0D0   1.0D-4   1.0D0   20  1.0D-10  ::  por, k, Ss, leakFlag, K2, Ss2, b2, ellipse MS, ellipse cutoff
+1.0D0   2.0D-2   1.0D-5   0   1.0D0   1.0D-4   1.0D0   20   ::  por, k, Ss, leakFlag, K2, Ss2, b2, ellipse MS
 1.5D-1  2.0D0  False  1.0  :: Sy, Kz, unconfined?, b
 1.0D-5  2.0D0  False  :: matrixSs, matrix/fracture lambda, dualPorosityFlag?
 40  40  4  :: nx, ny, nt
