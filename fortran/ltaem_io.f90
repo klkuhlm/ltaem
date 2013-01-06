@@ -34,6 +34,7 @@ contains
   ! this routine read the main input file, and allocates the main
   ! data structures used to store data.
   subroutine readInput(s,dom,bg,c,e,p)
+
     use constants, only : DP, lenFN, PI
     use type_definitions, only : solution, particle, domain, element, circle, ellipse
 
@@ -51,9 +52,9 @@ contains
     character(lenFN+5) :: echofname
     character(lenFN) :: circleFname, ellipseFname, particleFname
     integer :: ierr, j, ntot, nC, nE, ln = 1, sln, s1,s2,slen
+    real(DP) :: tmp
 
-
-    open(unit=15, file=trim(s%infname), status='old', action='read', iostat=ierr)
+    open(unit=15, file=s%infname, status='old', action='read', iostat=ierr)
     if (ierr /= 0) then
        write(*,'(2A)') 'READINPUT: error opening input file ',trim(s%infname)
        stop 100
@@ -250,28 +251,47 @@ contains
        allocate(s%obsname(0))
        read(15,*); ln=ln+1 ! read placeholder name line anyway
     end if
-    read(15,*,iostat=ierr) s%x(:); ln=ln+1
-    if (ierr /= 0) then
-       write(*,*) 'error reading line ',ln,' x calc locations (s%x) of input'
-       stop 2082
+
+    read(15,*,iostat=ierr) tmp; ln=ln+1
+    if (ierr == 0)  then
+       ! read one real successfully
+       backspace(15)
+       read(15,*,iostat=ierr) s%x(:)
+       if (ierr /= 0) then
+          ! failed reading vector
+          write(*,*) 'error reading line ',ln,' x calc locations (s%x) from input'
+       end if
+    else
+       ! compute vector is first chars are 'linvec' or 'logvec'
+       s%x(:) = computeVector(15,s%nx,ln)
     end if
     
-    read(15,*,iostat=ierr) s%y(:); ln=ln+1
-    if (ierr /= 0) then
-       write(*,*) 'error reading line',ln,' y calc locations (s%y) of input'
-       stop 2083
+    read(15,*,iostat=ierr) tmp; ln=ln+1
+    if (ierr == 0)  then
+       backspace(15)
+       read(15,*,iostat=ierr) s%y(:)
+       if (ierr /= 0) then
+          write(*,*) 'error reading line ',ln,' y calc locations (s%y) from input'
+       end if
+    else
+       s%y(:) = computeVector(15,s%ny,ln)
     end if
 
-    ! shift xy values (usefull when x and y are something like UTM coordinates)
+    ! shift x & y values to origin (useful when x and y are UTM coordinates)
     s%xshift = (maxval(s%x) + minval(s%x))/2.0
     s%yshift = (maxval(s%y) + minval(s%y))/2.0
     s%x(:) = s%x(:) - s%xshift
     s%y(:) = s%y(:) - s%yshift
 
-    read(15,*,iostat=ierr) s%t(:); ln=ln+1
-    if (ierr /= 0)  then
-       write(*,*) 'error reading line ',ln,' calc times (s%t) of input' 
-       stop 2084
+    read(15,*,iostat=ierr) tmp; ln=ln+1
+    if (ierr == 0)  then
+       backspace(15)
+       read(15,*,iostat=ierr) s%t(:)
+       if (ierr /= 0) then
+          write(*,*) 'error reading line ',ln,' t calc times (s%t) from input'
+       end if
+    else
+       s%t(:) = computeVector(15,s%nt,ln)
     end if
 
     if (any(s%t <= 0.0)) then
@@ -556,7 +576,7 @@ contains
              read(22,*,iostat=ierr) c(j)%AreaTime,c(j)%ATPar(:)
              if (ierr /= 0) then
                 write(*,*) 'error reading line ',sln,' area functional time behavior '//&
-               &'(c%ATPar) of circle ',j,' input'
+                     &'(c%ATPar) of circle ',j,' input'
                 stop 2202
              end if
              write(16,'(I0,2(1X,ES12.5),A,I0)') c(j)%AreaTime,c(j)%ATPar(:),&
@@ -567,7 +587,7 @@ contains
              read(22,*,iostat=ierr) c(j)%AreaTime,c(j)%ATPar(:)
              if (ierr /= 0) then
                 write(*,*) 'error reading line ',sln,' area piecewise-constant time '//&
-               &'behavior (c%ATpar) of circle ',j,'input'
+                     &'behavior (c%ATpar) of circle ',j,'input'
                 stop 2203
              end if
              lfmt = '(I0,1X,    (ES12.5,1X),A,    (ES12.5,1X),A,I0)' 
@@ -1153,6 +1173,55 @@ contains
     close(16) ! input echo file
   end subroutine readInput
 
+  !******************************************************
+  function computeVector(unit,n,line) result(v)
+    
+    use constants, only : DP
+    integer, intent(in) :: unit, n, line
+    real(DP), dimension(n) :: v
+    integer :: ierr,i
+    real(DP) :: minv,maxv,delta
+    character(6) :: vec
+
+    ! assume file is positioned at beginning of line
+    ! if 'linvec','LINVEC','logvec', or 'LOGVEC' are the first
+    ! entry on the line, read two more integers (min/max)
+    ! and create an evenly spaced vector n elements long
+    ! line indicates the input files line, for error reporting
+
+    backspace(unit)
+    read(unit,*,iostat=ierr) vec
+
+    if ((vec(4:6) /= 'vec' .and. vec(4:6) /= 'VEC') &
+         & .or. ierr /= 0) then
+       write(*,*) 'error reading line ',line,' of input '//&
+            &'({LIN,LOG}VEC min max) of input' 
+       stop 7770
+    else
+       backspace(unit)
+       read(15,*,iostat=ierr) vec,minv,maxv
+       if (ierr /= 0) then
+          write(*,*) 'error reading line ',line,&
+               &' calc vector ({LIN,LOG}VEC min max) of input'
+          stop 7771
+       else
+          delta = (maxv-minv)/(n-1)
+          v = minv + real([(i,i=0,n-1)],DP)*delta
+          if (vec(1:3) == 'LIN' .or. vec(1:3) == 'lin') then
+             return
+          elseif (vec(1:3) == 'LOG' .or. vec(1:3) == 'log') then
+             v = 10.0_DP**v
+             return
+          else
+             write(*,*) 'error reading vector type line ',line,&
+                  & '{LIN,LOG}VEC or {lin,log}vec'
+             stop 7772
+          end if
+       end if
+    end if
+
+  end function computeVector
+  
   !******************************************************
   subroutine writeResults(s,p)
 
