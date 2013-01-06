@@ -73,6 +73,8 @@ contains
     ! determine which inclusion this point is in, and related geometry
     call CalcLocation(Z,c,e,dom,Rgp,Pgp,in)
 
+    print *, 'CALC',Z,Rgp,Pgp
+
     H(:) = cmplx(0,0,DP)
 
     ! TODO there should be a way to combine the two branches of this
@@ -338,7 +340,7 @@ contains
 
     ! components of vector from center of circle to observation point
     Zgp(1:nc) = xy2cA(Z,c(:))
-    Rgp(1:nc) = abs(Zgp(1:nc))   ! r
+    Rgp(1:nc) = real(Zgp(1:nc))   ! r
     Pgp(1:nc) = aimag(Zgp(1:nc)) ! theta
     do j = 1,nc
        if (Rgp(j) < c(j)%r) then    ! inside (not including on boundary)
