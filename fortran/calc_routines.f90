@@ -73,8 +73,6 @@ contains
     ! determine which inclusion this point is in, and related geometry
     call CalcLocation(Z,c,e,dom,Rgp,Pgp,in)
 
-    print *, 'CALC',Z,Rgp,Pgp
-
     H(:) = cmplx(0,0,DP)
 
     ! TODO there should be a way to combine the two branches of this

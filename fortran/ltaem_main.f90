@@ -308,8 +308,6 @@ program ltaem_main
 
            calcZ = cmplx(sol%x(j),sol%y(i),DP)
 
-           !!print *, 'DEBUG x,y,z:',j,sol%x(j),'::',i,sol%y(i),'::',calcZ
-
            !! compute f(p) for all values of p at this location
            hp(1:tnP) =    headCalc(calcZ,stmp,1,tnP,dom,c,e,bg)
            vp(1:tnP,1:2) = velCalc(calcZ,stmp,1,tnP,dom,c,e,bg)
@@ -324,8 +322,6 @@ program ltaem_main
               !! group of Laplace parameters corresponding to this logcycle
               lop = (lt - minlt)*size(s,dim=1) + 1
               hip = lop + size(s,dim=1) - 1
-
-              !!print *, 'DEBUG s:',tnP,lt,'::',lot,hit,'::',lop,hip
 
               sol%h(j,i,lot:hit) =     L(sol%t(lot:hit), tee(lt), hp(lop:hip), sol%INVLT)
               sol%v(j,i,lot:hit,1:2) = L(sol%t(lot:hit), tee(lt), vp(lop:hip,1:2), sol%INVLT)
