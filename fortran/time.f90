@@ -46,7 +46,8 @@ contains
     complex(DP), dimension(size(p,1)) :: mult
 
     integer :: n, np, flag
-    real(DP), allocatable :: ti(:), y(:), dy(:), W(:), par(:), denom(:)
+    real(DP), allocatable :: ti(:), y(:), dy(:), W(:), par(:)
+    real(DP), allocatable :: denom(:), numer(:)
     real(DP) :: tf
 
     np = size(p,1)
@@ -118,7 +119,7 @@ contains
        !! piecewise linear pumping rate with n steps, from ti(1) to tf
        !! no jumps in value (no vertical slopes)
        n = -flag - 100
-       allocate(ti(n),W(0:n+1),y(1:n),denom(1:n))
+       allocate(ti(n),W(0:n+1),y(1:n),denom(1:n),numer(1:n))
 
        ! unpack initial times, pumping rates and final time
        ti(1:n) = par(1:n)
@@ -129,11 +130,12 @@ contains
        W(0) = 0.0
        W(n+1) = 0.0
        denom = [ti(2:n),tf] - ti(1:n)
-       if (any(abs(denom) < epsilon(1.0))) then
-          ! TODO: convert a vertical slope to a step, rather than die?
-          !stop 'no vertical sloped lines in piecewise linear pumping rate'
-       end if
-       W(1:n) = (y(2:n+1) - y(1:n))/denom ! rise/run
+       numer = y(2:n+1) - y(1:n)
+       where (abs(denom) < epsilon(abs(numer)))
+          ! TODO: probably a better way to handle this
+          denom = denom + spacing(denom)
+       end where
+       W(1:n) = numer/denom ! rise/run
 
        mult(1:np) = (sum(spread(W(1:n) - W(0:n-1),2,np)*&
             & exp(-outer(ti(1:n),p(1:np))),dim=1) - &
