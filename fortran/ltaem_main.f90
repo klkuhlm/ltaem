@@ -75,8 +75,7 @@ program ltaem_main
   end if
 
   ! some parallel-related statistics ("!$" is special OMP directive)
-  !$write(*,'(2(A,I0))') 'OpenMP num procs:',omp_get_num_procs(), &
-  !$     & ' OpenMP max threads:', omp_get_max_threads()
+  !$ write(*,'(2(A,I0))') 'OpenMP num procs:',omp_get_num_procs(), ' OpenMP max threads:', omp_get_max_threads()
 
   ! read in data, initialize variables, allocate major structs
   call readInput(sol,dom,bg,c,e,part)

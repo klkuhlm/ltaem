@@ -39,7 +39,7 @@ contains
     complex(DP), dimension(product(shape(s))) :: p
 
     integer :: tnp, i, j
-    integer, dimension(size(p,1)) :: dim
+    integer, dimension(size(p,1)) :: shirtdim
     complex(DP), dimension(size(p,1)) :: kap
 
     tnp = size(s)
@@ -50,18 +50,15 @@ contains
     kap = kappa(p,bg)
 
     ! initialize background for each value of p
-    dim(:) = shirts(maxval(e(:)%N), kap)
+    shirtdim(:) = shirts(maxval(e(:)%N+2), kap)
 
     ! TODO: make a decision about matrix size here and
     ! either bail out if too large, or potentially use an
     ! asymptotic expansion (needs investigation)
 
-    write(*,'(A)',advance='no') 'bg: q-MS '
     do i = 1, tnp
-       bg%mat(i) = mathieu_init(kap(i), MM=max(bg%ms,dim(i)))
-       write(*,'(3(I0,1X))',advance='no') i,bg%MS,dim(i)
+       bg%mat(i) = mathieu_init(kap(i), MM=max(bg%ms,shirtdim(i)))
     end do
-    write(*,'(/)')
 
     ! allocate/initialize each element for each value of p
     do j = 1, size(e)
@@ -69,14 +66,11 @@ contains
           allocate(e(j)%mat(tnp))
 
           kap = kappa(p,e(j)%element)
-          dim(:) = shirts(e(j)%N, kap)
+          shirtdim(:) = shirts(e(j)%N+2, kap)
 
-          write(*,'(A,I0,1X)',advance='no') 'el',j,': q-MS '
           do i = 1, tnp
-             e(j)%mat(i) = mathieu_init(kap(i), MM=max(e(j)%MS,dim(i)))
-             write(*,'(3(I0,1X))',advance='no') i,e(j)%MS,dim(i)
+             e(j)%mat(i) = mathieu_init(kap(i), MM=max(e(j)%MS,shirtdim(i)))
           end do
-          write(*,'(/)')
        end if
     end do
   end subroutine ellipse_init

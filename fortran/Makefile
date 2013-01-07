@@ -43,33 +43,33 @@ TARG=ltaem
 OBJS=$(EXTERNAL) constants.o $(KKLOW) geometryUtil.o $(KKHIGH)
 
 #################### ifort >= 12.0 ##########
-##F90=ifort
-##OMP=-openmp
-##CPP=-cpp
-###DFLAGS=-O0 -g -traceback -warn all -check bounds -check pointers -check uninit -check format -check output_conversion
-##DFLAGS=-O0 -g -traceback -warn all -check all
-##PFLAGS=-xHOST -O3 $(OMP)
-##LINKFLAG=$(DFLAGS) $(OMP)
+F90=ifort
+OMP=-openmp
+CPP=-cpp
+#DFLAGS=-O0 -g -traceback -warn all -check bounds -check pointers -check uninit -check format -check output_conversion
+DFLAGS=-O0 -g -traceback -warn all -check all
+PFLAGS=-xHOST -O3 -fast
+LINKFLAG=$(DFLAGS) 
 #############################################
 
 #### gfortran #################
-F90=gfortran # must be >= 4.6.1
-OMP=-fopenmp
-CPP=-cpp
-DFLAGS=-O0 -Wall -Wextra -g -std=f2008
-DFLAGS+=-gdwarf-4 -frange-check -fbounds-check -fcheck=all -fmodule-private -pedantic -Wunderflow -finit-integer=-777 -finit-real=snan -ffpe-trap=invalid -finit-logical=false -finit-character=126
-##DFLAGS+=-fdump-rtl-expand 
-PFLAGS=-Ofast -march=native
+##F90=gfortran # must be >= 4.6.1
+##OMP=-fopenmp
+##CPP=-cpp
+##DFLAGS=-O0 -Wall -Wextra -g -std=f2008
+####DFLAGS+=-gdwarf-4 -frange-check -fbounds-check -fcheck=all -fmodule-private -pedantic -Wunderflow -finit-integer=-777 -finit-real=snan -ffpe-trap=invalid -finit-logical=false -finit-character=126
+####DFLAGS+=-fdump-rtl-expand 
+##PFLAGS=-Ofast -march=native -flto
 ###################################
 
-BFLAGS=$(DFLAGS) # $(PFLAGS)
-PFLAGS+=$(PFLAGEXTRA) $(OMP)
+BFLAGS=$(PFLAGS) # $(PFLAGS)
+PFLAGS+=$(OMP)
 
 # switch between performance or debugging flags
-FLAGS=$(DFLAGS)
-#FLAGS=$(PFLAGS)
+#FLAGS=$(DFLAGS)
+FLAGS=$(PFLAGS)
 
-LINKFLAG=$(FLAGS) -fbacktrace $(OMP)
+LINKFLAG=$(FLAGS) $(OMP)
 
 # the link step
 main: $(OBJS) $(MAIN)

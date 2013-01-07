@@ -1,7 +1,7 @@
 10 :: N
 22 :: M
-20 :: ms
-1  :: ibnd
+10 :: ms
+-1  :: ibnd
 F  :: calcin?
 F  :: storin?
 0.0D0        :: r
