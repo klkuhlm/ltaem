@@ -70,12 +70,12 @@ PFLAGS=-xHOST -O3 -fast
 ##PFLAGS=-Ofast -march=native -flto
 ###################################
 
-BFLAGS=$(PFLAGS) # $(PFLAGS)
+BFLAGS=$(DFLAGS) # $(PFLAGS)
 PFLAGS+=$(OMP)
 
 # switch between performance or debugging flags
-#FLAGS=$(DFLAGS)
-FLAGS=$(PFLAGS)
+FLAGS=$(DFLAGS)
+#FLAGS=$(PFLAGS)
 
 LINKFLAG=$(FLAGS) $(OMP) $(LINKOPT)
 
