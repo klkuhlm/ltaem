@@ -6,8 +6,8 @@ T  F  F  T  10  pumping_well_hydrographs dump.out  pumping_well.elem  pumping_we
 NW LOC|NE LOC|SE LOC|SW LOC|W LOC|N LOC|E LOC|S LOC
 -1.25  1.25  1.25 -1.25 -1.25  0.0   1.25  0.0    ::    x 
  1.25  1.25 -1.25 -1.25  0.0   1.25  0.0  -1.25   ::    y 
-LOGVEC -4.0 4.0 :: t 
-1.0D-6  1.0D-8  10  :: alpha, tolerance, M
+LOGVEC -4.0 1.0 :: t 
+1.0D-6  1.0D-8  50  :: alpha, tolerance, M
 1  pumping_well_circles.in     :: number of circular elements, circle data file
 0  not_used    :: number of elliptical elements, ellipse data file
 not_used   ::  particle data file

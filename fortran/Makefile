@@ -28,16 +28,16 @@ KKLOW=type_definitions.o utility.o bessel_functions.o mathieu_functions2.o
 ##BLASLIB=-lblas
 
 ## if no system libraries put statically linked libraries in this directory
-#LAPACKLIB=lapack.a
-#BLASLIB=blas.a
+LAPACKLIB=lapack.a
+BLASLIB=blas.a
 
-# use Intel math kernel library
-MKLROOT=/opt/intel/mkl
-LAPACKLIB= -Wl,--start-group  \
-	$(MKLROOT)/lib/intel64/libmkl_intel_lp64.a \
-	$(MKLROOT)/lib/intel64/libmkl_sequential.a \
-	$(MKLROOT)/lib/intel64/libmkl_core.a \
-	-Wl,--end-group -lpthread -lm
+### use Intel math kernel library
+##MKLROOT=/opt/intel/mkl
+##LAPACKLIB= -Wl,--start-group  \
+##	$(MKLROOT)/lib/intel64/libmkl_intel_lp64.a \
+##	$(MKLROOT)/lib/intel64/libmkl_sequential.a \
+##	$(MKLROOT)/lib/intel64/libmkl_core.a \
+##	-Wl,--end-group -lpthread -lm
 
 # main-program related
 ####################################
@@ -50,25 +50,25 @@ MAIN=ltaem_main.o
 TARG=ltaem
 OBJS=$(EXTERNAL) constants.o $(KKLOW) geometryUtil.o $(KKHIGH)
 
-#################### ifort >= 12.0 ##########
-F90=ifort
-OMP=-openmp
-CPP=-cpp
-#DFLAGS=-O0 -g -traceback -warn all -check bounds -check pointers -check uninit -check format -check output_conversion
-DFLAGS=-O0 -g -traceback -warn all -check all
-PFLAGS=-xHOST -O3 -fast  
-#############################################
-
-#### gfortran #################
-##F90=gfortran # must be >= 4.6.1
-##OMP=-fopenmp
+###################### ifort >= 12.0 ##########
+##F90=ifort
+##OMP=-openmp
 ##CPP=-cpp
-##DFLAGS=-O0 -Wall -Wextra -g -std=f2008
-####DFLAGS+=-gdwarf-4 -frange-check -fbounds-check -fcheck=all -fmodule-private -pedantic -Wunderflow -finit-integer=-777 -finit-real=snan -ffpe-trap=invalid -finit-logical=false -finit-character=126
-####DFLAGS+=-fdump-rtl-expand 
-##LINKOPT=-fbacktrace
-##PFLAGS=-Ofast -march=native -flto
-###################################
+###DFLAGS=-O0 -g -traceback -warn all -check bounds -check pointers -check uninit -check format -check output_conversion
+##DFLAGS=-O0 -g -traceback -warn all -check all
+##PFLAGS=-xHOST -O3 -fast  
+###############################################
+
+## gfortran #################
+F90=gfortran # must be >= 4.6.1
+OMP=-fopenmp
+CPP=-cpp
+DFLAGS=-O0 -Wall -Wextra -g -std=f2008
+##DFLAGS+=-gdwarf-4 -frange-check -fbounds-check -fcheck=all -fmodule-private -pedantic -Wunderflow -finit-integer=-777 -finit-real=snan -ffpe-trap=invalid -finit-logical=false -finit-character=126
+##DFLAGS+=-fdump-rtl-expand 
+LINKOPT=-fbacktrace
+PFLAGS=-Ofast -march=native 
+#################################
 
 BFLAGS=$(PFLAGS) # $(PFLAGS)
 PFLAGS+=$(OMP)
