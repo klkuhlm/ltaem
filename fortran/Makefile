@@ -70,12 +70,12 @@ LINKOPT=-fbacktrace
 PFLAGS=-Ofast -march=native 
 #################################
 
-BFLAGS=$(PFLAGS) # $(PFLAGS)
+BFLAGS=$(DFLAGS) # $(PFLAGS)
 PFLAGS+=$(OMP)
 
 # switch between performance or debugging flags
-#FLAGS=$(DFLAGS)
-FLAGS=$(PFLAGS)
+FLAGS=$(DFLAGS)
+#FLAGS=$(PFLAGS)
 
 LINKFLAG=$(FLAGS) $(OMP) $(LINKOPT)
 
