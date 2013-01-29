@@ -262,7 +262,7 @@ contains
 
     ! internal variables
     integer, dimension(size(n)) :: j
-    real(DP), dimension(mf%M) :: v, vi
+    complex(DP), dimension(mf%M) :: v, vi
     integer, dimension(count(mod(n,2) == 0)) :: EV
     integer, dimension(count(mod(n,2) == 1)) :: OD
     integer :: nz, nje, njo
@@ -1129,7 +1129,7 @@ contains
 
     ! compute vector of integers counting up
     forall (j = 0:mf%m-1) i(j+1) = j
-    v = cmplex(i,0,DP)
+    v = cmplx(i,0,DP)
 
     ! compute the "sign" vector
     vi = cmplx(1,0,DP)
