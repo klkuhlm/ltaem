@@ -51,7 +51,7 @@ contains
     complex(DP), intent(in) :: q
     integer, intent(in) :: M
     complex(DP), intent(out), dimension(4*M) :: mcn 
-    complex(DP), intent(out) ,dimension(M,M,2) :: A(:,:,:), B(:,:,:) 
+    complex(DP), intent(out), dimension(M,M,2) :: A, B
 
     ! just one matrix of recursion coefficients (used 4 times)
     complex(DP), allocatable :: coeff(:,:)
@@ -88,7 +88,7 @@ contains
     allocate(coeff(M,M), rwork(33*M), work(lwork), w(M))
 
     di = 1 ! dummy integer for lapack
-    dc(1) = 0.0 ! dummy complex for lapack
+    dc(1) = cmplx(0,0,DP) ! dummy complex for lapack
 
     !$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
     ! even coefficients (a) of even order
