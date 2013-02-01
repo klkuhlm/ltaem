@@ -2084,12 +2084,12 @@ CONTAINS
     INTEGER, INTENT(IN)           :: ikflg
     INTEGER, INTENT(IN)           :: ipmtr
     REAL (dp), INTENT(IN)         :: tol
-    INTEGER, INTENT(IN OUT)       :: init
+    INTEGER, INTENT(INOUT)       :: init
     COMPLEX (dp), INTENT(OUT)     :: phi
-    COMPLEX (dp), INTENT(IN OUT)  :: zeta1
-    COMPLEX (dp), INTENT(IN OUT)  :: zeta2
-    COMPLEX (dp), INTENT(IN OUT)  :: total
-    COMPLEX (dp), INTENT(IN OUT)  :: cwrk(16)
+    COMPLEX (dp), INTENT(INOUT)  :: zeta1
+    COMPLEX (dp), INTENT(INOUT)  :: zeta2
+    COMPLEX (dp), INTENT(INOUT)  :: total
+    COMPLEX (dp), INTENT(INOUT)  :: cwrk(16)
 
     COMPLEX (dp)  :: cfn, crfn, s, sr, t, t2,  zn
     REAL (dp)     :: ac, rfn, test, tstr, tsti
@@ -2241,7 +2241,7 @@ CONTAINS
     INTEGER, INTENT(IN)           :: kode
     INTEGER, INTENT(IN)           :: ikflg
     INTEGER, INTENT(IN)           :: n
-    COMPLEX (dp), INTENT(IN OUT)  :: y(n)
+    COMPLEX (dp), INTENT(INOUT)  :: y(n)
     INTEGER, INTENT(OUT)          :: nuf
     REAL (dp), INTENT(IN)         :: tol
     REAL (dp), INTENT(IN)         :: elim
@@ -3465,9 +3465,9 @@ CONTAINS
     INTEGER, INTENT(IN)        :: n
     COMPLEX (dp), INTENT(OUT)  :: y(n)
     INTEGER, INTENT(OUT)       :: nz
-    REAL (dp), INTENT(IN OUT)  :: tol
-    REAL (dp), INTENT(IN OUT)  :: elim
-    REAL (dp), INTENT(IN OUT)  :: alim
+    REAL (dp), INTENT(INOUT)  :: tol
+    REAL (dp), INTENT(INOUT)  :: elim
+    REAL (dp), INTENT(INOUT)  :: alim
 
     REAL (dp)  :: ax, ay, xx, yy
 
@@ -4865,12 +4865,12 @@ CONTAINS
     !***END PROLOGUE  CS1S2
 
     COMPLEX (dp), INTENT(IN)      :: zr
-    COMPLEX (dp), INTENT(IN OUT)  :: s1
-    COMPLEX (dp), INTENT(IN OUT)  :: s2
+    COMPLEX (dp), INTENT(INOUT)  :: s1
+    COMPLEX (dp), INTENT(INOUT)  :: s2
     INTEGER, INTENT(OUT)          :: nz
     REAL (dp), INTENT(IN)         :: ascle
     REAL (dp), INTENT(IN)         :: alim
-    INTEGER, INTENT(IN OUT)       :: iuf
+    INTEGER, INTENT(INOUT)       :: iuf
 
     COMPLEX (dp)  :: c1, s1d
     REAL (dp)     :: aa, aln, as1, as2, xx
@@ -4918,7 +4918,7 @@ CONTAINS
     !***ROUTINES CALLED  (NONE)
     !***END PROLOGUE  CSHCH
 
-    COMPLEX (dp), INTENT(IN OUT)  :: z
+    COMPLEX (dp), INTENT(INOUT)  :: z
     COMPLEX (dp), INTENT(OUT)     :: csh
     COMPLEX (dp), INTENT(OUT)     :: cch
 
@@ -5535,7 +5535,7 @@ CONTAINS
     COMPLEX (dp), INTENT(OUT)  :: y(n)
     INTEGER, INTENT(OUT)       :: nz
     COMPLEX (dp), INTENT(IN)   :: rz
-    REAL (dp), INTENT(IN OUT)  :: ascle
+    REAL (dp), INTENT(INOUT)  :: ascle
     REAL (dp), INTENT(IN)      :: tol
     REAL (dp), INTENT(IN)      :: elim
 
@@ -5656,11 +5656,11 @@ CONTAINS
     INTEGER, INTENT(IN)        :: n
     COMPLEX (dp), INTENT(OUT)  :: y(n)
     INTEGER, INTENT(OUT)       :: nz
-    REAL (dp), INTENT(IN OUT)  :: rl
-    REAL (dp), INTENT(IN OUT)  :: fnul
+    REAL (dp), INTENT(INOUT)  :: rl
+    REAL (dp), INTENT(INOUT)  :: fnul
     REAL (dp), INTENT(IN)      :: tol
-    REAL (dp), INTENT(IN OUT)  :: elim
-    REAL (dp), INTENT(IN OUT)  :: alim
+    REAL (dp), INTENT(INOUT)  :: elim
+    REAL (dp), INTENT(INOUT)  :: alim
 
     COMPLEX (dp)  :: ck, cs, cscl, cscr, csgn, cspn, css(3), csr(3), c1, c2,  &
          rz, sc1, sc2, st, s1, s2, zn, cy(2)
@@ -5973,7 +5973,7 @@ CONTAINS
     COMPLEX (dp), INTENT(IN)   :: z
     REAL (dp), INTENT(IN)      :: fnu
     INTEGER, INTENT(IN)        :: kode
-    INTEGER, INTENT(IN OUT)    :: mr
+    INTEGER, INTENT(INOUT)    :: mr
     INTEGER, INTENT(IN)        :: n
     COMPLEX (dp), INTENT(OUT)  :: y(n)
     INTEGER, INTENT(OUT)       :: nz
