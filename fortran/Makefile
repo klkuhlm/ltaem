@@ -96,6 +96,10 @@ cbessel.o : ./external/cbessel.f90
 clean:
 	rm -f *.o *.mod $(TARG)
 
+# build python module of stripped-down version of mathieu libraries using f2py
+pymodule fmathieu.so : ./external/cbessel.f90 mathieu.f90
+	f2py --fcompiler=gnu95 $(LAPACKLIB) $(BLASLIB) -c fmathieu.pyf ./external/cbessel.f90 mathieu.f90
+
 # dependency listing
 # "provides" : "depends on"
 cbessel.o complex_bessel.mod : ./external/cbessel.f90

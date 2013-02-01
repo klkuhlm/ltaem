@@ -20,68 +20,22 @@
 ! THE SOFTWARE.
 !
 
-module mathieu_functions
+module mf
 
   implicit none
 
   private  !! only interfaces and mathieu_init are publicly callable
-  public :: mathieu, ce, Dce, se, Dse, Ke, Ko, DKe, DKo, Ie, Io, DIe, DIo, mathieu_init
+  public :: ce, Dce, se, Dse, Ke, Ko, DKe, DKo, Ie, Io, DIe, DIo, mathieu_init
 
-  ! real with range 300 orders of mag, 15 sig figs
-  integer, parameter :: DP = selected_real_kind(p=15,r=300)
+  integer, parameter, private :: DP = 8 !! selected_real_kind(p=15,r=300)
+  real(DP), parameter, private :: PIOV2 = atan(1.0_DP)*2.0_DP
 
-  type :: mathieu
-     ! things required to compute mathieu functions
-     integer :: M = -999,  buffer = -999
-     complex(DP) :: q = (-999.,-999.)
-     complex(DP), allocatable :: mcn(:), A(:,:,:), B(:,:,:)  ! 4*M; 1:M, 0:M-1, 0:1
-  end type mathieu
-
-  interface ce   ! even first kind angular MF
-     module procedure ce_scalar_nz, ce_scalar_n, ce_scalar_z, ce_vect_nz
-  end interface
-  interface Dce  ! derivative of even first kind angular MF
-     module procedure Dce_scalar_nz, Dce_scalar_n, Dce_scalar_z, Dce_vect_nz
-  end interface
-  interface se  ! odd first kind angular MF
-     module procedure se_scalar_nz, se_scalar_n, se_scalar_z, se_vect_nz
-  end interface
-  interface Dse  ! derivative of odd first kind angular MF
-     module procedure Dse_scalar_nz, Dse_scalar_n, Dse_scalar_z, Dse_vect_nz
-  end interface
-  interface Ie  ! even first kind radial MF
-     module procedure Ie_scalar_nz, Ie_scalar_n, Ie_scalar_z, Ie_vect_nz
-  end interface
-  interface Io  ! odd first kind radial MF
-     module procedure Io_scalar_nz, Io_scalar_n, Io_scalar_z, Io_vect_nz
-  end interface
-  interface Ke  ! even second kind radial MF
-     module procedure Ke_scalar_nz, Ke_scalar_n, Ke_scalar_z, Ke_vect_nz
-  end interface
-  interface Ko  ! odd second kind radial MF
-     module procedure Ko_scalar_nz, Ko_scalar_n, Ko_scalar_z, Ko_vect_nz
-  end interface
-  interface DIe  ! derivative of even first kind radial MF
-     module procedure DIe_scalar_nz, DIe_scalar_n, DIe_scalar_z, DIe_vect_nz
-  end interface
-  interface DIo  ! derivative of odd first kind radial MF
-     module procedure DIo_scalar_nz, DIo_scalar_n, DIo_scalar_z, DIo_vect_nz
-  end interface
-  interface DKe  ! derivative of even second kind radial MF
-     module procedure DKe_scalar_nz, DKe_scalar_n, DKe_scalar_z, DKe_vect_nz
-  end interface
-  interface DKo  ! derivative of odd second kind radial MF
-     module procedure DKo_scalar_nz, DKo_scalar_n, DKo_scalar_z, DKo_vect_nz
-  end interface
 contains
-  function mathieu_init(q,MM) result(mat)
+  subroutine mathieu_init(q,M,mcn,A,B) 
     ! this subroutine computes the eigenvalues given at least a value for the
     ! Mathieu parameter (q), the norm and matrix size (M) are optional
 
-    use constants, only : DP
-    use utility, only : diag
-
-    interface ! LAPACK 3.2.1 eigenvalue/eigenfunction routine
+    interface ! LAPACK eigenvalue/eigenfunction routine interface
        subroutine ZGEEV(JOBVL,JOBVR,N,A,LDA,W,VL,LDVL,VR,LDVR,WORK, &
             & LWORK,RWORK,INFO)
          integer, intent(in) :: LDVR, LDVL, LDA, N, LWORK
@@ -93,13 +47,11 @@ contains
        end subroutine ZGEEV
     end interface
 
+    ! externally visible things
     complex(DP), intent(in) :: q
-    integer, optional, intent(in) :: MM
-
-    ! resulting structure defined at top of containing module
-    type(mathieu) :: mat
-    integer :: i, j, M
-    real(DP) :: dg, denom
+    integer, intent(in) :: M
+    complex(DP), intent(out), dimension(4*M) :: mcn 
+    complex(DP), intent(out) ,dimension(M,M,2) :: A(:,:,:), B(:,:,:) 
 
     ! just one matrix of recursion coefficients (used 4 times)
     complex(DP), allocatable :: coeff(:,:)
@@ -114,15 +66,7 @@ contains
     !! used in stratton normalization only
     complex(DP), allocatable :: w(:) ! 1:M
 
-    mat%q = q
-    if (present(MM)) then
-       mat%M = MM
-    else
-       ! assuming this will be computed more intelligenly elsewhere
-       ! e.g., using Shirts' 1993 rational approximation
-       mat%M = 16
-    end if
-    M = mat%M
+    integer :: i, j
 
     allocate(v(0:M),vi(0:M))
     forall (j = 0:M) v(j) = j
@@ -141,8 +85,7 @@ contains
     ! A/B 3rd dimension: 0(even) or 1(odd) cases of the second dimension
 
     lwork = 2*M+1
-    allocate(coeff(M,M), rwork(33*M), work(lwork), w(M), mat%mcn(4*M), &
-         & mat%A(1:M,0:M-1,0:1), mat%B(1:M,0:M-1,0:1))
+    allocate(coeff(M,M), rwork(33*M), work(lwork), w(M))
 
     di = 1 ! dummy integer for lapack
     dc(1) = 0.0 ! dummy complex for lapack
@@ -163,16 +106,16 @@ contains
     ! special case
     Coeff(2,1) = 2.0*q
 
-    call ZGEEV(JOBVL='N', JOBVR='V',N=M, A=Coeff, LDA=M, W=mat%mcn(1:m), &
-         & VL=dc, LDVL=di, VR=mat%A(1:m,0:m-1,0), LDVR=M, &
+    call ZGEEV(JOBVL='N', JOBVR='V',N=M, A=Coeff, LDA=M, W=mcn(1:m), &
+         & VL=dc, LDVL=di, VR=A(1:m,1:m,1), LDVR=M, &
          & WORK=work, LWORK=lwork, RWORK=rwork, INFO=info)
 
     if (info /= 0) write (*,'(A,I0,A)') "ZGEEV ERROR ",info, &
          &" calculating even coefficients of even order"
 
     ! Morse norm  ce_2n(psi=0)
-    w = sum(spread(vi(1:M),2,M)*mat%A(:,:,0),dim=1)
-    mat%A(:,:,0) = mat%A(:,:,0)/spread(w,1,M)
+    w = sum(spread(vi(1:M),2,M)*A(:,:,1),dim=1)
+    A(:,:,1) = A(:,:,1)/spread(w,1,M)
 
     !$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
     ! even coefficients (a) of odd order
@@ -185,16 +128,16 @@ contains
     forall(i = 1:m-1) Coeff(i+1,i+1) = cmplx((2*i+1)**2, 0, DP)
     forall(i = 1:m, j = 1:m, j == i+1 .or. j == i-1) Coeff(i,j) = q
 
-    call ZGEEV(JOBVL='N', JOBVR='V', N=M, A=Coeff, LDA=M, W=mat%mcn(m+1:2*m),&
-         & VL=dc, LDVL=di, VR=mat%A(1:m,0:m-1,1), LDVR=M, &
+    call ZGEEV(JOBVL='N', JOBVR='V', N=M, A=Coeff, LDA=M, W=mcn(m+1:2*m),&
+         & VL=dc, LDVL=di, VR=A(1:m,1:m,2), LDVR=M, &
          & WORK=work, LWORK=lwork, RWORK=rwork, INFO=info)
 
     if (info /= 0) write(*,'(A,I0,A)') "ZGEEV ERROR ",info, &
          &" calculating even coefficients of odd order"
 
     ! se'_2n+1(psi=0)
-    w = sum(spread((2*v(0:M-1)+1)*vi(0:M-1),2,M)*mat%A(:,:,1),dim=1)
-    mat%A(:,:,1) = mat%A(:,:,1)/spread(w,1,M)
+    w = sum(spread((2*v(0:M-1)+1)*vi(0:M-1),2,M)*A(:,:,2),dim=1)
+    A(:,:,2) = A(:,:,2)/spread(w,1,M)
 
     !$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
     ! odd coefficients (b) of even order
@@ -208,16 +151,16 @@ contains
     forall(i = 1:m) Coeff(i,i) = cmplx((2*i)**2, 0, DP)
     forall(i = 1:m, j = 1:m, j == i+1 .or. j == i-1) Coeff(i,j) = q
 
-    call ZGEEV(JOBVL='N', JOBVR='V', N=M, A=Coeff, LDA=M, W=mat%mcn(2*m+1:3*m),&
-         & VL=dc, LDVL=di, VR=mat%B(1:m,0:m-1,0),LDVR=M,&
+    call ZGEEV(JOBVL='N', JOBVR='V', N=M, A=Coeff, LDA=M, W=mcn(2*m+1:3*m),&
+         & VL=dc, LDVL=di, VR=B(1:m,1:m,1),LDVR=M,&
          & WORK=work, LWORK=lwork, RWORK=rwork, INFO=info)
 
     if (info /= 0) write (*,'(A,I0,A)') "ZGEEV ERROR ",info, &
          &" calculating odd coefficients of even order"
 
     ! ce_2n+2(psi=0)
-    w = sum(spread((2*v(0:M-1)+2)*vi(0:M-1),2,M)*mat%B(:,:,0),dim=1)
-    mat%B(:,:,0) = mat%B(:,:,0)/spread(w,1,M)
+    w = sum(spread((2*v(0:M-1)+2)*vi(0:M-1),2,M)*B(:,:,1),dim=1)
+    B(:,:,1) = B(:,:,1)/spread(w,1,M)
 
     !$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
     ! odd coefficients (b) of odd order
@@ -230,788 +173,479 @@ contains
     forall(i = 1:m-1) Coeff(i+1,i+1) = cmplx((2*i+1)**2, 0, DP)
     forall(i = 1:m, j = 1:m, j == i+1 .or. j == i-1) Coeff(i,j) = q
 
-    call ZGEEV(JOBVL='N', JOBVR='V', N=M, A=Coeff, LDA=M, W=mat%mcn(3*m+1:4*m),&
-         & VL=dc, LDVL=di, VR=mat%B(1:m,0:m-1,1), LDVR=M,&
+    call ZGEEV(JOBVL='N', JOBVR='V', N=M, A=Coeff, LDA=M, W=mcn(3*m+1:4*m),&
+         & VL=dc, LDVL=di, VR=B(1:m,1:m,2), LDVR=M,&
          & WORK=work, LWORK=lwork, RWORK=rwork, INFO=info)
 
     if (info /= 0) write (*,'(A,I0,A)') "ZGEEV ERROR ",info, &
          &" calculating odd coefficients of odd order"
 
     ! ce_2n+1(psi=0)
-    w = sum(mat%B(:,:,1)*spread(vi(0:M-1),2,M),dim=1)
-    mat%B(:,:,1) = mat%B(:,:,1)/spread(w,1,m)
+    w = sum(B(:,:,2)*spread(vi(0:M-1),2,M),dim=1)
+    B(:,:,2) = B(:,:,2)/spread(w,1,m)
 
     deallocate(coeff,rwork,w,work)
 
-  end function mathieu_init
+  end subroutine mathieu_init
 
   !############################################################
   ! even angular modified mathieu function (q<0)
   ! for vector order and argument (retuns an outer-product type result)
   ! ce(q) is called Se(-q) by Blanch, or Qe(q) by Alhargan
   ! functions here use identities in 7.02 of Blanch's AMS#59 publication
-  function ce_vect_nz(mf,n,z) result(ce)
-    use constants, only : DP, PIOV2
-    use utility, only : outer
+  function ce(n,z,A,B) 
 
     ! external arguments
     integer, dimension(:), intent(in) :: n
     real(DP), dimension(:), intent(in) :: z
-    type(mathieu), intent(in) :: mf
+    complex(DP), dimension(:,:,:), intent(in) :: A,B
     complex(DP), dimension(size(z),size(n)) :: ce
 
     ! internal variables
     integer, dimension(size(n)) :: j
-    complex(DP), dimension(mf%M) :: v, vi
+    complex(DP), dimension(size(A,dim=1)) :: v, vi
     integer, dimension(count(mod(n,2) == 0)) :: EV
     integer, dimension(count(mod(n,2) == 1)) :: OD
-    integer :: nz, nje, njo
+    integer :: M, nz, nje, njo
 
+    M = size(A,dim=1)
     nz = size(z)
-    call angfcnsetup(mf,n,v,vi,EV,OD)
+    call angfcnsetup(M,n,v,vi,EV,OD)
     nje = size(EV)
     njo = size(OD)
-    j = floor(n/2.0)
+    j = floor(n/2.0)+1
 
-    ce(:,EV) = sum(spread(mf%A(:,j(EV),0),2,nz)* &
+    ce(:,EV) = sum(spread(A(:,j(EV),1),2,nz)* &
          & spread(cos(outer(2*v,PIOV2-z)),3,nje),dim=1)
 
-    ce(:,OD) = sum(spread(mf%B(:,j(OD),1),2,nz)* &
+    ce(:,OD) = sum(spread(B(:,j(OD),2),2,nz)* &
          & spread(sin(outer(2*v+1,PIOV2-z)),3,njo),dim=1)
 
-  end function ce_vect_nz
+  end function ce
 
   !############################################################
   ! odd angular modified mathieu function (q<0)
   ! for vector order and argument (returns an outer-product type result)
   ! se is called So(-q) by Blanch and Qo(q) by Alhargan
-  function se_vect_nz(mf,n,z) result(se)
-    use constants, only : DP, PIOV2
-    use utility, only : outer
+  function se(n,z,A,B) 
     integer, dimension(:), intent(in) :: n
     real(DP), dimension(:), intent(in) :: z
-    type(mathieu), intent(in) :: mf
+    complex(DP), dimension(:,:,:), intent(in) :: A,B
     complex(DP), dimension(size(z),size(n)) :: se
 
     integer, dimension(size(n)) :: j
-    complex(DP), dimension(mf%M):: v, vi
+    complex(DP), dimension(size(A,dim=1)):: v, vi
     integer, dimension(count(mod(n,2) == 0)) :: EV
     integer, dimension(count(mod(n,2) == 1)) :: OD
-    integer :: nz, nje, njo
+    integer :: M, nz, nje, njo
 
+    M = size(A,dim=1)
     nz = size(z)
-    call angfcnsetup(mf,n,v,vi,EV,OD)
+    call angfcnsetup(M,n,v,vi,EV,OD)
     nje = size(EV)
     njo = size(OD)
     j = floor((n-1)/2.0)
     where (n == 0) j = 0
-
-    se(:,EV) = sum(spread(mf%B(:,j(EV),0),2,nz)* &
+    j = j+1
+    
+    se(:,EV) = sum(spread(B(:,j(EV),1),2,nz)* &
          & spread(sin(outer(2*v+2,PIOV2-z)),3,nje),dim=1)
 
-    se(:,OD) = sum(spread(mf%A(:,j(OD),1),2,nz)* &
+    se(:,OD) = sum(spread(A(:,j(OD),2),2,nz)* &
          & spread(cos(outer(2*v+1,PIOV2-z)),3,njo),dim=1)
 
     where (spread(n,1,nz) == 0) se = -huge(1.0)  ! se_0() is invalid
-  end function se_vect_nz
+  end function se
 
   !############################################################
   ! derivative of even angular modified mathieu function (q<0)
   ! for vector order and argument (returns an outer-product type result)
-  function Dce_vect_nz(mf,n,z) result(Dce)
-    use constants, only : DP, PIOV2
-    use utility, only : outer
+  function Dce(n,z,A,B) 
     integer, dimension(:), intent(in) :: n
     real(DP), dimension(:), intent(in) :: z
-    type(mathieu), intent(in) :: mf
+    complex(DP), dimension(:,:,:), intent(in) :: A,B
     complex(DP), dimension(size(z),size(n)) :: Dce
 
     integer, dimension(size(n)) :: j
-    complex(DP), dimension(mf%M):: v, vi
+    complex(DP), dimension(size(A,dim=1)):: v, vi
     integer, dimension(count(mod(n,2) == 0)) :: EV
     integer, dimension(count(mod(n,2) == 1)) :: OD
-    integer :: nz, nje, njo
+    integer :: M, nz, nje, njo
 
+    M = size(A,dim=1)
     nz = size(z)
-    call angfcnsetup(mf,n,v,vi,EV,OD)
+    call angfcnsetup(M,n,v,vi,EV,OD)
     nje = size(EV)
     njo = size(OD)
-    j = floor(n/2.0)
+    j = floor(n/2.0)+1
 
-    Dce(:,EV) = sum(spread(spread(2*v,2,nje)*mf%A(:,j(EV),0),2,nz)* &
+    Dce(:,EV) = sum(spread(spread(2*v,2,nje)*A(:,j(EV),1),2,nz)* &
          & spread(sin(outer(2*v,PIOV2-z)),3,nje),dim=1)
 
-    Dce(:,OD) = -sum(spread(spread(2*v+1,2,njo)*mf%B(:,j(OD),1),2,nz)* &
+    Dce(:,OD) = -sum(spread(spread(2*v+1,2,njo)*B(:,j(OD),2),2,nz)* &
          & spread(cos(outer(2*v+1,PIOV2-z)),3,njo),dim=1)
 
-  end function Dce_vect_nz
+  end function Dce
 
   !############################################################
   ! derivative of odd angular modified mathieu function (q<0)
   ! for vector order and argument (returns an outer-product type result)
-  function Dse_vect_nz(mf,n,z) result(Dse)
-    use constants, only : DP, PIOV2
-    use utility, only : outer
+  function Dse(n,z,A,B) 
     integer, dimension(:), intent(in) :: n
     real(DP), dimension(:), intent(in) :: z
-    type(mathieu), intent(in) :: mf
+    complex(DP), dimension(:,:,:), intent(in) :: A,B
     complex(DP), dimension(size(z),size(n)) :: Dse
 
     integer, dimension(size(n)) :: j
-    complex(DP), dimension(mf%M):: v, vi
+    complex(DP), dimension(size(A,dim=1)):: v, vi
     integer, dimension(count(mod(n,2) == 0)) :: EV
     integer, dimension(count(mod(n,2) == 1)) :: OD
-    integer :: nz, nje, njo
+    integer :: M, nz, nje, njo
 
+    M = size(A,dim=1)
     nz = size(z)
-    call angfcnsetup(mf,n,v,vi,EV,OD)
+    call angfcnsetup(M,n,v,vi,EV,OD)
     nje = size(EV)
     njo = size(OD)
     j = floor((n-1)/2.0)
     where (n == 0) j = 0
+    j = j+1
 
-    Dse(:,EV) = -sum(spread(spread(2*v+2,2,nje)*mf%B(:,j(EV),0),2,nz)* &
+    Dse(:,EV) = -sum(spread(spread(2*v+2,2,nje)*B(:,j(EV),1),2,nz)* &
          & spread(cos(outer(2*v+2,PIOV2-z)),3,nje),dim=1)
 
-    Dse(:,OD) = sum(spread(spread(2*v+1,2,njo)*mf%A(:,j(OD),1),2,nz)* &
+    Dse(:,OD) = sum(spread(spread(2*v+1,2,njo)*A(:,j(OD),2),2,nz)* &
          & spread(sin(outer(2*v+1,PIOV2-z)),3,njo),dim=1)
 
     where (spread(n,1,nz) == 0) Dse = -huge(1.0)  ! se_0() is undefined
-  end function Dse_vect_nz
+  end function Dse
 
   !############################################################
   ! even radial first kind modified mathieu functions (q<0)
   ! for vector order and argument
-  function Ie_vect_nz(mf,n,z) result(Ie)
-    use constants, only : DP
+  function Ie(n,z,q,A,B) 
     integer, dimension(:), intent(in) :: n
     real(DP), dimension(:), intent(in) :: z
-    type(mathieu), intent(in) :: mf
+    complex(DP), intent(in) :: q
+    complex(DP), dimension(:,:,:), intent(in) :: A,B
     complex(DP), dimension(size(z),size(n)) :: Ie
 
     integer, dimension(size(n)) :: j
-    complex(DP), dimension(mf%M):: v, vi
-    complex(DP), dimension(0:mf%M,size(z)) :: I1, I2
+    complex(DP), dimension(size(A,dim=1)):: v, vi
+    complex(DP), dimension(0:size(A,dim=1),size(z)) :: I1, I2
     integer, dimension(count(mod(n,2) == 0)) :: EV
     integer, dimension(count(mod(n,2) == 1)) :: OD
     complex(DP), dimension(size(z)) :: v1, v2
-    complex(DP) :: sqrtq
     integer :: nje, njo, nz, M
 
     nz = size(z)
-    M = mf%M
-    call radfcnsetup(mf,n,z,sqrtq,v1,v2,v,vi,EV,OD)
+    M = size(A,dim=1)
+    call radfcnsetup(M,q,n,z,v1,v2,v,vi,EV,OD)
     nje = size(EV)
     njo = size(OD)
-    j = floor(n/2.0)
+    j = floor(n/2.0)+1
     call BesselI_val(v1,M+1,I1(0:M,1:nz))
     call BesselI_val(v2,M+1,I2(0:M,1:nz))
 
-    Ie(:,EV) = sum(spread(spread(vi,2,nje)*mf%A(:,j(EV),0),2,nz)* &
-         & spread(I1(0:m-1,:)*I2(0:m-1,:),3,nje),dim=1)/spread(mf%A(1,j(EV),0),1,nz)
+    Ie(:,EV) = sum(spread(spread(vi,2,nje)*A(:,j(EV),1),2,nz)* &
+         & spread(I1(0:m-1,:)*I2(0:m-1,:),3,nje),dim=1)/spread(A(1,j(EV),1),1,nz)
 
-    Ie(:,OD) = sum(spread(spread(vi,2,njo)*mf%B(:,j(OD),1),2,nz)* &
+    Ie(:,OD) = sum(spread(spread(vi,2,njo)*B(:,j(OD),2),2,nz)* &
          & spread(I1(0:m-1,:)*I2(1:m,:) + I1(1:m,:)*I2(0:m-1,:),3,njo),dim=1)/ &
-         & spread(mf%B(1,j(OD),1),1,nz)
+         & spread(B(1,j(OD),2),1,nz)
 
     Ie = Ie*spread(exp(abs(real(v1)) + abs(real(v2))),2,size(n))
-  end function Ie_vect_nz
+  end function Ie
 
   !############################################################
   ! odd radial first kind modified mathieu functions (q<0)
   ! for vector order and argument
-  function Io_vect_nz(mf,n,z) result(Io)
-    use constants, only : DP
+  function Io(n,z,q,A,B) 
     integer, dimension(:), intent(in) :: n
     real(DP), dimension(:), intent(in) :: z
-    type(mathieu), intent(in) :: mf
+    complex(DP), intent(in) :: q
+    complex(DP), dimension(:,:,:), intent(in) :: A,B
     complex(DP), dimension(size(z),size(n)) :: Io
 
     integer, dimension(size(n)) :: j
-    complex(DP), dimension(mf%M):: v, vi
-    complex(DP), dimension(0:mf%M+1,size(z)) :: I1, I2
+    complex(DP), dimension(size(A,dim=1)):: v, vi
+    complex(DP), dimension(0:size(A,dim=1)+1,size(z)) :: I1, I2
     integer, dimension(count(mod(n,2) == 0)) :: EV
     integer, dimension(count(mod(n,2) == 1)) :: OD
     complex(DP), dimension(size(z)) :: v1, v2
-    complex(DP) :: sqrtq
     integer :: nje, njo, nz, M
 
     nz = size(z)
-    M = mf%M
-    call radfcnsetup(mf,n,z,sqrtq,v1,v2,v,vi,EV,OD)
+    M = size(A,dim=1)
+    call radfcnsetup(M,q,n,z,v1,v2,v,vi,EV,OD)
     nje = size(EV)
     njo = size(OD)
     j = floor((n-1)/2.0)
     where (n == 0) j = 0
+    j = j+1
     call BesselI_val(v1,m+2,I1(0:m+1,:))
     call BesselI_val(v2,m+2,I2(0:m+1,:))
 
-    Io(:,EV) = sum(spread(spread(vi,2,nje)*mf%B(:,j(EV),0),2,nz)* &
+    Io(:,EV) = sum(spread(spread(vi,2,nje)*B(:,j(EV),1),2,nz)* &
          & spread(I1(0:m-1,:)*I2(2:m+1,:) - I1(2:m+1,:)*I2(0:m-1,:),3,nje),dim=1)/ &
-         & spread(mf%B(1,j(EV),0),1,nz)
+         & spread(B(1,j(EV),1),1,nz)
 
-    Io(:,OD) = sum(spread(spread(vi,2,njo)*mf%A(:,j(OD),1),2,nz)* &
+    Io(:,OD) = sum(spread(spread(vi,2,njo)*A(:,j(OD),2),2,nz)* &
          & spread(I1(0:m-1,:)*I2(1:m,:) - I1(1:m,:)*I2(0:m-1,:),3,njo),dim=1)/ &
-         & spread(mf%A(1,j(OD),1),1,nz)
+         & spread(A(1,j(OD),2),1,nz)
 
     Io = Io*spread(exp(abs(real(v1)) + abs(real(v2))),2,size(n))
-   end function Io_vect_nz
+  end function Io
 
   !############################################################
   ! even radial second kind modified mathieu functions (q<0)
   ! for vector order and argument
-  function Ke_vect_nz(mf,n,z) result(Ke)
-    use constants, only : DP
+  function Ke(n,z,q,A,B) 
     integer, dimension(:), intent(in) :: n
     real(DP), dimension(:), intent(in) :: z
-    type(mathieu), intent(in) :: mf
+    complex(DP), intent(in) :: q
+    complex(DP), dimension(:,:,:), intent(in) :: A,B
     complex(DP), dimension(size(z),size(n)) :: Ke
 
     integer, dimension(size(n)) :: j
-    complex(DP), dimension(mf%M):: v, vi
-    complex(DP), dimension(0:mf%M,size(z)) :: I, K
+    complex(DP), dimension(size(A,dim=1)):: v, vi
+    complex(DP), dimension(0:size(A,dim=1),size(z)) :: I, K
     integer, dimension(count(mod(n,2) == 0)) :: EV
     integer, dimension(count(mod(n,2) == 1)) :: OD
     complex(DP), dimension(size(z)) :: v1, v2
-    complex(DP) :: sqrtq
     integer :: nje, njo, nz, m
 
     nz = size(z)
-    m = mf%M
-    call radfcnsetup(mf,n,z,sqrtq,v1,v2,v,vi,EV,OD)
+    m = size(A,dim=1)
+    call radfcnsetup(M,q,n,z,v1,v2,v,vi,EV,OD)
     nje = size(EV)
     njo = size(OD)
-    j = floor(real(n,DP)/2.0)
+    j = floor(real(n,DP)/2.0)+1
     call BesselI_val(v1,m+1,I(0:m,:))
     call BesselK_val(v2,m+1,K(0:m,:))
 
-    Ke(:,EV) = sum(spread(mf%A(:,j(EV),0),2,nz)* &
-         & spread(I(0:m-1,:)*K(0:m-1,:),3,nje),dim=1)/spread(mf%A(1,j(EV),0),1,nz)
+    Ke(:,EV) = sum(spread(A(:,j(EV),1),2,nz)* &
+         & spread(I(0:m-1,:)*K(0:m-1,:),3,nje),dim=1)/spread(A(1,j(EV),1),1,nz)
 
-    Ke(:,OD) = sum(spread(mf%B(:,j(OD),1),2,nz)* &
+    Ke(:,OD) = sum(spread(B(:,j(OD),2),2,nz)* &
          & spread(I(0:m-1,:)*K(1:m,:) - I(1:m,:)*K(0:m-1,:),3,njo),dim=1)/ &
-         & spread(mf%B(1,j(OD),1),1,nz)
+         & spread(B(1,j(OD),2),1,nz)
 
     Ke = Ke*spread(exp(abs(real(v1)) - v2),2,size(n))
-  end function Ke_vect_nz
+  end function Ke
 
   !############################################################
   ! odd radial second kind modified mathieu functions (q<0)
   ! for vector order and argument
-  function Ko_vect_nz(mf,n,z) result(Ko)
-    use constants, only : DP
+  function Ko(n,z,q,A,B) 
     integer, dimension(:), intent(in) :: n
     real(DP), dimension(:), intent(in) :: z
-    type(mathieu), intent(in) :: mf
+    complex(DP), intent(in) :: q
+    complex(DP), dimension(:,:,:), intent(in) :: A,B
     complex(DP), dimension(size(z),size(n)) :: Ko
 
     integer, dimension(size(n)) :: j
-    complex(DP), dimension(mf%M):: v, vi
-    complex(DP), dimension(0:mf%M+1,size(z)) :: I, K
+    complex(DP), dimension(size(A,dim=1)):: v, vi
+    complex(DP), dimension(0:size(A,dim=1)+1,size(z)) :: I, K
     integer, dimension(count(mod(n,2) == 0)) :: EV
     integer, dimension(count(mod(n,2) == 1)) :: OD
     complex(DP), dimension(size(z)) :: v1, v2
-    complex(DP) :: sqrtq
     integer :: nje, njo, nz, m
 
     nz = size(z)
-    m = mf%M
-    call radfcnsetup(mf,n,z,sqrtq,v1,v2,v,vi,EV,OD)
+    m = size(A,dim=1)
+    call radfcnsetup(M,q,n,z,v1,v2,v,vi,EV,OD)
     nje = size(EV)
     njo = size(OD)
     j = floor((n-1)/2.0)
     where(n == 0) j = 0
+    j = j+1
     call BesselI_val(v1,m+2,I(0:m+1,:))
     call BesselK_val(v2,m+2,K(0:m+1,:))
 
-    Ko(:,EV) = sum(spread(mf%B(:,j(EV),0),2,nz)* &
+    Ko(:,EV) = sum(spread(B(:,j(EV),1),2,nz)* &
          & spread(I(0:m-1,:)*K(2:m+1,:) - I(2:m+1,:)*K(0:m-1,:),3,nje),dim=1)/ &
-         & spread(mf%B(1,j(EV),0),1,nz)
+         & spread(B(1,j(EV),1),1,nz)
 
-    Ko(:,OD) = sum(spread(mf%A(:,j(OD),1),2,nz)* &
+    Ko(:,OD) = sum(spread(A(:,j(OD),2),2,nz)* &
          & spread(I(0:m-1,:)*K(1:m,:) + I(1:m,:)*K(0:m-1,:),3,njo),dim=1)/ &
-         & spread(mf%A(1,j(OD),1),1,nz)
+         & spread(A(1,j(OD),2),1,nz)
 
     Ko = Ko*spread(exp(abs(real(v1)) - v2),2,size(n))
     where (spread(n,1,nz) == 0) Ko = -huge(1.0)  ! Ko_0() is invalid
-  end function Ko_vect_nz
+  end function Ko
 
   !############################################################
   ! derivative of even radial first kind modified mathieu functions (q<0)
   ! for vector order and argument
-  function DIe_vect_nz(mf,n,z) result(DIe)
-    use constants, only : DP
+  function DIe(n,z,q,A,B) 
     integer, dimension(:), intent(in) :: n
     real(DP), dimension(:), intent(in) :: z
-    type(mathieu), intent(in) :: mf
+    complex(DP), intent(in) :: q
+    complex(DP), dimension(:,:,:), intent(in) :: A,B
     complex(DP), dimension(size(z),size(n)) :: DIe
 
     integer, dimension(size(n)) :: j
-    complex(DP), dimension(mf%M):: v, vi
-    complex(DP), dimension(0:mf%M,size(z)) :: I1, I2, DI1, DI2
+    complex(DP), dimension(size(A,dim=1)):: v, vi
+    complex(DP), dimension(0:size(A,dim=1),size(z)) :: I1, I2, DI1, DI2
     integer, dimension(count(mod(n,2) == 0)) :: EV
     integer, dimension(count(mod(n,2) == 1)) :: OD
     complex(DP), dimension(size(z)) :: v1, v2
-    complex(DP), dimension(mf%M,size(z)) :: enz, epz
+    complex(DP), dimension(size(A,dim=1),size(z)) :: enz, epz
     complex(DP) :: sqrtq
     integer :: nje, njo, nz, m
 
     nz = size(z)
-    m = mf%M
-    call radderivfcnsetup(mf,n,z,sqrtq,v1,v2,enz,epz,v,vi,EV,OD)
+    m = size(A,dim=1)
+    call radderivfcnsetup(M,q,n,z,sqrtq,v1,v2,enz,epz,v,vi,EV,OD)
     nje = size(EV)
     njo = size(OD)
-    j = floor(n/2.0)
+    j = floor(n/2.0)+1
     call BesselI_val_and_deriv(v1,m+1,I1(0:m,:),DI1(0:m,:))
     call BesselI_val_and_deriv(v2,m+1,I2(0:m,:),DI2(0:m,:))
 
-    DIe(:,EV) = sqrtq*sum(spread(spread(vi,2,nje)*mf%A(:,j(EV),0),2,nz)* &
+    DIe(:,EV) = sqrtq*sum(spread(spread(vi,2,nje)*A(:,j(EV),1),2,nz)* &
          & spread(epz*I1(0:m-1,:)*DI2(0:m-1,:) - enz*DI1(0:m-1,:)*I2(0:m-1,:),3,nje),dim=1)/ &
-         & spread(mf%A(1,j(EV),0),1,nz)
+         & spread(A(1,j(EV),1),1,nz)
 
-    DIe(:,OD) = sqrtq*sum(spread(spread(vi,2,njo)*mf%B(:,j(OD),1),2,nz)* &
+    DIe(:,OD) = sqrtq*sum(spread(spread(vi,2,njo)*B(:,j(OD),2),2,nz)* &
          & spread(epz*I1(0:m-1,:)*DI2(1:m,:) - enz*DI1(0:m-1,:)*I2(1:m,:) + &
          &        epz*I1(1:m,:)*DI2(0:m-1,:) - enz*DI1(1:m,:)*I2(0:m-1,:),3,njo),dim=1)/&
-         & spread(mf%B(1,j(OD),1),1,nz)
+         & spread(B(1,j(OD),2),1,nz)
 
     DIe = DIe*spread(exp(abs(real(v1)) + abs(real(v2))),2,size(n))
-  end function DIe_vect_nz
+  end function DIe
 
   !############################################################
   ! derivative of odd radial first kind modified mathieu functions (q<0)
   ! for vector order and argument
-  function DIo_vect_nz(mf,n,z) result(DIo)
-    use constants, only : DP
+  function DIo(n,z,q,A,B) 
     integer, dimension(:), intent(in) :: n
     real(DP), dimension(:), intent(in) :: z
-    type(mathieu), intent(in) :: mf
+    complex(DP), intent(in) :: q
+    complex(DP), dimension(:,:,:), intent(in) :: A,B
     complex(DP), dimension(size(z),size(n)) :: DIo
 
     integer, dimension(size(n)) :: j
-    complex(DP), dimension(mf%M):: v, vi
-    complex(DP), dimension(0:mf%M+1,size(z)) :: I1, I2, DI1, DI2
+    complex(DP), dimension(size(A,dim=1)):: v, vi
+    complex(DP), dimension(0:size(A,dim=1)+1,size(z)) :: I1, I2, DI1, DI2
     integer, dimension(count(mod(n,2) == 0)) :: EV
     integer, dimension(count(mod(n,2) == 1)) :: OD
     complex(DP), dimension(size(z)) :: v1, v2
-    complex(DP), dimension(mf%M,size(z)) :: enz, epz
+    complex(DP), dimension(size(A,dim=1),size(z)) :: enz, epz
     complex(DP) :: sqrtq
     integer :: nje, njo, nz, m
 
     nz = size(z)
-    m = mf%M
-    call radderivfcnsetup(mf,n,z,sqrtq,v1,v2,enz,epz,v,vi,EV,OD)
+    m = size(A,dim=1)
+    call radderivfcnsetup(M,q,n,z,sqrtq,v1,v2,enz,epz,v,vi,EV,OD)
     nje = size(EV)
     njo = size(OD)
     j = floor((n-1)/2.0)
     where (n == 0) j = 0
+    j = j+1
     call BesselI_val_and_deriv(v1,m+2,I1(0:m+1,:),DI1(0:m+1,:))
     call BesselI_val_and_deriv(v2,m+2,I2(0:m+1,:),DI2(0:m+1,:))
 
-    DIo(:,EV) = sqrtq*sum(spread(spread(vi,2,nje)*mf%B(:,j(EV),0),2,nz)* &
+    DIo(:,EV) = sqrtq*sum(spread(spread(vi,2,nje)*B(:,j(EV),1),2,nz)* &
          & spread(epz*I1(0:m-1,:)*DI2(2:m+1,:) - enz*DI1(0:m-1,:)*I2(2:m+1,:) - &
          &        epz*I1(2:m+1,:)*DI2(0:m-1,:) - enz*DI1(2:m+1,:)*I2(0:m-1,:),3,nje),dim=1)/&
-         & spread(mf%B(1,j(EV),0),1,nz)
+         & spread(B(1,j(EV),1),1,nz)
 
-    DIo(:,OD) = sqrtq*sum(spread(spread(vi,2,njo)*mf%A(:,j(OD),1),2,nz)* &
+    DIo(:,OD) = sqrtq*sum(spread(spread(vi,2,njo)*A(:,j(OD),2),2,nz)* &
          & spread(epz*I1(0:m-1,:)*DI2(1:m,:) - enz*DI1(0:m-1,:)*I2(1:m,:) - &
          &        epz*I1(1:m,:)*DI2(0:m-1,:) - enz*DI1(1:m,:)*I2(0:m-1,:),3,njo),dim=1)/&
-         & spread(mf%A(1,j(OD),1),1,nz)
+         & spread(A(1,j(OD),2),1,nz)
 
     DIo = DIo*spread(exp(abs(real(v1)) + abs(real(v2))),2,size(n))
     where (spread(n,1,nz) == 0) DIo = -huge(1.0)  ! DIo_0() is invalid
-  end function DIo_vect_nz
+  end function DIo
 
   !############################################################
   ! derivative of even radial second kind modified mathieu functions (q<0)
   ! for vector order and argument
-  function DKe_vect_nz(mf,n,z) result(DKe)
-    ! mathieu coefficients corresponding to q passed via module
-    use constants, only : DP
-    implicit none
+  function DKe(n,z,q,A,B) 
     integer, dimension(:), intent(in) :: n
     real(DP), dimension(:), intent(in) :: z
-    type(mathieu), intent(in) :: mf
+    complex(DP), intent(in) :: q
+    complex(DP), dimension(:,:,:), intent(in) :: A,B
     complex(DP), dimension(size(z),size(n)) :: DKe
 
     integer, dimension(size(n)) :: j
-    complex(DP), dimension(mf%M):: v, vi
-    complex(DP), dimension(0:mf%M,size(z)) :: I, K, DI, DK
+    complex(DP), dimension(size(A,dim=1)):: v, vi
+    complex(DP), dimension(0:size(A,dim=1),size(z)) :: I, K, DI, DK
     integer, dimension(count(mod(n,2) == 0)) :: EV
     integer, dimension(count(mod(n,2) == 1)) :: OD
     complex(DP), dimension(size(z)) :: v1, v2
-    complex(DP), dimension(mf%M,size(z)) :: enz, epz
+    complex(DP), dimension(size(A,dim=1),size(z)) :: enz, epz
     complex(DP) :: sqrtq
     integer :: nje, njo, nz, m
 
     nz = size(z)
-    m = mf%M
-    call radderivfcnsetup(mf,n,z,sqrtq,v1,v2,enz,epz,v,vi,EV,OD)
+    m = size(A,dim=1)
+    call radderivfcnsetup(M,q,n,z,sqrtq,v1,v2,enz,epz,v,vi,EV,OD)
     nje = size(EV)
     njo = size(OD)
-    j = floor(n/2.0)
+    j = floor(n/2.0)+1
     call BesselI_val_and_deriv(v1,m+1,I(0:m,:),DI(0:m,:))
     call BesselK_val_and_deriv(v2,m+1,K(0:m,:),DK(0:m,:))
 
-    DKe(:,EV) = sqrtq*sum(spread(mf%A(:,j(EV),0),2,nz)* &
+    DKe(:,EV) = sqrtq*sum(spread(A(:,j(EV),1),2,nz)* &
          & spread(epz*I(0:m-1,:)*DK(0:m-1,:) - enz*DI(0:m-1,:)*K(0:m-1,:),3,nje),dim=1)/&
-         & spread(mf%A(1,j(EV),0),1,nz)
+         & spread(A(1,j(EV),1),1,nz)
 
-    DKe(:,OD) = sqrtq*sum(spread(mf%B(:,j(OD),1),2,nz)* &
+    DKe(:,OD) = sqrtq*sum(spread(B(:,j(OD),2),2,nz)* &
          & spread(epz*I(0:m-1,:)*DK(1:m,:) - enz*DI(0:m-1,:)*K(1:m,:) - &
          &        epz*I(1:m,:)*DK(0:m-1,:) - epz*DI(1:m,:)*K(0:m-1,:),3,njo),dim=1)/ &
-         & spread(mf%B(1,j(OD),1),1,nz)
+         & spread(B(1,j(OD),2),1,nz)
 
     DKe = DKe*spread(exp(abs(real(v1)) - v2),2,size(n))
-  end function DKe_vect_nz
+  end function DKe
 
   !############################################################
   ! derivative of odd radial second kind modified mathieu functions (q<0)
   ! for vector order and argument
-  function DKo_vect_nz(mf,n,z) result(DKo)
-    ! mathieu coefficients corresponding to q passed via module
-    use constants, only : DP
+  function DKo(n,z,q,A,B) 
     integer, dimension(:), intent(in) :: n
     real(DP), dimension(:), intent(in) :: z
-    type(mathieu), intent(in) :: mf
+    complex(DP), intent(in) :: q
+    complex(DP), dimension(:,:,:), intent(in) :: A,B
     complex(DP), dimension(size(z),size(n)) :: DKo
 
     integer, dimension(size(n)) :: j
-    complex(DP), dimension(mf%M):: v, vi
-    complex(DP), dimension(0:mf%M+1,size(z)) :: I, K, DI, DK
+    complex(DP), dimension(size(A,dim=1)):: v, vi
+    complex(DP), dimension(0:size(A,dim=1)+1,size(z)) :: I, K, DI, DK
     integer, dimension(count(mod(n,2) == 0)) :: EV
     integer, dimension(count(mod(n,2) == 1)) :: OD
     complex(DP), dimension(size(z)) :: v1, v2
-    complex(DP), dimension(mf%M,size(z)) :: enz, epz
+    complex(DP), dimension(size(A,dim=1),size(z)) :: enz, epz
     complex(DP) :: sqrtq
     integer :: nje, njo, nz, m
 
     nz = size(z)
-    m = mf%M
-    call radderivfcnsetup(mf,n,z,sqrtq,v1,v2,enz,epz,v,vi,EV,OD)
+    m = size(A,dim=1)
+    call radderivfcnsetup(M,q,n,z,sqrtq,v1,v2,enz,epz,v,vi,EV,OD)
     nje = size(EV)
     njo = size(OD)
     j = floor((n-1)/2.0)
     where (n == 0) j = 0
+    j = j+1
     call BesselI_val_and_deriv(v1,m+2,I(0:m+1,:),DI(0:m+1,:))
     call BesselK_val_and_deriv(v2,m+2,K(0:m+1,:),DK(0:m+1,:))
 
-    DKo(:,EV) = sqrtq*sum(spread(mf%B(:,j(EV),0),2,nz)* &
+    DKo(:,EV) = sqrtq*sum(spread(B(:,j(EV),1),2,nz)* &
          & spread(epz*I(0:m-1,:)*DK(2:m+1,:) - enz*DI(0:m-1,:)*K(2:m+1,:) - &
          &        epz*I(2:m+1,:)*DK(0:m-1,:) - epz*DI(2:m+1,:)*K(0:m-1,:),3,nje),dim=1)/&
-         & spread(mf%B(1,j(EV),0),1,nz)
+         & spread(B(1,j(EV),1),1,nz)
 
-    DKo(:,OD) = sqrtq*sum(spread(mf%A(:,j(OD),1),2,nz)* &
+    DKo(:,OD) = sqrtq*sum(spread(A(:,j(OD),2),2,nz)* &
          & spread(epz*I(0:m-1,:)*DK(1:m,:) - enz*DI(0:m-1,:)*K(1:m,:) + &
          &        epz*I(1:m,:)*DK(0:m-1,:) - enz*DI(1:m,:)*K(0:m-1,:),3,njo),dim=1)/&
-         & spread(mf%A(1,j(OD),1),1,nz)
+         & spread(A(1,j(OD),2),1,nz)
 
     DKo = DKo*spread(exp(abs(real(v1)) - v2),2,size(n))
     where (spread(n,1,nz) == 0) DKo = -huge(1.0)  ! DKo_0() is invalid
-  end function DKo_vect_nz
-
-  ! &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-  ! wrapper functions allowing vector functions and subroutines
-  ! to be called for a scalar order or arguments or both
-
-  function ce_scalar_n(mf,n,z) result(ce)
-    use constants, only : DP
-    integer, intent(in) :: n
-    real(DP), intent(in), dimension(:) :: z
-    type(mathieu), intent(in) :: mf
-    complex(DP), dimension(size(z)) :: ce
-    ce = sum(ce_vect_nz(mf,[n],z),dim=2)
-  end function ce_scalar_n
-  function ce_scalar_z(mf,n,z) result(ce)
-    use constants, only : DP
-    integer, intent(in), dimension(:) :: n
-    real(DP), intent(in) :: z
-    type(mathieu), intent(in) :: mf
-    complex(DP), dimension(size(n)) :: ce
-    ce = sum(ce_vect_nz(mf,n,[z]),dim=1)
-  end function ce_scalar_z
-  function ce_scalar_nz(mf,n,z) result(ce)
-    use constants, only : DP
-    integer, intent(in) :: n
-    real(DP), intent(in) :: z
-    type(mathieu), intent(in) :: mf
-    complex(DP) :: ce
-    ce = sum(ce_vect_nz(mf,[n],[z]))
-  end function ce_scalar_nz
-
-  function se_scalar_n(mf,n,z) result(se)
-    use constants, only : DP
-    integer, intent(in) :: n
-    real(DP), intent(in), dimension(:) :: z
-    type(mathieu), intent(in) :: mf
-    complex(DP), dimension(size(z)) :: se
-    se = sum(se_vect_nz(mf,[n],z),dim=2)
-  end function se_scalar_n
-  function se_scalar_z(mf,n,z) result(se)
-    use constants, only : DP
-    integer, intent(in), dimension(:) :: n
-    real(DP), intent(in) :: z
-    type(mathieu), intent(in) :: mf
-    complex(DP), dimension(size(n)) :: se
-    se = sum(se_vect_nz(mf,n,[z]),dim=1)
-  end function se_scalar_z
-  function se_scalar_nz(mf,n,z) result(se)
-    use constants, only : DP
-    integer, intent(in) :: n
-    real(DP), intent(in) :: z
-    type(mathieu), intent(in) :: mf
-    complex(DP) :: se
-    se = sum(se_vect_nz(mf,[n],[z]))
-  end function se_scalar_nz
-
-  function Dce_scalar_n(mf,n,z) result(Dce)
-    use constants, only : DP
-    integer, intent(in) :: n
-    real(DP), intent(in), dimension(:) :: z
-    type(mathieu), intent(in) :: mf
-    complex(DP), dimension(size(z)) :: Dce
-    Dce = sum(Dce_vect_nz(mf,[n],z),dim=2)
-  end function Dce_scalar_n
-  function Dce_scalar_z(mf,n,z) result(Dce)
-    use constants, only : DP
-    integer, intent(in), dimension(:) :: n
-    real(DP), intent(in) :: z
-    type(mathieu), intent(in) :: mf
-    complex(DP), dimension(size(n)) :: Dce
-    Dce = sum(Dce_vect_nz(mf,n,[z]),dim=1)
-  end function Dce_scalar_z
-  function Dce_scalar_nz(mf,n,z) result(Dce)
-    use constants, only : DP
-    integer, intent(in) :: n
-    real(DP), intent(in) :: z
-    type(mathieu), intent(in) :: mf
-    complex(DP) :: Dce
-    Dce = sum(Dce_vect_nz(mf,[n],[z]))
-  end function Dce_scalar_nz
-
-  function Dse_scalar_n(mf,n,z) result(Dse)
-    use constants, only : DP
-    integer, intent(in) :: n
-    real(DP), intent(in), dimension(:) :: z
-    type(mathieu), intent(in) :: mf
-    complex(DP), dimension(size(z)) :: Dse
-    Dse = sum(Dse_vect_nz(mf,[n],z),dim=2)
-  end function Dse_scalar_n
-  function Dse_scalar_z(mf,n,z) result(Dse)
-    use constants, only : DP
-    integer, intent(in), dimension(:) :: n
-    real(DP), intent(in) :: z
-    type(mathieu), intent(in) :: mf
-    complex(DP), dimension(size(n)) :: Dse
-    Dse = sum(Dse_vect_nz(mf,n,[z]),dim=1)
-  end function Dse_scalar_z
-  function Dse_scalar_nz(mf,n,z) result(Dse)
-    use constants, only : DP
-    integer, intent(in) :: n
-    real(DP), intent(in) :: z
-    type(mathieu), intent(in) :: mf
-    complex(DP) :: Dse
-    Dse = sum(Dse_vect_nz(mf,[n],[z]))
-  end function Dse_scalar_nz
-
-  function Ie_scalar_n(mf,n,z) result(Ie)
-    use constants, only : DP
-    integer, intent(in) :: n
-    real(DP), intent(in), dimension(:) :: z
-    type(mathieu), intent(in) :: mf
-    complex(DP), dimension(size(z)) :: Ie
-    Ie = sum(Ie_vect_nz(mf,[n],z),dim=2)
-  end function Ie_scalar_n
-  function Ie_scalar_z(mf,n,z) result(Ie)
-    use constants, only : DP
-    integer, intent(in), dimension(:) :: n
-    real(DP), intent(in) :: z
-    type(mathieu), intent(in) :: mf
-    complex(DP), dimension(size(n)) :: Ie
-    Ie = sum(Ie_vect_nz(mf,n,[z]),dim=1)
-  end function Ie_scalar_z
-  function Ie_scalar_nz(mf,n,z) result(Ie)
-    use constants, only : DP
-    integer, intent(in) :: n
-    real(DP), intent(in) :: z
-    type(mathieu), intent(in) :: mf
-    complex(DP) :: Ie
-    Ie = sum(Ie_vect_nz(mf,[n],[z]))
-  end function Ie_scalar_nz
-
-  function Io_scalar_n(mf,n,z) result(Io)
-    use constants, only : DP
-    integer, intent(in) :: n
-    real(DP), intent(in), dimension(:) :: z
-    type(mathieu), intent(in) :: mf
-    complex(DP), dimension(size(z)) :: Io
-    Io = sum(Io_vect_nz(mf,[n],z),dim=2)
-  end function Io_scalar_n
-  function Io_scalar_z(mf,n,z) result(Io)
-    use constants, only : DP
-    integer, intent(in), dimension(:) :: n
-    real(DP), intent(in) :: z
-    type(mathieu), intent(in) :: mf
-    complex(DP), dimension(size(n)) :: Io
-    Io = sum(Io_vect_nz(mf,n,[z]),dim=1)
-  end function Io_scalar_z
-  function Io_scalar_nz(mf,n,z) result(Io)
-    use constants, only : DP
-    integer, intent(in) :: n
-    real(DP), intent(in) :: z
-    type(mathieu), intent(in) :: mf
-    complex(DP) :: Io
-    Io = sum(Io_vect_nz(mf,[n],[z]))
-  end function Io_scalar_nz
-
-  function Ke_scalar_n(mf,n,z) result(Ke)
-    use constants, only : DP
-    integer, intent(in) :: n
-    real(DP), intent(in), dimension(:) :: z
-    type(mathieu), intent(in) :: mf
-    complex(DP), dimension(size(z)) :: Ke
-    Ke = sum(Ke_vect_nz(mf,[n],z),dim=2)
-  end function Ke_scalar_n
-  function Ke_scalar_z(mf,n,z) result(Ke)
-    use constants, only : DP
-    integer, intent(in), dimension(:) :: n
-    real(DP), intent(in) :: z
-    type(mathieu), intent(in) :: mf
-    complex(DP), dimension(size(n)) :: Ke
-    Ke = sum(Ke_vect_nz(mf,n,[z]),dim=1)
-  end function Ke_scalar_z
-  function Ke_scalar_nz(mf,n,z) result(Ke)
-    use constants, only : DP
-    integer, intent(in) :: n
-    real(DP), intent(in) :: z
-    type(mathieu), intent(in) :: mf
-    complex(DP) :: Ke
-    Ke = sum(Ke_vect_nz(mf,[n],[z]))
-  end function Ke_scalar_nz
-
-  function Ko_scalar_n(mf,n,z) result(Ko)
-    use constants, only : DP
-    integer, intent(in) :: n
-    real(DP), intent(in), dimension(:) :: z
-    type(mathieu), intent(in) :: mf
-    complex(DP), dimension(size(z)) :: Ko
-    Ko = sum(Ko_vect_nz(mf,[n],z),dim=2)
-  end function Ko_scalar_n
-  function Ko_scalar_z(mf,n,z) result(Ko)
-    use constants, only : DP
-    integer, intent(in), dimension(:) :: n
-    real(DP), intent(in) :: z
-    type(mathieu), intent(in) :: mf
-    complex(DP), dimension(size(n)) :: Ko
-    Ko = sum(Ko_vect_nz(mf,n,[z]),dim=1)
-  end function Ko_scalar_z
-  function Ko_scalar_nz(mf,n,z) result(Ko)
-    use constants, only : DP
-    integer, intent(in) :: n
-    real(DP), intent(in) :: z
-    type(mathieu), intent(in) :: mf
-    complex(DP) :: Ko
-    Ko = sum(Ko_vect_nz(mf,[n],[z]))
-  end function Ko_scalar_nz
-
-  function DIe_scalar_n(mf,n,z) result(DIe)
-    use constants, only : DP
-    integer, intent(in) :: n
-    real(DP), intent(in), dimension(:) :: z
-    type(mathieu), intent(in) :: mf
-    complex(DP), dimension(size(z)) :: DIe
-    DIe = sum(DIe_vect_nz(mf,[n],z),dim=2)
-  end function DIe_scalar_n
-  function DIe_scalar_z(mf,n,z) result(DIe)
-    use constants, only : DP
-    integer, intent(in), dimension(:) :: n
-    real(DP), intent(in) :: z
-    type(mathieu), intent(in) :: mf
-    complex(DP), dimension(size(n)) :: DIe
-    DIe = sum(DIe_vect_nz(mf,n,[z]),dim=1)
-  end function DIe_scalar_z
-  function DIe_scalar_nz(mf,n,z) result(DIe)
-    use constants, only : DP
-    integer, intent(in) :: n
-    real(DP), intent(in) :: z
-    type(mathieu), intent(in) :: mf
-    complex(DP) :: DIe
-    DIe = sum(DIe_vect_nz(mf,[n],[z]))
-  end function DIe_scalar_nz
-
-  function DIo_scalar_n(mf,n,z) result(DIo)
-    use constants, only : DP
-    integer, intent(in) :: n
-    real(DP), intent(in), dimension(:) :: z
-    type(mathieu), intent(in) :: mf
-    complex(DP), dimension(size(z)) :: DIo
-    DIo = sum(DIo_vect_nz(mf,[n],z),dim=2)
-  end function DIo_scalar_n
-  function DIo_scalar_z(mf,n,z) result(DIo)
-    use constants, only : DP
-    integer, intent(in), dimension(:) :: n
-    real(DP), intent(in) :: z
-    type(mathieu), intent(in) :: mf
-    complex(DP), dimension(size(n)) :: DIo
-    DIo = sum(DIo_vect_nz(mf,n,[z]),dim=1)
-  end function DIo_scalar_z
-  function DIo_scalar_nz(mf,n,z) result(DIo)
-    use constants, only : DP
-    integer, intent(in) :: n
-    real(DP), intent(in) :: z
-    type(mathieu), intent(in) :: mf
-    complex(DP) :: DIo
-    DIo = sum(DIo_vect_nz(mf,[n],[z]))
-  end function DIo_scalar_nz
-
-  function DKe_scalar_n(mf,n,z) result(DKe)
-    use constants, only : DP
-    integer, intent(in) :: n
-    real(DP), intent(in), dimension(:) :: z
-    type(mathieu), intent(in) :: mf
-    complex(DP), dimension(size(z)) :: DKe
-    DKe = sum(DKe_vect_nz(mf,[n],z),dim=2)
-  end function DKe_scalar_n
-  function DKe_scalar_z(mf,n,z) result(DKe)
-    use constants, only : DP
-    integer, intent(in), dimension(:) :: n
-    real(DP), intent(in) :: z
-    type(mathieu), intent(in) :: mf
-    complex(DP), dimension(size(n)) :: DKe
-    DKe = sum(DKe_vect_nz(mf,n,[z]),dim=1)
-  end function DKe_scalar_z
-  function DKe_scalar_nz(mf,n,z) result(DKe)
-    use constants, only : DP
-    integer, intent(in) :: n
-    real(DP), intent(in) :: z
-    type(mathieu), intent(in) :: mf
-    complex(DP) :: DKe
-    DKe = sum(DKe_vect_nz(mf,[n],[z]))
-  end function DKe_scalar_nz
-
-  function DKo_scalar_n(mf,n,z) result(DKo)
-    use constants, only : DP
-    integer, intent(in) :: n
-    real(DP), intent(in), dimension(:) :: z
-    type(mathieu), intent(in) :: mf
-    complex(DP), dimension(size(z)) :: DKo
-    DKo = sum(DKo_vect_nz(mf,[n],z),dim=2)
-  end function DKo_scalar_n
-  function DKo_scalar_z(mf,n,z) result(DKo)
-    use constants, only : DP
-    integer, intent(in), dimension(:) :: n
-    real(DP), intent(in) :: z
-    type(mathieu), intent(in) :: mf
-    complex(DP), dimension(size(n)) :: DKo
-    DKo = sum(DKo_vect_nz(mf,n,[z]),dim=1)
-  end function DKo_scalar_z
-  function DKo_scalar_nz(mf,n,z) result(DKo)
-    use constants, only : DP
-    integer, intent(in) :: n
-    real(DP), intent(in) :: z
-    type(mathieu), intent(in) :: mf
-    complex(DP) :: DKo
-    DKo = sum(DKo_vect_nz(mf,[n],[z]))
-  end function DKo_scalar_nz
+  end function DKo
 
   ! &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
   ! &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
@@ -1019,8 +653,7 @@ contains
   ! some utility routines
 
   ! possibly disable this checking subroutine for extra speed??
-  subroutine check_order(mf,n)
-    type(mathieu), intent(in) :: mf
+  subroutine check_order(n)
     integer, dimension(:), intent(in) :: n
     integer :: nn
 
@@ -1045,21 +678,20 @@ contains
 
   end subroutine check_order
 
-  subroutine angfcnsetup(mf,n,v,vi,EV,OD)
-    use constants, only : DP
+  subroutine angfcnsetup(M,n,v,vi,EV,OD)
+    integer, intent(in) :: M
     integer, intent(in), dimension(:) :: n
-    type(mathieu), intent(in) :: mf
-    complex(DP), intent(out), dimension(mf%m) :: v,vi
+    complex(DP), intent(out), dimension(M) :: v,vi
     integer, intent(out), dimension(count(mod(n,2) == 0)) :: EV
     integer, intent(out), dimension(count(mod(n,2) == 1)) :: OD
-    integer, dimension(mf%m) :: i
+    integer, dimension(M) :: i
     integer, dimension(size(n)) :: nn
     integer :: j
 
-    call check_order(mf,n)
+    call check_order(n)
 
     ! compute vector of integers counting up
-    forall (j = 0:mf%m-1) i(j+1) = j
+    forall (j = 0:M-1) i(j+1) = j
     v = cmplx(i,0,DP)
 
     ! compute the "sign" vector
@@ -1074,33 +706,31 @@ contains
 
   end subroutine angfcnsetup
 
-  subroutine radfcnsetup(mf,n,z,sqrtq,v1,v2,v,vi,EV,OD)
-    use constants, only : DP
+  subroutine radfcnsetup(M,q,n,z,v1,v2,v,vi,EV,OD)
+    integer, intent(in) :: M
+    complex(DP), intent(in) :: q
     integer, intent(in), dimension(:) :: n
     real(DP), intent(in), dimension(:) :: z
-    type(mathieu), intent(in) :: mf
-    complex(DP), intent(out), dimension(mf%m) :: v,vi
-    complex(DP), intent(out) :: sqrtq
+    complex(DP), intent(out), dimension(M) :: v,vi
     complex(DP), intent(out), dimension(size(z)) :: v1,v2
     integer, intent(out), dimension(count(mod(n,2) == 0)) :: EV
     integer, intent(out), dimension(count(mod(n,2) == 1)) :: OD
-    integer, dimension(mf%m) :: i
+    integer, dimension(M) :: i
     integer, dimension(size(n)) :: nn
     integer :: j
 
-    call check_order(mf,n)
+    call check_order(n)
 
     ! compute vector of integers counting up
-    forall (j = 0:mf%m-1) i(j+1) = j
+    forall (j = 0:M-1) i(j+1) = j
     v = cmplx(i,0,DP)
 
     ! compute the "sign" vector
     vi = cmplx(1,0,DP)
     where (mod(i,2) == 1) vi = cmplx(-1,0,DP)
 
-    sqrtq = sqrt(mf%q)
-    v1 = sqrtq*exp(-z)
-    v2 = sqrtq*exp( z)
+    v1 = sqrt(q)*exp(-z)
+    v2 = sqrt(q)*exp( z)
 
     ! indexing vectors based on even/odd-ness of n
     forall (j = 1:size(n)) nn(j) = j
@@ -1110,34 +740,34 @@ contains
 
   end subroutine radfcnsetup
 
-  subroutine radderivfcnsetup(mf,n,z,sqrtq,v1,v2,enz,epz,v,vi,EV,OD)
-    use constants, only : DP
+  subroutine radderivfcnsetup(M,q,n,z,sqrtq,v1,v2,enz,epz,v,vi,EV,OD)
+    integer, intent(in) :: M
+    complex(DP), intent(in) :: q
     integer, intent(in), dimension(:) :: n
     real(DP), intent(in), dimension(:) :: z
-    type(mathieu), intent(in) :: mf
-    complex(DP), intent(out), dimension(mf%m) :: v, vi
+    complex(DP), intent(out), dimension(M) :: v, vi
     complex(DP), intent(out) :: sqrtq
     complex(DP), intent(out), dimension(size(z)) :: v1, v2
-    complex(DP), intent(out), dimension(mf%m,size(z)) :: enz, epz
+    complex(DP), intent(out), dimension(M,size(z)) :: enz, epz
     integer, intent(out), dimension(count(mod(n,2) == 0)) :: EV
     integer, intent(out), dimension(count(mod(n,2) == 1)) :: OD
-    integer, dimension(mf%m) :: i
+    integer, dimension(M) :: i
     integer, dimension(size(n)) :: nn
     integer :: j
 
-    call check_order(mf,n)
+    call check_order(n)
 
     ! compute vector of integers counting up
-    forall (j = 0:mf%m-1) i(j+1) = j
+    forall (j = 0:M-1) i(j+1) = j
     v = cmplx(i,0,DP)
 
     ! compute the "sign" vector
     vi = cmplx(1,0,DP)
     where (mod(i,2) == 1) vi = cmplx(-1,0,DP)
 
-    enz = spread(exp(-z),dim=1,ncopies=mf%m)
-    epz = spread(exp( z),dim=1,ncopies=mf%m)
-    sqrtq = sqrt(mf%q)
+    enz = spread(exp(-z),dim=1,ncopies=M)
+    epz = spread(exp( z),dim=1,ncopies=M)
+    sqrtq = sqrt(q)
     v1 = enz(1,:)*sqrtq
     v2 = epz(1,:)*sqrtq
 
@@ -1149,6 +779,13 @@ contains
 
   end subroutine radderivfcnsetup
 
+  pure function outer(a,b) result(c)
+    complex(DP), intent(in), dimension(:) :: a
+    real(DP), intent(in), dimension(:) :: b
+    complex(DP), dimension(size(a),size(b)) :: c
+    c = spread(a,dim=2,ncopies=size(b))*spread(b,dim=1,ncopies=size(a))
+  end function outer
+
   !! &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
   !! these subroutnies are wrappers for the complex Bessel funcitons
   !! implemented by Amos, Algorithm 644 TOMS, Vol 21, No 4, 1995
@@ -1156,7 +793,6 @@ contains
   !! these are SCALED results, un-scaling is done in the MF routines
 
   subroutine BesselI_val(arg,n,I)
-    use constants, only : DP
     use complex_bessel, only : cbesi
     complex(DP), intent(in), dimension(:) :: arg
     integer, intent(in) :: n
@@ -1203,7 +839,6 @@ contains
   ! that is handled separately in the MF routines
   !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   subroutine BesselI_val_and_deriv(arg,n,I,ID)
-    use constants, only : DP
     complex(DP), intent(in), dimension(:) :: arg
     integer, intent(in) :: n
     complex(DP), intent(out), dimension(0:n-1,size(arg)) :: I, ID
@@ -1219,7 +854,6 @@ contains
   end subroutine BesselI_val_and_deriv
 
   subroutine BesselK_val(arg,n,K)
-    use constants, only : DP
     use complex_bessel, only : cbesk
     complex(DP), intent(in), dimension(:) :: arg
     integer, intent(in) :: n
@@ -1264,7 +898,6 @@ contains
   ! this does not include the derivative of the argument
   !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   subroutine BesselK_val_and_deriv(arg,n,K,KD)
-    use constants, only : DP
     complex(DP), intent(in), dimension(:) :: arg
     integer, intent(in) :: n
     complex(DP), intent(out), dimension(0:n-1,size(arg)) :: K, KD
@@ -1279,4 +912,4 @@ contains
 
   end subroutine BesselK_val_and_deriv
 
-end module mathieu_functions
+end module mf

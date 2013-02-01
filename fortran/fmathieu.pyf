@@ -1,0 +1,113 @@
+!    -*- f90 -*-
+! Note: the context of this file is case sensitive.
+
+python module fmathieu ! in 
+    interface  ! in :fmathieu
+        module mf ! in :fmathieu:mathieu.f90
+            real(kind=8), private,parameter,optional :: piov2=atan(1.0_dp)*2.0_dp
+            integer, private,parameter,optional :: dp=8
+            subroutine mathieu_init(q,m,mcn,a,b) ! in :fmathieu:mathieu.f90:mathieu_functions_for_f2py
+                complex(8) intent(in) :: q
+                integer intent(in) :: m
+                complex(8) dimension(4 * m),intent(out),depend(m) :: mcn
+                complex(8) dimension(m,m,2),intent(out),depend(m,m) :: a
+                complex(8) dimension(m,m,2),intent(out),depend(m,m) :: b
+            end subroutine mathieu_init
+            function ce(n,z,a,b) ! in :fmathieu:mathieu.f90:mathieu_functions_for_f2py
+                integer dimension(:),intent(in) :: n
+                real(8) dimension(:),intent(in) :: z
+                complex(8) dimension(:,:,:),intent(in) :: a
+                complex(8) dimension(:,:,:),intent(in) :: b
+                complex(8) dimension(size(z),size(n)) :: ce
+            end function ce
+            function se(n,z,a,b) ! in :fmathieu:mathieu.f90:mathieu_functions_for_f2py
+                integer dimension(:),intent(in) :: n
+                real(8) dimension(:),intent(in) :: z
+                complex(8) dimension(:,:,:),intent(in) :: a
+                complex(8) dimension(:,:,:),intent(in) :: b
+                complex(8) dimension(size(z),size(n)) :: se
+            end function se
+            function dce(n,z,a,b) ! in :fmathieu:mathieu.f90:mathieu_functions_for_f2py
+                integer dimension(:),intent(in) :: n
+                real(8) dimension(:),intent(in) :: z
+                complex(8) dimension(:,:,:),intent(in) :: a
+                complex(8) dimension(:,:,:),intent(in) :: b
+                complex(8) dimension(size(z),size(n)) :: dce
+            end function dce
+            function dse(n,z,a,b) ! in :fmathieu:mathieu.f90:mathieu_functions_for_f2py
+                integer dimension(:),intent(in) :: n
+                real(8) dimension(:),intent(in) :: z
+                complex(8) dimension(:,:,:),intent(in) :: a
+                complex(8) dimension(:,:,:),intent(in) :: b
+                complex(8) dimension(size(z),size(n)) :: dse
+            end function dse
+            function ie(n,z,q,a,b) ! in :fmathieu:mathieu.f90:mathieu_functions_for_f2py
+                integer dimension(:),intent(in) :: n
+                real(8) dimension(:),intent(in) :: z
+                complex(8) intent(in) :: q
+                complex(8) dimension(:,:,:),intent(in) :: a
+                complex(8) dimension(:,:,:),intent(in) :: b
+                complex(8) dimension(size(z),size(n)) :: ie
+            end function ie
+            function io(n,z,q,a,b) ! in :fmathieu:mathieu.f90:mathieu_functions_for_f2py
+                integer dimension(:),intent(in) :: n
+                real(8) dimension(:),intent(in) :: z
+                complex(8) intent(in) :: q
+                complex(8) dimension(:,:,:),intent(in) :: a
+                complex(8) dimension(:,:,:),intent(in) :: b
+                complex(8) dimension(size(z),size(n)) :: io
+            end function io
+            function ke(n,z,q,a,b) ! in :fmathieu:mathieu.f90:mathieu_functions_for_f2py
+                integer dimension(:),intent(in) :: n
+                real(8) dimension(:),intent(in) :: z
+                complex(8) intent(in) :: q
+                complex(8) dimension(:,:,:),intent(in) :: a
+                complex(8) dimension(:,:,:),intent(in) :: b
+                complex(8) dimension(size(z),size(n)) :: ke
+            end function ke
+            function ko(n,z,q,a,b) ! in :fmathieu:mathieu.f90:mathieu_functions_for_f2py
+                integer dimension(:),intent(in) :: n
+                real(8) dimension(:),intent(in) :: z
+                complex(8) intent(in) :: q
+                complex(8) dimension(:,:,:),intent(in) :: a
+                complex(8) dimension(:,:,:),intent(in) :: b
+                complex(8) dimension(size(z),size(n)) :: ko
+            end function ko
+            function die(n,z,q,a,b) ! in :fmathieu:mathieu.f90:mathieu_functions_for_f2py
+                integer dimension(:),intent(in) :: n
+                real(8) dimension(:),intent(in) :: z
+                complex(8) intent(in) :: q
+                complex(8) dimension(:,:,:),intent(in) :: a
+                complex(8) dimension(:,:,:),intent(in) :: b
+                complex(8) dimension(size(z),size(n)) :: die
+            end function die
+            function dio(n,z,q,a,b) ! in :fmathieu:mathieu.f90:mathieu_functions_for_f2py
+                integer dimension(:),intent(in) :: n
+                real(8) dimension(:),intent(in) :: z
+                complex(8) intent(in) :: q
+                complex(8) dimension(:,:,:),intent(in) :: a
+                complex(8) dimension(:,:,:),intent(in) :: b
+                complex(8) dimension(size(z),size(n)) :: dio
+            end function dio
+            function dke(n,z,q,a,b) ! in :fmathieu:mathieu.f90:mathieu_functions_for_f2py
+                integer dimension(:),intent(in) :: n
+                real(8) dimension(:),intent(in) :: z
+                complex(8) intent(in) :: q
+                complex(8) dimension(:,:,:),intent(in) :: a
+                complex(8) dimension(:,:,:),intent(in) :: b
+                complex(8) dimension(size(z),size(n)) :: dke
+            end function dke
+            function dko(n,z,q,a,b) ! in :fmathieu:mathieu.f90:mathieu_functions_for_f2py
+                integer dimension(:),intent(in) :: n
+                real(8) dimension(:),intent(in) :: z
+                complex(8) intent(in) :: q
+                complex(8) dimension(:,:,:),intent(in) :: a
+                complex(8) dimension(:,:,:),intent(in) :: b
+                complex(8) dimension(size(z),size(n)) :: dko
+            end function dko
+          end module mf
+    end interface 
+end python module fmathieu
+
+! This file was auto-generated with f2py (version:2).
+! See http://cens.ioc.ee/projects/f2py2e/
