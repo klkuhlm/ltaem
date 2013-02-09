@@ -3,7 +3,7 @@
 -1  :: ibnd
 F  :: calcin?
 F  :: storin?
-1.0D-2  :: r
+1.0D-3  :: r
 3.5D-1 :: x0
 3.5D-1 :: y0
 1.0D0    :: K

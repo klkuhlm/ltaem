@@ -4,7 +4,7 @@
 0  :: ibnd
 T  :: calcin?
 F  :: storin?
-0.15        :: r
+0.0        :: r
 5.5D-1        :: x0
 5.5D-1        :: y0
 1.25D-1       :: f

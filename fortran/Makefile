@@ -63,7 +63,7 @@ OBJS=$(EXTERNAL) constants.o $(KKLOW) geometryUtil.o $(KKHIGH)
 F90=gfortran # must be >= 4.6.1
 OMP=-fopenmp
 CPP=-cpp
-DFLAGS=-O0 -Wall -Wextra -g -std=f2008
+DFLAGS=-O0 -Wall -Wextra -gdwarf-4 -std=f2008
 ##DFLAGS+=-gdwarf-4 -frange-check -fbounds-check -fcheck=all -fmodule-private -pedantic -Wunderflow -finit-integer=-777 -finit-real=snan -ffpe-trap=invalid -finit-logical=false -finit-character=126
 ##DFLAGS+=-fdump-rtl-expand 
 LINKOPT=-fbacktrace
@@ -77,7 +77,7 @@ PFLAGS+=$(OMP)
 FLAGS=$(DFLAGS)
 #FLAGS=$(PFLAGS)
 
-LINKFLAG=$(FLAGS) $(OMP) $(LINKOPT)
+LINKFLAG=$(FLAGS) $(LINKOPT)
 
 # the link step
 main: $(OBJS) $(MAIN)

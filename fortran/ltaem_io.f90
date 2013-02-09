@@ -405,7 +405,9 @@ contains
           stop 2141
        end if       
 
-       c(:)%z = cmplx(c%x-s%xshift, c%y-s%yshift, DP)
+       c(:)%x = c%x-s%xshift
+       c(:)%y = c%y-s%yshift
+       c(:)%z = cmplx(c%x, c%y, DP)
 
        read(22,*,iostat=ierr) c(:)%k; sln=sln+1
        if (ierr /= 0 .or. any(c%k <= 0.0)) then
@@ -745,8 +747,10 @@ contains
           write(*,*) 'error reading line ',sln,' center y (e%y) of ellipse input'
           stop 2301
        end if       
-
-       e(:)%z = cmplx(e%x-s%xshift, e%y-s%yshift, DP)
+       
+       e(:)%x = e%x-s%xshift
+       e(:)%y = e%y-s%yshift
+       e(:)%z = cmplx(e%x, e%y, DP)
 
        read(33,*,iostat=ierr) e(:)%f; sln=sln+1
        if (ierr /= 0 .or. any(e%f <= 0.0)) then
@@ -1013,10 +1017,10 @@ contains
     ! compute secondary parameters
     bg%alpha = bg%K/bg%Ss
     bg%T = bg%K*bg%b
-    c(:)%alpha = c(:)%K/c(:)%Ss
-    e(:)%alpha = e(:)%K/e(:)%Ss
-    c(:)%T = c(:)%K*c(:)%b
-    e(:)%T = e(:)%K*e(:)%b
+    c(:)%alpha = c%K/c%Ss
+    e(:)%alpha = e%K/e%Ss
+    c(:)%T = c%K*c%b
+    e(:)%T = e%K*e%b
 
     write(chint,'(I4.4)') dom%num(1)
     fmt(2) = '('//chint//'(ES11.5,1X),A) ' ! circles
@@ -1106,8 +1110,8 @@ contains
           stop 2471
        end if
 
-       p(:)%x = p(:)%x - s%xshift
-       p(:)%y = p(:)%y - s%yshift
+       p(:)%x = p%x - s%xshift
+       p(:)%y = p%y - s%yshift
 
        read(44,*,iostat=ierr) p(:)%ti; sln=sln+1
        if (ierr /= 0 .or. any(p%ti <= 0.0)) then
