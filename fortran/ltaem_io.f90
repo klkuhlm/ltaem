@@ -47,7 +47,7 @@ contains
 
     character(4) :: chint
     character(20), dimension(3) :: fmt
-    character(512)  :: input ! a "big enough" buffer to contain all location names?
+    character(2048) :: buf 
     character(46) :: lfmt = '(I0,1X,    (ES12.5,1X),A,    (ES12.5,1X),A,I0)'
     character(lenFN+5) :: echofname
     character(lenFN) :: circleFname, ellipseFname, particleFname
@@ -71,10 +71,9 @@ contains
     endif
 
     ! solution-specific and background aquifer parameters
-    read(15,*,iostat=ierr) s%calc, s%particle, s%contour, s%deriv, s%output, &
-         & s%outFname, s%coeffFName, s%elemHfName, s%geomfName
+    read(15,*,iostat=ierr) s%calc, s%particle, s%contour, s%deriv, s%output
     if (ierr /= 0) then
-       write(*,*) 'error reading line ',ln,' (flags & filenames) of input'
+       write(*,*) 'error reading line ',ln,' (problem type + output flags) of input'
        stop 110
     end if
 
@@ -131,22 +130,32 @@ contains
        stop 2031
     end if    
 
-    read(15,*,iostat=ierr) bg%por, bg%k, bg%ss, bg%leakFlag, &
-         & bg%aquitardK, bg%aquitardSs, bg%aquitardb, bg%ms; ln=ln+1
+    ! read filenames
+    read(15,*,iostat=ierr) s%outFname, s%coeffFName, s%elemHfName, s%geomfName; ln=ln+1
     if (ierr /= 0) then
-       write(*,*) 'error on line ',ln,' of input file (background props)'
-       stop 204
+       write(*,*) 'error on line ',ln,' of input file (output filenames)'
+       stop 2032
     end if
     
-    ! reals checked here, bg%ms checked in ellipse section
+    read(15,*,iostat=ierr) bg%por, bg%k, bg%ss; ln=ln+1
+    if (ierr /= 0) then
+       write(*,*) 'error on line ',ln,' of input file (basic background props)'
+       stop 204
+    end if
     if (any([bg%por,bg%k,bg%ss] <= 0.0)) then
        write(*,*) 'input file (line ',ln,') bg%por, bg%k, bg%ss &
             &must all be > 0.0 ',[bg%por,bg%k,bg%ss]
        stop 205
     end if
+    
+    read(15,*,iostat=ierr) bg%leakFlag, bg%aquitardK, bg%aquitardSs, bg%aquitardb; ln=ln+1
+    if (ierr /= 0) then
+       write(*,*) 'error on line ',ln,' of input file (leaky aquitard props)'
+       stop 2050
+    end if
     if (bg%leakFlag < 0 .or. bg%leakFlag > 3) then
        write(*,*) 'error on line',ln,' of input; leak flag (bg%leakFlag) must be in {0,1,2,3}'
-       stop 2050
+       stop 2051
     end if
     if (any([bg%aquitardK,bg%aquitardSs,bg%aquitardb] <= 0.0) .and. bg%leakFlag > 0) then
        write(*,*) 'input file (line ',ln,') bg%aquitardK, bg%aquitardSs, bg%aquitardb &
@@ -154,7 +163,7 @@ contains
        stop 206
     end if
 
-    read(15,*,iostat=ierr) bg%Sy, bg%kz, bg%unconfinedFlag, bg%b; ln=ln+1
+    read(15,*,iostat=ierr) bg%unconfinedFlag, bg%Sy, bg%kz, bg%b; ln=ln+1
     if (ierr /= 0) then
        write(*,*) 'error on line ',ln,' of input file (unconfined)'
        stop 2060
@@ -173,7 +182,7 @@ contains
     end if
 
 
-    read(15,*,iostat=ierr) bg%matrixSs, bg%lambda, bg%dualPorosityFlag; ln=ln+1
+    read(15,*,iostat=ierr) bg%dualPorosityFlag, bg%matrixSs, bg%lambda; ln=ln+1
     if (ierr /= 0) then
        write(*,*) 'error reading line ',ln,' (dual porosity) of input'
        stop 2072
@@ -218,32 +227,32 @@ contains
     allocate(s%x(s%nx), s%y(s%ny), s%t(s%nt))
     if (s%timeseries) then
        allocate(s%obsname(s%nx))
-       read(15,'(512A)',iostat=ierr) input; ln=ln+1
+       read(15,'(512A)',iostat=ierr) buf; ln=ln+1
        if (ierr /= 0) then
           write(*,*) 'error reading line ',ln,' (location names) of input'
           stop 2081
        end if
        
        s1 = 1
-       slen = len_trim(input) ! don't include trailing blanks
+       slen = len_trim(buf) ! don't include trailing blanks
        do j = 1,s%nx
           ! location names are separated by "|" character
-          s2 = index(input(s1:),'|')
+          s2 = index(buf(s1:),'|')
           if (s2 == 0) then
              ! no "|" separator character found
              if (j == 1 .and. slen > 1) then
                 ! first name no separator 
-                s%obsname(1) = trim(input)
+                s%obsname(1) = trim(buf)
                 s1 = slen
              elseif(j == s%nx .and. s1 > 1) then
                 ! last name no separator (normal)
-                s%obsname(s%nx) = trim(input(s1:))
+                s%obsname(s%nx) = trim(buf(s1:))
              else
                 write(chint,'(I4.4)') j
                 s%obsname(j) = 'LOC-'//chint ! generic name
              end if
           else
-             s%obsname(j) = input(s1:s1+s2-2)
+             s%obsname(j) = buf(s1:s1+s2-2)
           end if
           s1 = s1+s2
        end do
@@ -353,8 +362,9 @@ contains
        end if
 
        allocate(c(nc))
+       ! try to just read in all the numbers
        read(22,*,iostat=ierr) c(:)%n
-       if (ierr /= 0 .or. any(c%n < 1)) then
+       if (ierr /= 0  .or. any(c%n < 1)) then
           write(*,*) 'error reading line ',sln,' of circle input; # Fourier terms (c%N) '//&
                &'must not be < 1 ',c%N
           stop 211
@@ -667,7 +677,7 @@ contains
     end if
 
     ! elliptical (includes line sources/sinks)
-    read(15,*,iostat=ierr) dom%num(2), ellipseFname; ln=ln+1
+    read(15,*,iostat=ierr) dom%num(2), bg%ms, ellipseFname; ln=ln+1
     if (ierr /= 0) then
        write(*,*) 'error reading line ',ln,' (ellipses) of main input'
        stop 2092
@@ -1586,6 +1596,6 @@ contains
     end if
 
   end subroutine writeGeometry
-
+  
 end module file_ops
 
