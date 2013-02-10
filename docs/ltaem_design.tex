@@ -1,4 +1,4 @@
-\documentclass{article}
+\documentclass[12pt,letterpaper]{article}
 \usepackage{amsmath}
 \usepackage{fullpage}
 \usepackage{natbib}
@@ -19,33 +19,99 @@ contours.out  dump  results.elem  results.geom
 False 1.5D-1  2.0D0  1.0  
 False 1.0D-5  2.0D0    
 40  40  4  
-OBS_NAME_NOT_USED  
+LOC_1 | LOC_2
 LINVEC -2.5 2.5 
 LINVEC -2.5 2.5 
-LOGVEC -3.0 0.0 4
+LOGVEC -3.0 0.0
 1.0D-6  1.0D-8  10  
-1  circles.in   
+1  20 circles.in   
 0  20 NOT_USED  
 NOT_USED  
 \end{verbatim}
 
 \begin{verbatim}
-CALC? PARTICLE? CONTOUR? TDERIV?  OUTPUT_TYPE  OUTPUT_FN  DUMP_FN  ELEM_ORG_FN  ELEM_GEOM_FN  
+CALC? PARTICLE? CONTOUR? TDERIV? OUTPUT_TYPE OUTPUT_FN DUMP_FN ELEM_ORG_FN ELEM_GEOM_FN  
 POROSITY  K  Ss   
 LEAK_FLAG  AQT_K AQT_Ss  AQT_b  
-Sy  Ks  False  1.0  
-1.0D-5  2.0D0  False  
-40  40  4  
+UNCONFINED_FLAG?, Sy  Ks  AQF_b
+DUALPORO_FLAG?, MATRIX_Ss, LAMBDA
+NUM_X, NUM_Y, NUM_T
 OBS_LOC_NAMES
-LINVEC -2.5 2.5 
-LINVEC -2.5 2.5 
-LOGVEC -3.0 0.0 4
-1.0D-6  1.0D-8  10  
-1  circles.in   
-0  ELLIPSE_MS not_used  
-not_used  
+XVALS
+YVALS
+TVALS
+DKS_ALPHA  DKS_TOL  DKS_M  
+NUM_CIRCLES  CIRCLE_INPUT_FN   
+NUM_ELLIPSES BG_MS ELLIPSE_INPUT_FN
+PARTICLE_INPUT_FN
 \end{verbatim}
 
+\section{Problem Types}
+The LT-AEM program is designed to solve several related problems,
+designated with flags in the input file.  Generally, the geometry of
+the elements is specified the same between all cases, it is just the
+locations, times, types and types of calculated output that change.
+
+LT-AEM can compute:
+\begin{itemize}
+\item particle tracking forward or backward from a set of initial
+  locations and times;
+\item solution at a grid of space locations, for a set of times (e.g.,
+  for creating contour maps); and
+\item solution at a set of named space locations, for a set of times
+  (i.e., drawdown time series).
+\end{itemize}
+
+\subsection{Particle Tracking}
+When performing particle tracking, LT-AEM can compute two different
+styles of particle tracking
+\begin{itemize}
+\item forward or reverse \textbf{pathlines}, either at fixed time steps or
+  using adaptive integration (i.e., tracing the path a particle of
+  water would take); and
+\item forward or reverse \textbf{streaklines}, computing location of a set of
+  particles at fixed time intervals (i.e., showing future positions of
+  a set of particles released at the same time, like a cloud of
+  smoke).
+\end{itemize}
+
+The input format for the particle tracking file is given below:
+\begin{verbatim}
+
+\end{verbatim}
+
+\subsubsection{Pathlines}
+Pathline computation takes particle start locations and start times as
+input, with a flag indicating whether particles are forward or
+backward tracking, a flag indicating whether the particle starts in
+the background or an element, and a choice of integration method.
+
+The available methods for particle integration are
+\begin{itemize}
+\item forward Euler (non-adaptive first order)
+\item Runge-Kutta (non-adaptive fourth order) consisting of:
+  \begin{enumerate}
+  \item forward half-step Euler (predictor)
+  \item backward half-step Euler (corrector)
+  \item full-step midpoint rule (predictor)
+  \item full-step Simpson's rule (corrector)
+  \end{enumerate}
+\item Runge-Kutta-Merson (adaptive fourth order) consisting of:
+  \begin{enumerate}
+  \item forward third-step Euler (predictor)
+  \item third-step trapezoid rule (corrector)
+  \item half-step Adams-Bashforth (predictor)
+  \item full-step Adams-Bashforth (predictor)
+  \item full-step Simpson's rule (corrector)
+  \end{enumerate}
+  with an adaptive step size based on relative error of the last two
+  fourth-order steps.
+\item semi-analytical Laplace-space root finding solution, using
+  Muller's algorithm for complex roots.
+\end{itemize}
+
+\subsubsection{Streaklines}
+Streaklines are computed from the output of a non-adaptive particle tracking algorithm (not Runge-Kutta-Merson).  The ``streakSkip'' parameter
 
 \section{kappa}
 \label{sec:kappa}
