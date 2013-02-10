@@ -24,12 +24,12 @@ EXTERNAL=cbessel.o
 KKLOW=type_definitions.o utility.o bessel_functions.o mathieu_functions2.o
 
 ### use system libraries 
-##LAPACKLIB=-llapack
-##BLASLIB=-lblas
+LAPACKLIB=-llapack
+BLASLIB=-lblas
 
 ## if no system libraries put statically linked libraries in this directory
-LAPACKLIB=lapack.a
-BLASLIB=blas.a
+#LAPACKLIB=lapack.a
+#BLASLIB=blas.a
 
 ### use Intel math kernel library
 ##MKLROOT=/opt/intel/mkl
@@ -63,7 +63,7 @@ OBJS=$(EXTERNAL) constants.o $(KKLOW) geometryUtil.o $(KKHIGH)
 F90=gfortran # must be >= 4.6.1
 OMP=-fopenmp
 CPP=-cpp
-DFLAGS=-O0 -Wall -Wextra -gdwarf-4 -std=f2008
+DFLAGS=-O0 -Wall -Wextra -g -std=f2008
 ##DFLAGS+=-gdwarf-4 -frange-check -fbounds-check -fcheck=all -fmodule-private -pedantic -Wunderflow -finit-integer=-777 -finit-real=snan -ffpe-trap=invalid -finit-logical=false -finit-character=126
 ##DFLAGS+=-fdump-rtl-expand 
 LINKOPT=-fbacktrace

@@ -71,6 +71,11 @@ contains
        ncols = 2*N-1
        loM = 1
        hiM = M
+    !!elseif ((e%ibnd == -1 .or. e%ibnd == 1) .and. e%calcin) then
+    !!   nrows = M
+    !!   ncols = 4*N-2
+    !!   loM = 1
+    !!   hiM = M
     else
        nrows = M
        ncols = 2*N-1
@@ -79,6 +84,8 @@ contains
     end if
 
     allocate(r%LHS(nrows,ncols), r%RHS(nrows))
+
+    !print *, 'nrows,ncols',nrows,ncols
 
     if (e%ibnd /= 2) then
 
@@ -98,6 +105,9 @@ contains
           r%LHS(1:M,N+1:2*N-1) = semat(:,1:N-1,0)/e%parent%K ! b_n head
 
           if (e%ibnd == 0 .or. (e%ibnd == -1 .and. e%calcin)) then
+             !print *, 2*N,':',3*N-1
+             !print *, 3*N,':',4*N-2
+             !print *, 'size,shape',size(r%LHS),'-',shape(r%LHS)
              r%LHS(1:M,2*N:3*N-1) = -cemat(:,0:N-1,1)/e%K ! c_n head
              r%LHS(1:M,3*N:4*N-2) = -semat(:,1:N-1,1)/e%K ! d_n head
           end if

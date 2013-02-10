@@ -736,6 +736,11 @@ contains
           stop 230
        end if
 
+       where (e%r < spacing(0.0) .and. e%calcin)
+          ! can't calculate inside something of zero radius
+          e%calcin = .false.
+       end where
+
        read(33,*,iostat=ierr) e(:)%x; sln=sln+1
        if (ierr /= 0) then
           write(*,*) 'error reading line ',sln,' center x (e%x) of ellipse input'
