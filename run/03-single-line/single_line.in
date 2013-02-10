@@ -1,7 +1,9 @@
-T  F  T  T  1  single_line_contour  dump.out  single_line.elem  single_line.geom    ::  1=calc?, 2=prtcl?, 3=contour?, 4=log(t)_deriv?, 5=output_flag, 6=outputFN, 7=coeffFN(out), 8=elementHierarchy(out), 9=geometryFN(out)
-1.0D0   2.0D0   1.0D-5   0   1.0D0   1.0D-4   1.0D0   10   ::  por, k, Ss, leakFlag, K2, Ss2, b2, ellipse MS
-1.5D-1  2.0D0  False  1.0  :: Sy, Kz, unconfined?, b
-1.0D-5  2.0D0  False  :: matrixSs, matrix/fracture lambda, dualPorosityFlag?
+T  F  T  T  1  ::  calc?, prtcl?, contour?, log(t)_deriv?, output_flag
+single_line_contour  dump.out  single_line.elem  single_line.geom    :: outputFN, coeffFN(out), elementHierarchy(out), geometryFN(out)
+1.0D0   2.0D0   1.0D-5   ::  por, k, Ss 
+0   1.0D0   1.0D-4   1.0D0   :: LEAKY: leakFlag, K2, Ss2, b2
+False 1.5D-1  2.0D0   1.0  :: UNCONFINED: unconfinedFlag?< Sy, Kz, b
+False 1.0D-5  2.0D0    :: DUALPORO: dualPorosityFlagm?, matrixSs, matrix/fracture lambda
 30  30  4  :: nx, ny, nt
 DUMMY OBS NAME  
 LINVEC 0.0 1.1 :: x 
@@ -9,7 +11,7 @@ LINVEC 0.0 1.1 :: y
 logvec -1.0 1.0 :: t
 1.0D-6  1.0D-8  10  :: alpha, tolerance, M
 1  single_line_circles.in    :: number of circular elements, circle data file
-1  single_line_ellipses.in    :: number of elliptical elements, ellipse data file
+1  20 single_line_ellipses.in    :: number of elliptical elements, ellipse MS, ellipse data file
 not_used   ::  particle data file
 
      
