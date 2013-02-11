@@ -77,8 +77,23 @@ styles of particle tracking
 
 The input format for the particle tracking file is given below:
 \begin{verbatim}
-
+NUM_PART STREAK_SKIP
+np*FWD_TRACK?
+np*RKM_TOLERANCE
+np*RKM_MAX_DT
+np*RKM_MIN_DT
+np*INITIAL_DT
+np*X0
+np*Y0
+np*T0
+np*T1
+np*INT_METHOD_FLAG
+np*BEGIN_INSIDE_ELEMENT?
 \end{verbatim}
+where ``\texttt{np*}'' means the entry is repeated for each of the $np$
+particles.  LT-AEM recognizes the following entry shortcut: if there
+are not enough entries on the line for all the particles, the first
+entry will be repeated for all particles.
 
 \subsubsection{Pathlines}
 Pathline computation takes particle start locations and start times as
@@ -111,7 +126,11 @@ The available methods for particle integration are
 \end{itemize}
 
 \subsubsection{Streaklines}
-Streaklines are computed from the output of a non-adaptive particle tracking algorithm (not Runge-Kutta-Merson).  The ``streakSkip'' parameter
+Streaklines are computed from the output of a non-adaptive particle
+tracking algorithm (not Runge-Kutta-Merson).  The ``streakSkip''
+parameter indicates how many equal-sized steps should be skipped
+between calculation of streak locations.  Aside from this it is just
+like the other non-adaptive particle tracking.
 
 \section{kappa}
 \label{sec:kappa}

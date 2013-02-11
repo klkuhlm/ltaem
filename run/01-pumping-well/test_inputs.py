@@ -1,7 +1,7 @@
 from subprocess import Popen,PIPE,check_output
 
-names = ['porosity','K','Ss','leaky flag','K2','Ss2','b2','ellipse MS','ellipse cutoff','Sy','Kz','b','matrixSs','lambda','x','y','t','DH alpha','DH tol','DH M']
-values = [1.0,1.0,0.1,0,1.0,1.0,1.0,20,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,0.00001,1.0E-6,1.0E-8,10]
+names = ['porosity','K','Ss','leaky flag','K2','Ss2','b2','Sy','Kz','b','matrixSs','lambda','x','y','t','DH alpha','DH tol','DH M','Ellipse MS']
+values = [1.0,1.0,0.1,0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,0.00001,1.0E-6,1.0E-8,10,20]
 nval = len(values)
 subs = [-2,0,'junk']
 
@@ -14,10 +14,12 @@ for j in range(nval):
         v[j] = s
         P = Popen(["./ltaem","input.in"],stdout=PIPE,stderr=PIPE)
         fh = open('input.in','w')
-        fh.write("""True  False  True  True  1  pumping_well_contour  dump.out  pumping_well.elem  pumping_well.geom    
-%s  %s  %s  %s  %s  %s  %s  %s  %s  ::  por, k, Ss, leakFlag, K2, Ss2, b2, ellipse MS, ellipse cutoff
-%s  %s  False  %s  :: Sy, Kz, unconfined?, b
-%s  %s  False  :: matrixSs, matrix/fracture lambda, dualPorosityFlag?
+        fh.write("""True  False  True  True  1  
+pumping_well_contour  dump.out  pumping_well.elem  pumping_well.geom    
+%s  %s  %s  ::  por, k, Ss
+%s  %s  %s  %s  :: LEAKY: leakFlag, K2, Ss2, b2
+False %s  %s  %s  :: UNCONFINED: unconfinedFlag?, Sy, Kz, b
+False %s  %s   :: DUALPORO: dualPorosityFlag?, matrixSs, matrix/fracture lambda
 4  4  4  :: nx, ny, nt
 NAME 1|NAME 2|NAME 3  
 %s -2.37179e+00 -2.24359e+00 -2.11538e+00  :: x 
@@ -25,7 +27,7 @@ NAME 1|NAME 2|NAME 3
 %s 0.001 0.01 0.1 :: t
 %s  %s  %s  :: alpha, tolerance, M
 1  circles.in     :: number of circular elements, circle data file
-0  not_used    :: number of elliptical elements, ellipse data file 
+0  %s not_used    :: number of elliptical elements, ellipse MS, ellipse data file 
 not_used   ::  particle data file
 """ % tuple(v))
         fh.close()
@@ -37,10 +39,12 @@ not_used   ::  particle data file
 
 P = Popen(["./ltaem","input.in"],stdout=PIPE,stderr=PIPE)
 fh = open('input.in','w')
-fh.write("""True  False  True  True  1  pumping_well_contour  dump.out  pumping_well.elem  pumping_well.geom    
-%s  %s  %s  %s  %s  %s  %s  %s  %s  ::  por, k, Ss, leakFlag, K2, Ss2, b2, ellipse MS, ellipse cutoff
-%s  %s  False  %s  :: Sy, Kz, unconfined?, b
-%s  %s  False  :: matrixSs, matrix/fracture lambda, dualPorosityFlag?
+fh.write("""True  False  True  True  1  
+pumping_well_contour  dump.out  pumping_well.elem  pumping_well.geom    
+%s  %s  %s  ::  por, k, Ss
+%s  %s  %s  %s   :: LEAKY: leakFlag, K2, Ss2, b2
+False %s  %s   %s  :: unconfinedFlag? Sy, Kz, b
+False %s  %s   :: dualPorosityFlag?, matrixSs, matrix/fracture lambda
 4  4  4  :: nx, ny, nt
 NAME 1|NAME 2|NAME 3  
 %s -2.37179e+00 -2.24359e+00 -2.11538e+00  :: x 
@@ -48,7 +52,7 @@ NAME 1|NAME 2|NAME 3
 %s 0.001 0.01 0.1 :: t
 %s  %s  %s  :: alpha, tolerance, M
 1  circles.in     :: number of circular elements, circle data file
-0  not_used    :: number of elliptical elements, ellipse data file 
+0  %s not_used    :: number of elliptical elements, ellipse MS, ellipse data file 
 not_used   ::  particle data file
 """ % tuple(values))
 fh.close()
