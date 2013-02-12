@@ -1,5 +1,5 @@
 T  F  F  T  10  ::  calc?, particle?, contour?, log(t)_deriv?, output
-well_single_circle_hydrograph  dump.out  well_single_circle.elem  well_single_circle.geom   : outputFN, coeffFN(out), elementHierarchy(out), geometryFN(out)
+well_single_circle_hydrograph.dat
 1.0D0   2.0D0   1.0D-4   ::  por, k, Ss
 0   1.0D0   1.0D-4   1.0D0   :: LEAKY: leakFlag, K2, Ss2, b2
 False 1.5D-1  2.0D0  1.0  :: UNCONFINED: unconfinedFlag?, Sy, Kz, b
