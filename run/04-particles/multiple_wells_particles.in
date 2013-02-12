@@ -1,0 +1,12 @@
+9  1     :: #particles, streakSkip
+T        :: forward tracking?
+1        :: integration scheme
+1.0D-4   :: RKM tolerance
+0.025    :: RKM max step length
+0.00001  :: RKM min dt step size
+0.0001   :: initial dt step size
+0.5      :: starting x
+0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 :: starting y
+0.001    :: starting time
+3.0      :: ending time
+F        :: beginning inside an element?
