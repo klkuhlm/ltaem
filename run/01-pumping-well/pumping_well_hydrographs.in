@@ -1,5 +1,5 @@
 T  F  F  T  10  :: calc?, prtcl?, contour?, log(t)_deriv?, output_flag
-pumping_well_hydrographs dump.out  pumping_well.elem  pumping_well.geom    ::  outputFN, coeffFN(out), elementHierarchy(out), geometryFN(out)
+pumping_well_hydrographs.dat 
 1.0D0   2.0D-2   1.0D-5     ::  por, k, Ss
 0   1.0D0   1.0D-4   1.0D0  :: LEAKY: leakFlag, K2, Ss2, b2
 False 1.5D-1  2.0D0  1.0  :: UNCONFINED: unconfinedFlag?, Sy, Kz, b

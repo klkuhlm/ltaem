@@ -1,0 +1,17 @@
+T  T  F  T  20          :: calc?, prtcl?, contour?, log(t)_deriv?, output_flag
+pumping_well_particle.dat
+1.0D0   2.0D-2   1.0D-5   ::  por, k, Ss
+0   1.0D0   1.0D-4   1.0D0   :: leakFlag, K2, Ss2, b2
+False 1.5D-1  2.0D0  1.0  :: unconfinedFlag?, Sy, Kz, b
+False 1.0D-5  2.0D0       :: dualPorosityFlag?, matrixSs, matrix/fracture lambda
+40  40  4  :: nx, ny, nt
+DUMMY NAME  
+LINVEC 0.0 5.0  ::    x Vector
+LINVEC 0.0 5.0  ::    y Vector
+0.0001 0.001 0.01 0.1 :: t
+1.0D-6  1.0D-8  10  :: alpha, tolerance, M
+1  pumping_well_circles.in     :: number of circular elements, circle data file
+0  20, not_used    :: number of elliptical elements, ellipse MS, ellipse data file
+pumping_well_particle.in   ::  particle data file
+
+     

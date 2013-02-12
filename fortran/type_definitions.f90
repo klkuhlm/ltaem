@@ -214,7 +214,8 @@ module type_definitions
 
      ! input/output filenames
      character(lenFN) :: outfname='unset', infname='unset'
-     character(lenFN) :: coefffname='unset', elemHfName='unset', geomFname='unset'
+     character(lenFN) :: elemHfName='unset', geomFname='unset'
+     character(13) :: coefffname = 'dump-vars.out'
 
      ! output index
      ! ------------------- <10 = contour map output --------------------

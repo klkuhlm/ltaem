@@ -1,15 +1,12 @@
-T  T  F  T  20  pumping_well_particle  dump.out  pumping_well.elem  pumping_well.geom    ::  1=calc?, 2=prtcl?, 3=contour?, 4=log(t)_deriv?, 5=output_flag, 6=outputFN, 7=coeffFN(out), 8=elementHierarchy(out), 9=geometryFN(out)
-1.0D0   2.0D-2   1.0D-5   0   1.0D0   1.0D-4   1.0D0   20   ::  por, k, Ss, leakFlag, K2, Ss2, b2, ellipse MS
-1.5D-1  2.0D0  False  1.0  :: Sy, Kz, unconfined?, b
-1.0D-5  2.0D0  False  :: matrixSs, matrix/fracture lambda, dualPorosityFlag?
-40  40  4  :: nx, ny, nt
-DUMMY NAME  
-LINVEC 0.0 5.0  ::    x Vector
-LINVEC 0.0 5.0  ::    y Vector
-0.0001 0.001 0.01 0.1 :: t
-1.0D-6  1.0D-8  10  :: alpha, tolerance, M
-1  pumping_well_circles.in     :: number of circular elements, circle data file
-0  not_used    :: number of elliptical elements, ellipse data file
-pumping_well.part   ::  particle data file
-
-     
+8  1          :: #particles, streakSkip
+T  T  T  T  T T T T     :: forward or backward tracking?
+1 1 1 1  1 1 1 1        :: integration scheme
+1.0D-2 1.0D-2 1.0D-2 1.0D-2  1.0D-2 1.0D-2 1.0D-2 1.0D-2  :: RKM tolerance
+0.02 0.02 0.02 0.02  0.02 0.02 0.02 0.02 :: RKM max step length
+0.00001 0.00001 0.00001 0.00001 0.00001 0.00001 0.00001 0.00001  :: RKM min dt step size
+0.001 0.001 0.001 0.001 0.001 0.001 0.001 0.001 :: initial dt step size
+-1.25  1.25  1.25 -1.25 -1.25  0.  1.25  0.      :: starting x
+1.25  1.25 -1.25 -1.25  0.  1.25  0. -1.25 :: starting y
+0.001 0.001 0.001  0.001 0.001 0.001 0.001  0.001 :: starting time
+999.0  999.0  999.0  999.0 999.0  999.0  999.0  999.0  :: ending time
+F F F F  F F F F      :: beginning inside an element?

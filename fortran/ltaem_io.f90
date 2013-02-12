@@ -51,7 +51,7 @@ contains
     character(46) :: lfmt = '(I0,1X,    (ES12.5,1X),A,    (ES12.5,1X),A,I0)'
     character(lenFN+5) :: echofname
     character(lenFN) :: circleFname, ellipseFname, particleFname
-    integer :: ierr, j, ntot, nC, nE, ln = 1, sln,s1,s2,slen
+    integer :: ierr, j, ntot, nC, nE, ln = 1, sln,s1,s2,slen, idx
     real(DP) :: tmp
 
     open(unit=15, file=s%infname, status='old', action='read', iostat=ierr)
@@ -60,7 +60,13 @@ contains
        stop 100
     endif
 
-    echofname = trim(s%infname)//'.echo'
+    idx = index(s%infName,'.')
+    if (idx > 0) then
+       echofname = s%infname(1:idx-1)//'.echo'
+    else
+       echofname = trim(s%infname)//'.echo'
+    end if
+
     open(unit=16, file=echofname, status='replace', action='write', iostat=ierr)
     if (ierr /= 0) then
        write(*,'(2A)') 'READINPUT: error opening echo file ',echofname
@@ -130,11 +136,21 @@ contains
        stop 2031
     end if    
 
-    ! read filenames
-    read(15,*,iostat=ierr) s%outFname, s%coeffFName, s%elemHfName, s%geomfName; ln=ln+1
+    ! read output filename
+    read(15,*,iostat=ierr) s%outFname; ln=ln+1
     if (ierr /= 0) then
        write(*,*) 'error on line',ln,'of input file (output filenames)'
        stop 2032
+    end if
+
+    ! other names just based on output filename
+    idx = index(s%outFname,'.') ! is there a . in filename?
+    if (idx > 0) then
+       s%elemHfName = s%outFname(1:idx-1)//'.elem'
+       s%geomfName  = s%outFname(1:idx-1)//'.geom'
+    else       
+       s%elemHfName = trim(s%outFname)//'.elem' 
+       s%geomfName  = trim(s%outFname)//'.geom'
     end if
     
     read(15,*,iostat=ierr) bg%por, bg%k, bg%ss; ln=ln+1
@@ -1572,7 +1588,7 @@ contains
     backspace(fn)
     read(fn,*,iostat=ierr) ival
     if (ierr /= 0) then
-       write(*,*) 'error reading line ',num,'of',trim(str),'input'
+       write(*,*) 'error reading line ',num,' of ',trim(str),' input'
        stop 7771
     end if
   end function read_int
@@ -1586,7 +1602,7 @@ contains
     backspace(fn)
     read(fn,*,iostat=ierr) fval
     if (ierr /= 0) then
-       write(*,*) 'error reading line ',num,'of',trim(str),'input'
+       write(*,*) 'error reading line ',num,' of ',trim(str),' input'
        stop 7772
     end if
   end function read_real
@@ -1599,7 +1615,7 @@ contains
     backspace(fn)
     read(fn,*,iostat=ierr) lval
     if (ierr /= 0) then
-       write(*,*) 'error reading line ',num,'of',trim(str),'input'
+       write(*,*) 'error reading line ',num,' of ',trim(str),' input'
        stop 7773
     end if
   end function read_logical
