@@ -20,6 +20,15 @@
 ! THE SOFTWARE.
 !
 
+! this Fortran90 module is designed to not depend on the LT-AEM.  It
+! is also not called from LT-AEM (it uses mathieu_functions2.f90).
+! This module, the modified version of the Amos Bessel function
+! library (cbessel.f90), and the fmathieu.pyf definition file should
+! be used to create a python-callable complex-parameter modified
+! Mathieu function library.
+!
+! f2py --fcompiler=gnu95 -llapack -lblas -c fmathieu.pyf cbessel.f90 mathieu.f90
+
 module mf
 
   implicit none
