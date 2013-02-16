@@ -63,11 +63,28 @@ module type_definitions
      ! 6 = cosine(tpar(1)*t),    tpar(1) = frequency multiplier; tpar(2) = start time
      ! 7 = + only tri wave,      tpar(1) = 1/4 period of wave; tpar(2) = start time
      ! 8 = +/- square wave,      tpar(1) = 1/2 period of wave; tpar(2) = start time
-     ! n<0 = arbitrary piecewise constant rate, comprised of n steps from tpar(1) to tfinal
+     ! -100<n<0 = arbitrary piecewise constant rate, comprised of n steps from tpar(1) to tfinal
      !                tpar(1:n) = starting times of each step
      !                tpar(n+1) = final time of last step
      !                tpar(n+2:2*n+1) = strength at each of n steps
      ! (is multiplied by constant strength too -- you probably want to set that to unity)
+     ! n<-100 = arbitrary piecewise linear rate, comprised of n steps from tpar(1) to tfinal
+     !                tpar(1:n) = starting times of each linear segment
+     !                tpar(n+1) = final time of last linear segment
+     !                tpar(n+2:2*n+1) = strength at each of n linear segment
+     ! (is multiplied by constant strength too -- you probably want to set that to unity)
+
+     character(55), dimension(80) :: timeExplain = [&
+          & '[step on @ tpar(1)]                                    ',&
+          & '[finite width pulse; tpar(1:2) = on/off times]         ',&
+          & '[instantaneous pulse @ tpar(1)]                        ',&
+          & '[stairs; stair width=tpar(1), off @ tpar(2)]           ',&
+          & '[+only square wave; tpar(1)=period/2, off @ tpar(2)]   ',&
+          & '[cos(tpar(1)*t); on @ tpar(2)]                         ',&
+          & '[+only triangular wave; tpar(1)=period/4, on @ tpar(2)]',&
+          & '[+/- square wave; tpar(1)=period/4, on @ tpar(2)]      ',&
+          & '[piecewise-constant rate]                              ',&
+          & '[piecewise-linear rate]                                ']
 
      ! type of time behavior for AREA/Boundary Head/Flux (see above)
      integer :: AreaTime = -999, BdryTime = -999
@@ -87,10 +104,15 @@ module type_definitions
 
      ! leaky-related (adjoining aquitard/aquifer parameters)
      ! 0= no leakage
-     ! 1= case I, no-drawdown condition at top of aquifer
-     ! 2= case II, no-flow condition at top of aquifer
+     ! 1= case I, no-drawdown condition at top of aquitard
+     ! 2= case II, no-flow condition at top of aquitard
      ! 3= aquitard thickness -> infinity (no bc)
      integer :: leakFlag  = -999
+     character(39), dimension(0:3) :: leakFlagExplain = &
+          & ['(no leakage)                           ',&
+          &  '(no-drawdown condition beyond aquitard)',&
+          &  '(no-flow condition beyond aquitard)    ',&
+          &  '(infinitely thick aquitard)            ']
      real(DP) :: aquitardK = -999., aquitardSs = -999., aquitardb = -999.
 
      ! unconfined-related (flag, specific yield, and vertical K)
@@ -136,6 +158,11 @@ module type_definitions
      ! type of element: -1=specified head TOTAL, 0=match, +1=specified flux TOTAL
      !                  -2=specified head ELEMENT, +2=specified flux ELEMENT
      ! -2 doesn't really make sense from a physical perspective : not implemented
+     character(24), dimension(-1:2) :: ibndExplain = [&
+          & '(specified total head)  ',&
+          & '(matching)              ',&
+          & '(specified total flux)  ',&
+          & '(specified element flux)']
      integer :: ibnd = -999
 
      ! whether inclusion is a matching(T) or specified(F) inclusion
@@ -213,9 +240,9 @@ module type_definitions
      logical :: calc = .false.
 
      ! input/output filenames
-     character(lenFN) :: outfname='unset', infname='unset'
-     character(lenFN) :: elemHfName='unset', geomFname='unset'
-     character(13) :: coefffname = 'dump-vars.out'
+     character(lenFN) :: outfName='unset', infName='unset'
+     character(lenFN) :: elemHfName='unset', geomfName='unset', echofName='unset'
+     character(13) :: coefffName = 'dump-vars.out'
 
      ! output index
      ! ------------------- <10 = contour map output --------------------
@@ -228,6 +255,15 @@ module type_definitions
      ! --------------->=20 = particle track output ---------------------
      ! 20= pathline Gnuplot (column of times, particles separated by blank lines);
      ! 21= streakline Gnuplot (each block a requested time, each row a particle);
+
+     character(34), dimension(7) :: outputExplain = [&
+          & '(gnuplot contour map)             ',&
+          & '(matlab contour map)              ',&
+          & '(gnuplot time series w/ velocity) ',&
+          & '(inverse time series w/o velocity)',&
+          & '(gnuplot time series w/o velocity)',&
+          & '(gnuplot pathlines)               ',&
+          & '(gnuplot streakline)              ']
 
      ! aquitardLeak and unconfined
      integer :: output = -999, aquitardLeak = -999, unconfined= -999

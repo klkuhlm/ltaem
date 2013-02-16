@@ -165,92 +165,83 @@ program ltaem_main
         end if
      end do
      !$OMP END PARALLEL DO
-
-     ! only write output if there is at least one matching element
-     if(any(e(:)%match) .or. any(c(:)%match)) then
-
-        !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        ! save coefficient matrices to file (if sol%output < 100)
-
-        if (.not. sol%skipdump) then
-           open(unit=77, file=sol%coefffname, status='replace', action='write', iostat=ierr)
-           if (ierr /= 0) then
-              write(*,'(2A)') 'WARNING: error opening intermediate save file ',&
-                   & trim(sol%coefffname), ' continuing without saving results'
-           else
-              write(77,'(A)') trim(sol%infname)//'.echo' ! file with all the input parameters
-              write(77,'(4(I0,1X))') minlt,maxlt,nc,ne
-              write(77,*) nt(:)
-              write(77,*) s(:,:)
-              write(77,*) tee(:)
-              do i = 1,nc
-                 write(77,'(A,3(I0,1X))') 'CIRCLE ',i,shape(c(i)%coeff)
-                 write(77,*) c(i)%coeff(:,:)
-              end do
-              do i = 1,ne
-                 write(77,'(A,3(I0,1X))') 'ELLIPS ',i,shape(e(i)%coeff)
-                 write(77,*) e(i)%coeff(:,:)
-              end do
-              close(77)
-           end if
-           write(*,'(A)') '  <matching finished>  '
-        end if
-     end if
-  else 
-     ! do not re-calculate coefficients
-     ! (this only makes sense if num matching elements > 0)
-
-     if(any(e(:)%match) .or. any(c(:)%match)) then
-        open(unit=77, file=sol%coefffname, status='old', action='read', iostat=ierr)
+     
+     !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+     ! save coefficient matrices to file (if sol%output < 100)
+     
+     if (.not. sol%skipdump) then
+        open(unit=77, file=sol%coefffname, status='replace', action='write', iostat=ierr)
         if (ierr /= 0) then
-           ! go back and recalculate if no restart file
-           write(*,'(A)') 'ERROR: cannot opening restart file, recalculating...'
+           write(*,*) 'WARNING: error opening intermediate save file ',&
+                & trim(sol%coefffname), ' continuing without saving results'
+        else
+           write(77,'(A)') sol%echofName ! file with all the input parameters
+           write(77,'(4(I0,1X))') minlt,maxlt,nc,ne
+           write(77,*) nt(:)
+           write(77,*) s(:,:)
+           write(77,*) tee(:)
+           do i = 1,nc
+              write(77,'(A,3(I0,1X))') 'CIRCLE ',i,shape(c(i)%coeff)
+              write(77,*) c(i)%coeff(:,:)
+           end do
+           do i = 1,ne
+              write(77,'(A,3(I0,1X))') 'ELLIPS ',i,shape(e(i)%coeff)
+              write(77,*) e(i)%coeff(:,:)
+           end do
+           close(77)
+        end if
+        write(*,'(A)') '  <matching finished>  '
+     end if
+
+  else   ! do not re-calculate coefficients     
+     open(unit=77, file=sol%coefffname, status='old', action='read', iostat=ierr)
+     if (ierr /= 0) then
+        ! go back and recalculate if no restart file
+        write(*,'(A)') 'ERROR: cannot opening restart file, recalculating...'
+        sol%calc = .true.
+        goto 111
+     end if
+
+     read(77,*) !! TODO should I check inputs are same?
+     read(77,*) minlt,maxlt,nc,ne ! scalars
+     allocate(s(2*sol%m+1,minlt:maxlt-1), nt(minlt:maxlt-1), tee(minlt:maxlt-1))
+     read(77,*) nt(:)
+     read(77,*) s(:,:)
+     sol%totalnP = product(shape(s))
+     tnp = sol%totalnP
+     read(77,*) tee(:)
+     do i = 1,nc
+        read(77,*) elType,j,crow,ccol
+        if (elType == 'CIRCLE' .and. i == j) then
+           allocate(c(i)%coeff(crow,ccol))
+        else
+           write(*,'(A)') 'ERROR reading in CIRCLE matching '//&
+                &'results, recalculating...'
            sol%calc = .true.
            goto 111
         end if
-
-        read(77,*) !! TODO should I check inputs are same?
-        read(77,*) minlt,maxlt,nc,ne ! scalars
-        allocate(s(2*sol%m+1,minlt:maxlt-1), nt(minlt:maxlt-1), tee(minlt:maxlt-1))
-        read(77,*) nt(:)
-        read(77,*) s(:,:)
-        sol%totalnP = product(shape(s))
-        tnp = sol%totalnP
-        read(77,*) tee(:)
-        do i = 1,nc
-           read(77,*) elType,j,crow,ccol
-           if (elType == 'CIRCLE' .and. i == j) then
-              allocate(c(i)%coeff(crow,ccol))
-           else
-              write(*,'(A)') 'ERROR reading in CIRCLE matching '//&
-                   &'results, recalculating...'
-              sol%calc = .true.
-              goto 111
-           end if
-           read(77,*) c(i)%coeff(:,:)
-        end do
-        do i = 1,ne
-           read(77,*) elType,j,crow,ccol
-           if (elType == 'ELLIPS' .and. i == j) then
-              allocate(e(i)%coeff(crow,ccol))
-           else
-              write(*,'(A)') 'ERROR reading in ELLIPS matching '//&
-                   &'results, recalculating...'
-              sol%calc = .true.
-              goto 111
-           end if
-           read(77,*) e(i)%coeff(:,:)
-        end do
-
-        ! re-initialize Mathieu function matrices
-        if (ne > 0) then
-           write(*,'(A)') 're-computing Mathieu coefficients ...'
-           call ellipse_init(e,bg,s)
+        read(77,*) c(i)%coeff(:,:)
+     end do
+     do i = 1,ne
+        read(77,*) elType,j,crow,ccol
+        if (elType == 'ELLIPS' .and. i == j) then
+           allocate(e(i)%coeff(crow,ccol))
+        else
+           write(*,'(A)') 'ERROR reading in ELLIPS matching '//&
+                &'results, recalculating...'
+           sol%calc = .true.
+           goto 111
         end if
+        read(77,*) e(i)%coeff(:,:)
+     end do
 
-        write(*,'(A)') 'matching results successfully re-read from file'
+     ! re-initialize Mathieu function matrices
+     if (ne > 0) then
+        write(*,'(A)') 're-computing Mathieu coefficients ...'
+        call ellipse_init(e,bg,s)
      end if
 
+     write(*,'(A)') 'matching results successfully re-read from file'
   end if
 
   !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

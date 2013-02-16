@@ -53,6 +53,7 @@ contains
     character(lenFN) :: circleFname, ellipseFname, particleFname
     integer :: ierr, j, ntot, nC, nE, ln = 1, sln,s1,s2,slen, idx
     real(DP) :: tmp
+    character(55) :: explain
 
     ! unit numbers for input/output files
     integer, parameter :: UINPUT = 15, UECHO = 16, UCIRC = 22, UELIP = 33, UPAR = 44 
@@ -65,12 +66,12 @@ contains
 
     idx = index(s%infName,'.')
     if (idx > 0) then
-       echofname = s%infname(1:idx-1)//'.echo'
+       s%echofname = s%infname(1:idx-1)//'.echo'
     else
-       echofname = trim(s%infname)//'.echo'
+       s%echofname = trim(s%infname)//'.echo'
     end if
 
-    open(unit=UECHO, file=echofname, status='replace', action='write', iostat=ierr)
+    open(unit=UECHO, file=s%echofname, status='replace', action='write', iostat=ierr)
     if (ierr /= 0) then
        write(*,'(2A)') 'READINPUT: error opening echo file ',echofname
        stop 101
@@ -214,17 +215,39 @@ contains
        stop 2072
     end if
 
+    if (s%output < 10) then
+       explain = s%outputExplain(s%output)
+    elseif (s%output < 20) then
+       explain = s%outputExplain(s%output-7)
+    else
+       explain = s%outputExplain(s%output-14)
+    end if
+
     ! echo input from first 4 lines to file
     write(UECHO,'(5(L1,1X),I0,1X,A)') s%calc, s%particle, s%contour, s%timeseries, s%deriv, &
-         & s%output,'  ||    re-calculate coefficients?, particle?, contour?, timeseries?, '//&
+         & s%output,trim(explain)//&
+         & '  ||    re-calculate coefficients?, particle?, contour?, timeseries?, '//&
          &'log(t) deriv?, output flag'
     write(UECHO,'(2A)') trim(s%outFname),'  ||    output file name'
     write(UECHO,'(3(ES12.5,1X),A)') bg%por, bg%k, bg%ss,'  ||   AQUIFER properties : por, k, Ss'
-    write(UECHO,'(I0,1X,3(ES12.5,1X),A)') bg%leakFlag, bg%aquitardK, bg%aquitardSs, bg%aquitardb, &
+    write(UECHO,'(I0,1X,A,1X,3(ES12.5,1X),A)') bg%leakFlag, trim(bg%leakFlagExplain(bg%leakFlag)), &
+         & bg%aquitardK, bg%aquitardSs, bg%aquitardb, &
          & '  ||   LEAKY properties : leaky flag, K2, Ss2, b2'
-    write(UECHO,'(L1,1X,3(ES12.5,1X),A)') bg%unconfinedFlag, bg%Sy, bg%kz, bg%b, &
+
+    if (bg%unconfinedFlag) then
+       explain = '(with unconfined)'
+    else
+       explain = '(no unconfined)'
+    end if
+    write(UECHO,'(L1,1X,A,1X,3(ES12.5,1X),A)') bg%unconfinedFlag, explain, bg%Sy, bg%kz, bg%b, &
          & '  ||   UNCONFINED properties : unconfined?, Sy, Kz, BGb'
-    write(UECHO,'(L1,1X,2(ES12.5,1X),A)') bg%dualPorosityFlag, bg%matrixSs, bg%lambda, &
+
+    if (bg%dualPorosityFlag) then
+       explain = '(with dual porosity)'
+    else
+       explain = '(no dual porosity)'
+    end if
+    write(UECHO,'(L1,1X,A,1X,2(ES12.5,1X),A)') bg%dualPorosityFlag, explain, bg%matrixSs, bg%lambda, &
          & '  ||   DUAL POROSITY properties : dual porosity?, matrixSs, matrix/fracture lambda'
 
     ! desired sution points/times
