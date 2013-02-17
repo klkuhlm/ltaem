@@ -48,7 +48,6 @@ contains
     character(4) :: chint
     character(20), dimension(3) :: fmt
     character(1024) :: buf 
-    character(46) :: lfmt = '(I0,1X,    (ES12.5,1X),A,    (ES12.5,1X),A,I0)'
     character(lenFN+5) :: echofname
     character(lenFN) :: circleFname, ellipseFname, particleFname
     integer :: ierr, j, ntot, nC, nE, ln = 1, sln,s1,s2,slen, idx
@@ -83,7 +82,7 @@ contains
     ! solution-specific and background aquifer parameters
     read(UINPUT,*,iostat=ierr) s%calc, s%particle, s%contour, s%deriv, s%output
     if (ierr /= 0) then
-       write(*,*) 'error reading line ',ln,' (problem type + output flags) of input'
+       write(*,*) 'error reading line ',ln,' (problem type + output flags) input'
        stop 110
     end if
 
@@ -106,36 +105,36 @@ contains
     if (.not.(s%output == 1 .or. s%output == 2 .or. &
          & s%output == 10 .or. s%output == 11 .or. s%output == 12 .or. &
          & s%output == 20 .or. s%output == 21)) then
-       write(*,*) 'input file (line',ln,') s%output must be in '&
+       write(*,*) 'input file (line ',ln,') s%output must be in '&
             &//'{1,2,10,11,12,20,21} ',s%output
        stop 200
     end if
     if (s%output >= 10  .and. s%contour) then
-       write(*,*) 'input file (line',ln,') s%output should be in {1,2} '&
+       write(*,*) 'input file (line ',ln,') s%output should be in {1,2} '&
             &//'when contour output is selected ',s%output,s%contour
        stop 2010
     elseif (s%output < 10 .and. .not. s%contour) then
-       write(*,*) 'input file (line',ln,') s%output should be only in '&
+       write(*,*) 'input file (line ',ln,') s%output should be only in '&
             &//'{1,2} when contour output is selected ',s%output,s%contour
        stop 2011
     end if
 
     if ((s%output < 10 .or. s%output >= 20) .and. s%timeseries) then
-       write(*,*) 'input file (line',ln,') s%output should be in {10,11,12}'&
+       write(*,*) 'input file (line ',ln,') s%output should be in {10,11,12}'&
             &//' when timeseries output is selected ',s%output,s%timeseries
        stop 2020
     elseif (s%output >= 10 .and. s%output < 20 .and. .not. s%timeseries) then
-       write(*,*) 'input file (line',ln,') s%output should only be in {10,'&
+       write(*,*) 'input file (line ',ln,') s%output should only be in {10,'&
             &//'11,12} when contour output is selected ',s%output,s%timeseries
        stop 2021
     end if
 
     if (s%output < 20 .and. s%particle) then
-       write(*,*) 'input file (line',ln,') if s%particle==.True., '&
+       write(*,*) 'input file (line ',ln,') if s%particle==.True., '&
             &//'s%output should be in {20,21} ',s%output,s%particle
        stop 2030
     elseif (s%output >= 20  .and. .not. s%particle) then
-       write(*,*) 'input file (line',ln,') s%output should only be in '&
+       write(*,*) 'input file (line ',ln,') s%output should only be in '&
             &//'{20,21} if s%particle==.True. ',s%output,s%particle
        stop 2031
     end if    
@@ -143,7 +142,7 @@ contains
     ! read output filename
     read(UINPUT,*,iostat=ierr) s%outFname; ln=ln+1
     if (ierr /= 0) then
-       write(*,*) 'error on line',ln,'of input file (output filenames)'
+       write(*,*) 'error on line ',ln,' input file (output filenames)'
        stop 2032
     end if
 
@@ -159,57 +158,57 @@ contains
     
     read(UINPUT,*,iostat=ierr) bg%por, bg%k, bg%ss; ln=ln+1
     if (ierr /= 0) then
-       write(*,*) 'error on line',ln,'of input file (basic background props)'
+       write(*,*) 'error on line',ln,'input file (basic background props)'
        stop 204
     end if
     if (any([bg%por,bg%k,bg%ss] <= 0.0)) then
-       write(*,*) 'input file (line',ln,') bg%por, bg%k, bg%ss &
+       write(*,*) 'input file (line ',ln,') bg%por, bg%k, bg%ss &
             &must all be > 0.0 ',[bg%por,bg%k,bg%ss]
        stop 205
     end if
     
     read(UINPUT,*,iostat=ierr) bg%leakFlag, bg%aquitardK, bg%aquitardSs, bg%aquitardb; ln=ln+1
     if (ierr /= 0) then
-       write(*,*) 'error on line',ln,'of input file (leaky aquitard props)'
+       write(*,*) 'error on line ',ln,' input file (leaky aquitard props)'
        stop 2050
     end if
     if (bg%leakFlag < 0 .or. bg%leakFlag > 3) then
-       write(*,*) 'error on line',ln,' of input; leak flag (bg%leakFlag) must be in {0,1,2,3}'
+       write(*,*) 'error on line ',ln,' input; leak flag (bg%leakFlag) must be in {0,1,2,3}'
        stop 2051
     end if
     if (any([bg%aquitardK,bg%aquitardSs,bg%aquitardb] <= 0.0) .and. bg%leakFlag > 0) then
-       write(*,*) 'input file (line',ln,') bg%aquitardK, bg%aquitardSs, bg%aquitardb &
+       write(*,*) 'input file (line ',ln,') bg%aquitardK, bg%aquitardSs, bg%aquitardb &
             &must all be > 0.0 ',[bg%aquitardK,bg%aquitardSs,bg%aquitardb]
        stop 206
     end if
 
     read(UINPUT,*,iostat=ierr) bg%unconfinedFlag, bg%Sy, bg%kz, bg%b; ln=ln+1
     if (ierr /= 0) then
-       write(*,*) 'error on line',ln,'of input file (unconfined)'
+       write(*,*) 'error on line ',ln,' input file (unconfined)'
        stop 2060
     end if
     
 
     if (any([bg%kz,bg%b] <= 0.0) .and. bg%unconfinedFlag) then
-       write(*,*) 'input (line',ln,') vertical K (bg%kz), thickness (bg%b) must be > 0.0 ', &
+       write(*,*) 'input (line ',ln,') vertical K (bg%kz), thickness (bg%b) must be > 0.0 ', &
             & [bg%kz,bg%b]
        stop 207
     end if
 
     if (bg%Sy < 0.0 .and. bg%unconfinedFlag) then
-       write(*,*) 'input (line',ln,') specific yield (bg%Sy) must be non-negative',bg%Sy
+       write(*,*) 'input (line ',ln,') specific yield (bg%Sy) must be non-negative',bg%Sy
        stop 2071
     end if
 
 
     read(UINPUT,*,iostat=ierr) bg%dualPorosityFlag, bg%matrixSs, bg%lambda; ln=ln+1
     if (ierr /= 0) then
-       write(*,*) 'error reading line',ln,'(dual porosity) of input'
+       write(*,*) 'error reading line ',ln,' (dual porosity) input'
        stop 2072
     end if
     
     if (any([bg%matrixSs,bg%lambda] <= 0.0) .and. bg%dualPorosityFlag) then
-       write(*,*) 'line',ln,'of input: matrix specific storage (bg%matrixSs) and '//&
+       write(*,*) 'line ',ln,' input: matrix specific storage (bg%matrixSs) and '//&
             & 'matrix/fracture connection factor (bg%lambda) must be > 0.0',&
             & [bg%matrixSs,bg%lambda]
        stop 2072
@@ -253,12 +252,12 @@ contains
     ! desired sution points/times
     read(UINPUT,*,iostat=ierr) s%nx, s%ny, s%nt; ln=ln+1
     if (ierr /= 0) then
-       write(*,*) 'error reading line',ln,'(nx,ny,nt) of input'
+       write(*,*) 'error reading line ',ln,' (nx,ny,nt) input'
        stop 2073
     end if
     
     if (any([s%nx,s%ny,s%nt] < 1)) then
-       write(*,*) 'input file (line',ln,') number of x,y & t observation locations '//&
+       write(*,*) 'input file (line ',ln,') number x,y & t observation locations '//&
             & '(s%nx,s%ny,s%nt) must be > 0 ', [s%nx,s%ny,s%nt]
        stop 208
     end if
@@ -271,7 +270,7 @@ contains
        allocate(s%obsname(s%nx))
        read(UINPUT,'(512A)',iostat=ierr) buf; ln=ln+1
        if (ierr /= 0) then
-          write(*,*) 'error reading line',ln,'(location names) of input'
+          write(*,*) 'error reading line ',ln,' (location names) input'
           stop 2081
        end if
        
@@ -310,7 +309,7 @@ contains
        read(UINPUT,*,iostat=ierr) s%x(:)
        if (ierr /= 0) then
           ! failed reading vector
-          write(*,*) 'error reading line',ln,'x calc locations (s%x) from input'
+          write(*,*) 'error reading line ',ln,' x calc locations (s%x) from input'
        end if
     else
        ! compute vector is first chars are 'linvec' or 'logvec'
@@ -322,7 +321,7 @@ contains
        backspace(UINPUT)
        read(UINPUT,*,iostat=ierr) s%y(:)
        if (ierr /= 0) then
-          write(*,*) 'error reading line',ln,'y calc locations (s%y) from input'
+          write(*,*) 'error reading line ',ln,' y calc locations (s%y) from input'
        end if
     else
        s%y(:) = computeVector(UINPUT,s%ny,ln)
@@ -339,7 +338,7 @@ contains
        backspace(UINPUT)
        read(UINPUT,*,iostat=ierr) s%t(:)
        if (ierr /= 0) then
-          write(*,*) 'error reading line',ln,'t calc times (s%t) from input'
+          write(*,*) 'error reading line ',ln,' t calc times (s%t) from input'
        end if
     else
        s%t(:) = computeVector(UINPUT,s%nt,ln)
@@ -368,7 +367,7 @@ contains
     ! deHoog et al. inverse Laplace transform parameters
     read(UINPUT,*,iostat=ierr) s%alpha, s%tol, s%m; ln=ln+1
     if (ierr /= 0) then
-       write(*,*) 'error reading line',ln,'(deHoog invlap) of input'
+       write(*,*) 'error reading line ',ln,' (deHoog invlap) input'
        stop 209
     end if
 
@@ -388,7 +387,7 @@ contains
     ! circular (includes wells)
     read(UINPUT,*,iostat=ierr) dom%num(1),circleFname; ln=ln+1
     if (ierr /= 0) then
-       write(*,*) 'error reading line',ln,'(circles) of main input'
+       write(*,*) 'error reading line ',ln,' (circles) main input'
        stop 2091
     end if
     
@@ -407,7 +406,7 @@ contains
        read(UCIRC,*,iostat=ierr) c(:)%N; sln=sln+1
        if (ierr /= 0) c(:)%N = read_int(UCIRC,sln,'circle  ')
        if (any(c%N < 1)) then
-          write(*,*) 'error line',sln,'of circle input; # Fourier terms (c%N) '//&
+          write(*,*) 'error line ',sln,' circle input; # Fourier terms (c%N) '//&
                &'must not be < 1 ',c%N
           stop 211
        end if
@@ -415,7 +414,7 @@ contains
        read(UCIRC,*,iostat=ierr) c(:)%M; sln=sln+1
        if (ierr /= 0) c(:)%M = read_int(UCIRC,sln,'circle  ')
        if (any(c%M < 1)) then
-          write(*,*) 'error line',sln,'of circle input; # matching locations (c%M) '//&
+          write(*,*) 'error line ',sln,' circle input; # matching locations (c%M) '//&
                &'must not be < 1 ',c%M
           stop 212
        end if
@@ -423,7 +422,7 @@ contains
        read(UCIRC,*,iostat=ierr) c(:)%ibnd; sln=sln+1
        if (ierr /= 0) c(:)%ibnd = read_int(UCIRC,sln,'circle  ')
        if (any(c%ibnd < -1 .or. c%ibnd > 2)) then
-          write(*,*) 'error line',sln,'of circle input; boundary type (c%ibnd) '//&
+          write(*,*) 'error line ',sln,' circle input; boundary type (c%ibnd) '//&
                &'must be in {-1,0,1,2} ',c%ibnd
           stop 213
        end if
@@ -437,7 +436,7 @@ contains
        read(UCIRC,*,iostat=ierr) c(:)%r; sln=sln+1
        if (ierr /= 0) c(:)%r = read_real(UCIRC,sln,'circle  ')
        if (any(c%r <= 0.0)) then
-          write(*,*) 'error line',sln,'of cirlce input; circle radius (c%r) '//&
+          write(*,*) 'error line ',sln,' cirlce input; circle radius (c%r) '//&
                & 'must be > 0.0 ',c%r
           stop 214
        end if
@@ -455,7 +454,7 @@ contains
        read(UCIRC,*,iostat=ierr) c(:)%k; sln=sln+1
        if (ierr /= 0) c(:)%k = read_real(UCIRC,sln,'circle  ')
        if (any(c%k <= 0.0)) then
-          write(*,*) 'error line',sln,'of circle input; hydraulic conductivity '//&
+          write(*,*) 'error line ',sln,' circle input; hydraulic conductivity '//&
                &'(c%K) must be > 0.0 ',c%k
           stop 215
        end if
@@ -463,7 +462,7 @@ contains
        read(UCIRC,*,iostat=ierr) c(:)%Ss; sln=sln+1
        if (ierr /= 0) c(:)%Ss = read_real(UCIRC,sln,'circle  ')
        if (any(c%ss <= 0.0)) then
-          write(*,*) 'error line',sln,'of circle input; specific storage (c%Ss) '//&
+          write(*,*) 'error line ',sln,' circle input; specific storage (c%Ss) '//&
                &'must be > 0.0 ',c%Ss
           stop 216
        end if
@@ -471,7 +470,7 @@ contains
        read(UCIRC,*,iostat=ierr) c(:)%por; sln=sln+1
        if (ierr /= 0) c(:)%por = read_real(UCIRC,sln,'circle  ')
        if (any(c%por <= 0.0)) then
-          write(*,*) 'error line',sln,'of circle input; porosity (c%por) '//&
+          write(*,*) 'error line ',sln,' circle input; porosity (c%por) '//&
                &'must be > 0.0 ',c%por
           stop 217
        end if
@@ -479,7 +478,7 @@ contains
        read(UCIRC,*,iostat=ierr) c(:)%leakFlag; sln=sln+1
        if (ierr /= 0) c(:)%leakFlag = read_int(UCIRC,sln,'circle  ')
        if (any(c%leakFlag < 0) .or. any(c%leakFlag > 3)) then
-          write(*,*) 'error line',sln,'leaky flag (c%leakFlag) of circle '//&
+          write(*,*) 'error line ',sln,' leaky flag (c%leakFlag) circle '//&
                &'input; input must be in {0,1,2,3}'
           stop 2170
        end if       
@@ -487,7 +486,7 @@ contains
        read(UCIRC,*,iostat=ierr) c(:)%aquitardK; sln=sln+1
        if (ierr /= 0) c(:)%aquitardK = read_real(UCIRC,sln,'circle  ')
        if (any(c%aquitardK <= 0.0 .and. c%leakFlag > 0)) then
-          write(*,*) 'error line',sln,'of circle input; aquitard vertical K '//&
+          write(*,*) 'error line ',sln,' circle input; aquitard vertical K '//&
                &'(c%aquitardK) must be > 0.0 ',c%aquitardk
           stop 218
        end if
@@ -495,7 +494,7 @@ contains
        read(UCIRC,*,iostat=ierr) c(:)%aquitardSs; sln=sln+1
        if (ierr /= 0) c(:)%aquitardSs = read_real(UCIRC,sln,'circle  ')
        if (any(c%aquitardSS <= 0.0 .and. c%leakFlag > 0)) then
-          write(*,*) 'error line',sln,'of circle input; aquitard specific storage '//&
+          write(*,*) 'error line ',sln,' circle input; aquitard specific storage '//&
                &'(c%aquitardSs) must be > 0.0 ',c%aquitardSs
           stop 219
        end if
@@ -503,7 +502,7 @@ contains
        read(UCIRC,*,iostat=ierr) c(:)%aquitardb; sln=sln+1
        if (ierr /= 0) c(:)%aquitardb = read_real(UCIRC,sln,'circle  ')
        if (any(c%aquitardB <= 0.0 .and. c%leakFlag > 0)) then
-          write(*,*) 'error line',sln,'of circle input; aquitard thickness '//&
+          write(*,*) 'error line ',sln,' circle input; aquitard thickness '//&
                &'(c%aquitardB) must be > 0.0 ',c%aquitardB
           stop 220
        end if
@@ -514,7 +513,7 @@ contains
        read(UCIRC,*,iostat=ierr) c(:)%Sy; sln=sln+1
        if (ierr /= 0) c(:)%Sy = read_real(UCIRC,sln,'circle  ')
        if (any(c%sy <= 0.0 .and. c%unconfinedFlag)) then
-          write(*,*) 'error line',sln,'of circle input; specific yield (c%Sy) '//&
+          write(*,*) 'error line ',sln,' circle input; specific yield (c%Sy) '//&
                &'must be > 0.0 ',c%sy
           stop 221
        end if
@@ -522,7 +521,7 @@ contains
        read(UCIRC,*,iostat=ierr) c(:)%Kz; sln=sln+1
        if (ierr /= 0) c(:)%Kz = read_real(UCIRC,sln,'circle  ')
        if (any(c%kz <= 0.0 .and. c%unconfinedFlag)) then
-          write(*,*) 'error line',sln,'of circle input; aquifer vertical K '//&
+          write(*,*) 'error line ',sln,' circle input; aquifer vertical K '//&
                &'(c%Kz) must be > 0.0 ',c%kz
           stop 222
        end if
@@ -530,7 +529,7 @@ contains
        read(UCIRC,*,iostat=ierr) c(:)%b; sln=sln+1
        if (ierr /= 0) c(:)%b = read_real(UCIRC,sln,'circle  ')
        if (any(c%b <= 0.0 .and. c%unconfinedFlag)) then
-          write(*,*) 'error line',sln,'of circle input; aquifer thickness '//&
+          write(*,*) 'error line ',sln,' circle input; aquifer thickness '//&
                &'(c%B) must be > 0.0 ',c%b
           stop 223
        end if
@@ -541,7 +540,7 @@ contains
        read(UCIRC,*,iostat=ierr) c(:)%matrixSs; sln=sln+1
        if (ierr /= 0) c(:)%matrixSs = read_real(UCIRC,sln,'circle  ')
        if (any(c%matrixSs <= 0.0 .and. c%dualPorosityFlag)) then
-          write(*,*) 'error line',sln,'of circle input; matrix specific storage '//&
+          write(*,*) 'error line ',sln,' circle input; matrix specific storage '//&
                &'(c%matrixSs) must be > 0.0', c%matrixSs
           stop 2230
        end if
@@ -549,7 +548,7 @@ contains
        read(UCIRC,*,iostat=ierr) c(:)%lambda; sln=sln+1
        if (ierr /= 0) c(:)%lambda = read_real(UCIRC,sln,'circle  ')
        if (any(c%lambda < 0.0 .and. c%dualPorosityFlag)) then
-          write(*,*) 'error line',sln,'of circle input; '//&
+          write(*,*) 'error line ',sln,' circle input; '//&
                & 'matrix/fracture connection (c%lambda) must be non-negative', c%lambda
           stop 2231
        end if
@@ -557,7 +556,7 @@ contains
        read(UCIRC,*,iostat=ierr) c(:)%dskin; sln=sln+1
        if (ierr /= 0) c(:)%dskin = read_real(UCIRC,sln,'circle  ')
        if (any(c%dskin <= 0.0)) then
-          write(*,*) 'error line',sln,'of circle input; dimensionless skin '//&
+          write(*,*) 'error line ',sln,' circle input; dimensionless skin '//&
                &'parameter (c%Dskin) must be > 0.0 ',c%dskin
           stop 224
        end if
@@ -573,13 +572,13 @@ contains
        fmt(2) = '('//chint//'(L1,1X),A)     ' ! logical
        fmt(3) = '('//chint//'(ES13.5,1X),A) ' ! real
 
-       write(UECHO,'(I0,A)') dom%num(1),        '  ||   # of circular elements (including wells)'
-       write(UECHO,fmt(1)) c(:)%n,              '  ||   # of circular free parameter (Fourier coefficients)'
-       write(UECHO,fmt(1)) c(:)%m,              '  ||   # of circular matching locations'
+       write(UECHO,'(I0,A)') dom%num(1),        '  ||   # circular elements (including wells)'
+       write(UECHO,fmt(1)) c(:)%n,              '  ||   # circular free parameter (Fourier coefficients)'
+       write(UECHO,fmt(1)) c(:)%m,              '  ||   # circular matching locations'
        write(UECHO,fmt(1)) c(:)%ibnd,           '  ||   circle ibnd array'
        write(UECHO,fmt(2)) c(:)%match,          '  ||   circle matching array'
        write(UECHO,fmt(2)) c(:)%calcin,         '  ||   calculate inside this circle?'
-       write(UECHO,fmt(2)) c(:)%storin,         '  ||   calculate free-water storage effects of circle?'
+       write(UECHO,fmt(2)) c(:)%storin,         '  ||   calculate circle free-water storage effects?'
        write(UECHO,fmt(3)) c(:)%r,              '  ||   circle radius'
        write(UECHO,fmt(3)) c(:)%x+s%xshift,     '  ||   original circle center x'
        write(UECHO,fmt(3)) c(:)%x,              '  ||   shifted circle center x'
@@ -606,75 +605,23 @@ contains
        ! area source behavior
        do j = 1,size(c,dim=1)
           read(UCIRC,*,iostat=ierr) c(j)%AreaTime; sln=sln+1
-             if (ierr /= 0) then
-                write(*,*) 'error reading line',sln,'area time behavior (c%AreaTime) &
-                     &of circle ',j,' input'
-                stop 2201
-             end if
-          backspace(UCIRC)
-          if (c(j)%AreaTime > -1) then
-             ! functional time behavior
-             allocate(c(j)%ATPar(2))
-             read(UCIRC,*,iostat=ierr) c(j)%AreaTime,c(j)%ATPar(:)
-             if (ierr /= 0) then
-                write(*,*) 'error reading line',sln,'area functional time behavior '//&
-                     &'(c%ATPar) of circle ',j,' input'
-                stop 2202
-             end if
-             write(UECHO,'(I0,2(1X,ES12.5),A,I0)') c(j)%AreaTime,c(j)%ATPar(:),&
-                  &'  ||  Area time behavior, par1, par2 for circle ',j
-          else
-             ! piecewise-constant time behavior
-             allocate(c(j)%ATPar(-2*c(j)%AreaTime+1))
-             read(UCIRC,*,iostat=ierr) c(j)%AreaTime,c(j)%ATPar(:)
-             if (ierr /= 0) then
-                write(*,*) 'error reading line',sln,'area piecewise-constant time '//&
-                     &'behavior (c%ATpar) of circle ',j,'input'
-                stop 2203
-             end if
-             lfmt = '(I0,1X,    (ES12.5,1X),A,    (ES12.5,1X),A,I0)' 
-             write(lfmt(8:11),'(I4.4)')  size(c(j)%ATPar(:-c(j)%AreaTime+1),1)
-             write(lfmt(26:29),'(I4.4)') size(c(j)%ATPar(-c(j)%AreaTime+2:),1)
-             write(UECHO,lfmt) c(j)%AreaTime,c(j)%ATPar(:-c(j)%AreaTime+1),'| ',&
-                  & c(j)%ATPar(-c(j)%AreaTime+2:), &
-                  &'  ||    Area ti, tf | strength for circle ',j
+          if (ierr /= 0) then
+             write(*,*) 'error reading line ',sln,' area time behavior (c%AreaTime) '//&
+                  &'circle ',j,' input'
+             stop 2201
           end if
+          call read_time_behaviors(UCIRC,UECHO,c(j)%matching,j,sln,'circle ',.true.)
        end do
 
        ! boundary source behavior
        do j = 1,size(c,dim=1)
           read(UCIRC,*,iostat=ierr) c(j)%BdryTime; sln=sln+1
           if (ierr /= 0) then
-                write(*,*) 'error reading line',sln,'boundary time behavior '//&
-                     &'(c%BdryTime) of circle ',j,' input'
-                stop 2204
-             end if
-          backspace(UCIRC)
-          if (c(j)%BdryTime > -1) then
-             allocate(c(j)%BTPar(2))
-             read(UCIRC,*,iostat=ierr) c(j)%BdryTime,c(j)%BTPar(:)
-             if (ierr /= 0) then
-                write(*,*) 'error reading line',sln,'boundary functional time '//&
-                     &'behavior (c%BTPar) of circle ',j,' input'
-                stop 2205
-             end if
-             write(UECHO,'(I0,2(1X,ES12.5),A,I0)') c(j)%BdryTime,c(j)%BTPar(:),&
-                  &'  ||  Bdry time behavior, par1, par2 for circle ',j
-          else
-             allocate(c(j)%BTPar(-2*c(j)%BdryTime+1))
-             read(UCIRC,*,iostat=ierr) c(j)%BdryTime,c(j)%BTPar(:)
-             if (ierr /= 0) then
-                write(*,*) 'error reading line',sln,'boundary piecewise-constant time '//&
-                     &'behavior (c%BTpar) of circle ',j,'input'
-                stop 2203
-             end if
-             lfmt = '(I0,1X,    (ES12.5,1X),A,    (ES12.5,1X),A,I0)' 
-             write(lfmt(8:11),'(I4.4)')  size(c(j)%BTPar(:-c(j)%BdryTime+1),1)
-             write(lfmt(26:29),'(I4.4)') size(c(j)%BTPar(-c(j)%BdryTime+2:),1)
-             write(UECHO,lfmt) c(j)%BdryTime,c(j)%BTPar(:-c(j)%BdryTime+1),' | ',&
-                  & c(j)%BTPar(-c(j)%BdryTime+2:), &
-                  &'  ||    Bdry ti, tf | strength for circle ',j
+             write(*,*) 'error reading line ',sln,' boundary time behavior '//&
+                  &'(c%BdryTime) circle ',j,' input'
+             stop 2204
           end if
+          call read_time_behaviors(UCIRC,UECHO,c(j)%matching,j,sln,'circle ',.false.)
        end do
 
        close(UCIRC) ! circle input file
@@ -709,7 +656,7 @@ contains
     ! elliptical (includes line sources/sinks)
     read(UINPUT,*,iostat=ierr) dom%num(2), bg%ms, ellipseFname; ln=ln+1
     if (ierr /= 0) then
-       write(*,*) 'error reading line',ln,'(ellipses) of main input'
+       write(*,*) 'error reading line ',ln,' (ellipses) main input'
        stop 2092
     end if
 
@@ -718,7 +665,8 @@ contains
     if (ne > 0) then
        open(unit=UELIP, file=trim(ellipseFname), status='old', action='read',iostat=ierr)
        if (ierr /= 0) then
-          write(*,'(2A)') 'READINPUT: error opening elliptical data file for reading ',trim(ellipseFname)
+          write(*,'(2A)') 'READINPUT: error opening elliptical data file for reading ',&
+               &trim(ellipseFname)
           stop 225
        else
           write(UECHO,'(A)') trim(ellipseFname)//' opened for elliptical input data'
@@ -728,7 +676,7 @@ contains
        read(UELIP,*,iostat=ierr) e(:)%N; sln=sln+1
        if (ierr /= 0) e(:)%N = read_int(UELIP,sln,'ellipse ')
        if (any(e%n < 1)) then
-          write(*,*) 'error line',sln,'of ellipse input; # Fourier terms (e%N) '//&
+          write(*,*) 'error line ',sln,' ellipse input; # Fourier terms (e%N) '//&
                      &'must not be < 1 ',e%N
           stop 226
        end if
@@ -736,7 +684,7 @@ contains
        read(UELIP,*,iostat=ierr) e(:)%M; sln=sln+1
        if (ierr /= 0) e(:)%M = read_int(UELIP,sln,'ellipse ')
        if (any(e%M < 1)) then
-          write(*,*) 'error line',sln,'of ellipse input; # matching locations '//&
+          write(*,*) 'error line ',sln,' ellipse input; # matching locations '//&
                      &'(e%M) must not be < 1 ',e%M
           stop 227
        end if
@@ -749,7 +697,7 @@ contains
        read(UELIP,*,iostat=ierr) e(:)%ibnd; sln=sln+1
        if (ierr /= 0) e(:)%ibnd = read_int(UELIP,sln,'ellipse ')      
        if (any(e%ibnd < -1 .or. e%ibnd > 2)) then
-          write(*,*) 'error line',sln,'of ellipse input; boundary type (e%ibnd) '//&
+          write(*,*) 'error line ',sln,' ellipse input; boundary type (e%ibnd) '//&
                      &'must be in {-1,0,1,2} ',e%ibnd
           stop 229
        end if
@@ -763,7 +711,7 @@ contains
        read(UELIP,*,iostat=ierr) e(:)%r; sln=sln+1   ! eta
        if (ierr /= 0) e(:)%r = read_real(UELIP,sln,'ellipse ')      
        if (any(e%r < 0.0)) then
-          write(*,*) 'error line',sln,'of ellipse input; elliptical radius '//&
+          write(*,*) 'error line ',sln,' ellipse input; elliptical radius '//&
                      &'(e%r) must be >= 0.0 ',e%r
           stop 230
        end if
@@ -786,7 +734,7 @@ contains
        read(UELIP,*,iostat=ierr) e(:)%f; sln=sln+1
        if (ierr /= 0) e(:)%f = read_real(UELIP,sln,'ellipse ')
        if (any(e%f <= 0.0)) then
-          write(*,*) 'error line',sln,'of ellipse input; elliptical semi-focal '//&
+          write(*,*) 'error line ',sln,' ellipse input; elliptical semi-focal '//&
                      &'length (e%f) must be > 0.0 ',e%f
           stop 231
        end if
@@ -794,7 +742,7 @@ contains
        read(UELIP,*,iostat=ierr) e(:)%theta; sln=sln+1
        if (ierr /= 0) e(:)%theta = read_real(UELIP,sln,'ellipse ')
        if (any(e%theta < -PI) .or. any(e%theta > PI)) then
-          write(*,*) 'error line',sln,'of ellipse input; eliptical angle wrt '//&
+          write(*,*) 'error line ',sln,' ellipse input; eliptical angle wrt '//&
                      &'global cartesian (e%theta) must be -pi <= theta <= PI ',e%theta
           stop 232
        end if
@@ -802,7 +750,7 @@ contains
        read(UELIP,*,iostat=ierr) e(:)%k; sln=sln+1
        if (ierr /= 0) e(:)%k = read_real(UELIP,sln,'ellipse ')
        if (any(e%k <= 0.0)) then
-          write(*,*) 'error line',sln,'of ellipse input; hydraulic conductivity '//&
+          write(*,*) 'error line ',sln,' ellipse input; hydraulic conductivity '//&
                      &'(e%k) must be > 0.0 ',e%k
           stop 233
        end if
@@ -810,7 +758,7 @@ contains
        read(UELIP,*,iostat=ierr) e(:)%Ss; sln=sln+1
        if (ierr /= 0) e(:)%Ss = read_real(UELIP,sln,'ellipse ')
        if (any(e%Ss <= 0.0)) then
-          write(*,*) 'error line',sln,'of ellipse input; specific storage '//&
+          write(*,*) 'error line ',sln,' ellipse input; specific storage '//&
                      &'(e%Ss) must be > 0.0 ',e%Ss
           stop 234
        end if
@@ -818,7 +766,7 @@ contains
        read(UELIP,*,iostat=ierr) e(:)%por; sln=sln+1
        if (ierr /= 0) e(:)%por = read_real(UELIP,sln,'ellipse ')
        if (any(e%por <= 0.0)) then
-          write(*,*) 'error line',sln,'of ellipse input; porosity (e%por) '//&
+          write(*,*) 'error line ',sln,' ellipse input; porosity (e%por) '//&
                      &'must be > 0.0 ',e%por
           stop 235
        end if
@@ -826,7 +774,7 @@ contains
        read(UELIP,*,iostat=ierr) e(:)%leakFlag; sln=sln+1 
        if (ierr /= 0) e(:)%leakFlag = read_int(UELIP,sln,'ellipse ')
        if (any(e%leakFlag < 0) .or. any(e%leakFlag > 3)) then
-          write(*,*) 'error line',sln,'leak flag (e%leakFlag) of ellipse '//&
+          write(*,*) 'error line ',sln,' leak flag (e%leakFlag) ellipse '//&
                      &'input; input must be in {0,1,2,3}'
           stop 2350
        end if       
@@ -842,7 +790,7 @@ contains
        read(UELIP,*,iostat=ierr) e(:)%aquitardSs; sln=sln+1
        if (ierr /= 0) e(:)%aquitardSs = read_real(UELIP,sln,'ellipse ')
        if (any(e%aquitardSs <= 0.0 .and. e%leakFlag > 0)) then
-          write(*,*) 'error line',sln,'of ellipse input; aquitard specific '//&
+          write(*,*) 'error line ',sln,' ellipse input; aquitard specific '//&
                      &'storage (e%aquitardSs) must be > 0.0 ',e%aquitardSs
           stop 237
        end if
@@ -850,7 +798,7 @@ contains
        read(UELIP,*,iostat=ierr) e(:)%aquitardb; sln=sln+1
        if (ierr /= 0) e(:)%aquitardb = read_real(UELIP,sln,'ellipse ')
        if (any(e%aquitardb <= 0.0 .and. e%leakFlag > 0)) then
-          write(*,*) 'error line',sln,'of ellipse input; aquitard thickness '//&
+          write(*,*) 'error line ',sln,' ellipse input; aquitard thickness '//&
                      &'(e%aquitardB) must be > 0.0 ',e%aquitardb
           stop 238
        end if
@@ -861,7 +809,7 @@ contains
        read(UELIP,*,iostat=ierr) e(:)%Sy; sln=sln+1
        if (ierr /= 0) e(:)%Sy = read_real(UELIP,sln,'ellipse ')
        if (any(e%Sy <= 0.0 .and. e%unconfinedFlag)) then
-          write(*,*) 'error line',sln,'of ellipse input; specific storage '//&
+          write(*,*) 'error line ',sln,' ellipse input; specific storage '//&
                      &'(e%Sy) must be > 0.0 ',e%Sy
           stop 239
        end if
@@ -869,7 +817,7 @@ contains
        read(UELIP,*,iostat=ierr) e(:)%Kz; sln=sln+1
        if (ierr /= 0) e(:)%Kz = read_real(UELIP,sln,'ellipse ')
        if (any(e%Kz <= 0.0 .and. e%unconfinedFlag)) then
-          write(*,*) 'error line',sln,'of ellipse input; aquifer vertical K '//&
+          write(*,*) 'error line ',sln,' ellipse input; aquifer vertical K '//&
                      &'(e%Kz) must be > 0.0 ',e%Kz
           stop 240
        end if
@@ -877,7 +825,7 @@ contains
        read(UELIP,*,iostat=ierr) e(:)%b; sln=sln+1
        if (ierr /= 0) e(:)%b = read_real(UELIP,sln,'ellipse ')
        if (any(e%b <= 0.0 .and. e%unconfinedFlag)) then
-          write(*,*) 'error line',sln,'of ellipse input; aquifer thickness '//&
+          write(*,*) 'error line ',sln,' ellipse input; aquifer thickness '//&
                      &'(e%b) must be > 0.0 ',e%b
           stop 241
        end if
@@ -888,7 +836,7 @@ contains
        read(UELIP,*,iostat=ierr) e(:)%matrixSs; sln=sln+1
        if (ierr /= 0) e(:)%matrixSs = read_real(UELIP,sln,'ellipse ')
        if (any(e%matrixSs <= 0.0 .and. e%dualPorosityFlag)) then
-          write(*,*) 'error line',sln,'of ellipse input; matrix specific '//&
+          write(*,*) 'error line ',sln,' ellipse input; matrix specific '//&
                      &'storage (e%matrixSs) must be > 0.0', e%matrixSs
           stop 2411
        end if
@@ -896,7 +844,7 @@ contains
        read(UELIP,*,iostat=ierr) e(:)%lambda; sln=sln+1
        if (ierr /= 0) e(:)%lambda = read_real(UELIP,sln,'ellipse ')
        if (any(e%lambda < 0.0 .and. e%dualPorosityFlag)) then
-          write(*,*) 'error line',sln,'of ellipse input; matrix/fracture '//&
+          write(*,*) 'error line ',sln,' ellipse input; matrix/fracture '//&
                      &'connection (e%lambda)'//&
                &' must be non-negative', e%lambda
           stop 2412
@@ -905,7 +853,7 @@ contains
        read(UELIP,*,iostat=ierr) e(:)%dskin; sln=sln+1
        if (ierr /= 0) e(:)%dskin = read_real(UELIP,sln,'ellipse ')
        if (any(e%dskin <= 0.0)) then
-          write(*,*) 'error line',sln,'of ellipse input; dimensionless '//&
+          write(*,*) 'error line ',sln,' ellipse input; dimensionless '//&
                      &'skin (e%dskin) must be > 0.0 ',e%dskin
           stop 242
        end if
@@ -921,10 +869,10 @@ contains
        fmt(2) = '('//chint//'(L1,1X),A)     ' ! logical
        fmt(3) = '('//chint//'(ES13.5,1X),A) ' ! real
 
-       write(UECHO,'(I0,A)') dom%num(2),        '  ||   # of elliptical elements (including lines)'
-       write(UECHO,fmt(1)) e(:)%n,              '  ||   # of elliptical free parameter (Fourier coeffs)'
-       write(UECHO,fmt(1)) e(:)%m,              '  ||   # of ellipse matching locations'
-       write(UECHO,fmt(1)) e(:)%ms,             '  ||   size of "infinite" Mathieu matrices'
+       write(UECHO,'(I0,A)') dom%num(2),        '  ||   # elliptical elements (including lines)'
+       write(UECHO,fmt(1)) e(:)%n,              '  ||   # elliptical free parameter (Fourier coeffs)'
+       write(UECHO,fmt(1)) e(:)%m,              '  ||   # ellipse matching locations'
+       write(UECHO,fmt(1)) e(:)%ms,             '  ||   size "infinite" Mathieu matrices'
        write(UECHO,fmt(1)) e(:)%ibnd,           '  ||   ellipse ibnd array'
        write(UECHO,fmt(2)) e(:)%match,          '  ||   ellipse matching array'
        write(UECHO,fmt(2)) e(:)%calcin,         '  ||   calculate inside this ellipse?'
@@ -956,71 +904,21 @@ contains
 
        do j = 1,size(e,dim=1)
           read(UELIP,*,iostat=ierr) e(j)%AreaTime; sln=sln+1
-             if (ierr /= 0) then
-                write(*,*) 'error reading line',sln,'area time behavior (e%AreaTime) &
-                     &of ellipse ',j,' input'
-                stop 2422
-             end if
-          backspace(UELIP)
-          if (e(j)%AreaTime > -1) then
-             allocate(e(j)%ATPar(2))
-             read(UELIP,*,iostat=ierr) e(j)%AreaTime,e(j)%ATPar(:)
-             if (ierr /= 0) then
-                write(*,*) 'error reading line',sln,'area functional time behavior '//&
-                     &'(e%ATPar) of ellipse ',j,' input'
-                stop 2423
-             end if
-             write(UECHO,'(I0,2(1X,ES12.5),A,I0)') e(j)%AreaTime,e(j)%ATPar(:),&
-                  &'  ||  Area time behavior, par1, par2 for ellipse ',j
-          else
-             allocate(e(j)%ATPar(-2*e(j)%AreaTime+1))
-             read(UELIP,*,iostat=ierr) e(j)%AreaTime,e(j)%ATPar(:)
-             if (ierr /= 0) then
-                write(*,*) 'error reading line',sln,'area piecewise-constant time '//&
-                     &'behavior (e%ATPar) of circle ',j,'input'
-                stop 2424
-             end if
-             lfmt = '(I0,1X,    (ES12.5,1X),A,    (ES12.5,1X),A,I0)' 
-             write(lfmt(8:11),'(I3.3)')  size(e(j)%ATPar(:-e(j)%AreaTime+1),1)
-             write(lfmt(26:29),'(I3.3)') size(e(j)%ATPar(-e(j)%AreaTime+2:),1)
-             write(UECHO,lfmt) e(j)%AreaTime,e(j)%ATPar(:-e(j)%AreaTime+1),' | ',&
-                  & e(j)%ATPar(-e(j)%AreaTime+2:), &
-                  &'  ||    Area ti, tf | strength for ellipse ',j
+          if (ierr /= 0) then
+             write(*,*) 'error reading line ',sln,' area time behavior (e%AreaTime) &
+                  &ellipse ',j,' input'
+             stop 2422
           end if
+          call read_time_behaviors(UELIP,UECHO,e(j)%matching,j,sln,'ellipse',.true.)
        end do
        do j = 1,size(e,dim=1)
           read(UELIP,*,iostat=ierr) e(j)%BdryTime; sln=sln+1
-             if (ierr /= 0) then
-                write(*,*) 'error reading line',sln,'boundary time behavior '//&
-                     &'(e%BdryTime) of ellipse ',j,' input'
-                stop 2425
-             end if
-          backspace(UELIP)
-          if (e(j)%BdryTime > -1) then
-             allocate(e(j)%BTPar(2))
-             read(UELIP,*,iostat=ierr) e(j)%BdryTime,e(j)%BTPar(:)
-             if (ierr /= 0) then
-                write(*,*) 'error reading line',sln,'boundary functional time '//&
-                     &'behavior (e%BTPar) of ellipse ',j,' input'
-                stop 2426
-             end if
-             write(UECHO,'(I0,2(1X,ES12.5),A,I0)') e(j)%BdryTime,e(j)%BTPar(:),&
-                  &'  ||  Boundary time behavior, par1, par2 for ellipse ',j
-          else
-             allocate(e(j)%BTPar(-2*e(j)%BdryTime+1))
-             read(UELIP,*,iostat=ierr) e(j)%BdryTime,e(j)%BTPar(:)
-             if (ierr /= 0) then
-                write(*,*) 'error reading line',sln,'boundary piecewise-constant '//&
-                     &'time behavior (e%BTPar) of circle ',j,'input'
-                stop 2427
-             end if
-             lfmt = '(I0,1X,    (ES12.5,1X),A,    (ES12.5,1X),A,I0)' 
-             write(lfmt(8:11),'(I3.3)')  size(e(j)%BTPar(:-e(j)%BdryTime+1),1)
-             write(lfmt(26:29),'(I3.3)') size(e(j)%BTPar(-e(j)%BdryTime+2:),1)
-             write(UECHO,lfmt) e(j)%BdryTime,e(j)%BTPar(:-e(j)%BdryTime+1),' | ',&
-                  & e(j)%BTPar(-e(j)%BdryTime+2:), &
-                  &'  ||    Boundary ti, tf | strength for ellipse ',j
+          if (ierr /= 0) then
+             write(*,*) 'error reading line ',sln,' boundary time behavior '//&
+                  &'(e%BdryTime) ellipse ',j,' input'
+             stop 2425
           end if
+          call read_time_behaviors(UELIP,UECHO,e(j)%matching,j,sln,'ellipse',.false.)
        end do
 
        close(UELIP) ! ellipse input file
@@ -1075,7 +973,7 @@ contains
        sln = 1
        read(UINPUT,*,iostat=ierr) particleFname; ln=ln+1
        if (ierr /= 0) then
-          write(*,*) 'error reading line',ln,'(particles) of main input'
+          write(*,*) 'error reading line ',ln,' (particles) main input'
           stop 2500
        end if
        open(unit=UPAR, file=particleFname, status='old', action='read',iostat=ierr)
@@ -1089,7 +987,7 @@ contains
 
        read(UPAR,*,iostat=ierr) s%nPart,  s%streakSkip
        if (ierr /= 0 .or. (s%nPart < 1) .or. (s%streakSkip < 0 .and. s%output == 21)) then
-          write(*,*) 'error reading line',sln,'of particle input; s%nPart and &
+          write(*,*) 'error reading line ',sln,' particle input; s%nPart and &
                &s%streakSkip must be >0',[s%nPart,s%streakSkip]
           stop 2430
        end if
@@ -1101,7 +999,7 @@ contains
        read(UPAR,*,iostat=ierr) p(:)%int; sln=sln+1
        if (ierr /= 0) p(:)%int = read_int(UPAR,sln,'particle')
        if (any(p%int < 1 .or. p%int > 4)) then
-          write(*,*) 'error line',sln,'of particle input; integration '//&
+          write(*,*) 'error line ',sln,' particle input; integration '//&
                      &'method (p%int) must be {1,2,3,4} ',p%int
           stop 252
        end if
@@ -1109,7 +1007,7 @@ contains
        read(UPAR,*,iostat=ierr) p(:)%tol; sln=sln+1
        if (ierr /= 0) p(:)%tol = read_real(UPAR,sln,'particle')
        if (any(p%tol <= 0.0 .and. p%int == 1)) then
-          write(*,*) 'error line',sln,'of particle input; RKM error '//&
+          write(*,*) 'error line',sln,'particle input; RKM error '//&
                      &'tolerance (p%tol) must be > 0.0 ',p%tol
           stop 244
        end if
@@ -1117,7 +1015,7 @@ contains
        read(UPAR,*,iostat=ierr) p(:)%maxL; sln=sln+1  
        if (ierr /= 0) p(:)%maxL = read_real(UPAR,sln,'particle')
        if (any(p%maxL <= 0.0 .and. p%int == 1)) then
-          write(*,*) 'error line',sln,'of particle input; max RKM '//&
+          write(*,*) 'error line ',sln,' particle input; max RKM '//&
                      &'step length (p%maxL) must be > 0.0 ',p%maxL
           stop 245
        end if
@@ -1125,7 +1023,7 @@ contains
        read(UPAR,*,iostat=ierr) p(:)%mindt; sln=sln+1
        if (ierr /= 0) p(:)%mindt = read_real(UPAR,sln,'particle')
        if (any(p%mindt <= 0.0 .and. p%int == 1)) then
-          write(*,*) 'error line',sln,'of particle input; min RKM '//&
+          write(*,*) 'error line ',sln,' particle input; min RKM '//&
                      &'time step (p%mindt) must be > 0.0 ',p%mindt
           stop 246
        end if
@@ -1133,7 +1031,7 @@ contains
        read(UPAR,*,iostat=ierr) p(:)%dt; sln=sln+1
        if (ierr /= 0) p(:)%dt = read_real(UPAR,sln,'particle')
        if (any(p%dt <= 0.0)) then
-          write(*,*) 'error line',sln,'of particle input; initial '//&
+          write(*,*) 'error line ',sln,' particle input; initial '//&
                      &'time step (p%dt) must be > 0.0 ',p%dt
           stop 247
        end if
@@ -1150,7 +1048,7 @@ contains
        read(UPAR,*,iostat=ierr) p(:)%ti; sln=sln+1
        if (ierr /= 0) p(:)%ti = read_real(UPAR,sln,'particle')
        if (any(p%ti <= 0.0)) then
-          write(*,*) 'error line',sln,'of particle input; start '//&
+          write(*,*) 'error line ',sln,' particle input; start '//&
                      &'time (p%ti) must be > 0.0 ',p%ti
           stop 248
        end if
@@ -1158,7 +1056,7 @@ contains
        read(UPAR,*,iostat=ierr) p(:)%tf; sln=sln+1
        if (ierr /= 0) p(:)%tf = read_real(UPAR,sln,'particle')
        if (any(p%tf <= 0.0)) then
-          write(*,*) 'error reading line',sln,'of particle input; end '//&
+          write(*,*) 'error reading line ',sln,' particle input; end '//&
                      &'time (p%tf) must be > 0.0 ',p%tf
           stop 249
        end if
@@ -1202,6 +1100,73 @@ contains
     close(UECHO) ! input echo file
   end subroutine readInput
 
+  subroutine read_time_behaviors(UIN,UECH,el,j,ln,tp,area) 
+    use type_definitions, only : matching
+    integer, intent(in) :: UIN, UECH, ln, j
+    type(matching), intent(inout) :: el
+    character(7), intent(in) :: tp
+    logical, intent(in) :: area
+
+    character(46) :: lfmt = '(I0,1X,    (ES12.5,1X),A,    (ES12.5,1X),A,I0)'
+    integer :: ierr
+    
+    backspace(UIN)
+    if (area) then
+        if (el%AreaTime > -1) then
+           ! functional time behavior
+           allocate(el%ATPar(2))
+           read(UIN,*,iostat=ierr) el%AreaTime,el%ATPar(:)
+           if (ierr /= 0) then
+              write(*,*) 'error reading line ',ln,' area functional time behavior '//&
+                   &'(ATPar) ',tp,j,' input'
+              stop 2202
+           end if
+           write(UECH,'(I0,2(1X,ES12.5),A,I0)') el%AreaTime,el%ATPar(:),&
+                &'  ||  Area time behavior, par1, par2 for '//tp,j
+        else
+           ! piecewise-constant/linear time behavior
+           allocate(el%ATPar(-2*el%AreaTime+1))
+           read(UIN,*,iostat=ierr) el%AreaTime,el%ATPar(:)
+           if (ierr /= 0) then
+              write(*,*) 'error reading line ',ln,' area piecewise- '//&
+                   &'constant/linear time behavior (ATpar) ',tp,j,'input'
+              stop 2203
+           end if
+           write(lfmt(8:11), '(I4.4)') size(el%ATPar(:-el%AreaTime+1),1)
+           write(lfmt(26:29),'(I4.4)') size(el%ATPar(-el%AreaTime+2:),1)
+           write(UECH,lfmt) el%AreaTime,el%ATPar(:-el%AreaTime+1),'| ',&
+                & el%ATPar(-el%AreaTime+2:), &
+                &'  ||    Area ti, tf | strength for '//tp,j
+        end if
+     else
+        if (el%BdryTime > -1) then
+           allocate(el%BTPar(2))
+           read(UIN,*,iostat=ierr) el%BdryTime,el%BTPar(:)
+           if (ierr /= 0) then
+              write(*,*) 'error reading line ',ln,' boundary functional time '//&
+                   &'behavior (BTPar) ',tp,j,' input'
+              stop 2205
+           end if
+           write(UECH,'(I0,2(1X,ES12.5),A,I0)') el%BdryTime,el%BTPar(:),&
+                &'  ||  Bdry time behavior, par1, par2 for '//tp,j
+        else
+           allocate(el%BTPar(-2*el%BdryTime+1))
+           read(UIN,*,iostat=ierr) el%BdryTime,el%BTPar(:)
+           if (ierr /= 0) then
+              write(*,*) 'error reading line ',ln,' boundary piecewise- '//&
+                   &'constant/linear time behavior (BTpar) ',tp,j,'input'
+              stop 2203
+           end if
+           write(lfmt(8:11), '(I4.4)') size(el%BTPar(:-el%BdryTime+1),1)
+           write(lfmt(26:29),'(I4.4)') size(el%BTPar(-el%BdryTime+2:),1)
+           write(UECH,lfmt) el%BdryTime,el%BTPar(:-el%BdryTime+1),' | ',&
+                & el%BTPar(-el%BdryTime+2:), &
+                &'  ||    Bdry ti, tf | strength for '//tp,j
+        end if
+     end if
+
+   end subroutine read_time_behaviors
+
   !******************************************************
   function computeVector(unit,n,line) result(v)
     
@@ -1223,15 +1188,15 @@ contains
 
     if ((vec(4:6) /= 'vec' .and. vec(4:6) /= 'VEC') &
          & .or. ierr /= 0) then
-       write(*,*) 'error reading line ',line,' of input '//&
-            &'({LIN,LOG}VEC min max) of input' 
+       write(*,*) 'error reading line ',line,' input '//&
+            &'({LIN,LOG}VEC min max) input' 
        stop 7770
     else
        backspace(unit)
        read(unit,*,iostat=ierr) vec,minv,maxv
        if (ierr /= 0) then
           write(*,*) 'error reading line ',line,&
-               &' calc vector ({LIN,LOG}VEC min max) of input'
+               &' calc vector ({LIN,LOG}VEC min max) input'
           stop 7771
        else
           delta = (maxv-minv)/(n-1)
@@ -1580,7 +1545,7 @@ contains
        write(*,'(2A)') 'WARNING: writeGeometry error opening output file for writing &
             &element matching locations ',s%geomFname
     else
-       write(40,'(A)') '# points along circumference of circular '//&
+       write(40,'(A)') '# points along circumference circular '//&
             &'and elliptical elements  -*-auto-revert-*-'
        do i = 1,nc
           write(40,'(2(A,I0),A)') '# circular element ',i,' = ',c(i)%M,' points'
@@ -1614,7 +1579,7 @@ contains
     backspace(unit)
     read(unit,*,iostat=ierr) ival
     if (ierr /= 0) then
-       write(*,*) 'error reading line ',num,' of ',trim(str),' input'
+       write(*,*) 'error reading line ',num,' ',trim(str),' input'
        stop 7771
     end if
   end function read_int
@@ -1628,7 +1593,7 @@ contains
     backspace(unit)
     read(unit,*,iostat=ierr) fval
     if (ierr /= 0) then
-       write(*,*) 'error reading line ',num,' of ',trim(str),' input'
+       write(*,*) 'error reading line ',num,' ',trim(str),' input'
        stop 7772
     end if
   end function read_real
@@ -1641,7 +1606,7 @@ contains
     backspace(unit)
     read(unit,*,iostat=ierr) lval
     if (ierr /= 0) then
-       write(*,*) 'error reading line ',num,' of ',trim(str),' input'
+       write(*,*) 'error reading line ',num,' ',trim(str),' input'
        stop 7773
     end if
   end function read_logical
