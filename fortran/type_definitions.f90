@@ -29,7 +29,6 @@ module type_definitions
        & INVLT, solution, particle, mathieu
   public :: print_match_result
 
-
   type :: mathieu
      ! things required to compute mathieu functions
      integer :: M = -999,  buffer = -999
@@ -74,7 +73,7 @@ module type_definitions
      !                tpar(n+2:2*n+1) = strength at each of n linear segment
      ! (is multiplied by constant strength too -- you probably want to set that to unity)
 
-     character(55), dimension(80) :: timeExplain = [&
+     character(55), dimension(10) :: TimeExplain = [&
           & '[step on @ tpar(1)]                                    ',&
           & '[finite width pulse; tpar(1:2) = on/off times]         ',&
           & '[instantaneous pulse @ tpar(1)]                        ',&
@@ -90,7 +89,7 @@ module type_definitions
      integer :: AreaTime = -999, BdryTime = -999
 
      ! parameters related to different time behaviors (on, off, etc)
-     real(DP), allocatable :: AtPar(:), BtPar(:)
+     real(DP), allocatable :: ATPar(:), BTPar(:)
   end type time
 
   type, extends(time) :: element
@@ -264,6 +263,9 @@ module type_definitions
           & '(gnuplot time series w/o velocity)',&
           & '(gnuplot pathlines)               ',&
           & '(gnuplot streakline)              ']
+     integer, dimension(21) :: OEMap = [1,2,0,0,0,0,0,0,0,&
+                                      & 3,4,5,0,0,0,0,0,0,0,&
+                                      & 6,7]
 
      ! aquitardLeak and unconfined
      integer :: output = -999, aquitardLeak = -999, unconfined= -999

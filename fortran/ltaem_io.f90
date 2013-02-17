@@ -214,17 +214,9 @@ contains
        stop 2072
     end if
 
-    if (s%output < 10) then
-       explain = s%outputExplain(s%output)
-    elseif (s%output < 20) then
-       explain = s%outputExplain(s%output-7)
-    else
-       explain = s%outputExplain(s%output-14)
-    end if
-
     ! echo input from first 4 lines to file
     write(UECHO,'(5(L1,1X),I0,1X,A)') s%calc, s%particle, s%contour, s%timeseries, s%deriv, &
-         & s%output,trim(explain)//&
+         & s%output,s%outputExplain(s%OEMap(s%output))//&
          & '  ||    re-calculate coefficients?, particle?, contour?, timeseries?, '//&
          &'log(t) deriv?, output flag'
     write(UECHO,'(2A)') trim(s%outFname),'  ||    output file name'
@@ -610,7 +602,7 @@ contains
                   &'circle ',j,' input'
              stop 2201
           end if
-          call read_time_behaviors(UCIRC,UECHO,c(j)%matching,j,sln,'circle ',.true.)
+          call read_time_behaviors(UCIRC,UECHO,c(j)%time,j,sln,'circle ',.true.)
        end do
 
        ! boundary source behavior
@@ -621,7 +613,7 @@ contains
                   &'(c%BdryTime) circle ',j,' input'
              stop 2204
           end if
-          call read_time_behaviors(UCIRC,UECHO,c(j)%matching,j,sln,'circle ',.false.)
+          call read_time_behaviors(UCIRC,UECHO,c(j)%time,j,sln,'circle ',.false.)
        end do
 
        close(UCIRC) ! circle input file
@@ -909,7 +901,7 @@ contains
                   &ellipse ',j,' input'
              stop 2422
           end if
-          call read_time_behaviors(UELIP,UECHO,e(j)%matching,j,sln,'ellipse',.true.)
+          call read_time_behaviors(UELIP,UECHO,e(j)%time,j,sln,'ellipse',.true.)
        end do
        do j = 1,size(e,dim=1)
           read(UELIP,*,iostat=ierr) e(j)%BdryTime; sln=sln+1
@@ -918,7 +910,7 @@ contains
                   &'(e%BdryTime) ellipse ',j,' input'
              stop 2425
           end if
-          call read_time_behaviors(UELIP,UECHO,e(j)%matching,j,sln,'ellipse',.false.)
+          call read_time_behaviors(UELIP,UECHO,e(j)%time,j,sln,'ellipse',.false.)
        end do
 
        close(UELIP) ! ellipse input file
@@ -1101,15 +1093,23 @@ contains
   end subroutine readInput
 
   subroutine read_time_behaviors(UIN,UECH,el,j,ln,tp,area) 
-    use type_definitions, only : matching
+    use type_definitions, only : time
     integer, intent(in) :: UIN, UECH, ln, j
-    type(matching), intent(inout) :: el
+    type(time), intent(inout) :: el
     character(7), intent(in) :: tp
     logical, intent(in) :: area
 
     character(46) :: lfmt = '(I0,1X,    (ES12.5,1X),A,    (ES12.5,1X),A,I0)'
+    character(8) :: lincon
     integer :: ierr
-    
+
+    if             (area .and. el%AreaTime < -100 .or. &
+         & ((.not. area) .and. el%BdryTime < -100)) then
+       lincon = 'linear'
+    else
+       lincon = 'constant'
+    end if
+
     backspace(UIN)
     if (area) then
         if (el%AreaTime > -1) then
@@ -1121,22 +1121,22 @@ contains
                    &'(ATPar) ',tp,j,' input'
               stop 2202
            end if
-           write(UECH,'(I0,2(1X,ES12.5),A,I0)') el%AreaTime,el%ATPar(:),&
-                &'  ||  Area time behavior, par1, par2 for '//tp,j
+           write(UECH,'(I0,2(1X,ES12.5),A,I0)') el%AreaTime, el%ATPar(:),&
+                &'  ||  Area time behavior '//trim(el%TimeExplain(el%areaTime))//', par1, par2 for '//tp,j
         else
-           ! piecewise-constant/linear time behavior
+           ! piecewise-constant/linear time behavior           
            allocate(el%ATPar(-2*el%AreaTime+1))
            read(UIN,*,iostat=ierr) el%AreaTime,el%ATPar(:)
            if (ierr /= 0) then
-              write(*,*) 'error reading line ',ln,' area piecewise- '//&
-                   &'constant/linear time behavior (ATpar) ',tp,j,'input'
+              write(*,*) 'error reading line ',ln,' area piecewise-'//&
+                   &trim(lincon)//' time behavior (ATpar) ',tp,j,'input'
               stop 2203
            end if
            write(lfmt(8:11), '(I4.4)') size(el%ATPar(:-el%AreaTime+1),1)
            write(lfmt(26:29),'(I4.4)') size(el%ATPar(-el%AreaTime+2:),1)
            write(UECH,lfmt) el%AreaTime,el%ATPar(:-el%AreaTime+1),'| ',&
                 & el%ATPar(-el%AreaTime+2:), &
-                &'  ||    Area ti, tf | strength for '//tp,j
+                &'  ||    Area ti, tf | piecewise-'//trim(lincon)//' strength for '//tp,j
         end if
      else
         if (el%BdryTime > -1) then
@@ -1147,21 +1147,21 @@ contains
                    &'behavior (BTPar) ',tp,j,' input'
               stop 2205
            end if
-           write(UECH,'(I0,2(1X,ES12.5),A,I0)') el%BdryTime,el%BTPar(:),&
-                &'  ||  Bdry time behavior, par1, par2 for '//tp,j
+           write(UECH,'(I0,2(1X,ES12.5),A,I0)') el%BdryTime, el%BTPar(:),&
+                &'  ||  Bdry time behavior '//trim(el%timeExplain(el%BdryTime))//', par1, par2 for '//tp,j
         else
            allocate(el%BTPar(-2*el%BdryTime+1))
            read(UIN,*,iostat=ierr) el%BdryTime,el%BTPar(:)
            if (ierr /= 0) then
               write(*,*) 'error reading line ',ln,' boundary piecewise- '//&
-                   &'constant/linear time behavior (BTpar) ',tp,j,'input'
+                   &trim(lincon)//' time behavior (BTpar) ',tp,j,'input'
               stop 2203
            end if
            write(lfmt(8:11), '(I4.4)') size(el%BTPar(:-el%BdryTime+1),1)
            write(lfmt(26:29),'(I4.4)') size(el%BTPar(-el%BdryTime+2:),1)
            write(UECH,lfmt) el%BdryTime,el%BTPar(:-el%BdryTime+1),' | ',&
                 & el%BTPar(-el%BdryTime+2:), &
-                &'  ||    Bdry ti, tf | strength for '//tp,j
+                &'  ||    Bdry ti, tf | piecewise-'//trim(lincon)//' strength for '//tp,j
         end if
      end if
 
