@@ -1,0 +1,17 @@
+True  False  True  True  1  :: calc?, particle?, contour?, log(t)_deriv?, output_flag
+multiple_wells_contours.dat
+1.0D0   2.0D-2   1.0D-5     :: por, k, Ss
+0   1.0D0   1.0D-4   1.0D0  :: LEAKY: leakFlag, K2, Ss2, b2
+False 1.5D-1  2.0D0   1.0   :: UNCONFINED: unconfinedFlag?, Sy, Kz, b
+False 1.0D-5  2.0D0         :: DUALPORO: dualPorosityFlag?, matrixSs, matrix/fracture lambda
+40  40  7  :: nx, ny, nt
+DUMMY OBS NAME  
+LINVEC -0.1 1.1 :: x 
+LINVEC -0.1 1.1 :: y
+0.01 0.6 1.1 1.6 2.1 2.6 3.1 :: t
+1.0D-6  1.0D-8  40  :: alpha, tolerance, M
+4  multiple_wells_circles.in     :: number of circular elements, circle data file
+0  20 not_used    :: number of elliptical elements, ellipse MS, ellipse data file
+multiple_wells_particles.in   ::  particle data file
+
+     
