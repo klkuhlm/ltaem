@@ -1122,7 +1122,8 @@ contains
               stop 2202
            end if
            write(UECH,'(I0,2(1X,ES12.5),A,I0)') el%AreaTime, el%ATPar(:),&
-                &'  ||  Area time behavior '//trim(el%TimeExplain(el%areaTime))//', par1, par2 for '//tp,j
+                &'  ||  Area time behavior '//trim(el%TimeExplain(el%areaTime))//&
+                &', par1, par2 for '//tp,j
         else
            ! piecewise-constant/linear time behavior           
            allocate(el%ATPar(-2*el%AreaTime+1))
@@ -1148,7 +1149,8 @@ contains
               stop 2205
            end if
            write(UECH,'(I0,2(1X,ES12.5),A,I0)') el%BdryTime, el%BTPar(:),&
-                &'  ||  Bdry time behavior '//trim(el%timeExplain(el%BdryTime))//', par1, par2 for '//tp,j
+                &'  ||  Bdry time behavior '//trim(el%timeExplain(el%BdryTime))//&
+                &', par1, par2 for '//tp,j
         else
            allocate(el%BTPar(-2*el%BdryTime+1))
            read(UIN,*,iostat=ierr) el%BdryTime,el%BTPar(:)

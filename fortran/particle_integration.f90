@@ -52,6 +52,8 @@ contains
     real(DP) :: error, pt, px, py, dt, length
     real(DP), parameter :: SAFETY = 0.9
 
+    !!complex(DP), dimension(21,2) :: tmp
+
     ns = size(s,dim=1)
     pt = p%ti
     px = p%x
