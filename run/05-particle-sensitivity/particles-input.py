@@ -1,14 +1,20 @@
 import numpy as np
 import subprocess 
 
-nx,ny = (10,10)
+nx,ny = (15,15)
 
-delta = 1.0E-4
+delta = 1.0E-5
 
-xv = np.linspace(-0.5,1.5,nx)
-yv = np.linspace(-0.5,1.5,ny)
+xv = np.linspace(-0.15,1.15,nx)
+yv = np.linspace(-0.15,1.15,ny)
 
-r = np.empty((ny,nx,2,4))
+np.save('x.npy',xv)
+np.save('y.npy',yv)
+
+r = np.empty((ny,nx,2,2))  # deformation-gradient tensor (2x2 at each location)
+C = np.empty((ny,nx,2,2))  # cauchy-green strain tensor (" ")
+vec = np.empty((ny,nx,2,2))  # eigenvector field (strainlines + ?)
+val = np.empty((ny,nx,2))
 
 for i in range(ny):
     for j in range(nx):
@@ -21,40 +27,45 @@ T        :: forward tracking?
 1        :: integration scheme (1=RKM,2=RK,3=analytic,4=fwd Euler)
 1.0D-4   :: RKM tolerance
 0.025    :: RKM max step length
-1.0D-6  :: RKM min dt step size
-1.0D-4   :: initial dt step size
-%.7f      :: starting x
-%.7f      :: starting y
-1.1      :: starting time
-1.75      :: ending time
+5.0D-7   :: RKM min dt step size
+5.0D-5   :: initial dt step size
+%.7f     :: starting x
+%.7f     :: starting y
+1.15      :: starting time
+1.25     :: ending time
 F        :: beginning inside an element?
-""" % (xv[j]+dx,yv[j]+dy))
+""" % (xv[j]+dx,yv[i]+dy))
 
             fh.close()
 
-            fh = open('screen.out','w')
-
             subprocess.call(['rm','particles.dat'])
+
+            fh = open('screen.out','w')
             subprocess.call(['./ltaem','particle_track.in'],stdout=fh)
-        
             fh.close()
 
             p = np.loadtxt('particles.dat')
+            # columns are : 0=time, 1=x_1, 2=y_1, 3=v_{x,1}, 4=v_{x,1}
 
             if k == 0:
                 # no shift
-                base = p[-1,1:]
+                base = p[-1,1:3]  # get final x/y positions
                 print i,j,xv[j],yv[i]
             elif k == 1:
-                # x shift
-                r[i,j,0,:] = (base - p[-1,1:])/delta
-                #print 'x',base,':',p[-1,1:],':',r[i,j,0,:]
+                # x shift 
+                r[i,j,0,0] = (p[-1,1] - base[0])/delta
+                r[i,j,1,0] = (p[-1,2] - base[1])/delta
             else:
-                # y shift
-                r[i,j,1,:] = (base - p[-1,1:])/delta
-                #print 'y',base,':',p[-1,1:],':',r[i,j,1,:]
+                # y shift 
+                r[i,j,0,1] = (p[-1,1] - base[0])/delta
+                r[i,j,1,1] = (p[-1,2] - base[1])/delta
+                
+                # compute Cauchy-Green strain tensor
+                C[i,j,:,:] = np.dot(np.transpose(r[i,j,:,:]),r[i,j,:,:])
+                val[i,j,:],vec[i,j,:,:] = np.linalg.eig(C[i,j,:,:])
 
-np.save('r.npy',r)
-
-        
+np.save('def-grad-tensor.npy',r)
+np.save('cauchy-green-tensor.npy',C)
+np.save('eigenvector-field.npy',vec)
+np.save('eigenvalue-field.npy',val)
 
