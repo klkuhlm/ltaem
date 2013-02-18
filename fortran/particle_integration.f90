@@ -46,10 +46,10 @@ contains
     type(element), intent(in) :: bg
 
     integer :: count, lt, los, his, ns
-    logical :: partEnd
+    logical :: partEnd, done
     real(DP), dimension(2) :: vInit,vTrap,vAB3,vAB2,vSF
     real(DP), dimension(2) :: fwdEuler,Trap,halfAB,fullAB,Simp,x0
-    real(DP) :: error, pt, px, py, dt, length
+    real(DP) :: error, pt, px, py, dt, length, enddt
     real(DP), parameter :: SAFETY = 0.9
 
     !!complex(DP), dimension(21,2) :: tmp
@@ -69,7 +69,29 @@ contains
     
     ! Runge-Kutta-Merson 4th-order adaptive integration scheme
     rkm: do
-       if (partEnd .or. trackDone(p%forward,pt+dt,p%tf)) exit rkm
+       ! did particle enter a sink in last step?
+       if (partEnd) exit rkm
+ 
+       ! will particle pass specified end time during this step?
+       call trackDone(p%forward,pt,dt,p%tf,done,enddt) 
+       if (done) then
+          print *, 'p%forward,pt,dt,p%tf,done,enddt',p%forward,pt,dt,p%tf,done,enddt
+          if (enddt < spacing(dt)) then
+             ! close enough
+             write(*,'(A,I0,2(A,ES13.6E2))') &
+                  & 'particle ',p%id,' reached final time:',pt,'=',p%tf
+
+             ! compute velocity at final location
+             call getsrange(pt,lo,ns,los,his,lt)
+             p%r(count-1,4:5) = L(pt,tee(lt), &
+                  & V(x0,s(:,lt),los,his,dom,c,e,bg), sol%INVLT)
+             
+             exit rkm
+          else
+             dt = enddt
+          end if
+       end if
+       
        x0 = [px,py]
 
        ! forward Euler 1/3-step  predictor
@@ -128,7 +150,7 @@ contains
 
        ! new step size based on error estimate:
        ! Numerical Recipes, Press et al 1992, eqn 16.2.10, p 712
-       if ((.not. partEnd) .and. (.not. trackDone(p%forward,pt,p%tf))) then
+       if ((.not. partEnd) .and. (.not. done)) then
 
           if (length > p%maxL) then
              ! cut time step to minimize distance
@@ -177,7 +199,9 @@ contains
     real(DP) :: pt, px, py, dt
     real(DP), dimension(2) :: FwdEuler,BkwdEuler,MidPt,Simp,x0
     real(DP), dimension(2) :: vInit,vBkwdEuler,vMidpt,vSimp
+    logical :: sink 
 
+    sink = .false.
     ns = size(s,dim=1)
     pt = p%ti
     px = p%x
@@ -196,13 +220,6 @@ contains
 
     rk: do i = 1,numdt
        if (mod(i,20) == 0) write(*,'(I0,A,ES13.6E2)') i,' t=',pt
-
-       ! see if particle will reach end this step
-       if (trackDone(p%forward,pt+dt,p%tf)) then
-          write(*,'(A,I3,A,ES13.6E2)') &
-               & 'particle',p%id,' reached final time:',p%tf
-          exit rk
-       end if
 
        x0 = [px,py]
 
@@ -234,9 +251,21 @@ contains
 
        if (sinkCheck(px,py,c,e)) then
           write(*,'(A,I0,A,ES13.6E2)') 'particle ',p%id,' entered a sink at t=',pt
+          sink = .true.
           exit rk
        end if
     end do rk
+
+    if (.not. sink) then
+       write(*,'(A,I0,2(A,ES13.6E2))') &
+            & 'particle ',p%id,' reached final time:',pt,'=',p%tf
+    
+       ! compute velocity at final time
+       call getsrange(pt,lo,ns,los,his,lt)
+       p%r(numdt,4:5) = L(pt,tee(lt), &
+            & V(x0,s(:,lt),los,his,dom,c,e,bg), sol%INVLT)
+    end if
+    
     p%numt = i-1
   end subroutine rungekutta
 
@@ -261,7 +290,9 @@ contains
     integer :: i, numdt, lt, los, his, ns
     real(DP) :: pt, px, py, dt
     real(DP), dimension(2) :: vel
+    logical :: sink
 
+    sink = .false.
     ns = size(s,dim=1)
     pt = p%ti
     px = p%x
@@ -280,13 +311,6 @@ contains
     fe: do i = 1,numdt
        if(mod(i,100) == 0) write(*,'(I0,A,ES13.6E2)') i,' t=',pt
 
-       ! see if particle will reach end this step
-       if (trackDone(p%forward,pt+dt,p%tf)) then
-          write(*,'(A,I0,A,ES13.6E2)') &
-               &'particle',p%id,' reached specified ending time:',p%tf
-          exit fe
-       end if
-
        ! full step forward Euler
        call getsrange(pt,lo,ns,los,his,lt)
        vel = L(pt,tee(lt),V([px,py],s(:,lt),los,his,dom,c,e,bg),sol%INVLT)
@@ -300,9 +324,18 @@ contains
 
        if (sinkCheck(px,py,c,e)) then
           write(*,'(A,I0,A,ES13.6E2)') 'particle ',p%id,' entered a sink at t=',pt
+          sink = .true.
           exit fe
        end if
     end do fe
+    
+    write(*,'(A,I0,2(A,ES13.6E2))') &
+         &'particle',p%id,' reached final time:',pt,'=',p%tf
+    ! compute velocity at final time
+    call getsrange(pt,lo,ns,los,his,lt)
+    p%r(numdt,4:5) = L(pt,tee(lt),&
+         & V([px,py],s(:,lt),los,his,dom,c,e,bg),sol%INVLT)
+    
     p%numt = i - 1
 
   end subroutine fwdEuler
@@ -347,7 +380,7 @@ contains
     ! given initial location at t=0, and desired time t=dt
 
     ! solution at t=dt is a root-finding exercise in x and y
-    ! use fwd euler to solve for initial guesses in where particle will be
+    ! use fwd euler to solve for initial guess where particle will be
     
     t = [p%dt, p%dt/DTFRAC, p%dt*DTFRAC]
 
@@ -411,29 +444,34 @@ contains
   !###########################################################################
   ! logical function for comparing tracking time to final time
 
-  pure function trackDone(fwd,tp,te) result(done)
+  pure subroutine trackDone(fwd,tp,dt,te,done,newdt)
     use constants, only : DP
     logical, intent(in) :: fwd  ! is tracking forward or backwards?
-    real(DP), intent(in) :: tp,te ! particle and "end" time
-    logical :: done
+    real(DP), intent(in) :: tp,dt,te ! particle and "end" time
+    logical, intent(out) :: done
+    real(DP), intent(out) :: newdt ! delta t to land on final time
 
     if (fwd) then
        ! forward particle tracking
-       if (tp >= te) then
+       if (tp+dt >= te) then
           done = .true.
+          newdt = te - tp
        else
           done = .false.
+          newdt = 999.
        end if
     else
        ! backwards particle tracking
-       if (tp <= te) then
+       if (tp-dt <= te) then
           done = .true.
+          newdt = tp - te   
        else
           done = .false.
+          newdt = 999.
        end if
     end if
 
-  end function trackDone
+  end subroutine trackDone
 
 
   !###########################################################################
