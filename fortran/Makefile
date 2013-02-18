@@ -64,7 +64,7 @@ F90=gfortran # must be >= 4.6.1
 OMP=-fopenmp
 CPP=-cpp
 DFLAGS=-O0 -Wall -Wextra -fcheck=all -g #-std=f2008
-##DFLAGS+=-gdwarf-4 -frange-check -fbounds-check -fcheck=all -fmodule-private -pedantic -Wunderflow -finit-integer=-777 -finit-real=snan -ffpe-trap=invalid -finit-logical=false -finit-character=126
+DFLAGS+=-gdwarf-4 -frange-check -fbounds-check -fcheck=all -fmodule-private -pedantic -Wunderflow -finit-integer=-777 -finit-real=snan -ffpe-trap=invalid -finit-logical=false -finit-character=126
 ##DFLAGS+=-fdump-rtl-expand 
 LINKOPT=-fbacktrace
 PFLAGS=-Ofast -march=native 
@@ -74,8 +74,12 @@ BFLAGS=$(PFLAGS) # $(DFLAGS) #
 PFLAGS+=$(OMP)
 
 # switch between performance or debugging flags
-#FLAGS=$(DFLAGS)
-FLAGS=$(PFLAGS)
+# based on whethere the environment variable PERF is defined
+ifdef PERF
+  FLAGS=$(PFLAGS)
+else
+  FLAGS=$(DFLAGS)
+endif
 
 LINKFLAG=$(FLAGS) $(LINKOPT)
 
