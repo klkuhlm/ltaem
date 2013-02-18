@@ -74,8 +74,8 @@ BFLAGS=$(PFLAGS) # $(DFLAGS) #
 PFLAGS+=$(OMP)
 
 # switch between performance or debugging flags
-FLAGS=$(DFLAGS)
-#FLAGS=$(PFLAGS)
+#FLAGS=$(DFLAGS)
+FLAGS=$(PFLAGS)
 
 LINKFLAG=$(FLAGS) $(LINKOPT)
 

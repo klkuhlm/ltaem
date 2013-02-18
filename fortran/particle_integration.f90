@@ -219,7 +219,7 @@ contains
     write(*,'(A,ES12.5,A,I0)') 'step size=',dt,' number steps needed=',numdt
 
     rk: do i = 1,numdt
-       if (mod(i,20) == 0) write(*,'(I0,A,ES13.6E2)') i,' t=',pt
+       if (mod(i,100) == 0) write(*,'(I0,A,ES13.6E2)') i,' t=',pt
 
        x0 = [px,py]
 
@@ -309,7 +309,7 @@ contains
     write(*,'(A,I0)') '** fwd Euler integration, particle ', p%id
 
     fe: do i = 1,numdt
-       if(mod(i,100) == 0) write(*,'(I0,A,ES13.6E2)') i,' t=',pt
+       if(mod(i,500) == 0) write(*,'(I0,A,ES13.6E2)') i,' t=',pt
 
        ! full step forward Euler
        call getsrange(pt,lo,ns,los,his,lt)
@@ -329,12 +329,14 @@ contains
        end if
     end do fe
     
-    write(*,'(A,I0,2(A,ES13.6E2))') &
-         &'particle',p%id,' reached final time:',pt,'=',p%tf
-    ! compute velocity at final time
-    call getsrange(pt,lo,ns,los,his,lt)
-    p%r(numdt,4:5) = L(pt,tee(lt),&
-         & V([px,py],s(:,lt),los,his,dom,c,e,bg),sol%INVLT)
+    if (.not. sink) then
+       write(*,'(A,I0,2(A,ES13.6E2))') &
+            &'particle',p%id,' reached final time:',pt,'=',p%tf
+       ! compute velocity at final time
+       call getsrange(pt,lo,ns,los,his,lt)
+       p%r(numdt,4:5) = L(pt,tee(lt),&
+            & V([px,py],s(:,lt),los,his,dom,c,e,bg),sol%INVLT)
+    end if
     
     p%numt = i - 1
 
