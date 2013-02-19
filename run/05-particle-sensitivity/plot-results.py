@@ -21,7 +21,7 @@ for i in range(ny):
 
         # select eigenvector associated with smallest eigenvalue
         # these are tangent to strainlines
-        if val[i,j,0] < val[i,j,1]:
+        if abs(val[i,j,0]) < abs(val[i,j,1]):
             sl[i,j,:] = vec[i,j,:,0]
         else:
             sl[i,j,:] = vec[i,j,:,1]
