@@ -390,12 +390,14 @@ contains
 
     print *, 'analytical 001'
 
+    ! this routine for test case 03 is hanging up with a arithmetic exception 
+    ! inside Kappa? or the bessel function routine? something else I think
+
     vv(:,1:2) = V(loc,s(:,lt),los,his,dom,c,e,bg)
 
-    print *, 'analytical 002'
+    print *, 'analytical 002'  ! never makes it here
 
     do i = 1, 3
-       print *, 'do i',i
        ! full step forward Euler to three slightly
        ! different times, re-using v(p) estimate, vv
        vel = L(t(i),tee(lt),vv(:,1:2),sol%INVLT)
@@ -410,7 +412,6 @@ contains
     ! compute roots for x & y, for each value of laplace parameter
 
     mul: do i = 1, MAXITER
-       print *, 'mul do i',i
        ! calculate divided differences
        fx3x2 = (fpv(:,:,2)-fpv(:,:,3))/spread(ploc(:,2)-ploc(:,3),1,ns)
        fx3x1 = (fpv(:,:,1)-fpv(:,:,3))/spread(ploc(:,1)-ploc(:,3),1,ns)
