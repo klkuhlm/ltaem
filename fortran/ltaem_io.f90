@@ -26,7 +26,7 @@ module file_ops
   implicit none
 
   private
-  public :: readInput, writeResults, writeGeometry
+  public :: readInput, writeResults, writeGeometry, read_coeff, dump_coeff
 
 contains
 
@@ -1613,5 +1613,115 @@ contains
     end if
   end function read_logical
   
+  subroutine dump_coeff(sol,c,e,nt,s,tee,minlt,maxlt)
+    use type_definitions, only : solution, circle, ellipse
+    use constants, only : DP
+
+    type(circle), intent(in), dimension(:) :: c
+    type(ellipse), intent(in), dimension(:) :: e
+    type(solution), intent(in) :: sol
+    integer, intent(in), dimension(:) :: nt
+    complex(DP), intent(in), dimension(:,:) :: s
+    real(DP), intent(in), dimension(:) :: tee
+    integer, intent(in) :: minlt,maxlt
+
+    integer :: ierr,i,nc,ne
+    nc = size(c)
+    ne = size(e)
+
+    open(unit=77, file=sol%coefffname, status='replace', action='write', iostat=ierr)
+    if (ierr /= 0) then
+       write(*,*) 'WARNING: error opening intermediate save file ',&
+            & trim(sol%coefffname), ' continuing without saving results'
+    else
+       write(77,'(A)') sol%echofName ! file with all the input parameters
+       write(77,'(4(I0,1X))') minlt,maxlt,nc,ne
+       write(77,*) nt(:)
+       write(77,*) s(:,:)
+       write(77,*) tee(:)
+       do i = 1,nc
+          write(77,'(A,3(I0,1X))') 'CIRCLE ',i,shape(c(i)%coeff)
+          write(77,*) c(i)%coeff(:,:)
+       end do
+       do i = 1,ne
+          write(77,'(A,3(I0,1X))') 'ELLIPS ',i,shape(e(i)%coeff)
+          write(77,*) e(i)%coeff(:,:)
+       end do
+       close(77)
+    end if
+  end subroutine dump_coeff
+
+  subroutine read_coeff(sol,bg,c,e,nt,s,tee,minlt,maxlt,fail)
+    use type_definitions, only : solution, circle, ellipse, element
+    use constants, only : DP
+    use ellipse_mathieu_init, only : ellipse_init
+
+    type(solution), intent(inout) :: sol
+    type(element), intent(inout) :: bg
+    type(circle), intent(inout), dimension(:) :: c
+    type(ellipse), intent(inout), dimension(:) :: e
+    integer, intent(out), allocatable :: nt(:)
+    complex(DP), intent(out), allocatable :: s(:,:)
+    real(DP), intent(out), allocatable :: tee(:)
+    integer, intent(out) :: minlt,maxlt
+    logical, intent(out) :: fail
+
+    character(6) :: elType  ! element type {CIRCLE,ELLIPS}
+    integer :: ierr,i,j,nc,ne,crow,ccol
+    nc = size(c)
+    ne = size(e)
+
+    open(unit=77, file=sol%coefffname, status='old', action='read', iostat=ierr)
+    if (ierr /= 0) then
+       ! go back and recalculate if no restart file
+       write(*,'(A)') 'ERROR: cannot opening restart file, recalculating...'
+       sol%calc = .true.
+       fail = .true.
+    else
+       fail = .false.
+    end if
+
+    read(77,*) !! TODO check inputs are same?
+    read(77,*) minlt,maxlt,nc,ne 
+    allocate(s(2*sol%m+1,minlt:maxlt-1), nt(minlt:maxlt-1), tee(minlt:maxlt-1))
+    read(77,*) nt(:)
+    read(77,*) s(:,:)
+    sol%totalnP = product(shape(s))
+    read(77,*) tee(:)
+    do i = 1,nc
+        read(77,*) elType,j,crow,ccol
+        if (elType == 'CIRCLE' .and. i == j) then
+           allocate(c(i)%coeff(crow,ccol))
+        else
+           write(*,'(A)') 'ERROR reading in CIRCLE matching '//&
+                &'results, recalculating...'
+           sol%calc = .true.
+           fail = .true.
+        end if
+        read(77,*) c(i)%coeff(:,:)
+     end do
+     do i = 1,ne
+        read(77,*) elType,j,crow,ccol
+        if (elType == 'ELLIPS' .and. i == j) then
+           allocate(e(i)%coeff(crow,ccol))
+        else
+           write(*,'(A)') 'ERROR reading in ELLIPS matching '//&
+                &'results, recalculating...'
+           sol%calc = .true.
+           fail = .true.
+        end if
+        read(77,*) e(i)%coeff(:,:)
+     end do
+
+     ! re-initialize Mathieu function matrices
+     if (ne > 0) then
+        write(*,'(A)') 're-computing Mathieu coefficients ...'
+        call ellipse_init(e,bg,s)
+     end if
+
+     write(*,'(A)') 'matching results successfully re-read from file'
+   end subroutine read_coeff
+   
+
 end module file_ops
 

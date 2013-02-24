@@ -30,7 +30,7 @@
 program ltaem_main
   use constants, only : DP
   use type_definitions, only : domain, element, circle, ellipse, solution, INVLT, particle
-  use file_ops, only : readinput, writeresults
+  use file_ops, only : readinput, writeresults, read_coeff, dump_coeff
   use inverse_Laplace_Transform, only : L => deHoog_invlap, pvalues => deHoog_pvalues
   use particle_integrate, only : rungeKuttaMerson, rungeKutta, fwdEuler, analytic
   use solution_mod, only : matrix_solution
@@ -48,10 +48,9 @@ program ltaem_main
   type(ellipse), allocatable :: e(:)
   type(solution) :: sol
   type(particle), allocatable :: part(:)
-  integer :: i, j, ierr
+  integer :: i, j
   integer :: tnp                              ! total # p (product of dimensions)
   integer :: nc, ne                           ! #circles, #ellipses
-  integer :: crow, ccol                       ! coeff #row, coeff #col
   integer :: lt, minlt, maxlt                 ! indexes related to log10 time
   integer :: lot, hit, lop, hip, lo           ! local hi and lo indices for log cycles
   integer, allocatable :: nt(:)               ! # times per log cycle
@@ -60,8 +59,8 @@ program ltaem_main
   real(DP), allocatable :: logt(:), tee(:)    ! log10 time, deHoog T
   complex(DP), allocatable :: s(:,:), stmp(:) ! Laplace parameter (different shapes)
   complex(DP) :: calcZ                        ! calculation point
-  character(6) :: elType                      ! element type {CIRCLE,ELLIPS}
   complex(DP), allocatable :: hp(:), vp(:,:)  ! Laplace-space head and velocity vectors
+  logical :: fail
 
   ! constants that shouldn't be adjusted too often
   real(DP), parameter :: MOST_LOGT = 0.999, TMAX_MULT = 2.0_DP  
@@ -170,78 +169,15 @@ program ltaem_main
      ! save coefficient matrices to file (if sol%output < 100)
      
      if (.not. sol%skipdump) then
-        open(unit=77, file=sol%coefffname, status='replace', action='write', iostat=ierr)
-        if (ierr /= 0) then
-           write(*,*) 'WARNING: error opening intermediate save file ',&
-                & trim(sol%coefffname), ' continuing without saving results'
-        else
-           write(77,'(A)') sol%echofName ! file with all the input parameters
-           write(77,'(4(I0,1X))') minlt,maxlt,nc,ne
-           write(77,*) nt(:)
-           write(77,*) s(:,:)
-           write(77,*) tee(:)
-           do i = 1,nc
-              write(77,'(A,3(I0,1X))') 'CIRCLE ',i,shape(c(i)%coeff)
-              write(77,*) c(i)%coeff(:,:)
-           end do
-           do i = 1,ne
-              write(77,'(A,3(I0,1X))') 'ELLIPS ',i,shape(e(i)%coeff)
-              write(77,*) e(i)%coeff(:,:)
-           end do
-           close(77)
-        end if
+        call dump_coeff(sol,c,e,nt,s,tee,minlt,maxlt)
         write(*,'(A)') '  <matching finished>  '
      end if
 
-  else   ! do not re-calculate coefficients     
-     open(unit=77, file=sol%coefffname, status='old', action='read', iostat=ierr)
-     if (ierr /= 0) then
-        ! go back and recalculate if no restart file
-        write(*,'(A)') 'ERROR: cannot opening restart file, recalculating...'
-        sol%calc = .true.
-        goto 111
-     end if
-
-     read(77,*) !! TODO should I check inputs are same?
-     read(77,*) minlt,maxlt,nc,ne ! scalars
-     allocate(s(2*sol%m+1,minlt:maxlt-1), nt(minlt:maxlt-1), tee(minlt:maxlt-1))
-     read(77,*) nt(:)
-     read(77,*) s(:,:)
-     sol%totalnP = product(shape(s))
+  else   
+     ! do not re-calculate coefficients  
+     call read_coeff(sol,bg,c,e,nt,s,tee,minlt,maxlt,fail)
      tnp = sol%totalnP
-     read(77,*) tee(:)
-     do i = 1,nc
-        read(77,*) elType,j,crow,ccol
-        if (elType == 'CIRCLE' .and. i == j) then
-           allocate(c(i)%coeff(crow,ccol))
-        else
-           write(*,'(A)') 'ERROR reading in CIRCLE matching '//&
-                &'results, recalculating...'
-           sol%calc = .true.
-           goto 111
-        end if
-        read(77,*) c(i)%coeff(:,:)
-     end do
-     do i = 1,ne
-        read(77,*) elType,j,crow,ccol
-        if (elType == 'ELLIPS' .and. i == j) then
-           allocate(e(i)%coeff(crow,ccol))
-        else
-           write(*,'(A)') 'ERROR reading in ELLIPS matching '//&
-                &'results, recalculating...'
-           sol%calc = .true.
-           goto 111
-        end if
-        read(77,*) e(i)%coeff(:,:)
-     end do
-
-     ! re-initialize Mathieu function matrices
-     if (ne > 0) then
-        write(*,'(A)') 're-computing Mathieu coefficients ...'
-        call ellipse_init(e,bg,s)
-     end if
-
-     write(*,'(A)') 'matching results successfully re-read from file'
+     if (fail) goto 111
   end if
 
   !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -273,7 +209,6 @@ program ltaem_main
         case (4)
            call fwdEuler(s,tee,c,e,bg,sol,dom,part(j),lbound(tee,dim=1))
         end select
-        ! invalid integration code checked in ltaem-io routine
 
      end do
      !$OMP END PARALLEL DO

@@ -41,7 +41,7 @@ BLASLIB=-lblas
 
 # main-program related
 ####################################
-KKHIGH=kappa.o time.o ltaem_io.o invlap.o ellipse_mathieu_init.o \
+KKHIGH=kappa.o time.o ellipse_mathieu_init.o ltaem_io.o invlap.o  \
 	circular_elements.o elliptical_elements.o calc_routines.o \
 	element_geometry.o solution.o particle_integration.o
 
@@ -49,6 +49,8 @@ MAIN=ltaem_main.o
 
 TARG=ltaem
 OBJS=$(EXTERNAL) constants.o $(KKLOW) geometryUtil.o $(KKHIGH)
+
+SRCS=$(OBJS:.o=.f90) $(MAIN:.o=.f90)
 
 ###################### ifort >= 12.0 ##########
 ##F90=ifort
@@ -70,7 +72,6 @@ LINKOPT=-fbacktrace
 PFLAGS=-Ofast -march=native 
 #################################
 
-BFLAGS=$(PFLAGS) # $(DFLAGS) #
 PFLAGS+=$(OMP)
 
 # switch between performance or debugging flags
@@ -88,49 +89,109 @@ main: $(OBJS) $(MAIN)
 	$(F90) $(LINKFLAG) -o $(TARG) $(OBJS) $(MAIN) $(LAPACKLIB) $(BLASLIB)
 	install $(TARG) ../run/
 
-# this external library tends to produce spurious errors about implicit type conversions
-cbessel.o : ./external/cbessel.f90
-	$(F90) -c $(BFLAGS) -o $@ $<
-
 %.o: %.f90
 	$(F90) -c $(FLAGS) -o $@ $<
 
-%.o: %.f
-	$(F90) -c $(FLAGS) -o $@ $<
+# dependency listing
+cbessel.o complex_bessel.mod: cbessel.f90
+constants.o constants.mod: constants.f90
+type_definitions.o type_definitions.mod: type_definitions.f90 \
+ constants.mod
+utility.o utility.mod: utility.f90 constants.mod constants.mod \
+ constants.mod constants.mod constants.mod constants.mod constants.mod \
+ constants.mod constants.mod constants.mod constants.mod constants.mod \
+ constants.mod constants.mod constants.mod constants.mod constants.mod \
+ constants.mod
+bessel_functions.o bessel_functions.mod: bessel_functions.f90 \
+ constants.mod complex_bessel.mod constants.mod constants.mod \
+ complex_bessel.mod constants.mod constants.mod constants.mod \
+ constants.mod constants.mod
+mathieu_functions2.o mathieu_functions.mod: mathieu_functions2.f90 \
+ constants.mod type_definitions.mod constants.mod utility.mod \
+ constants.mod utility.mod constants.mod utility.mod constants.mod \
+ utility.mod constants.mod utility.mod constants.mod constants.mod \
+ constants.mod constants.mod constants.mod constants.mod constants.mod \
+ constants.mod constants.mod constants.mod constants.mod constants.mod \
+ constants.mod constants.mod constants.mod constants.mod constants.mod \
+ constants.mod constants.mod constants.mod constants.mod constants.mod \
+ constants.mod constants.mod constants.mod constants.mod constants.mod \
+ constants.mod constants.mod constants.mod constants.mod constants.mod \
+ constants.mod constants.mod constants.mod constants.mod constants.mod \
+ constants.mod constants.mod constants.mod constants.mod constants.mod \
+ constants.mod constants.mod constants.mod constants.mod constants.mod \
+ constants.mod complex_bessel.mod constants.mod constants.mod \
+ complex_bessel.mod constants.mod
+geometryUtil.o geomconv.mod: geometryUtil.f90 constants.mod constants.mod \
+ type_definitions.mod constants.mod type_definitions.mod utility.mod \
+ constants.mod type_definitions.mod constants.mod constants.mod \
+ type_definitions.mod constants.mod type_definitions.mod utility.mod \
+ constants.mod type_definitions.mod
+kappa.o kappa_mod.mod: kappa.f90 constants.mod type_definitions.mod \
+ constants.mod type_definitions.mod
+time.o time_mod.mod: time.f90 constants.mod type_definitions.mod \
+ utility.mod constants.mod type_definitions.mod
+ellipse_mathieu_init.o ellipse_mathieu_init.mod: ellipse_mathieu_init.f90 \
+ constants.mod mathieu_functions.mod type_definitions.mod kappa_mod.mod \
+ constants.mod
+ltaem_io.o file_ops.mod: ltaem_io.f90 constants.mod type_definitions.mod \
+ type_definitions.mod constants.mod type_definitions.mod constants.mod \
+ type_definitions.mod constants.mod type_definitions.mod constants.mod \
+ type_definitions.mod constants.mod ellipse_mathieu_init.mod
+invlap.o inverse_laplace_transform.mod: invlap.f90 constants.mod \
+ type_definitions.mod constants.mod type_definitions.mod constants.mod \
+ type_definitions.mod constants.mod type_definitions.mod constants.mod \
+ type_definitions.mod
+circular_elements.o circular_elements.mod: circular_elements.f90 \
+ constants.mod kappa_mod.mod time_mod.mod utility.mod \
+ type_definitions.mod bessel_functions.mod constants.mod kappa_mod.mod \
+ time_mod.mod utility.mod type_definitions.mod bessel_functions.mod \
+ constants.mod kappa_mod.mod time_mod.mod type_definitions.mod \
+ bessel_functions.mod constants.mod kappa_mod.mod type_definitions.mod \
+ bessel_functions.mod constants.mod kappa_mod.mod time_mod.mod \
+ type_definitions.mod bessel_functions.mod constants.mod kappa_mod.mod \
+ time_mod.mod type_definitions.mod bessel_functions.mod
+elliptical_elements.o elliptical_elements.mod: elliptical_elements.f90 \
+ constants.mod kappa_mod.mod time_mod.mod type_definitions.mod \
+ mathieu_functions.mod utility.mod constants.mod type_definitions.mod \
+ mathieu_functions.mod utility.mod constants.mod type_definitions.mod \
+ time_mod.mod mathieu_functions.mod constants.mod type_definitions.mod \
+ time_mod.mod mathieu_functions.mod constants.mod time_mod.mod \
+ type_definitions.mod mathieu_functions.mod
+calc_routines.o calc_routines.mod: calc_routines.f90 type_definitions.mod \
+ constants.mod circular_elements.mod elliptical_elements.mod \
+ kappa_mod.mod time_mod.mod type_definitions.mod constants.mod \
+ circular_elements.mod elliptical_elements.mod kappa_mod.mod time_mod.mod \
+ utility.mod type_definitions.mod constants.mod type_definitions.mod \
+ constants.mod constants.mod type_definitions.mod geomconv.mod \
+ constants.mod
+element_geometry.o geometry.mod: element_geometry.f90 constants.mod \
+ type_definitions.mod file_ops.mod geomconv.mod constants.mod \
+ type_definitions.mod utility.mod geomconv.mod
+solution.o solution_mod.mod: solution.f90 constants.mod \
+ type_definitions.mod circular_elements.mod elliptical_elements.mod
+particle_integration.o particle_integrate.mod: particle_integration.f90 \
+ constants.mod inverse_laplace_transform.mod type_definitions.mod \
+ calc_routines.mod utility.mod constants.mod \
+ inverse_laplace_transform.mod type_definitions.mod calc_routines.mod \
+ constants.mod inverse_laplace_transform.mod type_definitions.mod \
+ calc_routines.mod constants.mod utility.mod \
+ inverse_laplace_transform.mod type_definitions.mod calc_routines.mod \
+ constants.mod constants.mod constants.mod type_definitions.mod \
+ constants.mod utility.mod type_definitions.mod
+ltaem_main.o: ltaem_main.f90 constants.mod type_definitions.mod \
+ file_ops.mod inverse_laplace_transform.mod particle_integrate.mod \
+ solution_mod.mod calc_routines.mod geometry.mod ellipse_mathieu_init.mod
+
+## other targets
 clean:
 	rm -f *.o *.mod $(TARG)
 
+# to make awful dependency listing above
+deps:
+	gfortran -cpp -MM $(SRCS) > ltaem.deps
+
 # build python module of stripped-down version of mathieu libraries using f2py
-pymodule fmathieu.so : ./external/cbessel.f90 mathieu.f90
+pymodule fmathieu.so : cbessel.f90 mathieu.f90
 	f2py --fcompiler=gnu95 $(LAPACKLIB) $(BLASLIB) -c fmathieu.pyf ./external/cbessel.f90 mathieu.f90
 
-# dependency listing
-# "provides" : "depends on"
-cbessel.o complex_bessel.mod : ./external/cbessel.f90
-constants.o constants.mod : constants.f90
-type_definitions.o type_definitions.mod : constants.mod mathieu_functions.mod type_definitions.f90
-utility.o utility.mod : constants.mod utility.f90
-geometryUtil.o geomConv.mod : constants.mod type_definitions.mod utility.mod geometryUtil.f90
-bessel_functions.o bessel_functions.mod : complex_bessel.mod constants.mod bessel_functions.f90
-mathieu_functions2.o mathieu_functions.mod : constants.mod mathieu_functions2.f90
-kappa.o kappa_mod.mod : constants.mod type_definitions.mod kappa.f90
-time.o  time_mod.mod  : constants.mod type_definitions.mod utility.mod time.f90
-ltaem_io.o file_ops.mod : type_definitions.mod constants.mod ltaem_io.f90
-invlap.o inverse_laplace_transform.mod : constants.mod type_definitions.mod invlap.f90
-solution.o solution_mod.mod : constants.mod type_definitions.mod circular_elements.mod \
-	elliptical_elements.mod solution.f90
-ellipse_mathieu_init.o ellipse_mathieu_init.mod : constants.mod mathieu_functions.mod \
-	type_definitions.mod kappa_mod.mod ellipse_mathieu_init.f90
-circular_elements.o circular_elements.mod : constants.mod kappa_mod.mod time_mod.mod \
-	utility.mod type_definitions.mod bessel_functions.mod circular_elements.f90
-elliptical_elements.o elliptical_elements.mod : constants.mod kappa_mod.mod time_mod.mod \
-	utility.mod type_definitions.mod mathieu_functions.mod elliptical_elements.f90
-calc_routines.o calc_routines.mod : type_definitions.mod constants.mod circular_elements.mod \
-	elliptical_elements.mod kappa_mod.mod time_mod.mod utility.mod calc_routines.f90
-element_geometry.o geometry.mod : constants.mod type_definitions.mod file_ops.mod \
-	utility.mod element_geometry.f90
-ltaem_main.o : constants.mod type_definitions.mod file_ops.mod inverse_laplace_transform.mod \
-	solution_mod.mod calc_routines.mod geometry.mod ellipse_mathieu_init.mod ltaem_main.f90
-particle_integration.o particle_integrate.mod : constants.mod inverse_laplace_transform.mod \
-	type_definitions.mod calc_routines.mod
 
