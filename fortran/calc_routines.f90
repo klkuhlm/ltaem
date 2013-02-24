@@ -410,7 +410,7 @@ contains
     complex(DP), dimension(:), intent(in) :: p
     integer, intent(in) :: lo,hi
     if (hi-lo+1 /= size(p,1)) then
-       write(*,'(A,3(1X,I0))') 'ERROR: lo,hi do not match dimensions of p',lo,hi,size(p,1)
+       write(*,'(A,3(1X,I0))') 'CHECK_NP ERROR: lo,hi do not match dimensions of p',lo,hi,size(p,1)
        stop
     end if
   end subroutine check_np

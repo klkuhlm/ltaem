@@ -1,11 +1,11 @@
 1  :: N
 1  :: M
-2  :: ibnd
+-1  :: ibnd
 F  :: calcin?
 F  :: storin?
 1.0D-3  :: r
-3.5D-1 :: x0
-3.5D-1 :: y0
+2.5D-1 :: x0
+2.5D-1 :: y0
 1.0D0    :: K
 1.0D0    :: Ss
 1.0D0    :: porosity

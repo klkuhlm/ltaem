@@ -366,8 +366,8 @@ contains
     real(DP), dimension(2) :: loc, vel
     real(DP), dimension(2,3) :: ploc     ! location guesses
     ! f(x) and f(y) for root-finding
-    complex(DP), dimension(size(s),2,3) :: fpv
-    complex(DP), dimension(size(s),2) :: vv, fx3x2, fx3x1, fx2x1, fx3x2x1, w, r
+    complex(DP), dimension(size(s,1),2,3) :: fpv
+    complex(DP), dimension(size(s,1),2) :: vv, fx3x2, fx3x1, fx2x1, fx3x2x1, w, r
     real(DP), parameter :: DTFRAC = 1.1, ITERTOL = 1.0E-3
     integer, parameter :: MAXITER = 100
 
@@ -387,12 +387,18 @@ contains
     t = [p%dt, p%dt/DTFRAC, p%dt*DTFRAC]
 
     call getsrange(t(1),lo,ns,los,his,lt)
-    vv = V(loc,s(:,lt),los,his,dom,c,e,bg)
+
+    print *, 'analytical 001'
+
+    vv(:,1:2) = V(loc,s(:,lt),los,his,dom,c,e,bg)
+
+    print *, 'analytical 002'
 
     do i = 1, 3
+       print *, 'do i',i
        ! full step forward Euler to three slightly
        ! different times, re-using v(p) estimate, vv
-       vel = L(t(i),tee(lt),vv,sol%INVLT)
+       vel = L(t(i),tee(lt),vv(:,1:2),sol%INVLT)
        ! estimated coordinates
        ploc(1:2,i) = loc(:) + t(i)*vel(:)
        ! equation which is set to zero, and used for root-finding (p*x - x0) = V(x)
@@ -404,6 +410,7 @@ contains
     ! compute roots for x & y, for each value of laplace parameter
 
     mul: do i = 1, MAXITER
+       print *, 'mul do i',i
        ! calculate divided differences
        fx3x2 = (fpv(:,:,2)-fpv(:,:,3))/spread(ploc(:,2)-ploc(:,3),1,ns)
        fx3x1 = (fpv(:,:,1)-fpv(:,:,3))/spread(ploc(:,1)-ploc(:,3),1,ns)
