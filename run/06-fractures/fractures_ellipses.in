@@ -1,0 +1,36 @@
+16 :: N
+40 :: M
+10 :: ms
+1  :: ibnd
+F  :: calcin?
+F  :: storin?
+0.0        :: r
+0.0D+0        :: x0
+0.0 0.5 1.0 1.5        :: y0
+0.25        :: f
+0.0   :: theta
+2.0D-2        :: K
+1.0D-3        :: Ss
+1.0D0         :: porosity
+0             :: leaky type flag
+1.0D0         :: K2
+1.0D-4        :: Ss2
+1.0D0         :: b2
+F             :: unconfined?
+1.5D-1        :: Sy
+2.0D-2        :: Kz
+1.0D0         :: b
+F             :: dual porosity flag
+1.0D-5        :: matrix Ss
+2.0D0         :: fracture/matrix lambda
+1.0D0         :: dimensionless skin
+0.0D0         :: area source strength
+-0.5         :: boundary source strength
+1  0.0D0  0.0D0 :: 01 area time flag, tpar1, tpar2
+1  0.0D0  0.0D0 :: 02 area time flag, tpar1, tpar2
+1  0.0D0  0.0D0 :: 03 area time flag, tpar1, tpar2
+1  0.0D0  0.0D0 :: 04 area time flag, tpar1, tpar2
+1  0.0D0  0.0D0 :: 01 boundary time flag, tpar1, tpar2
+1  0.0D0  0.0D0 :: 02 boundary time flag, tpar1, tpar2
+1  0.0D0  0.0D0 :: 03 boundary time flag, tpar1, tpar2
+1  0.0D0  0.0D0 :: 04 boundary time flag, tpar1, tpar2
