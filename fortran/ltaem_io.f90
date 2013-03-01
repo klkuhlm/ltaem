@@ -335,6 +335,7 @@ contains
     else
        s%t(:) = computeVector(UINPUT,s%nt,ln)
     end if
+    print *, 'nt',s%nt,s%t
 
     if (any(s%t <= 0.0)) then
        write(*,*) 'all times (line ',ln,') must be positive values',s%t
@@ -1201,8 +1202,13 @@ contains
                &' calc vector ({LIN,LOG}VEC min max) input'
           stop 7771
        else
-          delta = (maxv-minv)/(n-1)
-          v = minv + real([(i,i=0,n-1)],DP)*delta
+          if (n == 1 ) then
+             v = (maxv+minv)/2 ! average of min/max
+          else
+             delta = (maxv-minv)/(n-1)
+             v = minv + real([(i,i=0,n-1)],DP)*delta
+          end if
+
           if (vec(1:3) == 'LIN' .or. vec(1:3) == 'lin') then
              return
           elseif (vec(1:3) == 'LOG' .or. vec(1:3) == 'log') then
