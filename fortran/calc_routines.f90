@@ -139,6 +139,60 @@ contains
     end if
   end function headCalcZ
 
+  function elementFlowrate(el,p,lo,hi,dom,c,e,bg) result(Q)
+    ! compute total flowrate in/out of an element, by integrating
+    ! flux along its boundary.  Useful for determining flowrate into a 
+    ! specified head element, or checking specified flux bc.
+
+    use type_definitions, only : matching, element, domain, circle, ellipse
+    use constants, only : DP, TWOPI
+
+    type(matching), intent(in) :: el
+    complex(DP), dimension(:), intent(in) :: p
+    integer, intent(in) :: lo,hi  ! lo,hi bounds of p relative to overall s
+    type(domain), intent(in) :: dom
+    type(circle),  target, dimension(:), intent(in) :: c
+    type(ellipse), target, dimension(:), intent(in) :: e
+    type(element), intent(in) :: bg
+    complex(DP), dimension(size(p,1)) :: Q
+
+    complex(DP), allocatable :: flux(:,:,:)
+    complex(DP), allocatable :: rflux(:,:)
+    integer :: M, np, i
+
+    M = el%M
+    np = size(p,1)
+    allocate(flux(np,2,M),rflux(np,M))
+
+    ! compute Cartesian components of flux at matching locations
+    do i = 1,M
+       flux(:,:,i) = velCalcZ(el%Zom(i),p,lo,hi,dom,c,e,bg)
+    end do
+
+    ! project flux onto radius vector and integrate w/ trapezoid rule
+    if (el%id <= dom%num(1)) then
+       ! circle
+       ! v_r = cos(theta)*v_x + sin(theta)*v_y
+       rflux(:,:) = spread(cos(el%Pcm(:)),1,np)*flux(:,1,:) + &
+                  & spread(sin(el%Pcm(:)),1,np)*flux(:,2,:)
+
+       ! Q = b*r* \int_0^{2 pi} q_r d theta
+       Q(:) = el%b*el%r*TWOPI/M*sum(rflux(1:np,1:M),dim=2)
+       
+    else
+       ! ellipse
+       ! v_eta = f*(sinh(eta)*cos(psi)*v_x + cosh(eta)*sin(psi)*v_y)
+       rflux(:,:) = el%f*(sinh(el%r)*spread(cos(el%Pcm(:)),1,np)*flux(:,1,:) + &
+                       & (cosh(el%r)*spread(sin(el%Pcm(:)),1,np)*flux(:,2,:)))
+
+       ! Q = b*f* \int_0^{2 pi} \sqrt{cosh^2 eta - cos^2 psi} q_eta d psi
+       Q(:) = el%b*el%f*TWOPI/M*sum(rflux(1:np,1:M)*&
+            & sqrt((cosh(2.0*el%r) - spread(cos(2.0*el%Pcm(:)),1,np))/2.0),dim=2)
+
+    end if
+    
+  end function elementFlowrate
+
   !##################################################
   function velCalcZ(Z,p,lo,hi,dom,c,e,bg) result(v)
 

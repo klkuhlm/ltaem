@@ -221,6 +221,9 @@ module type_definitions
      logical :: particle = .false.
      integer :: nPart = -999
 
+     ! compute flowrates across each element for contour/time series?
+     logical :: Qcalc = .false.
+
      ! dump matching results to file for restart?
      logical :: skipDump = .false.
 
@@ -239,8 +242,9 @@ module type_definitions
      logical :: calc = .false.
 
      ! input/output filenames
-     character(lenFN) :: outfName='unset', infName='unset'
-     character(lenFN) :: elemHfName='unset', geomfName='unset', echofName='unset'
+     character(lenFN) :: outfName='ERROR-unset', infName='ERROR-unset'
+     character(lenFN) :: elemHfName='ERROR-unset', geomfName='ERROR-unset'
+     character(lenFN) :: echofName='ERROR-unset', qfName='ERROR-unset'
      character(13) :: coefffName = 'dump-vars.out'
 
      ! output index

@@ -60,6 +60,7 @@ program ltaem_main
   complex(DP), allocatable :: s(:,:), stmp(:) ! Laplace parameter (different shapes)
   complex(DP) :: calcZ                        ! calculation point
   complex(DP), allocatable :: hp(:), vp(:,:)  ! Laplace-space head and velocity vectors
+  complex(DP), allocatable :: qp(:,:) ! Laplace-space flowrate into/out of element
   logical :: fail
 
   ! constants that shouldn't be adjusted too often

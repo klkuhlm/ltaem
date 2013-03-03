@@ -66,8 +66,10 @@ contains
     idx = index(s%infName,'.')
     if (idx > 0) then
        s%echofname = s%infname(1:idx-1)//'.echo'
+       s%qfname = s%infname(1:idx-1)//'.Q'
     else
        s%echofname = trim(s%infname)//'.echo'
+       s%qfname = trim(s%infname)//'.Q'
     end if
 
     open(unit=UECHO, file=s%echofname, status='replace', action='write', iostat=ierr)
@@ -80,7 +82,7 @@ contains
     endif
 
     ! solution-specific and background aquifer parameters
-    read(UINPUT,*,iostat=ierr) s%calc, s%particle, s%contour, s%deriv, s%output
+    read(UINPUT,*,iostat=ierr) s%calc, s%particle, s%contour, s%deriv, s%Qcalc, s%output
     if (ierr /= 0) then
        write(*,*) 'error reading line ',ln,' (problem type + output flags) input'
        stop 110
@@ -139,6 +141,11 @@ contains
        stop 2031
     end if    
 
+    if (s%Qcalc .and. s%particle) then
+       write(*,*) 'Warning: resetting Qcalc to false for particle tracking'
+       s%Qcalc = .false.
+    end if
+    
     ! read output filename
     read(UINPUT,*,iostat=ierr) s%outFname; ln=ln+1
     if (ierr /= 0) then
@@ -215,10 +222,10 @@ contains
     end if
 
     ! echo input from first 4 lines to file
-    write(UECHO,'(5(L1,1X),I0,1X,A)') s%calc, s%particle, s%contour, s%timeseries, s%deriv, &
-         & s%output,s%outputExplain(s%OEMap(s%output))//&
+    write(UECHO,'(6(L1,1X),I0,1X,A)') s%calc, s%particle, s%contour, s%timeseries, s%deriv, &
+         & s%qcalc,s%output,s%outputExplain(s%OEMap(s%output))//&
          & '  ||    re-calculate coefficients?, particle?, contour?, timeseries?, '//&
-         &'log(t) deriv?, output flag'
+         &'log(t) deriv?, Qcalc?, output flag'
     write(UECHO,'(2A)') trim(s%outFname),'  ||    output file name'
     write(UECHO,'(3(ES12.5,1X),A)') bg%por, bg%k, bg%ss,'  ||   AQUIFER properties : por, k, Ss'
     write(UECHO,'(I0,1X,A,1X,3(ES12.5,1X),A)') bg%leakFlag, trim(bg%leakFlagExplain(bg%leakFlag)), &
