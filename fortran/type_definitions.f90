@@ -284,7 +284,7 @@ module type_definitions
      logical :: deriv = .false.
 
      ! containers for time-domain final results (x,y,t,[i:j])
-     real(DP),    allocatable :: h(:,:,:), v(:,:,:,:), dh(:,:,:)
+     real(DP),    allocatable :: h(:,:,:), v(:,:,:,:), dh(:,:,:), Q(:,:)
 
   end type solution
 

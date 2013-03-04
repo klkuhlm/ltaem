@@ -29,12 +29,12 @@
 
 program ltaem_main
   use constants, only : DP
-  use type_definitions, only : domain, element, circle, ellipse, solution, INVLT, particle
+  use type_definitions, only : domain, element, matching, circle, ellipse, solution, INVLT, particle
   use file_ops, only : readinput, writeresults, read_coeff, dump_coeff
   use inverse_Laplace_Transform, only : L => deHoog_invlap, pvalues => deHoog_pvalues
   use particle_integrate, only : rungeKuttaMerson, rungeKutta, fwdEuler, analytic
   use solution_mod, only : matrix_solution
-  use calc_routines, only : headCalc, velCalc
+  use calc_routines, only : headCalc, velCalc, elementFlowrate
   use geometry, only : distanceAngleCalcs
   use ellipse_mathieu_init, only : ellipse_init
 
@@ -48,7 +48,8 @@ program ltaem_main
   type(ellipse), allocatable :: e(:)
   type(solution) :: sol
   type(particle), allocatable :: part(:)
-  integer :: i, j
+  !!type(matching), allocatable :: mv(:)
+  integer :: i, j, k
   integer :: tnp                              ! total # p (product of dimensions)
   integer :: nc, ne                           ! #circles, #ellipses
   integer :: lt, minlt, maxlt                 ! indexes related to log10 time
@@ -81,7 +82,7 @@ program ltaem_main
   call readInput(sol,dom,bg,c,e,part)
   nc = size(c,dim=1)
   ne = size(e,dim=1)
-
+  
   ! compute element geometry from input
   ! read in element hierarchy data from file
   call DistanceAngleCalcs(c,e,bg,dom,sol)
@@ -226,6 +227,16 @@ program ltaem_main
 
      stmp(1:tnP) = reshape(s,[tnP])
 
+     if (sol%Qcalc) then
+        allocate(sol%Q(sol%nt,nc+ne),qp(tnP,nc+ne))
+        do j = 1,nc
+           qp(:,j) = elementFlowrate(c(j)%matching,stmp,1,tnP,dom,c,e,bg)
+        end do
+        do j = 1,ne
+           qp(:,nc+j) = elementFlowrate(e(j)%matching,stmp,1,tnP,dom,c,e,bg)
+        end do
+     end if
+
      !$OMP PARALLEL DO PRIVATE(calcZ,hp,vp,lot,hit,lop,hip) SHARED(sol)
      do j = 1,sol%nx
         !$ write (*,'(I0,1X)',advance="no") OMP_get_thread_num()
@@ -259,6 +270,11 @@ program ltaem_main
                       & sol%INVLT)*sol%t(lot:hit)
               end if
 
+              if (sol%Qcalc .and. j == 1 .and. i == 1) then
+                 do k = 1,nc+ne
+                    sol%Q(lot:hit,k) = L(sol%t(lot:hit), tee(lt), qp(lop:hip,k), sol%INVLT)
+                 end do
+              end if
            end do
         end do
      end do
@@ -275,6 +291,16 @@ program ltaem_main
      end if
 
      stmp(1:tnp) = reshape(s,[tnp])
+
+     if (sol%Qcalc) then
+        allocate(sol%Q(sol%nt,nc+ne),qp(tnP,nc+ne))
+        do j = 1,nc
+           qp(:,j) = elementFlowrate(c(j)%matching,stmp,1,tnP,dom,c,e,bg)
+        end do
+        do j = 1,ne
+           qp(:,nc+j) = elementFlowrate(e(j)%matching,stmp,1,tnP,dom,c,e,bg)
+        end do
+     end if
 
      !$OMP PARALLEL DO PRIVATE(calcZ,hp,vp,lot,hit,lop,hip) SHARED(sol)
      do i = 1,sol%nx
@@ -301,6 +327,12 @@ program ltaem_main
               hp(lop:hip) = hp(lop:hip)*stmp(lop:hip)
               sol%dh(i,1,lot:hit) = L(sol%t(lot:hit),tee(lt),hp(lop:hip)&
                    &,sol%INVLT)*sol%t(lot:hit)
+           end if
+           
+           if (sol%Qcalc .and. i == 1) then
+              do k = 1, nc+ne
+                 sol%Q(lot:hit,k) = L(sol%t(lot:hit), tee(lt), qp(lop:hip,k), sol%INVLT)
+              end do
            end if
         end do
      end do

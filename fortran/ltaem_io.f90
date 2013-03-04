@@ -237,7 +237,7 @@ contains
     else
        explain = '(no unconfined)'
     end if
-    write(UECHO,'(L1,1X,A,1X,3(ES12.5,1X),A)') bg%unconfinedFlag, explain, bg%Sy, bg%kz, bg%b, &
+    write(UECHO,'(L1,1X,A,1X,3(ES12.5,1X),A)') bg%unconfinedFlag, trim(explain), bg%Sy, bg%kz, bg%b, &
          & '  ||   UNCONFINED properties : unconfined?, Sy, Kz, BGb'
 
     if (bg%dualPorosityFlag) then
@@ -245,7 +245,7 @@ contains
     else
        explain = '(no dual porosity)'
     end if
-    write(UECHO,'(L1,1X,A,1X,2(ES12.5,1X),A)') bg%dualPorosityFlag, explain, bg%matrixSs, bg%lambda, &
+    write(UECHO,'(L1,1X,A,1X,2(ES12.5,1X),A)') bg%dualPorosityFlag, trim(explain), bg%matrixSs, bg%lambda, &
          & '  ||   DUAL POROSITY properties : dual porosity?, matrixSs, matrix/fracture lambda'
 
     ! desired sution points/times
@@ -1532,6 +1532,25 @@ contains
        write(*,'(A,I0)')  'invalid output code ',s%output
        stop 300
     end select
+
+    ! write total flowrate through each element to separate file
+    ! each element includes a timeseries of flowrate
+    if (s%Qcalc) then
+       open(unit=91, file=s%qfname, status='replace', action='write')
+       write(91,'(A)') '# ltaem element total flowrates  -*-auto-revert-*-'
+       
+       do j = 1,size(s%Q,dim=2)
+          write(91,'(A,I0)') '# element ',j
+          do i = 1,s%nt
+             write(91,'('//tfmt//',1X,'//hfmt//')') s%t(i),s%Q(i,j)
+          end do
+          write(91,'(/)')
+       end do
+       write(91,'(A)') '# EOF'
+       close(91)
+       write(*,'(A)') '%% wrote element flowrates: '//trim(s%qfname)
+    end if
+
   end subroutine writeResults
 
   !##################################################

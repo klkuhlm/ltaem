@@ -28,7 +28,7 @@ module calc_routines
   implicit none
 
   private
-  public :: headCalc, velCalc
+  public :: headCalc, velCalc, elementFlowrate
 
   ! accepts complex point or 2-element vector as location
   interface headCalc
@@ -139,7 +139,7 @@ contains
     end if
   end function headCalcZ
 
-  function elementFlowrate(el,p,lo,hi,dom,c,e,bg) result(Q)
+  function elementFlowrate(el,p,lo,hi,dom,c,e,bg) result(qp)
     ! compute total flowrate in/out of an element, by integrating
     ! flux along its boundary.  Useful for determining flowrate into a 
     ! specified head element, or checking specified flux bc.
@@ -154,7 +154,7 @@ contains
     type(circle),  target, dimension(:), intent(in) :: c
     type(ellipse), target, dimension(:), intent(in) :: e
     type(element), intent(in) :: bg
-    complex(DP), dimension(size(p,1)) :: Q
+    complex(DP), dimension(size(p,1)) :: qp
 
     complex(DP), allocatable :: flux(:,:,:)
     complex(DP), allocatable :: rflux(:,:)
@@ -166,28 +166,30 @@ contains
 
     ! compute Cartesian components of flux at matching locations
     do i = 1,M
-       flux(:,:,i) = velCalcZ(el%Zom(i),p,lo,hi,dom,c,e,bg)
+       print *, 'i,Zom',i,el%Zom(i)
+       flux(1:np,1:2,i) = velCalcZ(el%Zom(i),p,lo,hi,dom,c,e,bg)
     end do
 
     ! project flux onto radius vector and integrate w/ trapezoid rule
     if (el%id <= dom%num(1)) then
        ! circle
        ! v_r = cos(theta)*v_x + sin(theta)*v_y
-       rflux(:,:) = spread(cos(el%Pcm(:)),1,np)*flux(:,1,:) + &
-                  & spread(sin(el%Pcm(:)),1,np)*flux(:,2,:)
+       rflux(1:np,1:M) = spread(cos(el%Pcm(1:M)),1,np)*flux(1:np,1,1:M) + &
+                       & spread(sin(el%Pcm(1:M)),1,np)*flux(1:np,2,1:M)
 
-       ! Q = b*r* \int_0^{2 pi} q_r d theta
-       Q(:) = el%b*el%r*TWOPI/M*sum(rflux(1:np,1:M),dim=2)
+       ! Q = r* \int_0^{2 pi} q_r d theta (assume unit thickness)
+       ! trap rule around circle (first & last points same)
+       qp(1:np) = el%r*TWOPI/M*sum(rflux(1:np,1:M),dim=2)
        
     else
        ! ellipse
        ! v_eta = f*(sinh(eta)*cos(psi)*v_x + cosh(eta)*sin(psi)*v_y)
-       rflux(:,:) = el%f*(sinh(el%r)*spread(cos(el%Pcm(:)),1,np)*flux(:,1,:) + &
-                       & (cosh(el%r)*spread(sin(el%Pcm(:)),1,np)*flux(:,2,:)))
+       rflux(:,:) = el%f*(sinh(el%r)*spread(cos(el%Pcm(1:M)),1,np)*flux(1:np,1,1:M) + &
+                       & (cosh(el%r)*spread(sin(el%Pcm(1:M)),1,np)*flux(1:np,2,1:M)))
 
-       ! Q = b*f* \int_0^{2 pi} \sqrt{cosh^2 eta - cos^2 psi} q_eta d psi
-       Q(:) = el%b*el%f*TWOPI/M*sum(rflux(1:np,1:M)*&
-            & sqrt((cosh(2.0*el%r) - spread(cos(2.0*el%Pcm(:)),1,np))/2.0),dim=2)
+       ! Q = f* \int_0^{2 pi} \sqrt{cosh^2 eta - cos^2 psi} q_eta d psi
+       qp(:) = el%f*TWOPI/M*sum(rflux(1:np,1:M)*&
+            & sqrt((cosh(2*el%r) - spread(cos(2*el%Pcm(:)),1,np))/2),dim=2)
 
     end if
     

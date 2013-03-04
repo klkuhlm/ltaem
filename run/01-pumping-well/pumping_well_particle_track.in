@@ -1,4 +1,4 @@
-T  T  F  T  20          :: calc?, prtcl?, contour?, log(t)_deriv?, output_flag
+T  T  F  T T 20          :: calc?, prtcl?, contour?, log(t)_deriv?, Qcalc?, output_flag
 pumping_well_particle.dat
 1.0D0   2.0D-2   1.0D-5   ::  por, k, Ss
 0   1.0D0   1.0D-4   1.0D0   :: leakFlag, K2, Ss2, b2
