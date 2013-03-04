@@ -166,7 +166,6 @@ contains
 
     ! compute Cartesian components of flux at matching locations
     do i = 1,M
-       print *, 'i,Zom',i,el%Zom(i)
        flux(1:np,1:2,i) = velCalcZ(el%Zom(i),p,lo,hi,dom,c,e,bg)
     end do
 
