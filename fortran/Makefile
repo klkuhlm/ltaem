@@ -61,8 +61,9 @@ SRCS=$(OBJS:.o=.f90) $(MAIN:.o=.f90)
 ##PFLAGS=-xHOST -O3 -fast  
 ###############################################
 
-## gfortran #################
-F90=gfortran # must be >= 4.6.1
+## gfortran >= 4.6.1 #################
+F90= gfotran
+##F90=~/local/bin/gfortran
 OMP=-fopenmp
 CPP=-cpp
 DFLAGS=-O0 -Wall -Wextra -fcheck=all -g #-std=f2008
