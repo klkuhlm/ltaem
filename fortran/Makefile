@@ -62,7 +62,7 @@ SRCS=$(OBJS:.o=.f90) $(MAIN:.o=.f90)
 ###############################################
 
 ## gfortran >= 4.6.1 #################
-F90= gfotran
+F90= gfortran
 ##F90=~/local/bin/gfortran
 OMP=-fopenmp
 CPP=-cpp
