@@ -62,8 +62,8 @@ SRCS=$(OBJS:.o=.f90) $(MAIN:.o=.f90)
 ###############################################
 
 ## gfortran >= 4.6.1 #################
-F90= gfortran
-##F90=~/local/bin/gfortran
+##F90= gfortran
+F90=~/local/bin/gfortran
 OMP=-fopenmp
 CPP=-cpp
 DFLAGS=-O0 -Wall -Wextra -fcheck=all -g #-std=f2008
@@ -98,30 +98,11 @@ cbessel.o complex_bessel.mod: cbessel.f90
 constants.o constants.mod: constants.f90
 type_definitions.o type_definitions.mod: type_definitions.f90 \
  constants.mod
-utility.o utility.mod: utility.f90 constants.mod constants.mod \
- constants.mod constants.mod constants.mod constants.mod constants.mod \
- constants.mod constants.mod constants.mod constants.mod constants.mod \
- constants.mod constants.mod constants.mod constants.mod constants.mod \
- constants.mod
+utility.o utility.mod: utility.f90 constants.mod 
 bessel_functions.o bessel_functions.mod: bessel_functions.f90 \
- constants.mod complex_bessel.mod constants.mod constants.mod \
- complex_bessel.mod constants.mod constants.mod constants.mod \
- constants.mod constants.mod
+ constants.mod complex_bessel.mod complex_bessel.mod 
 mathieu_functions2.o mathieu_functions.mod: mathieu_functions2.f90 \
- constants.mod type_definitions.mod constants.mod utility.mod \
- constants.mod utility.mod constants.mod utility.mod constants.mod \
- utility.mod constants.mod utility.mod constants.mod constants.mod \
- constants.mod constants.mod constants.mod constants.mod constants.mod \
- constants.mod constants.mod constants.mod constants.mod constants.mod \
- constants.mod constants.mod constants.mod constants.mod constants.mod \
- constants.mod constants.mod constants.mod constants.mod constants.mod \
- constants.mod constants.mod constants.mod constants.mod constants.mod \
- constants.mod constants.mod constants.mod constants.mod constants.mod \
- constants.mod constants.mod constants.mod constants.mod constants.mod \
- constants.mod constants.mod constants.mod constants.mod constants.mod \
- constants.mod constants.mod constants.mod constants.mod constants.mod \
- constants.mod complex_bessel.mod constants.mod constants.mod \
- complex_bessel.mod constants.mod
+ constants.mod type_definitions.mod utility.mod complex_bessel.mod  
 geometryUtil.o geomconv.mod: geometryUtil.f90 constants.mod constants.mod \
  type_definitions.mod constants.mod type_definitions.mod utility.mod \
  constants.mod type_definitions.mod constants.mod constants.mod \
@@ -135,12 +116,8 @@ ellipse_mathieu_init.o ellipse_mathieu_init.mod: ellipse_mathieu_init.f90 \
  constants.mod mathieu_functions.mod type_definitions.mod kappa_mod.mod \
  constants.mod
 ltaem_io.o file_ops.mod: ltaem_io.f90 constants.mod type_definitions.mod \
- type_definitions.mod constants.mod type_definitions.mod constants.mod \
- type_definitions.mod constants.mod type_definitions.mod constants.mod \
  type_definitions.mod constants.mod ellipse_mathieu_init.mod
 invlap.o inverse_laplace_transform.mod: invlap.f90 constants.mod \
- type_definitions.mod constants.mod type_definitions.mod constants.mod \
- type_definitions.mod constants.mod type_definitions.mod constants.mod \
  type_definitions.mod
 circular_elements.o circular_elements.mod: circular_elements.f90 \
  constants.mod kappa_mod.mod time_mod.mod utility.mod \
@@ -153,7 +130,6 @@ circular_elements.o circular_elements.mod: circular_elements.f90 \
  time_mod.mod type_definitions.mod bessel_functions.mod
 elliptical_elements.o elliptical_elements.mod: elliptical_elements.f90 \
  constants.mod kappa_mod.mod time_mod.mod type_definitions.mod \
- mathieu_functions.mod utility.mod constants.mod type_definitions.mod \
  mathieu_functions.mod utility.mod constants.mod type_definitions.mod \
  time_mod.mod mathieu_functions.mod constants.mod type_definitions.mod \
  time_mod.mod mathieu_functions.mod constants.mod time_mod.mod \

@@ -8,18 +8,27 @@ Module Complex_Bessel
   ! Date: 2002-02-08  Time: 17:53:05
   ! Latest revision - 16 April 2002
 
-  IMPLICIT NONE
+  implicit none
 
-  ! same selected_real_kind as in calling program
-  INTEGER, PARAMETER, private  :: dp = SELECTED_REAL_KIND(15, 307)
-
-  PRIVATE
-  PUBLIC  :: cbesh, cbesi, cbesj, cbesk, cbesy, cairy, cbiry 
+  private
+  public  :: cbesh, cbesi, cbesj, cbesk, cbesy, cairy, cbiry 
 
   ! Oct 2011: replaced function gamln() with Fortran2008 built-in log_gamma()
+  ! June 2013: changed real comparisons to use ULP*spacing(), compute pi-related constants at compile time
+
+  ! June 2013 consolidated common constants from individual routines
+  integer, parameter, private  :: DP = selected_real_kind(15, 307)
+  real(DP), parameter, private :: HPI = 2.0_DP*atan(1.0_DP)   !! PI/2 = 1.57079632679489662
+  real(DP), parameter, private :: PI =  4.0_DP*atan(1.0_DP)   !! PI = 3.14159265358979324
+  real(DP), parameter, private :: THPI = 6.0_DP*atan(1.0_DP)  !! 3*PI/2 = 4.71238898038469
+  real(DP), parameter, private :: RTPI = 1.0_DP/(8.0_DP*atan(1.0_DP))  !! 1/(2*PI) = 0.159154943091895
+  real(DP), parameter, private :: RTHPI = sqrt(8.0_DP*atan(1.0_DP))/2.0_DP !! sqrt(2*pi)/2 = 1.25331413731550
+  real(DP), parameter, private :: SPI = 3.0_DP/(2.0_DP*atan(1.0_DP))  ! 6/pi = 1.90985931710274 
+  complex(DP), parameter, private :: CONE =  (1.0_DP,0.0_DP),  CTWO = (2.0_DP,0.0_DP)
+  complex(DP), parameter, private :: CZERO = (0.0_DP,0.0_DP),  CI =   (0.0_DP,1.0_DP)
+  real(DP), parameter, private :: ULP = 2.0_DP
 
 CONTAINS
-
 
   SUBROUTINE cbesh(z, fnu, kode, m, n, cy, nz, ierr)
     !***BEGIN PROLOGUE  CBESH
@@ -179,9 +188,6 @@ CONTAINS
          rhpi, rl, r1m5, sgn, spn, tol, ufl, xn, xx, yn, yy,  &
          bb, ascle, rtol, atol
     INTEGER       :: i, inu, inuh, ir, k, k1, k2, mm, mr, nn, nuf, nw
-
-    REAL (dp), PARAMETER  :: hpi = 1.57079632679489662_dp
-    real(DP), parameter :: ULP = 2.0 !! KLK
 
     !***FIRST EXECUTABLE STATEMENT  CBESH
     nz = 0
@@ -516,8 +522,6 @@ CONTAINS
          tol, xx, yy, az, fn, bb, ascle, rtol, atol
     INTEGER       :: i, inu, k, k1, k2, nn
 
-    REAL (dp), PARAMETER     :: pi = 3.14159265358979324_dp
-    COMPLEX (dp), PARAMETER  :: cone = (1.0_dp, 0.0_dp)
 
     !***FIRST EXECUTABLE STATEMENT  CBESI
     ierr = 0
@@ -771,8 +775,6 @@ CONTAINS
          tol, yy, az, fn, bb, ascle, rtol, atol
     INTEGER       :: i, inu, inuh, ir, k1, k2, nl, k
 
-    REAL (dp), PARAMETER  :: hpi = 1.570796326794896619_dp
-
     !***FIRST EXECUTABLE STATEMENT  CBESJ
     ierr = 0
     nz = 0
@@ -1023,7 +1025,6 @@ CONTAINS
     REAL (dp)  :: aa, alim, aln, arg, az, dig, elim, fn, fnul, rl, r1m5,  &
          tol, ufl, xx, yy, bb
     INTEGER    :: k, k1, k2, mr, nn, nuf, nw
-    real(DP), parameter :: ULP = 2.0 !! KLK
 
     !***FIRST EXECUTABLE STATEMENT  CBESK
     ierr = 0
@@ -1309,8 +1310,6 @@ CONTAINS
     INTEGER       :: i, ifnu, k, k1, k2, nz1, nz2, i4
     COMPLEX (dp), PARAMETER  :: cip(4) = (/ (1.0_dp, 0.0_dp), (0.0_dp, 1.0_dp),  &
          (-1.0_dp, 0.0_dp), (0.0_dp, -1.0_dp) /)
-    REAL (dp), PARAMETER     :: hpi = 1.57079632679489662_dp
-    real(DP), parameter :: ULP = 2.0 !! KLK
 
     !***FIRST EXECUTABLE STATEMENT  CBESY
     xx = REAL(z, KIND=dp)
@@ -1547,8 +1546,8 @@ CONTAINS
     REAL (dp), PARAMETER  :: tth = 6.66666666666666667D-01,  &
          c1 = 3.55028053887817240D-01, c2 = 2.58819403792806799D-01,  &
          coef = 1.83776298473930683D-01
-    COMPLEX (dp), PARAMETER  :: cone = (1.0_dp, 0.0_dp)
-    real(DP), parameter :: ULP = 2.0 !! KLK
+
+
 
     !***FIRST EXECUTABLE STATEMENT  CAIRY
     ierr = 0
@@ -1887,9 +1886,7 @@ CONTAINS
     INTEGER       :: k, k1, k2, nz
     REAL (dp), PARAMETER  :: tth = 6.66666666666666667D-01,  &
          c1 = 6.14926627446000736D-01, c2 = 4.48288357353826359D-01,  &
-         coef = 5.77350269189625765D-01, pi = 3.141592653589793238_dp
-    complex(dp), PARAMETER  :: cone = (1.0_dp,0.0_dp)
-    real(DP), parameter :: ULP = 2.0 !! KLK
+         coef = 5.77350269189625765D-01
 
     !***FIRST EXECUTABLE STATEMENT  CBIRY
     ierr = 0
@@ -2114,7 +2111,6 @@ CONTAINS
     COMPLEX (dp)  :: cfn, crfn, s, sr, t, t2,  zn
     REAL (dp)     :: ac, rfn, test, tstr, tsti
     INTEGER       :: i, j, k, l
-    COMPLEX (dp), PARAMETER  :: czero = (0.0_dp,0.0_dp), cone = (1.0_dp, 0.0_dp)
     REAL (dp), PARAMETER     :: con(2) = (/ 3.98942280401432678D-01, &
          1.25331413731550025_dp /)
     REAL (dp), PARAMETER  :: c(120) = (/  &
@@ -2510,9 +2506,6 @@ CONTAINS
     REAL (dp)     :: ack, ak, ap, at, az, bk, fkap, fkk, flam, fnf, rho,  &
          rho2, scle, tfnf, tst, x
     INTEGER       :: i, iaz, ifnu, inu, itime, k, kk, km, m
-
-    COMPLEX (dp), PARAMETER  :: czero = (0.0_dp,0.0_dp), cone = (1.0_dp,0.0_dp), &
-         ctwo = (2.0_dp,0.0_dp)
 
     intrinsic :: log_gamma
 
@@ -2917,10 +2910,7 @@ CONTAINS
          1.44193250839954639D-02, 1.38184805735341786D-02, 1.32643378994276568D-02, &
          1.27517121970498651D-02, 1.22761545318762767D-02, 1.18338262398482403D-02 /)
     REAL (dp), PARAMETER  :: ex1 = 3.33333333333333333D-01,  &
-         ex2 = 6.66666666666666667D-01, hpi = 1.57079632679489662_dp,  &
-         pi = 3.14159265358979324_dp, thpi = 4.71238898038468986_dp
-    COMPLEX (dp), PARAMETER  :: czero = (0.0_dp,0.0_dp), cone = (1.0_dp,0.0_dp)
-    real(DP), parameter :: ULP = 2.0 !! KLK
+         ex2 = 6.66666666666666667D-01
 
     ! Associate arrays alfa & beta
 
@@ -3197,8 +3187,6 @@ CONTAINS
     REAL (dp)     :: aa, acz, ak, arm, ascle, atol, az, dfnu,  &
          fnup, rak1, rs, rtr1, s, ss, x
     INTEGER       :: i, ib, iflag, il, k, l, m, nn, nw
-    complex (dp), PARAMETER  :: czero = (0.0_dp,0.0_dp), cone = (1.0_dp,0.0_dp)
-    real(DP), parameter :: ULP = 2.0
 
     intrinsic :: log_gamma
 
@@ -3281,7 +3269,7 @@ CONTAINS
           IF (nn <= 2) RETURN
           k = nn - 2
           ak = k
-          rz = (cone+cone) / z
+          rz = ctwo / z
           IF (iflag == 1) GO TO 80
           ib = 3
 
@@ -3362,11 +3350,6 @@ CONTAINS
     REAL (dp)     :: aa, acz, aez, ak, arg, arm, atol, az, bb, bk, dfnu,  &
          dnu2, fdn, rtr1, s, sgn, sqk, x, yy
     INTEGER       :: i, ib, il, inu, j, jl, k, koded, m, nn
-
-    REAL (dp), PARAMETER     :: pi = 3.14159265358979324_dp, rtpi = 0.159154943091895336_dp
-    ! rtpi = reciprocal of 2.pi
-    COMPLEX (dp), PARAMETER  :: czero = (0.0_dp,0.0_dp), cone = (1.0_dp,0.0_dp)
-    real(DP), parameter :: ULP = 2.0 !! KLK
 
     nz = 0
     az = ABS(z)
@@ -3454,7 +3437,7 @@ CONTAINS
        nn = n
        k = nn - 2
        ak = k
-       rz = (cone+cone) / z
+       rz = ctwo / z
        ib = 3
        DO  i = ib, nn
           y(k) = CMPLX(ak+fnu, 0.0_dp, KIND=dp) * rz * y(k+1) + y(k+2)
@@ -3553,9 +3536,7 @@ CONTAINS
          fmr, fn, fnf, rs1, sgn, spn, x
     INTEGER       :: i, ib, iflag, ifn, il, init(2), inu, iuf, k, kdflg, kflag, &
          kk, m, nw, j, ipard, initd, ic
-    COMPLEX (dp), PARAMETER  :: czero = (0.0_dp,0.0_dp), cone = (1.0_dp,0.0_dp)
-    REAL (dp), PARAMETER     :: pi = 3.14159265358979324_dp
-    real(DP), parameter :: ULP = 2.0 !! KLK
+
     kdflg = 1
     nz = 0
     !-----------------------------------------------------------------------
@@ -3920,17 +3901,12 @@ CONTAINS
          c2m, c2r, crsc, cscl, fmr, fn, fnf, rs1, sar, sgn, spn, x, yy
     INTEGER       :: i, ib, iflag, ifn, il, in, inu, iuf, k, kdflg, kflag, kk,  &
          nai, ndai, nw, idum, j, ipard, ic
-    COMPLEX (dp), PARAMETER  :: czero = (0.0_dp,0.0_dp), cone = (1.0_dp,0.0_dp),  &
-         ci = (0.0_dp,1.0_dp),   &
+    COMPLEX (dp), PARAMETER  :: ci = (0.0_dp,1.0_dp),   &
          cr1 = (1.0_dp, 1.73205080756887729_dp),  &
          cr2 = (-0.5_dp, -8.66025403784438647D-01)
-    REAL (dp), PARAMETER     :: hpi = 1.57079632679489662_dp,  &
-         pi = 3.14159265358979324_dp,  &
-         aic = 1.26551212348464539_dp
+    REAL (dp), PARAMETER     :: aic = 1.26551212348464539_dp
     COMPLEX (dp), PARAMETER  :: cip(4) = (/ (1.0_dp,0.0_dp), (0.0_dp,-1.0_dp),  &
          (-1.0_dp,0.0_dp), (0.0_dp,1.0_dp) /)
-
-    real(DP), parameter :: ULP = 2.0 !! KLK
 
     kdflg = 1
     nz = 0
@@ -4505,7 +4481,6 @@ CONTAINS
          rz, sum, s1, s2, zeta1, zeta2, cy(2)
     REAL (dp)     :: aphi, ascle, bry(3), c2i, c2m, c2r, fn, rs1, yy
     INTEGER       :: i, iflag, init, k, m, nd, nn, nuf, nw
-    COMPLEX (dp), PARAMETER  :: czero = (0.0_dp,0.0_dp), cone = (1.0_dp,0.0_dp)
 
     nz = 0
     nd = n
@@ -4690,11 +4665,10 @@ CONTAINS
     REAL (dp)     :: aarg, ang, aphi, ascle, ay, bry(3), car, c2i, c2m,  &
          c2r, fn, rs1, sar, yy
     INTEGER       :: i, iflag, in, inu, j, k, nai, nd, ndai, nn, nuf, nw, idum
-    COMPLEX (dp), PARAMETER  :: czero = (0.0_dp,0.0_dp), cone = (1.0_dp,0.0_dp), &
-         ci = (0.0_dp,1.0_dp)
+    COMPLEX (dp), PARAMETER  :: ci = (0.0_dp,1.0_dp)
     COMPLEX (dp), PARAMETER  :: cip(4) = (/ (1.0_dp,0.0_dp), (0.0_dp,1.0_dp),  &
          (-1.0_dp,0.0_dp), (0.0_dp,-1.0_dp) /)
-    REAL (dp), PARAMETER     :: hpi = 1.57079632679489662_dp, aic = 1.265512123484645396_dp
+    REAL (dp), PARAMETER     :: aic = 1.265512123484645396_dp
 
     nz = 0
     nd = n
@@ -4910,7 +4884,6 @@ CONTAINS
     REAL (dp)     :: aa, aln, as1, as2, xx
 
     COMPLEX (dp), PARAMETER  :: czero = (0.0_dp,0.0_dp)
-    real(DP), parameter :: ULP = 2.0 !! KLK
 
     nz = 0
     as1 = ABS(s1)
@@ -5002,9 +4975,6 @@ CONTAINS
          rap1, rho, test, test1
     INTEGER       :: i, id, idnu, inu, itime, k, kk, magz
 
-    complex (dp), PARAMETER  :: czero = (0.0_dp,0.0_dp), cone = (1.0_dp,0.0_dp)
-    REAL(DP), parameter :: ULP = 2.0 !! KLK
-
     az = ABS(z)
     inu = int(fnu)
     idnu = inu + n - 1
@@ -5015,7 +4985,7 @@ CONTAINS
     id = idnu - magz - 1
     itime = 1
     k = 1
-    rz = (cone+cone) / z
+    rz = ctwo / z
     t1 = fnup * rz
     p2 = -t1
     p1 = cone
@@ -5119,20 +5089,13 @@ CONTAINS
 
     INTEGER, PARAMETER       :: kmax = 30
     REAL (dp), PARAMETER     :: r1 = 2.0_dp
-    COMPLEX (dp), PARAMETER  :: czero = (0.0_dp,0.0_dp), cone = (1.0_dp,0.0_dp), &
-         ctwo = (2.0_dp,0.0_dp)
 
-    REAL (dp), PARAMETER  :: pi = 3.14159265358979324_dp,  &
-         rthpi = 1.25331413731550025_dp, spi = 1.90985931710274403_dp,  &
-         hpi = 1.57079632679489662_dp, fpi = 1.89769999331517738_dp,  &
-         tth = 6.66666666666666666D-01
+    REAL (dp), PARAMETER  :: fpi = 1.89769999331517738_dp, tth = 6.66666666666666666D-01
 
     REAL (dp), PARAMETER  :: cc(8) = (/ 5.77215664901532861D-01,  &
          -4.20026350340952355D-02, -4.21977345555443367D-02, 7.21894324666309954D-03, &
          -2.15241674114950973D-04, -2.01348547807882387D-05, 1.13302723198169588D-06, &
          6.11609510448141582D-09 /)
-
-    real(DP), parameter :: ULP = 2.0 !! KLK
 
     intrinsic :: log_gamma
 
@@ -5715,8 +5678,6 @@ CONTAINS
     REAL (dp)     :: arg, ascle, as2, bscle, bry(3), cpn, c1i, c1m, c1r,  &
          fmr, sgn, spn, yy
     INTEGER       :: i, inu, iuf, kflag, nn, nw
-    REAL (dp), PARAMETER     :: pi = 3.14159265358979324_dp
-    COMPLEX (dp), PARAMETER  :: cone = (1.0_dp, 0.0_dp)
 
     nz = 0
     zn = -z
@@ -6033,7 +5994,6 @@ CONTAINS
     COMPLEX (dp)  :: csgn, cspn, c1, c2, zn, cy(2)
     REAL (dp)     :: arg, ascle, az, cpn, dfnu, fmr, sgn, spn, yy
     INTEGER       :: inu, iuf, nn, nw
-    REAL (dp), PARAMETER  :: pi = 3.14159265358979324_dp
 
     nz = 0
     zn = -z
