@@ -140,12 +140,12 @@ contains
   end function headCalcZ
 
   function elementFlowrate(el,p,lo,hi,dom,c,e,bg) result(qp)
-    ! compute total flowrate in/out of an element, by integrating
+    ! compute total flowrate in/out of an element, by integrating radial
     ! flux along its boundary.  Useful for determining flowrate into a 
     ! specified head element, or checking specified flux bc.
 
     use type_definitions, only : matching, element, domain, circle, ellipse
-    use constants, only : DP, TWOPI
+    use constants, only : DP, PI, EYE, TWOPI
 
     type(matching), intent(in) :: el
     complex(DP), dimension(:), intent(in) :: p
@@ -156,17 +156,29 @@ contains
     type(element), intent(in) :: bg
     complex(DP), dimension(size(p,1)) :: qp
 
-    complex(DP), allocatable :: flux(:,:,:)
-    complex(DP), allocatable :: rflux(:,:)
+    complex(DP), allocatable :: flux(:,:,:), rflux(:,:), calclocs(:)
     integer :: M, np, i
+    integer, parameter :: MINLOCS = 8
 
     M = el%M
     np = size(p,1)
     allocate(flux(np,2,M),rflux(np,M))
 
+    ! default number of integration locations (some circular wells are a single point, 
+    ! which doesn't result in an accurate intgration)
+    if (M == 1 .and. el%id <= dom%num(1)) then
+       allocate(calclocs(MINLOCS))
+       forall (i=1:MINLOCS)
+          calclocs(i) = el%z + el%r*exp(EYE*(-PI + TWOPI/M*(i-1)))
+       end forall
+    else
+       allocate(calclocs(M))
+       calclocs = el%Zom
+    end if
+
     ! compute Cartesian components of flux at matching locations
     do i = 1,M
-       flux(1:np,1:2,i) = velCalcZ(el%Zom(i),p,lo,hi,dom,c,e,bg)
+       flux(1:np,1:2,i) = velCalcZ(calclocs(i),p,lo,hi,dom,c,e,bg)
     end do
 
     ! project flux onto radius vector and integrate w/ trapezoid rule

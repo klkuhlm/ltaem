@@ -8,7 +8,7 @@ False 1.0D-5  2.0D0         :: DUALPORO: dualPorosityFlag?, matrixSs, matrix/fra
 DUMMY OBS NAME  
 LINVEC -2.5 2.5             :: x 
 LINVEC -2.5 2.5             :: y
-0.0001 0.001 0.01 0.1       :: t
+LOGVEC -4.0 -1.0           :: t
 1.0D-6  1.0D-8  10          :: alpha, tolerance, M
 1  pumping_well_circles.in  :: number of circular elements, circle data file
 0  20 not_used              :: number of elliptical elements, ellipse MS, ellipse data file
