@@ -313,6 +313,8 @@ contains
 
        ! full step forward Euler
        call getsrange(pt,lo,ns,los,his,lt)
+       !!!print *, 'FE t>:',pt,' lo>:',lo,' ns>:',ns,' los<:',los,' his<:',his,' lt<:',lt
+
        vel = L(pt,tee(lt),V([px,py],s(:,lt),los,his,dom,c,e,bg),sol%INVLT)
 
        px = px + dt*vel(1)
@@ -381,14 +383,14 @@ contains
     ! compute particle location at time t,
     ! given initial location at t=0, and desired time t=dt
 
-    ! solution at t=dt is a root-finding exercise in x and y
+    ! solution at t=ti + dt is a root-finding exercise in x and y
     ! use fwd euler to solve for initial guess where particle will be
     
-    t = [p%dt, p%dt/DTFRAC, p%dt*DTFRAC]
+    t = [p%ti + p%dt, p%dt/DTFRAC, p%dt*DTFRAC]
 
     call getsrange(t(1),lo,ns,los,his,lt)
 
-    print *, 'analytical 001'
+    print *, 'analytical 001 t>:',t(1),' lo>:',lo,' ns>:',ns,' los<:',los,' his<:',his,' lt<:',lt
 
     ! this routine for test case 03 is hanging up with a arithmetic exception 
     ! inside Kappa? or the bessel function routine? something else I think

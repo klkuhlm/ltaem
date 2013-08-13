@@ -62,7 +62,7 @@ contains
        if (.not.(ierr == 0 .or. ierr == 3)) then
           write(*,*) 'CBESK_VECTZ error (numzero=',numzero,', ierr=',ierr,', j=',j,&
                & ', num=',num,') z(j)=',z(j),'z',z
-          call abort()
+          call abort() ! to dump for checking backtrace in gdb
           stop 222
        end if
        K(j,0:num-1) = tmp(0:num-1)
