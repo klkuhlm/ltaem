@@ -408,6 +408,7 @@ contains
 
     ! Muller's algorithm for roots (Good for complex roots)
     ! compute roots for x & y, for each value of laplace parameter
+    ! modified from implementation in mpmath calculus/optimzation.py
 
     mul: do i = 1, MAXITER
        ! calculate divided differences
