@@ -374,27 +374,26 @@ contains
     integer, parameter :: MAXITER = 100
 
     ns = size(s,dim=1)
-    ! assume particles start at t=0?
+    ! assume particles start at t=0?  ! <--- TODO: doesn't make sense
     loc(1:2) = [p%x,p%y] ! starting position
 
     ! initialize with starting position
-    p%r(0,1:3) = [0.0_DP,loc(:)]
+    p%r(0,1:3) = [p%ti,loc(:)]
+
+    ! TODO: does this work for non-zero start time? this may not be correct logic
 
     ! compute particle location at time t,
-    ! given initial location at t=0, and desired time t=dt
+    ! given initial location at t=ti, and desired time t=dt
 
     ! solution at t=ti + dt is a root-finding exercise in x and y
     ! use fwd euler to solve for initial guess where particle will be
     
-    t = [p%ti + p%dt, p%dt/DTFRAC, p%dt*DTFRAC]
+    t(1) = p%ti 
+    t(2:3) = [t(1)/DTFRAC, t(1)*DTFRAC]
 
     call getsrange(t(1),lo,ns,los,his,lt)
 
-    print *, 'analytical t>:',t(1),' lo>:',lo,' ns>:',ns,' los<:',los,' his<:',his,' lt<:',lt
-
     vv(:,1:2) = V(loc,s(:,lt),los,his,dom,c,e,bg)
-
-    print *, 'analytical 002'  
 
     do i = 1, 3
        ! full step forward Euler to three slightly
@@ -406,8 +405,6 @@ contains
        fpv(1:ns,1:2,i) = V(ploc(:,i),s(:,lt),los,his,dom,c,e,bg) - &
             & (outer(s(:,lt),ploc(:,i)) - spread(loc(:),1,ns))
     end do
-    
-    print *, 'analytical 003'  
 
     ! Muller's algorithm for roots (Good for complex roots)
     ! compute roots for x & y, for each value of laplace parameter
@@ -416,7 +413,7 @@ contains
        ! calculate divided differences
        fx3x2 = (fpv(:,:,2)-fpv(:,:,3))/spread(ploc(:,2)-ploc(:,3),1,ns)
        fx3x1 = (fpv(:,:,1)-fpv(:,:,3))/spread(ploc(:,1)-ploc(:,3),1,ns)
-       fx3x1 = (fpv(:,:,1)-fpv(:,:,2))/spread(ploc(:,1)-ploc(:,2),1,ns)
+       fx2x1 = (fpv(:,:,1)-fpv(:,:,2))/spread(ploc(:,1)-ploc(:,2),1,ns)
 
        w = fx3x2 + fx3x1 - fx2x1
        fx3x2x1 = (fx2x1-fx3x2)/spread(ploc(:,1)-ploc(:,3),1,ns)
@@ -437,15 +434,19 @@ contains
        where (abs(w - r) > abs(w + r))
           r = -r
        end where 
-       ploc(:,3) = ploc(:,3) - 2.0*L(t(i),tee(lt),fpv(:,:,3)/(w+r),sol%INVLT)
+       ploc(:,3) = ploc(:,3) - 2.0*L(t(1),tee(lt),fpv(:,:,3)/(w+r),sol%INVLT) 
        fpv(:,:,3) = V(ploc(:,3),s(:,lt),los,his,dom,c,e,bg)  - &
             & (outer(s(:,lt),ploc(:,3)) - spread(loc(:),1,ns))
        if (all(abs(ploc(:,3) - ploc(:,2)) < ITERTOL)) then
           ! compute inverse Laplace transform of optimized location
-          vel = L(t(i),tee(lt),fpv(:,:,3),sol%INVLT)
+          vel = L(t(1),tee(lt),fpv(:,:,3),sol%INVLT)
           p%r(1,1) = p%dt
           p%r(1,2:3) = p%r(0,2:3) + p%dt*vel(:)
+          print *, 'finished in',i,'iterations of',MAXITER
           exit mul
+       end if
+       if (i == MAXITER) then
+          print *, 'did not converge in',MAXITER,'iterations'
        end if
     end do mul
 
