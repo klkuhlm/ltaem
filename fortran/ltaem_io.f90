@@ -1479,6 +1479,7 @@ contains
        open(unit=20, file=s%outfname, status='replace', action='write')
        write (20,'(A)') '# LT-AEM particle tracking output  -*-auto-revert-*-'
        do i = 1, size(p,dim=1)
+          write (20,'(A,I0,A)') '# particle ',i,' '//trim(p(i)%schemeExplain(p(i)%int))
           write (20,'(A)')   &
           & '#     time              x                    y                  '//&
           &'velx                 vely '

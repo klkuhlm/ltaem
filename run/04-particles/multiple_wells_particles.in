@@ -1,6 +1,6 @@
 4  1     :: #particles, streakSkip
 T        :: forward tracking?
-3        :: integration scheme
+1        :: integration scheme
 1.0D-4   :: RKM tolerance
 0.025    :: RKM max step length
 1.0D-6  :: RKM min dt step size

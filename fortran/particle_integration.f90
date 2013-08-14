@@ -390,14 +390,11 @@ contains
 
     call getsrange(t(1),lo,ns,los,his,lt)
 
-    print *, 'analytical 001 t>:',t(1),' lo>:',lo,' ns>:',ns,' los<:',los,' his<:',his,' lt<:',lt
-
-    ! this routine for test case 03 is hanging up with a arithmetic exception 
-    ! inside Kappa? or the bessel function routine? something else I think
+    print *, 'analytical t>:',t(1),' lo>:',lo,' ns>:',ns,' los<:',los,' his<:',his,' lt<:',lt
 
     vv(:,1:2) = V(loc,s(:,lt),los,his,dom,c,e,bg)
 
-    print *, 'analytical 002'  ! never makes it here
+    print *, 'analytical 002'  
 
     do i = 1, 3
        ! full step forward Euler to three slightly
@@ -410,6 +407,8 @@ contains
             & (outer(s(:,lt),ploc(:,i)) - spread(loc(:),1,ns))
     end do
     
+    print *, 'analytical 003'  
+
     ! Muller's algorithm for roots (Good for complex roots)
     ! compute roots for x & y, for each value of laplace parameter
 
