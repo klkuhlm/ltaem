@@ -308,7 +308,7 @@ module type_definitions
      character(39), dimension(4) :: schemeExplain = [&
           & 'Runge-Kutta-Merson (4th order adaptive)',&
           & 'Runge-Kutta  (4th order)               ',&
-          & 'Analytical   (root-finding method)     ',&
+          & 'Analytical   (root-finding)            ',&
           & 'Forward Euler  (1st order)             ']
 
      ! error tolerance, minimum stepsize, and max step length for rkm
