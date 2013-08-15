@@ -1428,7 +1428,7 @@ contains
           end if
           do k = 1, s%nt
              if (s%deriv) then
-                write (20,'(1X,'//tfmt//',1(1X,'//hfmt//'))') &
+                write (20,'(1X,'//tfmt//',3(1X,'//hfmt//'))') &
                      & s%t(k),s%h(j,1,k),s%dh(j,1,k)
              else
                 write (20,'(1X,'//tfmt//',2(1X,'//hfmt//'))') &

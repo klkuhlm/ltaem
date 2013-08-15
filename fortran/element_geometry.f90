@@ -123,6 +123,9 @@ contains
              c(i)%G(j)%Rgm(1:M) =   abs(Zgm(1:M)) ! r
              c(i)%G(j)%Pgm(1:M) = aimag(Zgm(1:M)) ! theta
 
+             print *, 'i,j:',i,j,'Rgm:',c(i)%G(j)%Rgm(1:M)
+             print *, 'i,j:',i,j,'Pgm:',c(i)%G(j)%Pgm(1:M)
+
              deallocate(Zgm)
              other => null()
           end if
@@ -260,9 +263,10 @@ contains
              do j = 1, nc
                 if (i /= j) then
                    ! all points on circumference must be either inside or outside
-                   if (any(abs(c(i)%G(j)%Rgm(:) - c(i)%r) < spacing(1.0)) .or. &
+                   if (any(abs(c(i)%G(j)%Rgm(:) - c(i)%r) <= 0.0) .or. &
                         & (any(c(i)%G(j)%Rgm(:) < c(i)%r) .and. &
                         &  any(c(i)%G(j)%Rgm(:) > c(i)%r))) then
+                      print *, c(i)%r,'::',c(i)%G(j)%Rgm(:)
                       write(*,*) 'ERROR: INTERSECTING CIRCLES: ',i,j
                       stop 400
                    end if
@@ -273,7 +277,7 @@ contains
           ! check circle-on-ellipse intersection
           do i = 1, nc
              do j = 1, ne
-                if (any(abs(c(i)%G(nc+j)%Rgm(:) - c(i)%r) < spacing(1.0)) .or. &
+                if (any(abs(c(i)%G(nc+j)%Rgm(:) - c(i)%r) <= 0.0) .or. &
                      & (any(c(i)%G(nc+j)%Rgm(:) < c(i)%r) .and. &
                      &  any(c(i)%G(nc+j)%Rgm(:) > c(i)%r))) then
                    write(*,*) 'ERROR: INTERSECTING CIRCLE & ELLIPSE: ',i,j
@@ -310,7 +314,7 @@ contains
           ! check ellipse-on-circle intersection
           do i = 1, ne
              do j = 1, nc
-                if (any(abs(e(i)%G(j)%Rgm(:) - e(i)%r) < spacing(1.0)) .or. &
+                if (any(abs(e(i)%G(j)%Rgm(:) - e(i)%r) <= 0.0) .or. &
                      & (any(e(i)%G(j)%Rgm(:) < e(i)%r) .and. &
                      &  any(e(i)%G(j)%Rgm(:) > e(i)%r))) then
                    write(*,*) 'ERROR: INTERSECTING ELLIPSE & CIRCLE: ',i,j
@@ -323,7 +327,7 @@ contains
           do i = 1, ne
              do j = 1, ne
                 if (i /= j) then
-                   if (any(abs(e(i)%G(nc+j)%Rgm(:) - e(i)%r) < spacing(1.0)) .or. &
+                   if (any(abs(e(i)%G(nc+j)%Rgm(:) - e(i)%r) <= 0.0) .or. &
                         & (any(e(i)%G(nc+j)%Rgm(:) < e(i)%r) .and. &
                         &  any(e(i)%G(nc+j)%Rgm(:) > e(i)%r))) then
                       write(*,*) 'ERROR: INTERSECTING ELLIPSES: ',i,j
