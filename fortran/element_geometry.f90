@@ -36,7 +36,7 @@ contains
     use constants, only: DP, PI, TWOPI
     use type_definitions, only : domain, circle, ellipse, element, solution, matching
     use file_ops, only : writeGeometry
-    use geomConv, only : c2xyA, e2xyA, xy2cA, xy2eA
+    use geomConv, only : xy2cA, xy2eA, c2xyR, e2xyR, xy2eR
 
     type(domain), intent(inout) :: dom
     type(circle),  target, intent(inout), dimension(:) :: c
@@ -59,17 +59,19 @@ contains
     ! each element can have a different number of matching locations
     ! starting at -PI (-x axis) continuing around the circle CCW.
     do i = 1,nc
-       allocate(c(i)%Pcm(c(i)%M))
-       forall(j = 1:c(i)%M)
-          c(i)%Pcm(j) = -PI + TWOPI/c(i)%M*real(j-1,DP)
+       M = c(i)%M
+       allocate(c(i)%Pcm(M))
+       forall(j = 1:M)
+          c(i)%Pcm(j) = -PI + TWOPI/M*(j-1)
        end forall
 
        c(i)%id = i ! global ID
     end do
     do i = 1,ne
-       allocate(e(i)%Pcm(e(i)%M))
-       forall (j = 1:e(i)%M)
-          e(i)%Pcm(j) = -PI + TWOPI/e(i)%M*real(j-1,DP)
+       M = e(i)%M
+       allocate(e(i)%Pcm(M))
+       forall (j = 1:M)
+          e(i)%Pcm(j) = -PI + TWOPI/M*(j-1)
        end forall
 
        e(i)%id = i+nc ! global ID
@@ -82,7 +84,7 @@ contains
 
        if (M > 1) then
           ! x,y from Cartesian origin to point on circumference of element
-          c(i)%Zom(1:M) = c2xyA(cmplx(c(i)%r,c(i)%Pcm(1:M),DP),c(i))
+          c(i)%Zom(1:M) = c(i)%z + c2xyR(cmplx(c(i)%r,c(i)%Pcm(1:M),DP))
        else
           ! when only one matching point move to center of element
           c(i)%Zom(1) = c(i)%z
@@ -96,7 +98,7 @@ contains
 
        if (M > 1) then
           ! x,y from Cartesian origin to point on circumference of element
-          e(i)%Zom(1:M) = e2xyA(cmplx(e(i)%r,e(i)%Pcm(1:M),DP),e(i))
+          e(i)%Zom(1:M) = e(i)%z + e2xyR(cmplx(e(i)%r,e(i)%Pcm(1:M),DP),e(i))
        else
           ! when only one matching location move to center of line between foci
           e(i)%Zom(1) = e(i)%z
@@ -115,16 +117,13 @@ contains
              else
                 other => e(j-nc)%matching ! other element an ellipse
              end if
+
              M = other%M
+             allocate(Zgm(M),c(i)%G(j)%Rgm(M), c(i)%G(j)%Pgm(M))
 
-             allocate(Zgm(M), c(i)%G(j)%Rgm(M), c(i)%G(j)%Pgm(M))
-
-             Zgm(1:M) = xy2cA(other%Zom(1:M),c(i))
-             c(i)%G(j)%Rgm(1:M) =   abs(Zgm(1:M)) ! r
-             c(i)%G(j)%Pgm(1:M) = aimag(Zgm(1:M)) ! theta
-
-             print *, 'i,j:',i,j,'Rgm:',c(i)%G(j)%Rgm(1:M)
-             print *, 'i,j:',i,j,'Pgm:',c(i)%G(j)%Pgm(1:M)
+             Zgm(1:M) = other%Zom(1:M) - c(i)%z
+             c(i)%G(j)%Rgm(1:M) = abs(Zgm) ! r
+             c(i)%G(j)%Pgm(1:M) = atan2(aimag(Zgm),real(Zgm)) ! theta
 
              deallocate(Zgm)
              other => null()
@@ -144,7 +143,7 @@ contains
 
              allocate(Zgm(M), e(i)%G(j)%Rgm(M), e(i)%G(j)%Pgm(M))
 
-             Zgm(1:M) = xy2eA(other%Zom(1:M),e(i))
+             Zgm(1:M) = xy2eR(other%Zom(1:M) - e(i)%z,e(i))
              e(i)%G(j)%Rgm(1:M) =  real(Zgm(1:M)) ! eta
              e(i)%G(j)%Pgm(1:M) = aimag(Zgm(1:M)) ! psi
 
@@ -280,6 +279,7 @@ contains
                 if (any(abs(c(i)%G(nc+j)%Rgm(:) - c(i)%r) <= 0.0) .or. &
                      & (any(c(i)%G(nc+j)%Rgm(:) < c(i)%r) .and. &
                      &  any(c(i)%G(nc+j)%Rgm(:) > c(i)%r))) then
+                   print *, c(i)%r,'::',c(i)%G(nc+j)%Rgm(:)
                    write(*,*) 'ERROR: INTERSECTING CIRCLE & ELLIPSE: ',i,j
                    stop 401
                 end if
@@ -317,6 +317,7 @@ contains
                 if (any(abs(e(i)%G(j)%Rgm(:) - e(i)%r) <= 0.0) .or. &
                      & (any(e(i)%G(j)%Rgm(:) < e(i)%r) .and. &
                      &  any(e(i)%G(j)%Rgm(:) > e(i)%r))) then
+                   print *, e(i)%r,'::',e(i)%G(j)%Rgm(:)
                    write(*,*) 'ERROR: INTERSECTING ELLIPSE & CIRCLE: ',i,j
                    stop 402
                 end if
@@ -330,6 +331,7 @@ contains
                    if (any(abs(e(i)%G(nc+j)%Rgm(:) - e(i)%r) <= 0.0) .or. &
                         & (any(e(i)%G(nc+j)%Rgm(:) < e(i)%r) .and. &
                         &  any(e(i)%G(nc+j)%Rgm(:) > e(i)%r))) then
+                      print *, e(i)%r,'::',e(i)%G(nc+j)%Rgm(:)
                       write(*,*) 'ERROR: INTERSECTING ELLIPSES: ',i,j
                       stop 403
                    end if

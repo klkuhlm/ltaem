@@ -1,14 +1,14 @@
-3   3  3  3  1  1        :: N
-5 5 5 5  1  1        :: M
-0   0  0  0  2  2        :: CIIbnd
-T   T  T  T  F  F        :: calcin?
-F   F  F  F  F  F        :: storin?
-  0.19    0.19     0.21     0.21     0.01    0.01   :: r
+10  10  10  10  1  1        :: N
+50  50  50  50  1  1        :: M
+0   0   0   0   2  2        :: CIIbnd
+T   T   T   T   F  F        :: calcin?
+F   F   F   F   F  F        :: storin?
+  0.21    0.21     0.19     0.19     0.01    0.01   :: r
 -29.956  26.706  -29.956   26.706  -29.956  26.706  :: x  3*(C5,C2)
  -0.850   1.720   -0.850    1.720   -0.850   1.720  :: y  3*(C5,C2)
-740.5   175.5      0.058    0.248    1.0     1.0    :: k
-  1.0     1.0      1.0E-5   1.0E-5   1.0     1.0    :: Ss
-1.D0  ::  porosity
+0.058    0.248      740.5   175.5      1.0     1.0    :: k
+1.0E-5   1.0E-5      1.0     1.0       1.0     1.0    :: Ss
+1.0  ::  porosity
 0     :: LEAKY TYPE FLAG
 1.0   :: K2
 1.0    :: Ss2
@@ -21,8 +21,8 @@ False  ::  DUAL PORO?
 1.0   :: matrix Ss
 1.0   :: lambda
 1.0   :: skin
-0.0D0  :: area source strength
-0.0D0 0.0D0 0.0D0 0.0D0 -8.82 +8.82
+0.0  :: area source strength
+0.0 0.0 0.0 0.0 -8.82 +8.82
 1 0.0 0.0 : 1 area time flag
 1 0.0 0.0 : 1 bdry time flag
 1 0.0 0.0 : 2 area time flag
