@@ -253,8 +253,8 @@ module type_definitions
      !  2= Matlab map (matrix output separate files);
      ! --------------->=10 <20 = time series output --------------------
      ! 10= Gnuplot time series with velocity (column of times; locs sep. by blank lines);
-     ! 11= Matlab for SCEM-UA inverse (column of times, locs sep. by blank lines);
-     ! 12= Gnuplot time serires no velocity (same as 10 no vel);
+     ! 11= Gnuplot time serires no velocity (same as 10 no vel);
+     ! 12= Matlab for SCEM-UA inverse (column of times, locs sep. by blank lines);
      ! --------------->=20 = particle track output ---------------------
      ! 20= pathline Gnuplot (column of times, particles separated by blank lines);
      ! 21= streakline Gnuplot (each block a requested time, each row a particle);

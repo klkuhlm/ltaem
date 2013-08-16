@@ -225,7 +225,9 @@ contains
     write(UECHO,'(6(L1,1X),I0,1X,A)') s%calc, s%particle, s%contour, s%timeseries, s%deriv, &
          & s%qcalc,s%output,s%outputExplain(s%OEMap(s%output))//&
          & '  ||    re-calculate coefficients?, particle?, contour?, timeseries?, '//&
-         &'log(t) deriv?, Qcalc?, output flag'
+         &'log(t) deriv?, Qcalc?, output flag (1:2 gnuplot/matlab contours, '//&
+         & '10:11 gnuplot time series w/wo vel, 12: matlab time series, '//&
+         &'20:21 pathline/streakline gnuplot)'
     write(UECHO,'(2A)') trim(s%outFname),'  ||    output file name'
     write(UECHO,'(3(ES12.5,1X),A)') bg%por, bg%k, bg%ss,'  ||   AQUIFER properties : por, k, Ss'
     write(UECHO,'(I0,1X,A,1X,3(ES12.5,1X),A)') bg%leakFlag, trim(bg%leakFlagExplain(bg%leakFlag)), &
@@ -574,7 +576,8 @@ contains
        write(UECHO,'(I0,A)') dom%num(1),        '  ||   # circular elements (including wells)'
        write(UECHO,fmt(1)) c(:)%n,              '  ||   # circular free parameter (Fourier coefficients)'
        write(UECHO,fmt(1)) c(:)%m,              '  ||   # circular matching locations'
-       write(UECHO,fmt(1)) c(:)%ibnd,           '  ||   circle ibnd array'
+       write(UECHO,fmt(1)) c(:)%ibnd,           '  ||   circle ibnd array '//&
+            &'(-1: spec head, 0: matching, :1 spec total flux, 2: spec elem flux)'
        write(UECHO,fmt(2)) c(:)%match,          '  ||   circle matching array'
        write(UECHO,fmt(2)) c(:)%calcin,         '  ||   calculate inside this circle?'
        write(UECHO,fmt(2)) c(:)%storin,         '  ||   calculate circle free-water storage effects?'
@@ -872,7 +875,8 @@ contains
        write(UECHO,fmt(1)) e(:)%n,              '  ||   # elliptical free parameter (Fourier coeffs)'
        write(UECHO,fmt(1)) e(:)%m,              '  ||   # ellipse matching locations'
        write(UECHO,fmt(1)) e(:)%ms,             '  ||   size "infinite" Mathieu matrices'
-       write(UECHO,fmt(1)) e(:)%ibnd,           '  ||   ellipse ibnd array'
+       write(UECHO,fmt(1)) e(:)%ibnd,           '  ||   ellipse ibnd array '//&
+            &'(-1: spec head, 0: matching, :1 spec total flux, 2: spec elem flux)'
        write(UECHO,fmt(2)) e(:)%match,          '  ||   ellipse matching array'
        write(UECHO,fmt(2)) e(:)%calcin,         '  ||   calculate inside this ellipse?'
        write(UECHO,fmt(2)) e(:)%storin,         '  ||   calculate free-water storage for this ellipse?'
@@ -1570,33 +1574,33 @@ contains
 
     nc = size(c,dim=1)
     ne = size(e,dim=1)
-    fmt = '(2(ES13.5,1X))'
+    fmt = '(3(ES13.5,1X))'
 
     ! write matching points to file
-    open(unit=40, file=s%geomfname, status='replace', action='write', iostat=ierr)
+    open(unit=40, file=s%geomfName, status='replace', action='write', iostat=ierr)
     if (ierr /= 0) then
        ! non-fatal error
        write(*,'(2A)') 'WARNING: writeGeometry error opening output file for writing &
-            &element matching locations ',s%geomFname
+            &element matching locations ',s%geomfName
     else
        write(40,'(A)') '# points along circumference circular '//&
             &'and elliptical elements  -*-auto-revert-*-'
        do i = 1,nc
           write(40,'(2(A,I0),A)') '# circular element ',i,' = ',c(i)%M,' points'
-          write(40,fmt)  (origin + c(i)%Zom(j), j=1,c(i)%M)
+          write(40,fmt)  (origin + c(i)%Zom(j), c(i)%Pcm(j), j=1,c(i)%M)
           if (c(i)%M > 1) then
              ! joins circle back up with beginning for plotting
-             write(40,fmt)  origin + c(i)%Zom(1)
+             write(40,fmt)  origin + c(i)%Zom(1), c(i)%Pcm(1)
           end if
           write(40,'(/)')
        end do
 
        do i = 1,ne
           write(40,'(2(A,I0),A)') '# elliptical element ',i,' = ',e(i)%M,' points'
-          write(40,fmt)  (origin + e(i)%Zom(j), j=1,e(i)%M)
+          write(40,fmt)  (origin + e(i)%Zom(j), e(i)%Pcm(j), j=1,e(i)%M)
           if (e(i)%M > 1) then
              ! joins ellipse back up with beginning for plotting
-             write(40,fmt)  origin + e(i)%Zom(1)
+             write(40,fmt)  origin + e(i)%Zom(1), e(i)%Pcm(1)
           end if
           write(40,'(/)')
        end do

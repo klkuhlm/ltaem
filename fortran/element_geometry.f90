@@ -47,6 +47,7 @@ contains
 
     integer :: i, j, ne, nc, ntot, par, M
     complex(DP), allocatable :: Zgm(:)
+    real(DP) :: dth
 
     nc = dom%num(1)
     ne = dom%num(2)
@@ -58,11 +59,13 @@ contains
     ! vector of eqi-spaced locations on perimeter of circle and ellipse
     ! each element can have a different number of matching locations
     ! starting at -PI (-x axis) continuing around the circle CCW.
+
     do i = 1,nc
        M = c(i)%M
        allocate(c(i)%Pcm(M))
+       dth = TWOPI/M
        forall(j = 1:M)
-          c(i)%Pcm(j) = -PI + TWOPI/M*(j-1)
+          c(i)%Pcm(j) = -PI + dth*(j-1)
        end forall
 
        c(i)%id = i ! global ID
@@ -70,8 +73,9 @@ contains
     do i = 1,ne
        M = e(i)%M
        allocate(e(i)%Pcm(M))
+       dth = TWOPI/M
        forall (j = 1:M)
-          e(i)%Pcm(j) = -PI + TWOPI/M*(j-1)
+          e(i)%Pcm(j) = -PI + dth*(j-1)
        end forall
 
        e(i)%id = i+nc ! global ID
