@@ -32,9 +32,11 @@ compilers.  The code uses LAPACK for matrix operations, which can be
 downloaded freely from NETLIB at: http://www.netlib.org/lapack/
 
 LT-AEM and LAPACK itself depend on (and the LAPACK source provides)
-BLAS for lower-level matrix operations.  Static libraries for blas and
-lapack should be linked or copied to the source directory as blas.a
-and lapack.a, or the Makefile needs to be changed to point to them.
+BLAS for lower-level matrix operations.  System blas and laplack
+libraries should be available with -lblas and -llapack or static
+libraries for blas and lapack should be linked or copied to the source
+directory as blas.a and lapack.a, or the Makefile needs to be changed
+to point to them.
 
 A recent version of gfortran is required (>= 4.6.1), due to a bug in
 previous releases of this compiler regarding extended fortran types.
@@ -55,4 +57,4 @@ issues compiling it.  If you run into a bug or missing feature, I
 might be able to accommodate you, but this depends on the amount of
 work required to fix/implement the feature of concern.
 
-December, 2012
+August, 2013
