@@ -1,5 +1,5 @@
-10  10  10  10  1  1        :: N
-50  50  50  50  1  1        :: M
+16  16  8   8   4  4        :: N
+32  32  16  16  8  8        :: M
 0   0   0   0   2  2        :: CIIbnd
 T   T   T   T   F  F        :: calcin?
 F   F   F   F   F  F        :: storin?

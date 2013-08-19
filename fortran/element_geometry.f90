@@ -93,6 +93,10 @@ contains
           ! when only one matching point move to center of element
           c(i)%Zom(1) = c(i)%z
        end if
+
+       write(*,'(A,I0,A)',advance='no') 'Zom ',i,' :'
+       write(*,*) c(i)%Zom
+
     end do
 
     ! elliptical element self-geometry
@@ -128,6 +132,11 @@ contains
              Zgm(1:M) = other%Zom(1:M) - c(i)%z
              c(i)%G(j)%Rgm(1:M) = abs(Zgm) ! r
              c(i)%G(j)%Pgm(1:M) = atan2(aimag(Zgm),real(Zgm)) ! theta
+
+             write(*,'(2(I0,1X),A)',advance='no') i,j,':Rgm'
+             write(*,*) c(i)%G(j)%Rgm
+             write(*,'(2(I0,1X),A)',advance='no') i,j,':Pgm'
+             write(*,*) c(i)%G(j)%Pgm
 
              deallocate(Zgm)
              other => null()
