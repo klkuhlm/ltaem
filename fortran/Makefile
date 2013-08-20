@@ -57,11 +57,11 @@ SRCS=$(OBJS:.o=.f90) $(MAIN:.o=.f90)
 ##OMP=-openmp
 ##CPP=-cpp
 ###DFLAGS=-O0 -g -traceback -warn all -check bounds -check pointers -check uninit -check format -check output_conversion
-##DFLAGS=-O0 -g -traceback -warn all -check all
+##DFLAGS=-O0 -g -traceback -check all # -warn all
 ##PFLAGS=-xHOST -O3 -fast  
 ###############################################
 
-## gfortran >= 4.6.1 #################
+#### gfortran >= 4.6.1 #################
 F90= gfortran
 ##F90=~/local/bin/gfortran
 OMP=-fopenmp

@@ -242,6 +242,7 @@ program ltaem_main
            qp(:,j) = elementFlowrate(c(j)%matching,stmp,1,tnP,dom,c,e,bg)
         end do
         do j = 1,ne
+           print *, 'debug el',j
            qp(:,nc+j) = elementFlowrate(e(j)%matching,stmp,1,tnP,dom,c,e,bg)
         end do
      end if

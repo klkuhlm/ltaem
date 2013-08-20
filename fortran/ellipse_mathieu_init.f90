@@ -49,6 +49,8 @@ contains
     allocate(bg%mat(tnp))
     kap = kappa(p,bg)
 
+    print *, 'shirts debug', maxval(e(:)%N+2), kap
+
     ! initialize background for each value of p
     shirtdim(:) = shirts(maxval(e(:)%N+2), kap)
 

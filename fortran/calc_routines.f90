@@ -164,6 +164,8 @@ contains
     np = size(p,1)
     allocate(flux(np,2,M),rflux(np,M))
 
+    print *, 'DEBUG',M,np,lo,hi
+
     ! default number of integration locations (some circular wells are a single point, 
     ! which doesn't result in an accurate intgration)
     if (M == 1 .and. el%id <= dom%num(1)) then
@@ -195,15 +197,19 @@ contains
     else
        ! ellipse
        ! v_eta = f*(sinh(eta)*cos(psi)*v_x + cosh(eta)*sin(psi)*v_y)
+       print *, 'DEBUG spread1a',shape(el%Pcm(1:M)),':',shape(cos(el%Pcm(1:M))),':',&
+            &shape(cos(el%Pcm(1:M))),':',shape(spread(cos(el%Pcm(1:M)),1,np))
+       print *, 'DEBUG spread1b',shape(sin(el%Pcm(1:M))),':',shape(spread(sin(el%Pcm(1:M)),1,np))
        rflux(:,:) = el%f*(sinh(el%r)*spread(cos(el%Pcm(1:M)),1,np)*flux(1:np,1,1:M) + &
                        & (cosh(el%r)*spread(sin(el%Pcm(1:M)),1,np)*flux(1:np,2,1:M)))
 
        ! Q = f* \int_0^{2 pi} \sqrt{cosh^2 eta - cos^2 psi} q_eta d psi
+       print *, 'DEBUG spread2',shape(cos(2*el%Pcm(1:M))),':',shape(spread(cos(2*el%Pcm(1:M)),1,np))
        qp(:) = el%f*TWOPI/M*sum(rflux(1:np,1:M)*&
-            & sqrt((cosh(2*el%r) - spread(cos(2*el%Pcm(:)),1,np))/2),dim=2)
+            & sqrt((cosh(2*el%r) - spread(cos(2*el%Pcm(1:M)),1,np))/2),dim=2)
 
     end if
-    
+    print *, 'done'
   end function elementFlowrate
 
   !##################################################
