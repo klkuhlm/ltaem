@@ -120,16 +120,25 @@ program ltaem_main
 
         allocate(s(2*sol%m+1,minlt:maxlt-1), nt(minlt:maxlt-1), tee(minlt:maxlt-1))
 
-        do lt = minlt, maxlt-1
+        print *, 'DEBUG','t',sol%t
+
+        logcycles: do lt = minlt, maxlt-1
            ! number of times falling in this logcycle
            nt(lt) = count(logt >= real(lt,DP) .and. logt < real(lt+1,DP))
+           if (nt(lt) == 0) then
+              cycle logcycles
+           end if
+           
            ! T=2*max time in this logcycle
+           !!print *, 'DBG:',lt,lo,nt(lt),lo+nt(lt)-1,maxval(sol%t(lo:lo+nt(lt)-1))
            tee(lt) = maxval(sol%t(lo:lo+nt(lt)-1))*TMAX_MULT
            s(:,lt) = pvalues(tee(lt),sol%INVLT)
            lo = lo + nt(lt)
-        end do
+        end do logcycles
         deallocate(logt)
      end if
+
+     !!print *, 'DEBUG','minlt',minlt,'maxlt-1',maxlt-1,'tee',tee,'lo',lo
 
      sol%totalnP = size(s) ! total number of Laplace parameters across all times
      tnp = sol%totalnP
@@ -251,6 +260,11 @@ program ltaem_main
 
            !! invert solutions one log-cycle of t at a time
            do lt = minlt,maxlt-1
+              
+              if (nt(lt) == 0) then
+                 ! empty logcycle
+                 cycle
+              end if
 
               !! group of times in current log cycle
               lot = 1 + sum(nt(minlt:lt-1))
