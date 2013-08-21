@@ -64,6 +64,7 @@ contains
     ! only needed for LAPACK routine; size(work) = 33*bigN
     complex(DP), allocatable :: WORK(:)
     
+    integer :: nrow, ncol
     character(41) :: fmt
     fmt = "(I0,1X,   ('(',ES10.3,',',ES10.3,')',1X))"
 
@@ -108,9 +109,11 @@ contains
                   &'RHS shape:',shape(res(j,i)%RHS)
 
              print *, 'SOL circ-circ i,j:',i,j,'LHS'
-             if (col(i,1) > 0) then
-                write(fmt(8:10),'(I3.3)') col(i,1)
-                do k = 1, row(i,i)
+             nrow = size(res(j,i)%LHS,1) 
+             ncol = size(res(j,i)%LHS,2) 
+             if (ncol > 0) then
+                write(fmt(8:10),'(I3.3)') ncol
+                do k = 1, nrow
                    write(*,fmt) k,res(j,i)%LHS(k,:)
                 end do
              else
@@ -118,8 +121,9 @@ contains
              end if
              
              print *, 'SOL circ-circ i,j:',i,j,'RHS'
-             if (row(i,1) > 0) then
-                write(fmt(8:10),'(I3.3)') row(i,1)
+             nrow = size(res(j,i)%RHS(:)) 
+             if (nrow > 0) then
+                write(fmt(8:10),'(I3.3)') nrow
                 write(*,fmt) 1,res(j,i)%RHS(:)
              else
                 write(*,'(A)') 'no output zero size'
