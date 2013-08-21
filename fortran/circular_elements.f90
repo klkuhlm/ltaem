@@ -58,11 +58,15 @@ contains
     forall (j = 0:N-1) vi(j) = real(j,DP)
 
     if (c%ibnd == 0) then
+       ! matching
        nrows = 2*M
        ncols = 4*N-2
        ! loM:hiM is index range for flux matching portion, beyond head-matching part
        loM = M+1
        hiM = 2*M
+
+       print *, 'DEBUG circle_match_self ibnd==0',nrows,ncols,loM,hiM
+       
     elseif (c%ibnd == 2) then
        ! simple well has no unknowns
        ! only appears on RHS of other elements
@@ -75,6 +79,9 @@ contains
           nrows = 0
           ncols = 0
        end if
+
+       print *, 'DEBUG circle_match_self ibnd==2',nrows,ncols,loM,hiM
+
     else
        if (c%calcin .and. (c%ibnd == -1 .or. c%ibnd == 1)) then
           ! if computing inside a specified head/flux element
@@ -85,6 +92,9 @@ contains
           ! only flux or head matching, so loM:him = 1:M
           loM = 1
           hiM = M
+
+          print *, 'DEBUG circle_match_self ibnd=={-1,+1} calcin',nrows,ncols,loM,hiM
+
        else
           ! other cases (no calc inside)
           nrows = M
@@ -92,6 +102,9 @@ contains
           ! here only head or flux matching, so loM:him = 1:M
           loM = 1
           hiM = M
+
+          print *, 'DEBUG circle_match_self ibnd=={-1,+1} nocalcin',nrows,ncols,loM,hiM
+
        end if
     end if
 

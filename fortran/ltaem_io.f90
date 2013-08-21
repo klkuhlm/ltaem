@@ -568,6 +568,12 @@ contains
        read(UCIRC,*,iostat=ierr) c(1:nc)%bdryQ; sln=sln+1 
        if (ierr /= 0) c(1:nc)%bdryQ = read_real(UCIRC,sln,'circle  ')
 
+       where (c(:)%ibnd == -1 .or. c(:)%ibnd == 0 .or. c(:)%ibnd == +1)
+          c(:)%match = .true.
+       elsewhere !( currently just 2)
+          c(:)%match = .false.
+       end where
+
        write(chint,'(I4.4)') dom%num(1)
        fmt(1) = '('//chint//'(I0,1X),A)     ' ! integer
        fmt(2) = '('//chint//'(L1,1X),A)     ' ! logical
@@ -627,12 +633,6 @@ contains
        end do
 
        close(UCIRC) ! circle input file
-
-       where (c(:)%ibnd == -1 .or. c(:)%ibnd == 0 .or. c(:)%ibnd == +1)
-          c(:)%match = .true.
-       elsewhere !( currently just 2)
-          c(:)%match = .false.
-       end where
 
        if(any(c%match .and. c%storin)) then
           write(*,*) 'WARNING: wellbore (free-water) storage only implemented for ibnd==2'

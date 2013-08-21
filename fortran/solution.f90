@@ -83,7 +83,7 @@ contains
        do j = 1,nc
           if(i /= j) then
              res(j,i) = circle_match(c(i),c(j)%matching,dom,p)
-             print *, 'SOL circ-circ j:',j,'LHS shape:',shape(res(j,i)%LHS),&
+             print *, 'SOL circ-circ i,j:',i,j,'LHS shape:',shape(res(j,i)%LHS),&
                   &'RHS shape:',shape(res(j,i)%RHS)
           end if
        end do
@@ -91,7 +91,7 @@ contains
        ! circle on other ellipse
        do j = 1,ne
           res(j+nc,i) = circle_match(c(i),e(j)%matching,dom,p)
-          print *, 'SOL circ-ellip j:',j,'LHS shape:',shape(res(j+nc,i)%LHS),&
+          print *, 'SOL circ-ellip i,j:',i,j,'LHS shape:',shape(res(j+nc,i)%LHS),&
                &'RHS shape:',shape(res(j+nc,i)%RHS)
        end do
     end do
@@ -109,7 +109,7 @@ contains
        ! ellipse on other circle
        do j = 1,nc
           res(j,nc+i) = ellipse_match(e(i),c(j)%matching,dom,p,idx)
-          print *, 'SOL ellip-circ j:',j,'LHS shape:',shape(res(j,nc+i)%LHS),&
+          print *, 'SOL ellip-circ i,j:',i,j,'LHS shape:',shape(res(j,nc+i)%LHS),&
                &'RHS shape:',shape(res(j,nc+i)%RHS)
        end do
 
@@ -117,7 +117,7 @@ contains
        do j = 1,ne
           if (i /= j) then
              res(nc+j,nc+i) = ellipse_match(e(i),e(j)%matching,dom,p,idx)
-             print *, 'SOL ellip-ellip j:',j,'LHS shape:',shape(res(j+nc,nc+i)%LHS),&
+             print *, 'SOL ellip-ellip i,j:',i,j,'LHS shape:',shape(res(j+nc,nc+i)%LHS),&
                   &'RHS shape:',shape(res(j+nc,nc+i)%RHS)
           end if
        end do
