@@ -57,6 +57,8 @@ contains
     M = c%M
     forall (j = 0:N-1) vi(j) = real(j,DP)
 
+    print *, 'DEBUG circle_match_self parent',c%parent%id
+
     if (c%ibnd == 0) then
        ! matching
        nrows = 2*M
@@ -65,7 +67,7 @@ contains
        loM = M+1
        hiM = 2*M
 
-       print *, 'DEBUG circle_match_self ibnd==0',nrows,ncols,loM,hiM
+       print *, 'DEBUG circle_match_self ibnd==0 (nrows,ncols,loM,hiM)',nrows,ncols,loM,hiM
        
     elseif (c%ibnd == 2) then
        ! simple well has no unknowns
@@ -80,7 +82,7 @@ contains
           ncols = 0
        end if
 
-       print *, 'DEBUG circle_match_self ibnd==2',nrows,ncols,loM,hiM
+       print *, 'DEBUG circle_match_self ibnd==2 (nrows,ncols,loM,hiM)',nrows,ncols,loM,hiM
 
     else
        if (c%calcin .and. (c%ibnd == -1 .or. c%ibnd == 1)) then
@@ -93,7 +95,7 @@ contains
           loM = 1
           hiM = M
 
-          print *, 'DEBUG circle_match_self ibnd=={-1,+1} calcin',nrows,ncols,loM,hiM
+          print *, 'DEBUG circle_match_self ibnd=={-1,+1} calcin (nrows,ncols,loM,hiM)',nrows,ncols,loM,hiM
 
        else
           ! other cases (no calc inside)
@@ -103,7 +105,7 @@ contains
           loM = 1
           hiM = M
 
-          print *, 'DEBUG circle_match_self ibnd=={-1,+1} nocalcin',nrows,ncols,loM,hiM
+          print *, 'DEBUG circle_match_self ibnd=={-1,+1} nocalcin (nrows,ncols,loM,hiM)',nrows,ncols,loM,hiM
 
        end if
     end if
@@ -119,11 +121,14 @@ contains
 
        r%LHS(1:M,1:N) =       cmat(:,0:N-1)/c%parent%K ! a_n head
        r%LHS(1:M,N+1:2*N-1) = smat(:,1:N-1)/c%parent%K ! b_n head
+       print *, 'DEBUG circle_match_self setup LHS a-b head'
 
        if (c%ibnd == 0 .or. (c%ibnd == -1 .and. c%calcin)) then
           r%LHS(1:M,2*N:3*N-1) = -cmat(:,0:N-1)/c%K ! c_n head
           r%LHS(1:M,3*N:4*N-2) = -smat(:,1:N-1)/c%K ! d_n head
+          print *, 'DEBUG circle_match_self setup LHS c-d head'
        end if
+
     end if
 
     ! matching or specified total flux
@@ -136,6 +141,8 @@ contains
        r%LHS(loM:hiM,1:N) =       spread(dBn(0:N-1)/Bn(0:N-1),1,M)*cmat(:,0:N-1) ! a_n flux
        r%LHS(loM:hiM,N+1:2*N-1) = spread(dBn(1:N-1)/Bn(1:N-1),1,M)*smat(:,1:N-1) ! b_n flux
 
+       print *, 'DEBUG circle_match_self setup LHS a-b flux'
+
        if (c%ibnd == 0 .or. (c%ibnd == 1 .and. c%calcin)) then
           kap = kappa(p,c%element)
           call dBI(kap*c%r,N,Bn(0:N-1),dBn(0:N-1))
@@ -143,31 +150,38 @@ contains
 
           r%LHS(loM:hiM,2*N:3*N-1) = -spread(dBn(0:N-1)/Bn(0:N-1),1,M)*cmat(:,0:N-1) ! c_n flux
           r%LHS(loM:hiM,3*N:4*N-2) = -spread(dBn(1:N-1)/Bn(1:N-1),1,M)*smat(:,1:N-1) ! d_n flux
+          print *, 'DEBUG circle_match_self setup LHS c-d flux'
        end if
        deallocate(Bn,dBn)
+       
     end if
 
     ! setup RHS
     select case(c%ibnd)
     case(-1)
+       print *, 'DEBUG circle_match_self setup RHS ibnd==-1'
        ! put specified head on RHS
        r%RHS(1:M) = timef(p,c%time,.false.)*c%bdryQ
     case(0)
+       print *, 'DEBUG circle_match_self setup RHS ibnd==0'
        ! put constant area source term effects (from inside the element) on RHS
        ! TODO : handle area source in background
        r%RHS(1:M) = -timef(p,c%time,.true.)*c%areaQ*c%Ss/kappa(p,c%element)**2
        r%RHS(M+1:2*M) = 0.0 ! constant area source has no flux effects
     case(1)
+       print *, 'DEBUG circle_match_self setup RHS ibnd==+1'
        ! put specified flux effects on RHS
        ! TODO : check addition of aquifer thickness to denominator
        r%RHS(1:M) = timef(p,c%time,.false.)*c%bdryQ/(2.0*PI*c%r*c%b)
     case(2)
        if (c%StorIn) then
+          print *, 'DEBUG circle_match_self setup RHS ibnd==2, storin'
           ! effects of wellbore storage and skin on finite-radius well
           ! effects of other elements on this one show up in off-diagonals
           r%LHS(1:M,1) = storwell(c,p)*r%LHS(1:M,1)
           r%RHS(1:M) = timef(p,c%time,.false.)*c%bdryQ/(PI*c%r*c%parent%T)
        else
+          print *, 'DEBUG circle_match_self setup RHS ibnd==2, nostor'
           continue ! no wellbore storage; nothing to do, since matrix is zero-sized
        end if
     end select
@@ -201,42 +215,53 @@ contains
     src = c%id
     forall (j = 0:N-1) vi(j) = real(j,DP)
 
+    print *, 'DEBUG circle_match_self (parent,src,targ)',c%parent%id,src,targ
+
     M = el%M
     ! target element determines number of rows
     if (el%ibnd == 0) then
        nrows = 2*M
        loM = M+1
        hiM = 2*M
+       print *, 'DEBUG circle_other, targ ibnd==0 (nrows,loM,hiM)',nrows,loM,hiM
     elseif (el%ibnd == 2) then
        if (el%storIn) then
           nrows = M
           loM = 1
           hiM = M
+          print *, 'DEBUG circle_other, targ ibnd==2 storin (nrows,loM,hiM)',nrows,loM,hiM
        else
           nrows = 0
+          print *, 'DEBUG circle_other, targ ibnd==2 nostor (nrows)',nrows,'(loM,hiM undefined)'
        end if
     else
        nrows = M
        loM = 1
        hiM = M
+       print *, 'DEBUG circle_other, targ ibnd=={-1,+1} storin (nrows,loM,hiM)',nrows,loM,hiM
     end if
 
     ! source element determines number of columns
     if (c%ibnd == 0) then
        ncols = 4*N-2
+       print *, 'DEBUG circle_other, src ibnd==0  (ncols)',ncols
     elseif (c%ibnd == 2) then
        if(c%storIn) then
           ncols = 1
+          print *, 'DEBUG circle_other, src ibnd==2 storin (ncols)',ncols
        else
           ! compute effects due to well for RHS
           ncols = 1  ! reset to zero at end of routine
+          print *, 'DEBUG circle_other, src ibnd==2 nostor (ncols)',ncols
        end if
-    elseif (c%calcin .and. c%ibnd == -1 .or. c%ibnd == 1) then
+    elseif (c%calcin .and. (c%ibnd == -1 .or. c%ibnd == 1)) then
        ! specified flux/head with calc inside
        ncols = 4*N-2
+       print *, 'DEBUG circle_other, src ibnd=={-1,+1} calcin (ncols)',ncols
     else
        ! specified flux/head w/o calc inside
        ncols = 2*N-1
+       print *, 'DEBUG circle_other, src ibnd=={-1,+1} nocalcin (ncols)',ncols
     end if
 
     allocate(r%LHS(nrows,ncols), r%RHS(nrows))
@@ -244,6 +269,9 @@ contains
     r%RHS = cmplx(0,0,DP)
 
     if (nrows > 0) then
+       print *, 'DEBUG circ_other dom%inclBg(src,targ)',dom%inclBg(src,targ), &
+            &'.or. dom%InclIn(src,targ)',dom%InclIn(src,targ)
+
        if (dom%inclBg(src,targ) .or. dom%InclIn(src,targ)) then
 
           allocate(Bn(M,0:N-1),Bn0(0:N-1),cmat(M,0:N-1),smat(M,N-1))
@@ -255,6 +283,8 @@ contains
           ! $$$$$$$$$$ head effects of source (c) on target (el) $$$$$$$$$$
           ! for matching or specified total head target elements
           if (el%ibnd == 0 .or. el%ibnd == -1) then
+
+             print *, 'DEBUG circ_other setup LHS'
 
              if (dom%inclBg(src,targ)) then
                 ! can the target element "see" the outside of the source element?
@@ -404,6 +434,8 @@ contains
     endif
 
     if (c%ibnd == 2 .and. (.not. c%storin)) then
+
+       print *, 'DEBUG circ_other ibnd==2 .and. notstorin'
 
        if (nrows > 0) then
 

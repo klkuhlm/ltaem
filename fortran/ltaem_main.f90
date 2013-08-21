@@ -181,7 +181,7 @@ program ltaem_main
      
      if (.not. sol%skipdump) then
         call dump_coeff(sol,c,e,nt,s,tee,minlt,maxlt)
-        write(*,'(A)') '  <matching finished>  '
+        write(*,'(A)') '  <coefficents dumped, matching finished>  '
      end if
 
   else   

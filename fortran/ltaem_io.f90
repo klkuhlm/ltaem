@@ -866,6 +866,12 @@ contains
        read(UELIP,*,iostat=ierr) e(1:ne)%bdryQ; sln=sln+1
        if (ierr /= 0) e(1:ne)%bdryQ = read_real(UELIP,sln,'ellipse ') 
 
+       where (e(:)%ibnd == -1 .or. e(:)%ibnd == 0 .or. e(:)%ibnd == +1)
+          e(:)%match = .true.
+       elsewhere
+          e(:)%match = .false.
+       end where
+
        write(chint,'(I4.4)') dom%num(2)
        fmt(1) = '('//chint//'(I0,1X),A)     ' ! integer
        fmt(2) = '('//chint//'(L1,1X),A)     ' ! logical
@@ -925,12 +931,6 @@ contains
        end do
 
        close(UELIP) ! ellipse input file
-
-       where (e(:)%ibnd == -1 .or. e(:)%ibnd == 0 .or. e(:)%ibnd == +1)
-          e(:)%match = .true.
-       elsewhere
-          e(:)%match = .false.
-       end where
        
        ! TODO: handle free-water storage for ellipses?
        if(any(e%storin)) then
