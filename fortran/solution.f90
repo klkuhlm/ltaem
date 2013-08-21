@@ -59,10 +59,13 @@ contains
     complex(DP), allocatable :: A(:,:), b(:)
     type(match_result), allocatable :: res(:,:) ! results(target_id,source_id)
     integer, allocatable :: row(:,:), col(:,:) ! row/column trackers
-    integer :: nc, ne, ntot, i, j, bigM, bigN, rr,cc, ierr
+    integer :: nc, ne, ntot, i, j, k, bigM, bigN, rr,cc, ierr
 
     ! only needed for LAPACK routine; size(work) = 33*bigN
     complex(DP), allocatable :: WORK(:)
+    
+    character(41) :: fmt
+    fmt = "(I0,1X,   ('(',ES10.3,',',ES10.3,')',1X))"
 
     nc = size(c,dim=1)
     ne = size(e,dim=1)
@@ -79,12 +82,49 @@ contains
        print *, 'SOL circ-self i:',i,'LHS shape:',shape(res(i,i)%LHS),'&
             &RHS shape:',shape(res(i,i)%RHS),'row:',row(i,1),'col:',col(i,1)
 
+       print *, 'SOL circ-self i:',i,'LHS'
+       if (col(i,1) > 0) then 
+          write(fmt(8:10),'(I3.3)') col(i,1)
+          do j = 1, row(i,i)
+             write(*,fmt) j,res(i,i)%LHS(j,:)
+          end do
+       else
+          write(*,'(A)') 'no output zero size'
+       end if
+       
+       print *, 'SOL circ-self i:',i,'RHS'
+       if (row(i,1) > 0) then
+          write(fmt(8:10),'(I3.3)') row(i,1)
+          write(*,fmt) 1,res(i,i)%RHS(:)
+       else
+          write(*,'(A)') 'no output zero size'
+       end if
+       
        ! circle on other circle
        do j = 1,nc
           if(i /= j) then
              res(j,i) = circle_match(c(i),c(j)%matching,dom,p)
              print *, 'SOL circ-circ i,j:',i,j,'LHS shape:',shape(res(j,i)%LHS),&
                   &'RHS shape:',shape(res(j,i)%RHS)
+
+             print *, 'SOL circ-circ i,j:',i,j,'LHS'
+             if (col(i,1) > 0) then
+                write(fmt(8:10),'(I3.3)') col(i,1)
+                do k = 1, row(i,i)
+                   write(*,fmt) k,res(j,i)%LHS(k,:)
+                end do
+             else
+                write(*,'(A)') 'no output zero size'
+             end if
+             
+             print *, 'SOL circ-circ i,j:',i,j,'RHS'
+             if (row(i,1) > 0) then
+                write(fmt(8:10),'(I3.3)') row(i,1)
+                write(*,fmt) 1,res(j,i)%RHS(:)
+             else
+                write(*,'(A)') 'no output zero size'
+             end if
+             
           end if
        end do
 
