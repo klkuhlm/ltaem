@@ -111,6 +111,7 @@ contains
     else
        ! assuming this will be computed more intelligenly elsewhere
        ! e.g., using Shirts' 1993 rational approximation
+       print *, 'MATHIEU_INIT WARNING: infinite matrix size not specified, using M=16'
        mat%M = 16
     end if
     M = mat%M

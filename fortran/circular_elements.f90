@@ -272,7 +272,7 @@ contains
        print *, 'DEBUG circ_other dom%inclBg(src,targ)',dom%inclBg(src,targ), &
             &'.or. dom%InclIn(src,targ)',dom%InclIn(src,targ)
 
-       if (dom%inclBg(src,targ) .or. dom%InclIn(src,targ)) then
+       if (dom%inclBg(src,targ) .or. dom%InclIn(src,targ) .or. dom%InclIn(targ,src)) then  !! <<-- added another condition
 
           allocate(Bn(M,0:N-1),Bn0(0:N-1),cmat(M,0:N-1),smat(M,N-1))
 
@@ -286,7 +286,7 @@ contains
 
              print *, 'DEBUG circ_other setup LHS'
 
-             if (dom%inclBg(src,targ)) then
+             if (dom%inclBg(src,targ) .or. dom%inclIn(targ,src)) then   !! <<-- added another condition
                 ! can the target element "see" the outside of the source element?
                 ! use exterior Bessel functions (Kn)
                 kap = kappa(p,c%parent)

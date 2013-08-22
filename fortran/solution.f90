@@ -66,39 +66,48 @@ contains
     
     integer :: nrow, ncol
     character(41) :: fmt
-    fmt = "(I0,1X,   ('(',ES10.3,',',ES10.3,')',1X))"
+    fmt = "(I0,1X,   ('(',ES8.1,',',ES8.1,')',1X))"
 
     nc = size(c,dim=1)
     ne = size(e,dim=1)
     ntot = nc + ne
+
+    ! row/col have three entries per row or column
+    ! 0 : lower bound of sub-block in A matrix
+    ! 1 : size of sub-block 
+    ! 2 : upper bound of sub-block in A matrix
+
     allocate(res(ntot,ntot), row(ntot,0:2), col(ntot,0:2))
 
     ! accumulate result into matrices of structures
     do i = 1,nc
        ! circle on self
        res(i,i) = circle_match(c(i),p)
-       row(i,1) = size(res(i,i)%RHS,1)
+       row(i,1) = size(res(i,i)%RHS,1) 
        col(i,1) = size(res(i,i)%LHS,2)
 
        print *, 'SOL circ-self i:',i,'LHS shape:',shape(res(i,i)%LHS),'&
             &RHS shape:',shape(res(i,i)%RHS),'row:',row(i,1),'col:',col(i,1)
 
        print *, 'SOL circ-self i:',i,'LHS'
-       if (col(i,1) > 0) then 
-          write(fmt(8:10),'(I3.3)') col(i,1)
-          do j = 1, row(i,i)
+       nrow = size(res(i,i)%LHS,1)
+       ncol = size(res(i,i)%LHS,2)
+       if (ncol > 0) then 
+          write(fmt(8:10),'(I3.3)') ncol
+          do j = 1, nrow
              write(*,fmt) j,res(i,i)%LHS(j,:)
           end do
        else
-          write(*,'(A)') 'no output zero size'
+          write(*,'(A)') 'no output ncol==0'
        end if
        
        print *, 'SOL circ-self i:',i,'RHS'
-       if (row(i,1) > 0) then
-          write(fmt(8:10),'(I3.3)') row(i,1)
+       nrow = size(res(i,i)%RHS)
+       if (nrow > 0) then
+          write(fmt(8:10),'(I3.3)') nrow
           write(*,fmt) 1,res(i,i)%RHS(:)
        else
-          write(*,'(A)') 'no output zero size'
+          write(*,'(A)') 'no output nrow==0'
        end if
        
        ! circle on other circle
@@ -117,7 +126,7 @@ contains
                    write(*,fmt) k,res(j,i)%LHS(k,:)
                 end do
              else
-                write(*,'(A)') 'no output zero size'
+                write(*,'(A)') 'no output ncol==0'
              end if
              
              print *, 'SOL circ-circ i,j:',i,j,'RHS'
@@ -126,7 +135,7 @@ contains
                 write(fmt(8:10),'(I3.3)') nrow
                 write(*,fmt) 1,res(j,i)%RHS(:)
              else
-                write(*,'(A)') 'no output zero size'
+                write(*,'(A)') 'no output nrow==0'
              end if
              
           end if
@@ -170,7 +179,7 @@ contains
     bigM = sum(row(:,1)) ! total number rows/cols
     bigN = sum(col(:,1))
 
-    print *, 'SOL bigM:',bigM,'bigN',bigN
+    print *, 'SOL bigM:',bigM,' bigN:',bigN
 
     allocate(A(bigM,bigN), b(bigM))
     b = cmplx(0,0,DP)
@@ -186,12 +195,21 @@ contains
        col(i,2) = sum(col(1:i,1))
     end forall
 
-    print *, 'SOL row:',row
-    print *, 'SOL col:',col
-
+    print *, 'SOL row:'
+    do i=1,size(row,1)
+       print *, i,':',row(i,:)
+    end do
+    
+    print *, 'SOL col:'
+    do i=1,size(col,1)
+       print *, i,':',col(i,:)
+    end do
+    
     ! convert structures into single matrix for solution via least squares
     do rr = 1,ntot
        do cc = 1,ntot
+          print *, 'convert',rr,cc,' row range:',row(rr,0),row(rr,2),&
+                                 & ' col range:',col(cc,0),col(cc,2)
           A(row(rr,0):row(rr,2),col(cc,0):col(cc,2)) = res(rr,cc)%LHS
           b(row(rr,0):row(rr,2)) = b(row(rr,0):row(rr,2)) + res(rr,cc)%RHS
        end do
@@ -204,7 +222,7 @@ contains
        ! this routine works for all three potential use cases
        ! M>N (overdetermined), M==N (even-determined), and M<N (underdetermined)
 
-       print *, 'ZGELS debug',bigM,bigN,size(work),'::',shape(b),'::',shape(A)
+       print *, 'ZGELS debug',bigM,bigN,size(work),':: bshape',shape(b),':: Ashape',shape(A)
        call ZGELS(TRANSA='N', M=bigM, N=bigN, NRHS=1, A=A(:,:), LDA=bigM, B=b(:), &
             & LDB=bigM, WORK=work, LDWORK=size(work), INFO=ierr)
        if (ierr /= 0) then
