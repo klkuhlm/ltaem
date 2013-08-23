@@ -63,8 +63,7 @@ contains
        stop 100
     endif
 
-    ! search for '.' in filename, but beginning from the
-    !  end (in case the path has '.' in it)
+    ! search for '.' in filename from the end of the string
     idx = index(s%infName,'.',back=.true.)  
     if (idx > 0) then
        s%echofname = s%infname(1:idx-1)//'.echo'
