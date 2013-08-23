@@ -2,6 +2,8 @@
 \usepackage{amsmath}
 \usepackage{fullpage}
 \usepackage{natbib}
+\usepackage{colortbl,multirow}
+\usepackage{hyperref}
 
 \begin{document}
 \section{Input File}
@@ -46,7 +48,51 @@ NUM_ELLIPSES BG_MS ELLIPSE_INPUT_FN
 PARTICLE_INPUT_FN
 \end{verbatim}
 
+TODO: explain input format/style
+
+\section{Problem setup and solution}
+\label{sec:problem-setup}
+The LT-AEM problem is posed in a direct fashion, with individual
+elements representing ``sub-blocks'' of the larger system matrix,
+which is solved via the ZGELS (double-precision complex (Z) GEneral
+Least Squares) LAPACK routine. The sub-blocks are built up in the
+\texttt{solution.f90} routine, through calls to the
+\texttt{circle\_match\_self}, \texttt{circle\_match\_other},
+\texttt{ellipse\_match\_self}, and \texttt{ellipse\_match\_other}
+routines.  Each time these routines are called, they return a data
+structure consisting of a LHS and RHS matrix.  The solution routine
+then assembles the global LHS and RHS matrices from these sub
+matrices, and calls ZGELS.
+
+   \begin{equation}
+  \label{eq:fullmatrix}
+  \left[ \begin{array}{cc|cc|cc}
+      \cellcolor[gray]{0.9}\frac{\bar{\Phi}^{1+}}{K_0} & 
+      \cellcolor[gray]{0.9}-\frac{\bar{\Phi}^{1-}}{K_1}  
+      & \frac{\bar{\Phi}^{2+}}{K_0}  &0&0&0\\
+      \cellcolor[gray]{0.9} \mathbf{n}_1 \cdot \bar{\mathbf{q}}^{1+} & 
+      \cellcolor[gray]{0.9} -\mathbf{n}_1 \cdot \bar{\mathbf{q}}^{1-} 
+      & - \mathbf{n}_1 \cdot \bar{\mathbf{q}}^{2+} &0&0&0\\
+      \hline
+      \frac{\bar{\Phi}^{1+}}{K_0}  &0& \cellcolor[gray]{0.9} \frac{\bar{\Phi}^{2+}}{K_0} 
+      & \cellcolor[gray]{0.9}-\frac{\bar{\Phi}^{2-}}{K_2}  & 
+      -\frac{\bar{\Phi}^{3+}}{K_2}  & 0 \\
+       \mathbf{n}_2 \cdot \bar{\mathbf{q}}^{1+}  & 0 & 
+       \cellcolor[gray]{0.9} \mathbf{n}_2 \cdot \bar{\mathbf{q}}^{2+}
+      & \cellcolor[gray]{0.9} -\mathbf{n}_2 \cdot \bar{\mathbf{q}}^{2-} &
+      - \mathbf{n}_2 \cdot \bar{\mathbf{q}}^{3+} & 0 \\
+      \hline
+      0&0&0& \frac{\bar{\Phi}^{2-}}{K_2} & \cellcolor[gray]{0.9}\frac{\bar{\Phi}^{3+}}{K_2} 
+      & \cellcolor[gray]{0.9}-\frac{\bar{\Phi}^{3-}}{K_3} \\
+      0&0&0& \mathbf{n}_3 \cdot \bar{\mathbf{q}}^{2-} & 
+      \cellcolor[gray]{0.9} \mathbf{n}_3 \cdot \bar{\mathbf{q}}^{3+} &
+      \cellcolor[gray]{0.9}-\mathbf{n}_3 \cdot \bar{\mathbf{q}}^{3-}
+    \end{array} \right] 
+\end{equation}
+
+
 \section{Problem Types}
+\label{sec:problem-types}
 The LT-AEM program is designed to solve several related problems,
 designated with flags in the input file.  Generally, the geometry of
 the elements is specified the same between all cases, it is just the
