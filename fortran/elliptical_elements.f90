@@ -214,7 +214,7 @@ contains
 
     if (nrows > 0) then
 
-       if (dom%inclBg(s,t) .or. dom%InclIn(s,t)) then
+       if (dom%inclBg(s,t) .or. dom%InclIn(s,t) .or. dom%InclIn(t,s)) then !! <<-- changed like circles
 
           allocate(RMn(M,0:N-1,0:1), RMn0(0:N-1,0:1), cemat(M,0:N-1), semat(M,N-1))
 
@@ -222,7 +222,7 @@ contains
           ! for matching or specified total head target elements
           if (el%ibnd == 0 .or. el%ibnd == -1) then
 
-             if (dom%inclBg(s,t)) then
+             if (dom%inclBg(s,t) .or. dom%inclin(t,s)) then  !! <<-- changed like circles
                 ! can the target element "see" the outside of the source element?
                 ! use exterior angular and radial modified Mathieu functions
                 cemat(1:M,0:N-1) = ce(e%parent%mat(idx), vi(0:N-1), e%G(t)%Pgm(:))
@@ -280,7 +280,7 @@ contains
                   & dPot_dR(M,2*N-1), dPot_dP(M,2*N-1), dPot_dX(M,2*N-1),dPot_dY(M,2*N-1))
 
              ! flux effects of source ellipse on target element
-             if (dom%inclBg(s,t)) then
+             if (dom%inclBg(s,t) .or. dom%inclIn(t,s)) then  !! <<-- changed like circles
                 ! use exterior angular and radial modified Mathieu functions
                 if (.not. el%ibnd == 0) then
                    cemat(1:M,0:N-1) = ce(e%parent%mat(idx), vi(0:N-1), e%G(t)%Pgm(:))
