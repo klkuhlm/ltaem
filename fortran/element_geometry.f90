@@ -94,8 +94,8 @@ contains
           c(i)%Zom(1) = c(i)%z
        end if
 
-       write(*,'(A,I0,A)',advance='no') 'Zom ',i,' :'
-       write(*,*) c(i)%Zom
+!!$       write(*,'(A,I0,A)',advance='no') 'Zom ',i,' :'
+!!$       write(*,*) c(i)%Zom
 
     end do
 
@@ -133,10 +133,10 @@ contains
              c(i)%G(j)%Rgm(1:M) = abs(Zgm) ! r
              c(i)%G(j)%Pgm(1:M) = atan2(aimag(Zgm),real(Zgm)) ! theta
 
-             write(*,'(2(I0,1X),A)',advance='no') i,j,':Rgm'
-             write(*,*) c(i)%G(j)%Rgm
-             write(*,'(2(I0,1X),A)',advance='no') i,j,':Pgm'
-             write(*,*) c(i)%G(j)%Pgm
+!!$             write(*,'(2(I0,1X),A)',advance='no') i,j,':Rgm'
+!!$             write(*,*) c(i)%G(j)%Rgm
+!!$             write(*,'(2(I0,1X),A)',advance='no') i,j,':Pgm'
+!!$             write(*,*) c(i)%G(j)%Pgm
 
              deallocate(Zgm)
              other => null()

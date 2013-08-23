@@ -120,7 +120,7 @@ program ltaem_main
 
         allocate(s(2*sol%m+1,minlt:maxlt-1), nt(minlt:maxlt-1), tee(minlt:maxlt-1))
 
-        print *, 'DEBUG','t',sol%t
+!!$        print *, 'DEBUG t',sol%t
 
         logcycles: do lt = minlt, maxlt-1
            ! number of times falling in this logcycle
