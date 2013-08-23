@@ -237,14 +237,17 @@ program ltaem_main
      stmp(1:tnP) = reshape(s,[tnP])
 
      if (sol%Qcalc) then
+        write(*,'(A)',advance='no') 'computing element boundary flowrates: '
         allocate(sol%Q(sol%nt,nc+ne),qp(tnP,nc+ne))
         do j = 1,nc
+           write(*,'(A,I0,1X)',advance='no') 'C',j
            qp(:,j) = elementFlowrate(c(j)%matching,stmp,1,tnP,dom,c,e,bg)
         end do
         do j = 1,ne
-           print *, 'debug el',j
+           write(*,'(A,I0,1X)',advance='no') 'E',j
            qp(:,nc+j) = elementFlowrate(e(j)%matching,stmp,1,tnP,dom,c,e,bg)
         end do
+        write(*,'(/)')
      end if
 
      !$OMP PARALLEL DO PRIVATE(calcZ,hp,vp,lot,hit,lop,hip) SHARED(sol)
