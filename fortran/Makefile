@@ -67,7 +67,7 @@ F90= gfortran
 OMP=-fopenmp
 CPP=-cpp
 DFLAGS=-O0 -Wall -Wextra -fcheck=all -g #-std=f2008
-DFLAGS+=-gdwarf-4 -fcheck=all -fmodule-private -pedantic -Wunderflow -finit-integer=-777 -finit-real=snan -ffpe-trap=invalid -finit-logical=false -finit-character=127
+DFLAGS+=-gdwarf-4 -fcheck=all -fmodule-private -pedantic -Wunderflow -finit-integer=$$((RANDOM%9999-5000)) -finit-real=snan -ffpe-trap=invalid -finit-logical=false -finit-character=$$((RANDOM%128+1))
 ##DFLAGS+=-fdump-rtl-expand 
 LINKOPT=-fbacktrace
 PFLAGS=-Ofast -march=native 
