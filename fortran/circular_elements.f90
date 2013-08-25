@@ -185,7 +185,7 @@ contains
     logical, intent(in) :: debug
     type(match_result) :: r
 
-    integer :: j, sorc, targ, N, M, loM, hiM, loN, hiN, nrows, ncols
+    integer :: j, s, t, N, M, loM, hiM, loN, hiN, nrows, ncols
     real(DP) :: K, factor
     real(DP), allocatable :: cmat(:,:), smat(:,:)
     real(DP), dimension(0:src%N-1) :: vi
@@ -194,8 +194,8 @@ contains
     complex(DP) :: kap
 
     N = src%N ! number of coefficients in the source circular element
-    targ = trg%id
-    sorc = src%id
+    t = trg%id
+    s = src%id
     forall (j = 0:N-1) vi(j) = real(j,DP)
 
     M = trg%M
@@ -237,8 +237,8 @@ contains
     end if
 
     if (debug) then
-       print '(A,3(I0,1X),A,4(I0,1X))', 'CIRCLE_MATCH_OTHER (parent,sorc,targ): ',&
-            & src%parent%id,sorc,targ,' (nrows,ncols,loM,hiM): ',nrows,ncols,loM,hiM
+       print '(A,3(I0,1X),A,4(I0,1X))', 'CIRCLE_MATCH_OTHER (parent,s,t): ',&
+            & src%parent%id,s,t,' (nrows,ncols,loM,hiM): ',nrows,ncols,loM,hiM
     end if
     
     allocate(r%LHS(nrows,ncols), r%RHS(nrows))
@@ -247,24 +247,24 @@ contains
 
     if (nrows > 0) then
 
-       if (dom%inclBg(sorc,targ) .or. dom%InclIn(sorc,targ) .or. dom%InclIn(targ,sorc)) then  
+       if (dom%inclBg(s,t) .or. dom%InclIn(s,t) .or. dom%InclIn(t,s)) then  
 
           allocate(Bn(M,0:N-1),Bn0(0:N-1),cmat(M,0:N-1),smat(M,N-1))
 
-          cmat(1:M,0:N-1) = cos(outer(src%G(targ)%Pgm(:),vi(0:N-1)))
-          smat(1:M,1:N-1) = sin(outer(src%G(targ)%Pgm(:),vi(1:N-1)))
+          cmat(1:M,0:N-1) = cos(outer(src%G(t)%Pgm(:),vi(0:N-1)))
+          smat(1:M,1:N-1) = sin(outer(src%G(t)%Pgm(:),vi(1:N-1)))
 
           ! setup LHS
-          ! $$$$$$$$$$ head effects of source (c) on target (el) $$$$$$$$$$
+          ! $$$$$$$$$$ head effects of source (s) on target (t) $$$$$$$$$$
           ! for matching or specified total head target elements
           if (trg%ibnd == 0 .or. trg%ibnd == -1) then
 
-             if (dom%inclBg(sorc,targ) .or. dom%inclIn(targ,sorc)) then   
+             if (dom%inclBg(s,t) .or. dom%inclIn(t,s)) then   
                 ! can the target element "see" the outside of the source element?
                 ! use exterior Bessel functions (Kn)
 
                 kap = kappa(p,src%parent)
-                Bn(1:M,0:N-1) = bK(kap*src%G(targ)%Rgm(:),N)
+                Bn(1:M,0:N-1) = bK(kap*src%G(t)%Rgm(:),N)
                 Bn0(0:N-1) =    bK(kap*src%r,N)
 
                 ! outside is always in 1:2*N-1 slot
@@ -286,7 +286,7 @@ contains
                 ! use interior Bessel functions (In)
 
                 kap = kappa(p,src%element)
-                Bn(1:M,0:N-1) = bI(kap*src%G(targ)%Rgm(:),N)
+                Bn(1:M,0:N-1) = bI(kap*src%G(t)%Rgm(:),N)
                 Bn0(0:N-1) =    bI(kap*src%r,N)
 
                 if (src%ibnd == 0) then
@@ -306,7 +306,7 @@ contains
                 r%LHS(1:M,loN+N:hiN)   = -Bn(:,1:N-1)/spread(Bn0(1:N-1),1,M)*smat(:,1:N-1)/src%K ! d_n
              end if
 
-             if (src%ibnd == 2 .and. (dom%inclBg(sorc,targ) .or. dom%inclIn(targ,sorc))) then
+             if (src%ibnd == 2 .and. (dom%inclBg(s,t) .or. dom%inclIn(t,s))) then
                 if (src%StorIn) then
 
                    ! wellbore storage and skin from finite-radius well
@@ -314,7 +314,7 @@ contains
                    r%RHS(1:M) = 0.0
                 else
                    ! save head effects of well onto RHS
-                   if (dom%inclBg(sorc,targ)) then
+                   if (dom%inclBg(s,t)) then
                       ! source well in background of target element
                       factor = -1.0_DP
                    else
@@ -337,11 +337,11 @@ contains
                   & dPot_dX(M,2*N-1), dPot_dY(M,2*N-1))
 
              ! flux effects of source circle on target element
-             if (dom%inclBg(sorc,targ) .or. dom%inclIn(targ,sorc)) then 
+             if (dom%inclBg(s,t) .or. dom%inclIn(t,s)) then 
                 ! use exterior Bessel functions (Kn)
 
                 kap = kappa(p,src%parent)
-                call dBK(kap*src%G(targ)%Rgm(:),N,Bn(:,0:N-1),dBn(:,0:N-1))
+                call dBK(kap*src%G(t)%Rgm(:),N,Bn(:,0:N-1),dBn(:,0:N-1))
                 dBn(1:M,0:N-1) = kap*dBn(:,0:N-1)
                 Bn0(0:N-1) = bK(kap*src%r,N)
                 K = src%parent%K
@@ -353,7 +353,7 @@ contains
              else
                 ! use interior Bessel functions (In)
                 kap = kappa(p,src%element)
-                call dBI(kap*src%G(targ)%Rgm(:),N,Bn(:,0:N-1),dBn(:,0:N-1))
+                call dBI(kap*src%G(t)%Rgm(:),N,Bn(:,0:N-1),dBn(:,0:N-1))
                 dBn(1:M,0:N-1) = -kap*dBn(:,0:N-1) ! apply in/out-side sign here
                 Bn0(0:N-1) = bI(kap*src%r,N)
                 K = src%K
@@ -373,7 +373,7 @@ contains
              dPot_dR(1:M,1:N) =       dBn(:,0:N-1)/spread(Bn0(0:N-1),1,M)*cmat(:,0:N-1)
              dPot_dR(1:M,N+1:2*N-1) = dBn(:,1:N-1)/spread(Bn0(1:N-1),1,M)*smat(:,1:N-1)
 
-             if (trg%ibnd == 2 .and. dom%inclBg(sorc,targ)) then
+             if (trg%ibnd == 2 .and. dom%inclBg(s,t)) then
                 ! wellbore storage and skin from finite-radius well
                 dPot_dR(1:M,1) = storwell(src,p)*dPot_dR(:,1)
                 dPot_dP(1:M,1:2*N-1) = 0.0 ! wells have angular symmetry
@@ -385,10 +385,10 @@ contains
              end if
 
              ! project these from cylindrical onto Cartesian coordinates
-             dPot_dX(1:M,1:2*N-1) = dPot_dR*spread(cos(src%G(targ)%Pgm),2,2*N-1) - &
-                                  & dPot_dP*spread(sin(src%G(targ)%Pgm)/src%G(targ)%Rgm,2,2*N-1)
-             dPot_dY(1:M,1:2*N-1) = dPot_dR*spread(sin(src%G(targ)%Pgm),2,2*N-1) + &
-                                  & dPot_dP*spread(cos(src%G(targ)%Pgm)/src%G(targ)%Rgm,2,2*N-1)
+             dPot_dX(1:M,1:2*N-1) = dPot_dR*spread(cos(src%G(t)%Pgm),2,2*N-1) - &
+                                  & dPot_dP*spread(sin(src%G(t)%Pgm)/src%G(t)%Rgm,2,2*N-1)
+             dPot_dY(1:M,1:2*N-1) = dPot_dR*spread(sin(src%G(t)%Pgm),2,2*N-1) + &
+                                  & dPot_dP*spread(cos(src%G(t)%Pgm)/src%G(t)%Rgm,2,2*N-1)
 
              ! project from Cartesian to "radial" coordinate of target element
              if (trg%id <= dom%num(1)) then
@@ -429,7 +429,7 @@ contains
        if (nrows > 0) then
 
           ! save flux effects of well onto RHS
-          if (dom%inclBg(sorc,targ)) then
+          if (dom%inclBg(s,t)) then
              ! source well in background of target element
              factor = -1.0_DP
           else

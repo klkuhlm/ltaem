@@ -183,7 +183,7 @@ contains
           c(i)%parent => c(par)%element
        elseif (par <= ntot) then
           ! circle has ellipse as parent
-          c(i)%parent => e(par)%element
+          c(i)%parent => e(par-nc)%element
        else
           write(*,'(A,(1X,I0))') 'error in parent element index',par,i
           stop 200
@@ -199,7 +199,7 @@ contains
           e(i)%parent => c(par)%element
        elseif (par <= ntot) then
           ! ellipse has another ellipse as parent
-          e(i)%parent => e(par)%element
+          e(i)%parent => e(par-nc)%element
        else
           write(*,'(A,(1X,I0))') 'error in parent element index',par,i
           stop 201

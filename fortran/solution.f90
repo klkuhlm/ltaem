@@ -59,11 +59,11 @@ contains
     complex(DP), allocatable :: A(:,:), b(:)
     type(match_result), allocatable :: res(:,:) ! results(target_id,source_id)
     integer, allocatable :: row(:,:), col(:,:) ! row/column trackers
-    integer :: nc, ne, ntot, i, j, bigM, bigN, rr,cc, ierr  , k
+    integer :: nc, ne, ntot, i, j, ii, jj, bigM, bigN, rr,cc, ierr  , k
 
     ! only needed for LAPACK routine; size(work) = 33*bigN
     complex(DP), allocatable :: WORK(:)
-    
+
     integer :: nrow, ncol
     character(41) :: fmt, fmt2
     fmt =  "(I3,1X,   ('(',ES8.1,',',ES8.1,')',1X))"
@@ -86,13 +86,13 @@ contains
        res(i,i) = circle_match(c(i),p,sol%debug)
        row(i,1) = size(res(i,i)%RHS,1) 
        col(i,1) = size(res(i,i)%LHS,2)
-       
+
        if (sol%debug) then
           print '(A,I0,A,2(I0,1X),3(A,I0))', 'SOL circ-self i: ',i,&
                & ' LHS shape: ',shape(res(i,i)%LHS),&
                & ' RHS length: ',size(res(i,i)%RHS),&
                & ' row: ',row(i,1),' col: ',col(i,1)
-          
+
           print '(A,I0,A)', 'SOL circ-self i: ',i,' LHS'
           nrow = size(res(i,i)%LHS,1)
           ncol = size(res(i,i)%LHS,2)
@@ -106,7 +106,7 @@ contains
           else
              print '(A)', 'no output ncol==0'
           end if
-          
+
           print '(A,I0,A)', 'SOL circ-self i: ',i,' RHS'
           nrow = size(res(i,i)%RHS)
           if (nrow > 0) then
@@ -118,7 +118,7 @@ contains
              print '(A)', 'no output nrow==0'
           end if
        end if
-    
+
        ! circle on other circle
        do j = 1,nc
           if(i /= j) then
@@ -141,7 +141,7 @@ contains
                 else
                    print '(A)', 'no LHS: ncol==0'
                 end if
-             
+
                 print '(A,2(I0,1X),A)', 'SOL circ-circ i,j: ',i,j,' RHS'
                 nrow = size(res(j,i)%RHS(:)) 
                 if (nrow > 0) then
@@ -153,51 +153,106 @@ contains
                    print '(A)', 'no RHS: nrow==0'
                 end if
              end if
-             
+
           end if
        end do
 
        ! circle on other ellipse
        do j = 1,ne
-          res(j+nc,i) = circle_match(c(i),e(j)%matching,dom,p,sol%debug)
+          jj = j+nc
+          res(jj,i) = circle_match(c(i),e(j)%matching,dom,p,sol%debug)
           if (sol%debug) then
-             print '(2(A,2(I0,1X)),A,I0)', 'SOL circ-ellip i,j: ',i,j,&
-                  & ' LHS shape:',shape(res(j+nc,i)%LHS),&
-                  & ' RHS size:',size(res(j+nc,i)%RHS)
+             print '(2(A,2(I0,1X)),A,I0)', 'SOL circ-ellip i,j: ',i,jj,&
+                  & ' LHS shape:',shape(res(jj,i)%LHS),&
+                  & ' RHS size:',size(res(jj,i)%RHS)
+
+             print '(A,2(I0,1X),A)', 'SOL circ-ellip i,j: ',i,jj,' LHS'
+             nrow = size(res(jj,i)%LHS,1) 
+             ncol = size(res(jj,i)%LHS,2) 
+             if (ncol > 0) then
+                write(fmt2(5:7),'(I3.3)') ncol
+                write(fmt(8:10),'(I3.3)') ncol
+                print fmt2, (k,k=1,ncol)
+                do k = 1, nrow
+                   print fmt, k,res(jj,i)%LHS(k,:)
+                end do
+             else
+                print '(A)', 'no LHS: ncol==0'
+             end if
+
+             print '(A,2(I0,1X),A)', 'SOL circ-ellip i,j: ',i,jj,' RHS'
+             nrow = size(res(jj,i)%RHS(:)) 
+             if (nrow > 0) then
+                write(fmt2(5:7),'(I3.3)') nrow
+                write(fmt(8:10),'(I3.3)') nrow
+                print fmt2, (k,k=1,nrow)
+                print fmt, 1,res(jj,i)%RHS(:)
+             else
+                print '(A)', 'no RHS: nrow==0'
+             end if
           end if
        end do
     end do
 
     do i = 1,ne
+       ii = i+nc ! global number
+
        ! ellipse on self
-       res(nc+i,nc+i) = ellipse_match(e(i),p,idx)
-       row(i+nc,1) = size(res(nc+i,nc+i)%RHS,1)
-       col(i+nc,1) = size(res(nc+i,nc+i)%LHS,2)
+       res(ii,ii) = ellipse_match(e(i),p,idx,sol%debug)
+       row(ii,1) = size(res(ii,ii)%RHS,1)
+       col(ii,1) = size(res(ii,ii)%LHS,2)
 
        if (sol%debug) then
-          print '(A,I0,A,2(I0,1X),3(A,I0))', 'SOL ellip-self i: ',i,&
-               & ' LHS shape:',shape(res(nc+i,nc+i)%LHS),&
-               & ' RHS size:',size(res(nc+i,nc+i)%RHS),&
-               & ' row: ',row(i+nc,1),' col: ',col(i+nc,1)
+          print '(A,I0,A,2(I0,1X),3(A,I0))', 'SOL ellip-self i: ',ii,&
+               & ' LHS shape:',shape(res(ii,ii)%LHS),&
+               & ' RHS size:',size(res(ii,ii)%RHS),&
+               & ' row: ',row(ii,1),' col: ',col(ii,1)
+
+          print '(A,I0,A)', 'SOL ellip-self i: ',ii,' LHS'
+          nrow = size(res(ii,ii)%LHS,1)
+          ncol = size(res(ii,ii)%LHS,2)
+          if (ncol > 0) then 
+             write(fmt2(5:7),'(I3.3)') ncol
+             write(fmt(8:10),'(I3.3)') ncol
+             write(*,fmt2) (j,j=1,ncol)
+             do j = 1, nrow
+                print fmt, j,res(ii,ii)%LHS(j,:)
+             end do
+          else
+             print '(A)', 'no output ncol==0'
+          end if
+
+          print '(A,I0,A)', 'SOL ellip-self i: ',ii,' RHS'
+          nrow = size(res(ii,ii)%RHS)
+          if (nrow > 0) then
+             write(fmt2(5:7),'(I3.3)') nrow
+             write(fmt(8:10),'(I3.3)') nrow
+             print fmt2, (j,j=1,nrow)
+             print fmt, 1,res(ii,ii)%RHS(:)
+          else
+             print '(A)', 'no output nrow==0'
+          end if
+
        end if
-       
+
        ! ellipse on other circle
        do j = 1,nc
-          res(j,nc+i) = ellipse_match(e(i),c(j)%matching,dom,p,idx)
-          
+          res(j,ii) = ellipse_match(e(i),c(j)%matching,dom,p,idx,sol%debug)
+
           if (sol%debug) then
-             print *, 'SOL ellip-circ i,j:',i,j,'LHS shape:',shape(res(j,nc+i)%LHS),&
-                  &'RHS shape:',shape(res(j,nc+i)%RHS)
+             print *, 'SOL ellip-circ i,j:',ii,j,'LHS shape:',shape(res(j,ii)%LHS),&
+                  &'RHS shape:',shape(res(j,ii)%RHS)
           end if
        end do
 
        ! ellipse on other ellipse
        do j = 1,ne
+          jj = j+nc
           if (i /= j) then
-             res(nc+j,nc+i) = ellipse_match(e(i),e(j)%matching,dom,p,idx)
+             res(jj,ii) = ellipse_match(e(i),e(j)%matching,dom,p,idx,sol%debug)
              if (sol%debug) then
-                print *, 'SOL ellip-ellip i,j:',i,j,'LHS shape:',shape(res(j+nc,nc+i)%LHS),&
-                     &'RHS shape:',shape(res(j+nc,nc+i)%RHS)
+                print *, 'SOL ellip-ellip i,j:',ii,jj,'LHS shape:',shape(res(jj,ii)%LHS),&
+                     &'RHS shape:',shape(res(jj,ii)%RHS)
              end if
           end if
        end do
@@ -209,7 +264,7 @@ contains
     if (sol%debug) then
        print *, 'SOL bigM:',bigM,' bigN:',bigN
     end if
-    
+
     allocate(A(bigM,bigN), b(bigM))
     b = cmplx(0,0,DP)
 
@@ -229,13 +284,13 @@ contains
        do i=1,size(row,1)
           print *, i,':',row(i,:)
        end do
-       
+
        print *, 'SOL col:'
        do i=1,size(col,1)
           print *, i,':',col(i,:)
        end do
     end if
-    
+
     ! convert structures into single matrix for solution via least squares
     do rr = 1,ntot
        do cc = 1,ntot
@@ -243,7 +298,7 @@ contains
              print *, 'convert',rr,cc,' row range:',row(rr,0),row(rr,2),&
                   & ' col range:',col(cc,0),col(cc,2)
           end if
-          
+
           A(row(rr,0):row(rr,2),col(cc,0):col(cc,2)) = res(rr,cc)%LHS
           b(row(rr,0):row(rr,2)) = b(row(rr,0):row(rr,2)) + res(rr,cc)%RHS
        end do
@@ -259,7 +314,7 @@ contains
           print *, 'ZGELS debug',bigM,bigN,size(work),':: bshape',&
                & shape(b),':: Ashape',shape(A)
        end if
-       
+
        call ZGELS(TRANSA='N', M=bigM, N=bigN, NRHS=1, A=A(:,:), LDA=bigM, B=b(:), &
             & LDB=bigM, WORK=work, LDWORK=size(work), INFO=ierr)
        if (ierr /= 0) then
