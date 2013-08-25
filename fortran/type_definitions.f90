@@ -217,6 +217,8 @@ module type_definitions
   ! things relating to the numerical solution, independent from flow elements
   type, extends(INVLT) :: solution
 
+     logical :: debug = .false.  ! debugging output?
+
      ! integrate particle lines vs. calculate at set locations/times
      logical :: particle = .false.
      integer :: nPart = -999

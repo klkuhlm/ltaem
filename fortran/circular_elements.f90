@@ -34,7 +34,7 @@ module circular_elements
   end interface
 
 contains
-  function circle_match_self(c,p) result(r)
+  function circle_match_self(c,p,debug) result(r)
     use constants, only : DP, PI
     use kappa_mod, only : kappa
     use time_mod, only : timef
@@ -45,6 +45,7 @@ contains
 
     type(circle), intent(in) :: c
     complex(DP), intent(in) :: p
+    logical, intent(in) :: debug
     type(match_result) :: r
 
     integer :: j, N, M, loM, hiM, nrows, ncols
@@ -56,9 +57,7 @@ contains
     N = c%N
     M = c%M
     forall (j = 0:N-1) vi(j) = real(j,DP)
-
-       print *, 'DEBUG circle_match_self parent',c%parent%id
-
+    
     if (c%ibnd == 0) then
        ! matching
        nrows = 2*M
@@ -66,9 +65,6 @@ contains
        ! loM:hiM is index range for flux matching portion, beyond head-matching part
        loM = M+1
        hiM = 2*M
-
-       print *, 'DEBUG circle_match_self ibnd==0 (nrows,ncols,loM,hiM)',nrows,ncols,loM,hiM
-       
     elseif (c%ibnd == 2) then
        ! simple well has no unknowns
        ! only appears on RHS of other elements
@@ -81,9 +77,6 @@ contains
           nrows = 0
           ncols = 0
        end if
-
-       print *, 'DEBUG circle_match_self ibnd==2 (nrows,ncols,loM,hiM)',nrows,ncols,loM,hiM
-
     else
        if (c%calcin .and. (c%ibnd == -1 .or. c%ibnd == 1)) then
           ! if computing inside a specified head/flux element
@@ -94,9 +87,6 @@ contains
           ! only flux or head matching, so loM:him = 1:M
           loM = 1
           hiM = M
-
-             print *, 'DEBUG circle_match_self ibnd=={-1,+1} calcin (nrows,ncols,loM,hiM)',nrows,ncols,loM,hiM
-
        else
           ! other cases (no calc inside)
           nrows = M
@@ -104,10 +94,12 @@ contains
           ! here only head or flux matching, so loM:him = 1:M
           loM = 1
           hiM = M
-
-             print *, 'DEBUG circle_match_self ibnd=={-1,+1} nocalcin (nrows,ncols,loM,hiM)',nrows,ncols,loM,hiM
-
        end if
+    end if
+
+    if (debug) then
+       print '(A,I0,A,4(I0,1X))', 'CIRCLE_MATCH_SELF parent: ',&
+            & c%parent%id,' (nrows,ncols,loM,hiM): ',nrows,ncols,loM,hiM
     end if
 
     allocate(r%LHS(nrows,ncols), r%RHS(nrows))
@@ -121,12 +113,10 @@ contains
 
        r%LHS(1:M,1:N) =       cmat(:,0:N-1)/c%parent%K ! a_n head
        r%LHS(1:M,N+1:2*N-1) = smat(:,1:N-1)/c%parent%K ! b_n head
-          print *, 'DEBUG circle_match_self setup LHS a-b head'
 
        if (c%ibnd == 0 .or. (c%ibnd == -1 .and. c%calcin)) then
           r%LHS(1:M,2*N:3*N-1) = -cmat(:,0:N-1)/c%K ! c_n head
           r%LHS(1:M,3*N:4*N-2) = -smat(:,1:N-1)/c%K ! d_n head
-             print *, 'DEBUG circle_match_self setup LHS c-d head'
        end if
 
     end if
@@ -141,8 +131,6 @@ contains
        r%LHS(loM:hiM,1:N) =       spread(dBn(0:N-1)/Bn(0:N-1),1,M)*cmat(:,0:N-1) ! a_n flux
        r%LHS(loM:hiM,N+1:2*N-1) = spread(dBn(1:N-1)/Bn(1:N-1),1,M)*smat(:,1:N-1) ! b_n flux
 
-          print *, 'DEBUG circle_match_self setup LHS a-b flux'
-
        if (c%ibnd == 0 .or. (c%ibnd == 1 .and. c%calcin)) then
           kap = kappa(p,c%element)
           call dBI(kap*c%r,N,Bn(0:N-1),dBn(0:N-1))
@@ -150,7 +138,6 @@ contains
 
           r%LHS(loM:hiM,2*N:3*N-1) = -spread(dBn(0:N-1)/Bn(0:N-1),1,M)*cmat(:,0:N-1) ! c_n flux
           r%LHS(loM:hiM,3*N:4*N-2) = -spread(dBn(1:N-1)/Bn(1:N-1),1,M)*smat(:,1:N-1) ! d_n flux
-             print *, 'DEBUG circle_match_self setup LHS c-d flux'
        end if
        deallocate(Bn,dBn)
        
@@ -159,35 +146,30 @@ contains
     ! setup RHS
     select case(c%ibnd)
     case(-1)
-          print *, 'DEBUG circle_match_self setup RHS ibnd==-1'
        ! put specified head on RHS
        r%RHS(1:M) = timef(p,c%time,.false.)*c%bdryQ
     case(0)
-          print *, 'DEBUG circle_match_self setup RHS ibnd==0'
        ! put constant area source term effects (from inside the element) on RHS
        ! TODO : handle area source in background
        r%RHS(1:M) = -timef(p,c%time,.true.)*c%areaQ*c%Ss/kappa(p,c%element)**2
        r%RHS(M+1:2*M) = 0.0 ! constant area source has no flux effects
     case(1)
-          print *, 'DEBUG circle_match_self setup RHS ibnd==+1'
        ! put specified flux effects on RHS
        ! TODO : check addition of aquifer thickness to denominator
        r%RHS(1:M) = timef(p,c%time,.false.)*c%bdryQ/(2.0*PI*c%r*c%b)
     case(2)
        if (c%StorIn) then
-             print *, 'DEBUG circle_match_self setup RHS ibnd==2, storin'
           ! effects of wellbore storage and skin on finite-radius well
           ! effects of other elements on this one show up in off-diagonals
           r%LHS(1:M,1) = storwell(c,p)*r%LHS(1:M,1)
           r%RHS(1:M) = timef(p,c%time,.false.)*c%bdryQ/(PI*c%r*c%parent%T)
        else
-             print *, 'DEBUG circle_match_self setup RHS ibnd==2, nostor'
           continue ! no wellbore storage; nothing to do, since matrix is zero-sized
        end if
     end select
   end function circle_match_self
 
-  function circle_match_other(c,el,dom,p) result(r)
+  function circle_match_other(src,trg,dom,p,debug) result(r)
     use constants, only : DP
     use kappa_mod, only : kappa
     use time_mod, only : timef
@@ -196,134 +178,123 @@ contains
     use bessel_functions, only : bK, bI, dbK, dbI
     implicit none
 
-    type(circle), intent(in) :: c ! source circle
-    type(matching), intent(in) :: el ! target element (circle or ellipse)
+    type(circle), intent(in) :: src   ! source circle
+    type(matching), intent(in) :: trg ! target element (circle or ellipse)
     type(domain), intent(in) :: dom
     complex(DP), intent(in) :: p
+    logical, intent(in) :: debug
     type(match_result) :: r
 
-    integer :: j, src, targ, N, M, loM, hiM, loN, hiN, nrows, ncols
+    integer :: j, sorc, targ, N, M, loM, hiM, loN, hiN, nrows, ncols
     real(DP) :: K, factor
     real(DP), allocatable :: cmat(:,:), smat(:,:)
-    real(DP), dimension(0:c%N-1) :: vi
+    real(DP), dimension(0:src%N-1) :: vi
     complex(DP), allocatable :: Bn(:,:), dBn(:,:), Bn0(:)
     complex(DP), allocatable :: dPot_dR(:,:), dPot_dP(:,:), dPot_dX(:,:), dPot_dY(:,:)
     complex(DP) :: kap
 
-    N = c%N ! number of coefficients in the source circular element
-    targ = el%id
-    src = c%id
+    N = src%N ! number of coefficients in the source circular element
+    targ = trg%id
+    sorc = src%id
     forall (j = 0:N-1) vi(j) = real(j,DP)
 
-    print *, 'DEBUG circle_match_other (parent,src,targ)',c%parent%id,src,targ
-
-    M = el%M
+    M = trg%M
     ! target element determines number of rows
-    if (el%ibnd == 0) then
+    if (trg%ibnd == 0) then
        nrows = 2*M
        loM = M+1
        hiM = 2*M
-       print *, 'DEBUG circle_other, targ ibnd==0 (nrows,loM,hiM)',nrows,loM,hiM
-    elseif (el%ibnd == 2) then
-       if (el%storIn) then
+    elseif (trg%ibnd == 2) then
+       if (trg%storIn) then
           nrows = M
           loM = 1
           hiM = M
-          print *, 'DEBUG circle_other, targ ibnd==2 storin (nrows,loM,hiM)',nrows,loM,hiM
        else
           nrows = 0
-          print *, 'DEBUG circle_other, targ ibnd==2 nostor (nrows)',nrows,'(loM,hiM undefined)'
        end if
     else
        nrows = M
        loM = 1
        hiM = M
-       print *, 'DEBUG circle_other, targ ibnd=={-1,+1} storin (nrows,loM,hiM)',nrows,loM,hiM
     end if
 
     ! source element determines number of columns
-    if (c%ibnd == 0) then
+    if (src%ibnd == 0) then
        ncols = 4*N-2
-       print *, 'DEBUG circle_other, src ibnd==0  (ncols)',ncols
-    elseif (c%ibnd == 2) then
-       if(c%storIn) then
+    elseif (src%ibnd == 2) then
+       if(src%storIn) then
           ncols = 1
-          print *, 'DEBUG circle_other, src ibnd==2 storin (ncols)',ncols
        else
           ! compute effects due to well for RHS
           ncols = 1  ! reset to zero at end of routine
-          print *, 'DEBUG circle_other, src ibnd==2 nostor (ncols)',ncols
        end if
-    elseif (c%calcin .and. (c%ibnd == -1 .or. c%ibnd == 1)) then
+    elseif (src%calcin .and. (src%ibnd == -1 .or. src%ibnd == 1)) then
        ! specified flux/head with calc inside
        ncols = 4*N-2
-       print *, 'DEBUG circle_other, src ibnd=={-1,+1} calcin (ncols)',ncols
     else
        ! specified flux/head w/o calc inside
        ncols = 2*N-1
-       print *, 'DEBUG circle_other, src ibnd=={-1,+1} nocalcin (ncols)',ncols
     end if
 
+    if (debug) then
+       print '(A,3(I0,1X),A,4(I0,1X))', 'CIRCLE_MATCH_OTHER (parent,sorc,targ): ',&
+            & src%parent%id,sorc,targ,' (nrows,ncols,loM,hiM): ',nrows,ncols,loM,hiM
+    end if
+    
     allocate(r%LHS(nrows,ncols), r%RHS(nrows))
     r%LHS = cmplx(0,0,DP)
     r%RHS = cmplx(0,0,DP)
 
     if (nrows > 0) then
-          print *, 'DEBUG circ_other dom%inclBg(src,targ)',dom%inclBg(src,targ), &
-                             & '.or. dom%InclIn(src,targ)',dom%InclIn(src,targ),&
-                             & '.or. dom%InclIn(targ,src)',dom%InclIn(targ,src)
 
-       if (dom%inclBg(src,targ) .or. dom%InclIn(src,targ) .or. dom%InclIn(targ,src)) then  
+       if (dom%inclBg(sorc,targ) .or. dom%InclIn(sorc,targ) .or. dom%InclIn(targ,sorc)) then  
 
           allocate(Bn(M,0:N-1),Bn0(0:N-1),cmat(M,0:N-1),smat(M,N-1))
 
-          cmat(1:M,0:N-1) = cos(outer(c%G(targ)%Pgm(:),vi(0:N-1)))
-          smat(1:M,1:N-1) = sin(outer(c%G(targ)%Pgm(:),vi(1:N-1)))
+          cmat(1:M,0:N-1) = cos(outer(src%G(targ)%Pgm(:),vi(0:N-1)))
+          smat(1:M,1:N-1) = sin(outer(src%G(targ)%Pgm(:),vi(1:N-1)))
 
           ! setup LHS
           ! $$$$$$$$$$ head effects of source (c) on target (el) $$$$$$$$$$
           ! for matching or specified total head target elements
-          if (el%ibnd == 0 .or. el%ibnd == -1) then
+          if (trg%ibnd == 0 .or. trg%ibnd == -1) then
 
-             print *, 'DEBUG circ_other setup LHS target ibnd=={0,-1}'
-
-             if (dom%inclBg(src,targ) .or. dom%inclIn(targ,src)) then   
+             if (dom%inclBg(sorc,targ) .or. dom%inclIn(targ,sorc)) then   
                 ! can the target element "see" the outside of the source element?
                 ! use exterior Bessel functions (Kn)
 
-                print *, 'DEBUG circ_other HEAD outer (K), N=',N
-
-                kap = kappa(p,c%parent)
-                Bn(1:M,0:N-1) = bK(kap*c%G(targ)%Rgm(:),N)
-                Bn0(0:N-1) =    bK(kap*c%r,N)
+                kap = kappa(p,src%parent)
+                Bn(1:M,0:N-1) = bK(kap*src%G(targ)%Rgm(:),N)
+                Bn0(0:N-1) =    bK(kap*src%r,N)
 
                 ! outside is always in 1:2*N-1 slot
                 loN = 1
                 hiN = 2*N-1
 
-                ! head effects on _outside_ of target element
-                r%LHS(1:M,loN:loN+N-1) = Bn(:,0:N-1)/spread(Bn0(0:N-1),1,M)*cmat(:,0:N-1)/c%parent%K ! a_n
-                r%LHS(1:M,loN+N:hiN)   = Bn(:,1:N-1)/spread(Bn0(1:N-1),1,M)*smat(:,1:N-1)/c%parent%K ! b_n
+                if (debug) then
+                   print '(2(A,2(I0,1X)),A,I0)', 'CIRCLE_MATCH_OTHER: (loN,hiN)',&
+                        & loN,hiN,' Bn,Bn0 shape: ',shape(Bn),':',shape(Bn0)
+                end if
+                
+                ! head effects on target element
+                r%LHS(1:M,loN:loN+N-1) = Bn(:,0:N-1)/spread(Bn0(0:N-1),1,M)*cmat(:,0:N-1)/src%parent%K ! a_n
+                r%LHS(1:M,loN+N:hiN)   = Bn(:,1:N-1)/spread(Bn0(1:N-1),1,M)*smat(:,1:N-1)/src%parent%K ! b_n
 
              else
                 ! can target element "see" the inside of the source element?
                 ! i.e., is the source element the parent?
                 ! use interior Bessel functions (In)
 
-                print *, 'DEBUG circ_other HEAD inner (I), N=',N
+                kap = kappa(p,src%element)
+                Bn(1:M,0:N-1) = bI(kap*src%G(targ)%Rgm(:),N)
+                Bn0(0:N-1) =    bI(kap*src%r,N)
 
-                kap = kappa(p,c%element)
-                Bn(1:M,0:N-1) = bI(kap*c%G(targ)%Rgm(:),N)
-                Bn0(0:N-1) =    bI(kap*c%r,N)
-
-                if (c%ibnd == 0) then
-                      print *, 'DEBUG circ_other src ibnd==0'
+                if (src%ibnd == 0) then
 
                    ! is source the inside of matching element?
                    loN = 2*N
                    hiN = 4*N-2
                 else
-                      print *, 'DEBUG circ_other src ibnd/=0'
 
                    ! is source inside of specified head/flux element? (no other previous part)
                    loN = 1
@@ -331,21 +302,29 @@ contains
                 end if
 
                 ! head effects on other element
-                r%LHS(1:M,loN:loN+N-1) = -Bn(:,0:N-1)/spread(Bn0(0:N-1),1,M)*cmat(:,0:N-1)/c%K ! c_n
-                r%LHS(1:M,loN+N:hiN)   = -Bn(:,1:N-1)/spread(Bn0(1:N-1),1,M)*smat(:,1:N-1)/c%K ! d_n
+                r%LHS(1:M,loN:loN+N-1) = -Bn(:,0:N-1)/spread(Bn0(0:N-1),1,M)*cmat(:,0:N-1)/src%K ! c_n
+                r%LHS(1:M,loN+N:hiN)   = -Bn(:,1:N-1)/spread(Bn0(1:N-1),1,M)*smat(:,1:N-1)/src%K ! d_n
              end if
 
-             if (c%ibnd == 2 .and. dom%inclBg(src,targ)) then
-                   print *, 'DEBUG circ_other ibnd==2 and dom%inclBg(src,targ)'
-                if (c%StorIn) then
+             if (src%ibnd == 2 .and. (dom%inclBg(sorc,targ) .or. dom%inclIn(targ,sorc))) then
+                if (src%StorIn) then
 
                    ! wellbore storage and skin from finite-radius well
-                   r%LHS(1:M,1) = storwell(c,p)*r%LHS(1:M,1)
+                   r%LHS(1:M,1) = storwell(src,p)*r%LHS(1:M,1)
                    r%RHS(1:M) = 0.0
                 else
+                   ! save head effects of well onto RHS
+                   if (dom%inclBg(sorc,targ)) then
+                      ! source well in background of target element
+                      factor = -1.0_DP
+                   else
+                      ! source well inside target element
+                      factor = 1.0_DP
+                   end if
+
                    ! specified flux (finite-radius well no storage)
                    ! save head effects of well onto RHS
-                   r%RHS(1:M) = -well(c,p)*r%LHS(1:M,1)
+                   r%RHS(1:M) = factor*well(src,p)*r%LHS(1:M,1)
                    r%LHS(1:M,1) = 0.0 ! LHS matrix re-allocated to zero size below
                 end if
              end if
@@ -353,34 +332,33 @@ contains
 
           ! $$$$$$$$$$ flux effects of source (c) on target (el) $$$$$$$$$$
           ! for matching, specified total flux, or well with wellbore storage target element
-          if (el%ibnd == 0 .or. el%ibnd == +1 .or. (el%ibnd == +2 .and. el%storIn)) then
+          if (trg%ibnd == 0 .or. trg%ibnd == +1 .or. (trg%ibnd == +2 .and. trg%storIn)) then
              allocate(dBn(M,0:N-1), dPot_dR(M,2*N-1), dPot_dP(M,2*N-1), &
                   & dPot_dX(M,2*N-1), dPot_dY(M,2*N-1))
 
              ! flux effects of source circle on target element
-             if (dom%inclBg(src,targ) .or. dom%inclIn(targ,src)) then 
+             if (dom%inclBg(sorc,targ) .or. dom%inclIn(targ,sorc)) then 
                 ! use exterior Bessel functions (Kn)
-                   print *, 'DEBUG circ_other FLUX outer (K)'
-                kap = kappa(p,c%parent)
-                call dBK(kap*c%G(targ)%Rgm(:),N,Bn(:,0:N-1),dBn(:,0:N-1))
+
+                kap = kappa(p,src%parent)
+                call dBK(kap*src%G(targ)%Rgm(:),N,Bn(:,0:N-1),dBn(:,0:N-1))
                 dBn(1:M,0:N-1) = kap*dBn(:,0:N-1)
-                Bn0(0:N-1) = bK(kap*c%r,N)
-                K = c%parent%K
+                Bn0(0:N-1) = bK(kap*src%r,N)
+                K = src%parent%K
 
                 ! outside part is always 1:2*N-1
                 loN = 1
                 hiN = 2*N-1
 
              else
-                   print *, 'DEBUG circ_other FLUX inner (I)'
                 ! use interior Bessel functions (In)
-                kap = kappa(p,c%element)
-                call dBI(kap*c%G(targ)%Rgm(:),N,Bn(:,0:N-1),dBn(:,0:N-1))
+                kap = kappa(p,src%element)
+                call dBI(kap*src%G(targ)%Rgm(:),N,Bn(:,0:N-1),dBn(:,0:N-1))
                 dBn(1:M,0:N-1) = -kap*dBn(:,0:N-1) ! apply in/out-side sign here
-                Bn0(0:N-1) = bI(kap*c%r,N)
-                K = c%K
+                Bn0(0:N-1) = bI(kap*src%r,N)
+                K = src%K
 
-                if (c%ibnd == 0) then
+                if (src%ibnd == 0) then
                    ! inside of matching element
                    loN = 2*N
                    hiN = 4*N-2
@@ -395,9 +373,9 @@ contains
              dPot_dR(1:M,1:N) =       dBn(:,0:N-1)/spread(Bn0(0:N-1),1,M)*cmat(:,0:N-1)
              dPot_dR(1:M,N+1:2*N-1) = dBn(:,1:N-1)/spread(Bn0(1:N-1),1,M)*smat(:,1:N-1)
 
-             if (el%ibnd == 2 .and. dom%inclBg(src,targ)) then
+             if (trg%ibnd == 2 .and. dom%inclBg(sorc,targ)) then
                 ! wellbore storage and skin from finite-radius well
-                dPot_dR(1:M,1) = storwell(c,p)*dPot_dR(:,1)
+                dPot_dR(1:M,1) = storwell(src,p)*dPot_dR(:,1)
                 dPot_dP(1:M,1:2*N-1) = 0.0 ! wells have angular symmetry
              else
                 ! derivative wrt angle of source element for more general circular elements
@@ -407,39 +385,39 @@ contains
              end if
 
              ! project these from cylindrical onto Cartesian coordinates
-             dPot_dX(1:M,1:2*N-1) = dPot_dR*spread(cos(c%G(targ)%Pgm),2,2*N-1) - &
-                                  & dPot_dP*spread(sin(c%G(targ)%Pgm)/c%G(targ)%Rgm,2,2*N-1)
-             dPot_dY(1:M,1:2*N-1) = dPot_dR*spread(sin(c%G(targ)%Pgm),2,2*N-1) + &
-                                  & dPot_dP*spread(cos(c%G(targ)%Pgm)/c%G(targ)%Rgm,2,2*N-1)
+             dPot_dX(1:M,1:2*N-1) = dPot_dR*spread(cos(src%G(targ)%Pgm),2,2*N-1) - &
+                                  & dPot_dP*spread(sin(src%G(targ)%Pgm)/src%G(targ)%Rgm,2,2*N-1)
+             dPot_dY(1:M,1:2*N-1) = dPot_dR*spread(sin(src%G(targ)%Pgm),2,2*N-1) + &
+                                  & dPot_dP*spread(cos(src%G(targ)%Pgm)/src%G(targ)%Rgm,2,2*N-1)
 
              ! project from Cartesian to "radial" coordinate of target element
-             if (el%id <= dom%num(1)) then
+             if (trg%id <= dom%num(1)) then
                 ! other element is a circle
-                if (el%ibnd == 2) then
+                if (trg%ibnd == 2) then
                    ! other element is a well with wellbore storage (Type III BC)
                    ! need head effects too
                    r%LHS(1:M,loN:loN+N-1) = Bn(:,0:N-1)/spread(Bn0(0:N-1),1,M)*cmat/K
                    r%LHS(1:M,loN+N:hiN) =   Bn(:,1:N-1)/spread(Bn0(1:N-1),1,M)*smat(:,1:N-1)/K
 
                    ! head effects of element
-                   r%LHS(1:M,loN:hiN) = -(el%r*p/el%parent%T)*r%LHS(1:M,loN:hiN)
+                   r%LHS(1:M,loN:hiN) = -(trg%r*p/trg%parent%T)*r%LHS(1:M,loN:hiN)
 
                    ! radial flux effects of element
-                   r%LHS(1:M,loN:hiN) = (r%LHS + (2.0 + el%r**2*el%dskin*p/el%parent%T)* &
-                        & (dPot_dX*spread(cos(el%Pcm),2,2*N-1) + &
-                        &  dPot_dY*spread(sin(el%Pcm),2,2*N-1)))
+                   r%LHS(1:M,loN:hiN) = (r%LHS + (2.0 + trg%r**2*trg%dskin*p/trg%parent%T)* &
+                        & (dPot_dX*spread(cos(trg%Pcm),2,2*N-1) + &
+                        &  dPot_dY*spread(sin(trg%Pcm),2,2*N-1)))
                 else
                    ! other element is a 'normal' circular element without wellbore storage
-                   r%LHS(loM:hiM,loN:hiN) = dPot_dX*spread(cos(el%Pcm),2,2*N-1) + &
-                                          & dPot_dY*spread(sin(el%Pcm),2,2*N-1)
+                   r%LHS(loM:hiM,loN:hiN) = dPot_dX*spread(cos(trg%Pcm),2,2*N-1) + &
+                                          & dPot_dY*spread(sin(trg%Pcm),2,2*N-1)
                 end if
              else
                 ! rotate to allow for arbitrary oriented ellipse
-                call rotate_vel_mat(dPot_dX,dPot_dY,-el%theta)
+                call rotate_vel_mat(dPot_dX,dPot_dY,-trg%theta)
 
                 ! other element is an ellipse
-                r%LHS(loM:hiM,loN:hiN) = dPot_dX*spread(el%f*sinh(el%r)*cos(el%Pcm(:)),2,2*N-1) + &
-                                       & dPot_dY*spread(el%f*cosh(el%r)*sin(el%Pcm(:)),2,2*N-1)
+                r%LHS(loM:hiM,loN:hiN) = dPot_dX*spread(trg%f*sinh(trg%r)*cos(trg%Pcm(:)),2,2*N-1) + &
+                                       & dPot_dY*spread(trg%f*cosh(trg%r)*sin(trg%Pcm(:)),2,2*N-1)
              end if
              deallocate(dBn, dPot_dR, dPot_dP, dPot_dX, dPot_dY)
           end if
@@ -447,14 +425,11 @@ contains
        end if
     endif
 
-    if (c%ibnd == 2 .and. (.not. c%storin)) then
-
-       print *, 'DEBUG circ_other ibnd==2 .and. notstorin : MOVE LHS -> RHS'
-
+    if (src%ibnd == 2 .and. (.not. src%storin)) then
        if (nrows > 0) then
 
           ! save flux effects of well onto RHS
-          if (dom%inclBg(src,targ)) then
+          if (dom%inclBg(sorc,targ)) then
              ! source well in background of target element
              factor = -1.0_DP
           else
@@ -462,10 +437,10 @@ contains
              factor = 1.0_DP
           end if
 
-          r%RHS(loM:hiM) = factor*well(c,p)*r%LHS(loM:hiM,1)
+          r%RHS(loM:hiM) = factor*well(src,p)*r%LHS(loM:hiM,1)
        end if
 
-       if (el%ibnd == 0) then
+       if (trg%ibnd == 0) then
           hiM = 2*M
        else
           hiM = M

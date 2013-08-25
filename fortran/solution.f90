@@ -64,7 +64,7 @@ contains
     ! only needed for LAPACK routine; size(work) = 33*bigN
     complex(DP), allocatable :: WORK(:)
     
-       integer :: nrow, ncol
+    integer :: nrow, ncol
     character(41) :: fmt, fmt2
     fmt =  "(I3,1X,   ('(',ES8.1,',',ES8.1,')',1X))"
     fmt2 = "(3X,   (8X,I4,8X))                     "
@@ -83,14 +83,17 @@ contains
     ! accumulate result into matrices of structures
     do i = 1,nc
        ! circle on self
-       res(i,i) = circle_match(c(i),p)
+       res(i,i) = circle_match(c(i),p,sol%debug)
        row(i,1) = size(res(i,i)%RHS,1) 
        col(i,1) = size(res(i,i)%LHS,2)
-
-          print *, 'SOL circ-self i:',i,'LHS shape:',shape(res(i,i)%LHS),'&
-               &RHS shape:',shape(res(i,i)%RHS),'row:',row(i,1),'col:',col(i,1)
-
-          print *, 'SOL circ-self i:',i,'LHS'
+       
+       if (sol%debug) then
+          print '(A,I0,A,2(I0,1X),3(A,I0))', 'SOL circ-self i: ',i,&
+               & ' LHS shape: ',shape(res(i,i)%LHS),&
+               & ' RHS length: ',size(res(i,i)%RHS),&
+               & ' row: ',row(i,1),' col: ',col(i,1)
+          
+          print '(A,I0,A)', 'SOL circ-self i: ',i,' LHS'
           nrow = size(res(i,i)%LHS,1)
           ncol = size(res(i,i)%LHS,2)
           if (ncol > 0) then 
@@ -98,63 +101,70 @@ contains
              write(fmt(8:10),'(I3.3)') ncol
              write(*,fmt2) (j,j=1,ncol)
              do j = 1, nrow
-                write(*,fmt) j,res(i,i)%LHS(j,:)
+                print fmt, j,res(i,i)%LHS(j,:)
              end do
           else
-             write(*,'(A)') 'no output ncol==0'
+             print '(A)', 'no output ncol==0'
           end if
-       
-          print *, 'SOL circ-self i:',i,'RHS'
+          
+          print '(A,I0,A)', 'SOL circ-self i: ',i,' RHS'
           nrow = size(res(i,i)%RHS)
           if (nrow > 0) then
              write(fmt2(5:7),'(I3.3)') nrow
              write(fmt(8:10),'(I3.3)') nrow
-             write(*,fmt2) (j,j=1,nrow)
-             write(*,fmt) 1,res(i,i)%RHS(:)
+             print fmt2, (j,j=1,nrow)
+             print fmt, 1,res(i,i)%RHS(:)
           else
-             write(*,'(A)') 'no output nrow==0'
+             print '(A)', 'no output nrow==0'
           end if
-       
+       end if
+    
        ! circle on other circle
        do j = 1,nc
           if(i /= j) then
-             res(j,i) = circle_match(c(i),c(j)%matching,dom,p)
-                print *, 'SOL circ-circ i,j:',i,j,'LHS shape:',shape(res(j,i)%LHS),&
-                     &'RHS shape:',shape(res(j,i)%RHS)
+             res(j,i) = circle_match(c(i),c(j)%matching,dom,p,sol%debug)
+             if (sol%debug) then
+                print '(2(A,2(I0,1X)),A,I0)', 'SOL circ-circ i,j: ',i,j,&
+                     & ' LHS shape: ',shape(res(j,i)%LHS),&
+                     & ' RHS size: ',size(res(j,i)%RHS)
 
-                print *, 'SOL circ-circ i,j:',i,j,'LHS'
+                print '(A,2(I0,1X),A)', 'SOL circ-circ i,j: ',i,j,' LHS'
                 nrow = size(res(j,i)%LHS,1) 
                 ncol = size(res(j,i)%LHS,2) 
                 if (ncol > 0) then
                    write(fmt2(5:7),'(I3.3)') ncol
                    write(fmt(8:10),'(I3.3)') ncol
-                   write(*,fmt2) (k,k=1,ncol)
+                   print fmt2, (k,k=1,ncol)
                    do k = 1, nrow
-                      write(*,fmt) k,res(j,i)%LHS(k,:)
+                      print fmt, k,res(j,i)%LHS(k,:)
                    end do
                 else
-                   write(*,'(A)') 'no output ncol==0'
+                   print '(A)', 'no LHS: ncol==0'
                 end if
              
-                print *, 'SOL circ-circ i,j:',i,j,'RHS'
+                print '(A,2(I0,1X),A)', 'SOL circ-circ i,j: ',i,j,' RHS'
                 nrow = size(res(j,i)%RHS(:)) 
                 if (nrow > 0) then
                    write(fmt2(5:7),'(I3.3)') nrow
                    write(fmt(8:10),'(I3.3)') nrow
-                   write(*,fmt2) (k,k=1,nrow)
-                   write(*,fmt) 1,res(j,i)%RHS(:)
+                   print fmt2, (k,k=1,nrow)
+                   print fmt, 1,res(j,i)%RHS(:)
                 else
-                   write(*,'(A)') 'no output nrow==0'
+                   print '(A)', 'no RHS: nrow==0'
                 end if
+             end if
              
           end if
        end do
 
        ! circle on other ellipse
        do j = 1,ne
-          res(j+nc,i) = circle_match(c(i),e(j)%matching,dom,p)
-             print *, 'SOL circ-ellip i,j:',i,j,'LHS shape:',shape(res(j+nc,i)%LHS),&
-                  &'RHS shape:',shape(res(j+nc,i)%RHS)
+          res(j+nc,i) = circle_match(c(i),e(j)%matching,dom,p,sol%debug)
+          if (sol%debug) then
+             print '(2(A,2(I0,1X)),A,I0)', 'SOL circ-ellip i,j: ',i,j,&
+                  & ' LHS shape:',shape(res(j+nc,i)%LHS),&
+                  & ' RHS size:',size(res(j+nc,i)%RHS)
+          end if
        end do
     end do
 
@@ -164,23 +174,31 @@ contains
        row(i+nc,1) = size(res(nc+i,nc+i)%RHS,1)
        col(i+nc,1) = size(res(nc+i,nc+i)%LHS,2)
 
-          print *, 'SOL ellip-self i:',i,'LHS shape:',shape(res(nc+i,nc+i)%LHS),&
-               &'RHS shape:',shape(res(nc+i,nc+i)%RHS),&
-               & 'row:',row(i+nc,1),'col:',col(i+nc,1)
-
+       if (sol%debug) then
+          print '(A,I0,A,2(I0,1X),3(A,I0))', 'SOL ellip-self i: ',i,&
+               & ' LHS shape:',shape(res(nc+i,nc+i)%LHS),&
+               & ' RHS size:',size(res(nc+i,nc+i)%RHS),&
+               & ' row: ',row(i+nc,1),' col: ',col(i+nc,1)
+       end if
+       
        ! ellipse on other circle
        do j = 1,nc
           res(j,nc+i) = ellipse_match(e(i),c(j)%matching,dom,p,idx)
+          
+          if (sol%debug) then
              print *, 'SOL ellip-circ i,j:',i,j,'LHS shape:',shape(res(j,nc+i)%LHS),&
                   &'RHS shape:',shape(res(j,nc+i)%RHS)
+          end if
        end do
 
        ! ellipse on other ellipse
        do j = 1,ne
           if (i /= j) then
              res(nc+j,nc+i) = ellipse_match(e(i),e(j)%matching,dom,p,idx)
+             if (sol%debug) then
                 print *, 'SOL ellip-ellip i,j:',i,j,'LHS shape:',shape(res(j+nc,nc+i)%LHS),&
                      &'RHS shape:',shape(res(j+nc,nc+i)%RHS)
+             end if
           end if
        end do
     end do
@@ -188,8 +206,10 @@ contains
     bigM = sum(row(:,1)) ! total number rows/cols
     bigN = sum(col(:,1))
 
+    if (sol%debug) then
        print *, 'SOL bigM:',bigM,' bigN:',bigN
-
+    end if
+    
     allocate(A(bigM,bigN), b(bigM))
     b = cmplx(0,0,DP)
 
@@ -204,6 +224,7 @@ contains
        col(i,2) = sum(col(1:i,1))
     end forall
 
+    if (sol%debug) then
        print *, 'SOL row:'
        do i=1,size(row,1)
           print *, i,':',row(i,:)
@@ -213,12 +234,16 @@ contains
        do i=1,size(col,1)
           print *, i,':',col(i,:)
        end do
+    end if
     
     ! convert structures into single matrix for solution via least squares
     do rr = 1,ntot
        do cc = 1,ntot
+          if (sol%debug) then
              print *, 'convert',rr,cc,' row range:',row(rr,0),row(rr,2),&
-                                    & ' col range:',col(cc,0),col(cc,2)
+                  & ' col range:',col(cc,0),col(cc,2)
+          end if
+          
           A(row(rr,0):row(rr,2),col(cc,0):col(cc,2)) = res(rr,cc)%LHS
           b(row(rr,0):row(rr,2)) = b(row(rr,0):row(rr,2)) + res(rr,cc)%RHS
        end do
@@ -230,8 +255,11 @@ contains
        ! use LAPACK routine to solve least-squares via Q-R decomposition
        ! this routine works for all three potential use cases
        ! M>N (overdetermined), M==N (even-determined), and M<N (underdetermined)
-
-          print *, 'ZGELS debug',bigM,bigN,size(work),':: bshape',shape(b),':: Ashape',shape(A)
+       if (sol%debug) then
+          print *, 'ZGELS debug',bigM,bigN,size(work),':: bshape',&
+               & shape(b),':: Ashape',shape(A)
+       end if
+       
        call ZGELS(TRANSA='N', M=bigM, N=bigN, NRHS=1, A=A(:,:), LDA=bigM, B=b(:), &
             & LDB=bigM, WORK=work, LDWORK=size(work), INFO=ierr)
        if (ierr /= 0) then

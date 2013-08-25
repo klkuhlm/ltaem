@@ -89,6 +89,12 @@ contains
        stop 110
     end if
 
+    backspace(UINPUT) ! optional input parameter
+    read(UINPUT,*,iostat=ierr) s%calc, s%particle, s%contour, s%deriv, s%Qcalc, s%output, s%debug
+    if (ierr /= 0) then
+       s%debug = .false.
+    end if
+    
     if ((.not. s%particle) .and. (.not. s%contour)) then
        s%timeseries = .true.
     else
