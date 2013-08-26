@@ -384,6 +384,7 @@ contains
     use constants, only : DP
     use type_definitions, only : circle, ellipse, domain
     use geomConv, only : xy2cA, xy2eA
+    use, intrinsic :: iso_fortran_env, only : stderr => error_unit
 
     complex(DP), intent(in) :: Z
     type(circle),  dimension(:), intent(in) :: c
@@ -459,7 +460,7 @@ contains
              end do
           end do
        case default
-          write(*,*) 'CALCLOCATION ERROR: more than triply-nested inclusions', dom%InclIn
+          write(stderr,*) 'CALCLOCATION ERROR: more than triply-nested inclusions', dom%InclIn
           stop
        end select
     else
@@ -480,10 +481,11 @@ contains
 
   subroutine check_np(p,lo,hi)
     use constants, only : DP
+    use, intrinsic :: iso_fortran_env, only : stderr => error_unit
     complex(DP), dimension(:), intent(in) :: p
     integer, intent(in) :: lo,hi
     if (hi-lo+1 /= size(p,1)) then
-       write(*,'(A,3(1X,I0))') 'CHECK_NP ERROR: lo,hi do not match dimensions of p',lo,hi,size(p,1)
+       write(stderr,'(A,3(1X,I0))') 'CHECK_NP ERROR: lo,hi do not match dimensions of p',lo,hi,size(p,1)
        stop
     end if
   end subroutine check_np

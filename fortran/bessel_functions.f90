@@ -50,6 +50,7 @@ contains
   function besk_vectz(z,num) result(K)
     use constants, only : DP
     use complex_bessel, only : cbesk
+    use, intrinsic :: iso_fortran_env, only : stderr => error_unit
     complex(DP), dimension(:), intent(in) :: z
     integer, intent(in) :: num
     complex(DP), dimension(size(z,dim=1),0:num-1) :: K
@@ -60,7 +61,7 @@ contains
        call cbesk(z=z(j), fnu=0.0_DP, kode=1, n=num, cy=tmp(0:num-1), nz=numzero, ierr=ierr)
        ! either 0 or 3 are acceptable return codes
        if (.not.(ierr == 0 .or. ierr == 3)) then
-          write(*,*) 'CBESK_VECTZ error (numzero=',numzero,', ierr=',ierr,', j=',j,&
+          write(stderr,*) 'CBESK_VECTZ error (numzero=',numzero,', ierr=',ierr,', j=',j,&
                & ', num=',num,') z(j)=',z(j),'z',z
           call abort() ! to dump for checking backtrace in gdb
           stop 222
@@ -82,6 +83,7 @@ contains
   function besi_vectz(z,num) result(I)
     use constants, only : DP
     use complex_bessel, only : cbesi
+    use, intrinsic :: iso_fortran_env, only : stderr => error_unit
     complex(DP), dimension(:), intent(in) :: z
     integer, intent(in) :: num
     complex(DP), dimension(size(z,dim=1),0:num-1) :: I
@@ -92,7 +94,7 @@ contains
        call cbesi(z=z(j), fnu=0.0_DP, kode=1, n=num, cy=tmp(0:num-1), nz=numzero, ierr=ierr)
        ! either 0 or 3 are acceptable return codes
        if (.not.(ierr == 0 .or. ierr == 3)) then
-          write(*,'(A,3(1X,I0))') 'CBESI_VECTZ error (numzero=',numzero,', ierr=',ierr,&
+          write(stderr,'(A,3(1X,I0))') 'CBESI_VECTZ error (numzero=',numzero,', ierr=',ierr,&
                &', j=',j, ', num=',num,') z(j)=',z(j),'z',z
           call abort()
           stop 223

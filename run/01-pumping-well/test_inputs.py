@@ -14,12 +14,12 @@ for j in range(nval):
         v[j] = s
         P = Popen(["./ltaem","input.in"],stdout=PIPE,stderr=PIPE)
         fh = open('input.in','w')
-        fh.write("""True  False  True  True  1  
-pumping_well_contour  dump.out  pumping_well.elem  pumping_well.geom    
-%s  %s  %s  ::  por, k, Ss
-%s  %s  %s  %s  :: LEAKY: leakFlag, K2, Ss2, b2
-False %s  %s  %s  :: UNCONFINED: unconfinedFlag?, Sy, Kz, b
-False %s  %s   :: DUALPORO: dualPorosityFlag?, matrixSs, matrix/fracture lambda
+        fh.write("""T  F  F  T  T 10  F
+pumping_well_debug_bad_inputs.dbg
+%s  %s  %s        ::  por, k, Ss
+%s  %s  %s  %s    :: LEAKY: leakFlag, K2, Ss2, b2
+True %s  %s  %s  :: UNCONFINED: unconfinedFlag?, Sy, Kz, b
+True %s  %s      :: DUALPORO: dualPorosityFlag?, matrixSs, matrix/fracture lambda
 4  4  4  :: nx, ny, nt
 NAME 1|NAME 2|NAME 3  
 %s -2.37179e+00 -2.24359e+00 -2.11538e+00  :: x 
@@ -35,16 +35,16 @@ not_used   ::  particle data file
         stdout,stderr = P.communicate()
         print 'error >>',stderr.rstrip()
         print 'output >>'
-        print stdout
+        print len(stdout), 'lines of output'
 
 P = Popen(["./ltaem","input.in"],stdout=PIPE,stderr=PIPE)
 fh = open('input.in','w')
-fh.write("""True  False  True  True  1  
-pumping_well_contour  dump.out  pumping_well.elem  pumping_well.geom    
+fh.write("""T  F  F  T  T 10  F
+pumping_well_debug_bad_circle_inputs.dbg
 %s  %s  %s  ::  por, k, Ss
 %s  %s  %s  %s   :: LEAKY: leakFlag, K2, Ss2, b2
-False %s  %s   %s  :: unconfinedFlag? Sy, Kz, b
-False %s  %s   :: dualPorosityFlag?, matrixSs, matrix/fracture lambda
+TRUE %s  %s   %s  :: unconfinedFlag? Sy, Kz, b
+TRUE %s  %s   :: dualPorosityFlag?, matrixSs, matrix/fracture lambda
 4  4  4  :: nx, ny, nt
 NAME 1|NAME 2|NAME 3  
 %s -2.37179e+00 -2.24359e+00 -2.11538e+00  :: x 
@@ -85,11 +85,11 @@ F  :: storin?
 %s  :: K2
 %s  :: Ss2
 %s  :: b2
-F        :: unconfined?
+TRUE        :: unconfined?
 %s   :: Sy
 %s   :: Kz
 %s   :: b
-F      :: dual porosity flag
+TRUE      :: dual porosity flag
 %s   :: matrix Ss
 %s   :: fracture/matrix lambda
 %s   :: dimensionless skin
@@ -103,4 +103,4 @@ F      :: dual porosity flag
         stdout,stderr = P.communicate()
         print 'error >>',stderr.rstrip()
         print 'output >>'
-        print stdout
+        print len(stdout), 'lines of output'

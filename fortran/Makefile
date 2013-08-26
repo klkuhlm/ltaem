@@ -23,20 +23,20 @@
 EXTERNAL=cbessel.o
 KKLOW=type_definitions.o utility.o bessel_functions.o mathieu_functions2.o
 
-##### use system libraries 
-LAPACKLIB=-llapack
-BLASLIB=-lblas
+####### use system libraries 
+##LAPACKLIB=-llapack
+##BLASLIB=-lblas
 
 ## if no system libraries put statically linked libraries in this directory
-#LAPACKLIB=lapack.a
-#BLASLIB=blas.a
+LAPACKLIB=lapack.a
+BLASLIB=blas.a
 
 ### use Intel math kernel library
-#MKLROOT=/opt/intel/mkl
+#MKLROOT=/opt/intel/mkl/lib/intel64
 #LAPACKLIB= -Wl,--start-group  \
-#	$(MKLROOT)/lib/intel64/libmkl_intel_lp64.a \
-#	$(MKLROOT)/lib/intel64/libmkl_sequential.a \
-#	$(MKLROOT)/lib/intel64/libmkl_core.a \
+#	$(MKLROOT)/libmkl_intel_lp64.a \
+#	$(MKLROOT)/libmkl_sequential.a \
+#	$(MKLROOT)/libmkl_core.a \
 #	-Wl,--end-group -lpthread -lm
 
 # main-program related

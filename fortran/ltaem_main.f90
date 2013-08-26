@@ -38,6 +38,8 @@ program ltaem_main
   use geometry, only : distanceAngleCalcs
   use ellipse_mathieu_init, only : ellipse_init
 
+  use, intrinsic :: iso_fortran_env, only : stdout => output_unit
+
   !!  for parallel execution using OpenMP
   !$  use omp_lib, only : omp_get_thread_num, omp_get_num_procs, omp_get_max_threads
 
@@ -70,13 +72,13 @@ program ltaem_main
   intrinsic :: get_command_argument
   call get_command_argument(1,sol%inFName)
   if (len_trim(sol%infname) == 0) then
-     write(*,'(A)') 'no command-line filename supplied, '&
+     write(stdout,'(A)') 'no command-line filename supplied, '&
           &//'using default input file: input.in'
      sol%infname = 'input.in'
   end if
 
   ! some parallel-related statistics ("!$" is special OMP directive)
-  !$ write(*,'(2(A,I0))') 'OpenMP num procs:',omp_get_num_procs(), ' OpenMP max threads:', omp_get_max_threads()
+  !$ write(stdout,'(2(A,I0))') 'OpenMP num procs:',omp_get_num_procs(), ' OpenMP max threads:', omp_get_max_threads()
 
   ! read in data, initialize variables, allocate major structs
   call readInput(sol,dom,bg,c,e,part)
@@ -148,7 +150,7 @@ program ltaem_main
 
      ! initialize Mathieu function matrices
      if (ne > 0) then
-        write(*,'(A)') 'Computing Mathieu coefficients ...'
+        write(stdout,'(A)') 'Computing Mathieu coefficients ...'
         call ellipse_init(e,bg,s)
      end if
 
@@ -158,18 +160,17 @@ program ltaem_main
 
      ! when in parallel, call once to initialize the results matrices in solution.f90
      !$ call matrix_solution(c,e,dom,sol,s(1,minlt),idxmat(1,minlt))
-     !$ write(*,'(A/)') 'solution initialization...'
+     !$ write(stdout,'(A/)') 'solution initialization...'
 
-     !$ write(*,'(A)',advance="no") 'thr'
-     write(*,'(A)') ' logt  idx            p'
+     !$ write(stdout,'(A)',advance="no") 'thr'
+     write(stdout,'(A)') ' logt  idx            p'
 
      !$OMP PARALLEL DO PRIVATE(lt,j)
      do lt = minlt,maxlt-1
         if (nt(lt) > 0) then
            do j = 1,2*sol%m+1
               !$ write (*,'(I2,1X)',advance="no") OMP_get_thread_num()
-              write(*,'(I4,1X,I4,1X,2(A,ES10.3),A)') lt,j, '(',&
-                   & real(s(j,lt)),',',aimag(s(j,lt)),')'
+              write(stdout,"(I4,1X,I4,1X,'(',ES10.3,',',ES10.3,')')") lt,j,s(j,lt)
               call matrix_solution(c,e,dom,sol,s(j,lt),idxmat(j,lt))
            end do
         end if
@@ -181,7 +182,7 @@ program ltaem_main
      
      if (.not. sol%skipdump) then
         call dump_coeff(sol,c,e,nt,s,tee,minlt,maxlt)
-        write(*,'(A)') '  <coefficents dumped, matching finished>  '
+        write(stdout,'(A)') '  <coefficents dumped, matching finished>  '
      end if
 
   else   
@@ -194,7 +195,7 @@ program ltaem_main
   !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   if(sol%particle) then ! integrate along particle path
 
-     write(*,'(A)') 'compute solution for tracking particles'
+     write(stdout,'(A)') 'compute solution for tracking particles'
      allocate(parnumdt(sol%nPart))
 
      ! assuming constant time steps, determine max # steps required
@@ -227,7 +228,7 @@ program ltaem_main
   !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   elseif(sol%contour) then ! x,y locations outer product of x,y vectors
 
-     write(*,'(A)') 'compute solution for plotting contours'
+     write(stdout,'(A)') 'compute solution for plotting contours'
      allocate(sol%h(sol%nx,sol%ny,sol%nt),   hp(tnP), &
           &   sol%v(sol%nx,sol%ny,sol%nt,2), vp(tnP,2), stmp(tnP))
      if (sol%deriv) then
@@ -237,17 +238,17 @@ program ltaem_main
      stmp(1:tnP) = reshape(s,[tnP])
 
      if (sol%Qcalc) then
-        write(*,'(A)',advance='no') 'computing element boundary flowrates: '
+        write(stdout,'(A)',advance='no') 'computing element boundary flowrates: '
         allocate(sol%Q(sol%nt,nc+ne),qp(tnP,nc+ne))
         do j = 1,nc
-           write(*,'(A,I0,1X)',advance='no') 'C',j
+           write(stdout,'(A,I0,1X)',advance='no') 'C',j
            qp(:,j) = elementFlowrate(c(j)%matching,stmp,1,tnP,dom,c,e,bg)
         end do
         do j = 1,ne
-           write(*,'(A,I0,1X)',advance='no') 'E',j
+           write(stdout,'(A,I0,1X)',advance='no') 'E',j
            qp(:,nc+j) = elementFlowrate(e(j)%matching,stmp,1,tnP,dom,c,e,bg)
         end do
-        write(*,'(/)')
+        write(stdout,'(/)')
      end if
 
      !$OMP PARALLEL DO PRIVATE(calcZ,hp,vp,lot,hit,lop,hip) SHARED(sol)
@@ -301,7 +302,7 @@ program ltaem_main
   !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   elseif(sol%timeseries) then ! x,y locations are in pairs; e.g. inner product
 
-     write(*,'(A)') 'compute solution for plotting time series'
+     write(stdout,'(A)') 'compute solution for plotting time series'
      allocate(sol%h(sol%nx,1,sol%nt), hp(tnP), sol%v(sol%nx,1,sol%nt,2), &
           & vp(tnP,2), stmp(tnP))
      if (sol%deriv) then
@@ -322,7 +323,7 @@ program ltaem_main
 
      !$OMP PARALLEL DO PRIVATE(calcZ,hp,vp,lot,hit,lop,hip) SHARED(sol)
      do i = 1,sol%nx
-        write(*,'(A,2(3X,ES14.7E1))') trim(sol%obsname(i)),sol%xshift+sol%x(i),&
+        write(stdout,'(A,2(3X,ES14.7E1))') trim(sol%obsname(i)),sol%xshift+sol%x(i),&
              & sol%yshift+sol%y(i)
 
         calcZ = cmplx(sol%x(i),sol%y(i),DP)

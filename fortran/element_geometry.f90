@@ -37,6 +37,7 @@ contains
     use type_definitions, only : domain, circle, ellipse, element, solution, matching
     use file_ops, only : writeGeometry
     use geomConv, only : xy2cA, xy2eA, c2xyR, e2xyR, xy2eR
+    use, intrinsic :: iso_fortran_env, only : stderr => error_unit
 
     type(domain), intent(inout) :: dom
     type(circle),  target, intent(inout), dimension(:) :: c
@@ -185,7 +186,7 @@ contains
           ! circle has ellipse as parent
           c(i)%parent => e(par-nc)%element
        else
-          write(*,'(A,(1X,I0))') 'error in parent element index',par,i
+          write(stderr,'(A,(1X,I0))') 'error in parent element index',par,i
           stop 200
        end if
     end do
@@ -201,7 +202,7 @@ contains
           ! ellipse has another ellipse as parent
           e(i)%parent => e(par-nc)%element
        else
-          write(*,'(A,(1X,I0))') 'error in parent element index',par,i
+          write(stderr,'(A,(1X,I0))') 'error in parent element index',par,i
           stop 201
        end if
     end do
@@ -214,6 +215,7 @@ contains
     use type_definitions, only : domain, solution, circle, ellipse
     use utility, only : cacosh
     use geomConv, only : xy2eR
+    use, intrinsic :: iso_fortran_env, only : stderr => error_unit
 
     type(domain), intent(inout) :: dom
     type(solution), intent(in) :: sol
@@ -279,7 +281,7 @@ contains
                         & (any(c(i)%G(j)%Rgm(:) < c(i)%r) .and. &
                         &  any(c(i)%G(j)%Rgm(:) > c(i)%r))) then
                       print *, c(i)%r,'::',c(i)%G(j)%Rgm(:)
-                      write(*,*) 'ERROR: INTERSECTING CIRCLES: ',i,j
+                      write(stderr,*) 'ERROR: INTERSECTING CIRCLES: ',i,j
                       stop 400
                    end if
                 end if
@@ -293,7 +295,7 @@ contains
                      & (any(c(i)%G(nc+j)%Rgm(:) < c(i)%r) .and. &
                      &  any(c(i)%G(nc+j)%Rgm(:) > c(i)%r))) then
                    print *, c(i)%r,'::',c(i)%G(nc+j)%Rgm(:)
-                   write(*,*) 'ERROR: INTERSECTING CIRCLE & ELLIPSE: ',i,j
+                   write(stderr,*) 'ERROR: INTERSECTING CIRCLE & ELLIPSE: ',i,j
                    stop 401
                 end if
              end do
@@ -331,7 +333,7 @@ contains
                      & (any(e(i)%G(j)%Rgm(:) < e(i)%r) .and. &
                      &  any(e(i)%G(j)%Rgm(:) > e(i)%r))) then
                    print *, e(i)%r,'::',e(i)%G(j)%Rgm(:)
-                   write(*,*) 'ERROR: INTERSECTING ELLIPSE & CIRCLE: ',i,j
+                   write(stderr,*) 'ERROR: INTERSECTING ELLIPSE & CIRCLE: ',i,j
                    stop 402
                 end if
              end do
@@ -345,7 +347,7 @@ contains
                         & (any(e(i)%G(nc+j)%Rgm(:) < e(i)%r) .and. &
                         &  any(e(i)%G(nc+j)%Rgm(:) > e(i)%r))) then
                       print *, e(i)%r,'::',e(i)%G(nc+j)%Rgm(:)
-                      write(*,*) 'ERROR: INTERSECTING ELLIPSES: ',i,j
+                      write(stderr,*) 'ERROR: INTERSECTING ELLIPSES: ',i,j
                       stop 403
                    end if
                 end if
@@ -449,7 +451,7 @@ contains
     open(unit=57, file=sol%elemhfname, status='replace', action='write', iostat=ierr)
     if (ierr /= 0) then
        ! non-fatal error
-       write(*,'(A)') 'ElementHierarcy: ERROR opening file '//trim(sol%elemHfName)// &
+       write(stderr,'(A)') 'ElementHierarcy: ERROR opening file '//trim(sol%elemHfName)// &
             &'.echo for writing element hierarchy'
     else
        ! add a file variable to set Emacs to auto-revert mode

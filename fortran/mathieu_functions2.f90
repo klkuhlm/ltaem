@@ -1274,19 +1274,19 @@ contains
     type(mathieu), intent(in) :: m
     integer, intent(in) :: n
     integer :: i,j
-    character(37) :: fmt
+    character(43) :: fmt
     write(*,'(2(A,I0))') 'M:',m%M,' buffer:',m%buffer
-    write(*,'(2(A,ES13.6),A)') 'q: (',real(m%q),',',aimag(m%q),')'
-    fmt = '(04(A,I0,A,XX(A,ES11.4,A,ES11.4,A)/))'
+    write(*,'(A,"(",ES13.6,",",ES13.6,")")') 'q: (',m%q
+    fmt = '(04(A,I0,A,XX("(",ES11.4,",",ES11.4,")")/))'
     write(fmt(12:13),'(I2.2)') n
     write(*,'(A,I0)') 'mcn size: ',size(m%mcn)
-    write(*,fmt) (' mcn_',i,'(1:n):', ('(',real(m%mcn(m%M*(i-1)+j)),',',aimag(m%mcn(m%M*(i-1)+j)),')',j=1,n),i=1,4)
+    write(*,fmt) (' mcn_',i,'(1:n):', (m%mcn(m%M*(i-1)+j),j=1,n),i=1,4)
     write(fmt(2:3),'(I2.2)') n
     write(*,'(2(A,3(I0,1X)))') 'A shape:',shape(m%A),' B shape:',shape(m%B)
-    write(*,fmt) (' A(',j,',1:n,0):', ('(',real(m%A(j,i,0)),',',aimag(m%A(j,i,0)),')',i=1,n),j=1,n)
-    write(*,fmt) (' A(',j,',1:n,1):', ('(',real(m%A(j,i,1)),',',aimag(m%A(j,i,1)),')',i=1,n),j=1,n)
-    write(*,fmt) (' B(',j,',1:n,0):', ('(',real(m%B(j,i,0)),',',aimag(m%B(j,i,0)),')',i=1,n),j=1,n)
-    write(*,fmt) (' B(',j,',1:n,1):', ('(',real(m%B(j,i,1)),',',aimag(m%B(j,i,1)),')',i=1,n),j=1,n)
+    write(*,fmt) (' A(',j,',1:n,0):', (m%A(j,i,0),i=1,n),j=1,n)
+    write(*,fmt) (' A(',j,',1:n,1):', (m%A(j,i,1),i=1,n),j=1,n)
+    write(*,fmt) (' B(',j,',1:n,0):', (m%B(j,i,0),i=1,n),j=1,n)
+    write(*,fmt) (' B(',j,',1:n,1):', (m%B(j,i,1),i=1,n),j=1,n)
   end subroutine print_mathieu_type
 
 end module mathieu_functions
