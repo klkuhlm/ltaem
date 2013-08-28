@@ -253,7 +253,6 @@ contains
           smat(1:M,1:N-1) = sin(outer(src%G(t)%Pgm(:),vi(1:N-1)))
 
           ! setup LHS
-          ! $$$$$$$$$$ head effects of source (s) on target (t) $$$$$$$$$$
           ! for matching or specified total head target elements
           if (trg%ibnd == 0 .or. trg%ibnd == -1) then
 
@@ -288,12 +287,10 @@ contains
                 Bn0(0:N-1) =    bI(kap*src%r,N)
 
                 if (src%ibnd == 0) then
-
                    ! is source the inside of matching element?
                    loN = 2*N
                    hiN = 4*N-2
                 else
-
                    ! is source inside of specified head/flux element? (no other previous part)
                    loN = 1
                    hiN = 2*N-1
@@ -328,7 +325,6 @@ contains
              end if
           end if
 
-          ! $$$$$$$$$$ flux effects of source (c) on target (el) $$$$$$$$$$
           ! for matching, specified total flux, or well with wellbore storage target element
           if (trg%ibnd == 0 .or. trg%ibnd == +1 .or. (trg%ibnd == +2 .and. trg%storIn)) then
              allocate(dBn(M,0:N-1), dPot_dR(M,2*N-1), dPot_dP(M,2*N-1), &

@@ -185,11 +185,11 @@ contains
     complex(DP), allocatable :: RMn(:,:,:), dRMn(:,:,:), RMn0(:,:)
     complex(DP), allocatable :: dPot_dR(:,:), dPot_dP(:,:), dPot_dX(:,:), dPot_dY(:,:)
     real(DP), allocatable :: hsq(:,:)
-    real(DP) :: K
+    real(DP) :: K, factor
 
     N = src%N ! number of coefficients in the source elliptical element
-    t = trg%id  ! <= target
-    s = src%id   ! <= source
+    t = trg%id  
+    s = src%id  
     forall (j = 0:N-1) vi(j) = j
 
     M = trg%M
@@ -209,9 +209,14 @@ contains
     ! source element determines number of columns
     if (src%ibnd == 0) then
        ncols = 4*N-2
+    elseif (src%ibnd == 2) then
+       ncols = 2*N-1  ! line source (ibound==2) later re-allocated to zero size LHS
+    elseif (src%calcin .and. (src%ibnd == -1 .or. src%ibnd == 1)) then
+       ! specified flux/head w/ calc inside
+       ncols = 4*N-2
     else
+       ! specified flux/head w/ no calc inside
        ncols = 2*N-1
-       ! line sources (ibound==2) are later re-allocated to zero size LHS
     end if
 
     if (debug) then
@@ -244,15 +249,15 @@ contains
                 RMn0(0:N-1,0) = Ke(src%parent%mat(idx), vi(0:N-1), src%r)
                 RMn0(1:N-1,1) = Ko(src%parent%mat(idx), vi(1:N-1), src%r)
                 RMn0(0,1) = 0.0
-                ! odd functions not needed for line source, but computed anyway
+                ! odd functions not needed for line source, but computed anyway (?)
                 K = src%parent%K
-
-                ! head effects due to ellipse on outside other element
-                r%LHS(1:M,1:N) =       RMn(:,0:N-1,0)/spread(RMn0(0:N-1,0),1,M)*cemat(:,0:N-1)/K ! a_n
-                r%LHS(1:M,N+1:2*N-1) = RMn(:,1:N-1,1)/spread(RMn0(1:N-1,1),1,M)*semat(:,1:N-1)/K ! b_n
 
                 loN = 1
                 hiN = 2*N-1
+
+                ! head effects due to ellipse on outside other element
+                r%LHS(1:M,loN:loN+N-1) = RMn(:,0:N-1,0)/spread(RMn0(0:N-1,0),1,M)*cemat(:,0:N-1)/K ! a_n
+                r%LHS(1:M,loN+N:hiN)   = RMn(:,1:N-1,1)/spread(RMn0(1:N-1,1),1,M)*semat(:,1:N-1)/K ! b_n
 
              else
                 ! can target element "see" the inside of the source element?
@@ -281,6 +286,24 @@ contains
                 ! head effects due to ellipse on inside other element
                 r%LHS(1:M,loN:loN+N-1) = -RMn(:,0:N-1,0)/spread(RMn0(0:N-1,0),1,M)*cemat(:,0:N-1)/K ! c_n
                 r%LHS(1:M,loN+N:hiN)   = -RMn(:,1:N-1,1)/spread(RMn0(1:N-1,1),1,M)*semat(:,0:N-1)/K ! d_n
+             end if
+
+             if (src%ibnd == 2 .and. (dom%inclBg(s,t) .or. dom%inclIn(t,s))) then
+                ! save head effects of line source onto RHS
+                if (dom%inclBg(s,t)) then
+                   ! source well in background of target element
+                   factor = -1.0_DP
+                else
+                   ! source well inside target element
+                   factor = 1.0_DP
+                end if
+                
+!!$                ! TODO this was copied over from circular elements -- needs to be checked/fixed
+!!$
+!!$                ! specified flux (finite-radius well no storage)
+!!$                ! save head effects of well onto RHS
+!!$                r%RHS(1:M) = factor*line(src,p)*r%LHS(1:M,1)
+!!$                r%LHS(1:M,1) = 0.0 ! LHS matrix re-allocated to zero size below
              end if
 
           end if
