@@ -69,21 +69,25 @@ contains
        ! specified flux line source has no unknowns
        ! only appears on RHS of other elements
        nrows = 0
-       ncols = 2*N-1
+       ncols = 0
        loM = 1
        hiM = M
-    elseif ((e%ibnd == -1 .or. e%ibnd == 1) .and. e%calcin) then
-!!$       nrows = M
-!!$       ncols = 4*N-2
-!!$       loM = 1
-!!$       hiM = M
-       ! TODO: calculating inside a specified head/flux ellipse is broken
-       stop 'UNIMPLEMENTED: e%ibnd=={-1,1} and calcin'
     else
-       nrows = M
-       ncols = 2*N-1
-       loM = 1
-       hiM = M
+       if (e%calcin .and. (e%ibnd == -1 .or. e%ibnd == 1)) then
+          nrows = M
+          ncols = 4*N-2
+          loM = 1
+          hiM = M
+          ! TODO: calculating inside a specified head/flux ellipse is broken
+          print *, 'WARNING: e%ibnd=={-1,1} and calcin are BROKEN?'
+!!$       stop 'UNIMPLEMENTED: e%ibnd=={-1,1} and calcin'
+       else
+          ! ibnd = {-1,1}, but .not. calcin
+          nrows = M
+          ncols = 2*N-1
+          loM = 1
+          hiM = M
+       end if
     end if
 
     if (debug) then
@@ -93,75 +97,71 @@ contains
 
     allocate(r%LHS(nrows,ncols), r%RHS(nrows))
 
-    if (e%ibnd /= 2) then
+    ! outside angular modified Mathieu functions (last dimension is inside/outside)
+    cemat(1:M,0:N-1,0) = ce(e%parent%mat(i), vi(0:N-1), e%Pcm(:))
+    semat(1:M,1:N-1,0) = se(e%parent%mat(i), vi(1:N-1), e%Pcm(:))
+    if (e%ibnd == 0 .or. (e%calcin .and. (e%ibnd == 1 .or. e%ibnd == -1))) then
+       ! inside
+       cemat(1:M,0:N-1,1) = ce(e%mat(i), vi(0:N-1), e%Pcm(:))
+       semat(1:M,1:N-1,1) = se(e%mat(i), vi(1:N-1), e%Pcm(:))
+    end if
 
-       ! outside angular modified Mathieu functions (last dimension is inside/outside)
-       cemat(1:M,0:N-1,0) = ce(e%parent%mat(i), vi(0:N-1), e%Pcm(:))
-       semat(1:M,1:N-1,0) = se(e%parent%mat(i), vi(1:N-1), e%Pcm(:))
-       if (e%ibnd == 0 .or. (e%calcin .and. (e%ibnd == 1 .or. e%ibnd == -1))) then
-          ! inside
-          cemat(1:M,0:N-1,1) = ce(e%mat(i), vi(0:N-1), e%Pcm(:))
-          semat(1:M,1:N-1,1) = se(e%mat(i), vi(1:N-1), e%Pcm(:))
+    ! setup LHS
+    ! matching or specified total head
+    if (e%ibnd == 0 .or. e%ibnd == -1) then
+       r%LHS(1:M,1:N) =       cemat(:,0:N-1,0)/e%parent%K ! a_n head
+       r%LHS(1:M,N+1:2*N-1) = semat(:,1:N-1,0)/e%parent%K ! b_n head
+
+       if (e%ibnd == 0 .or. (e%ibnd == -1 .and. e%calcin)) then
+          r%LHS(1:M,2*N:3*N-1) = -cemat(:,0:N-1,1)/e%K ! c_n head
+          r%LHS(1:M,3*N:4*N-2) = -semat(:,1:N-1,1)/e%K ! d_n head
        end if
+    end if
 
-       ! setup LHS
-       ! matching or specified total head
-       if (e%ibnd == 0 .or. e%ibnd == -1) then
-          r%LHS(1:M,1:N) =       cemat(:,0:N-1,0)/e%parent%K ! a_n head
-          r%LHS(1:M,N+1:2*N-1) = semat(:,1:N-1,0)/e%parent%K ! b_n head
+    ! matching or specified flux (no ibnd==2 case for ellipses)
+    if (e%ibnd == 0 .or. e%ibnd == +1) then
+       allocate(RMn(0:N-1,0:1),dRMn(0:N-1,0:1))
 
-          if (e%ibnd == 0 .or. (e%ibnd == -1 .and. e%calcin)) then
-             !print *, 2*N,':',3*N-1
-             !print *, 3*N,':',4*N-2
-             !print *, 'size,shape',size(r%LHS),'-',shape(r%LHS)
-             r%LHS(1:M,2*N:3*N-1) = -cemat(:,0:N-1,1)/e%K ! c_n head
-             r%LHS(1:M,3*N:4*N-2) = -semat(:,1:N-1,1)/e%K ! d_n head
-          end if
-       end if
+       ! radial functions last dimension is even/odd
+       RMn(0:N-1,0) =   Ke(e%parent%mat(i), vi(0:N-1), e%r) ! even fn
+       RMn(1:N-1,1) =   Ko(e%parent%mat(i), vi(1:N-1), e%r) ! odd fn
+       RMn(0,1) = 0.0
+       dRMn(0:N-1,0) = dKe(e%parent%mat(i), vi(0:N-1), e%r) ! even deriv
+       dRMn(1:N-1,1) = dKo(e%parent%mat(i), vi(1:N-1), e%r) ! odd deriv
+       dRMn(0,1) = 0.0
 
-       ! matching or specified flux
-       if (e%ibnd == 0 .or. e%ibnd == +1 .or. e%ibnd == 2) then
-          allocate(RMn(0:N-1,0:1),dRMn(0:N-1,0:1))
+       r%LHS(loM:hiM,1:N) =       spread(dRMn(0:N-1,0)/RMn(0:N-1,0),1,M)*cemat(:,0:N-1,0) ! a_n flux
+       r%LHS(loM:hiM,N+1:2*N-1) = spread(dRMn(1:N-1,1)/RMn(1:N-1,1),1,M)*semat(:,1:N-1,0) ! b_n flu
 
-          ! radial functions last dimension is even/odd
-          RMn(0:N-1,0) =   Ke(e%parent%mat(i), vi(0:N-1), e%r) ! even fn
-          RMn(1:N-1,1) =   Ko(e%parent%mat(i), vi(1:N-1), e%r) ! odd fn
+       if (e%ibnd == 0 .or. (e%ibnd == 1 .and. e%calcin)) then
+          RMn(0:N-1,0) =   Ie(e%mat(i), vi(0:N-1), e%r)
+          RMn(1:N-1,1) =   Io(e%mat(i), vi(1:N-1), e%r)
           RMn(0,1) = 0.0
-          dRMn(0:N-1,0) = dKe(e%parent%mat(i), vi(0:N-1), e%r) ! even deriv
-          dRMn(1:N-1,1) = dKo(e%parent%mat(i), vi(1:N-1), e%r) ! odd deriv
+          dRMn(0:N-1,0) = dIe(e%mat(i), vi(0:N-1), e%r)
+          dRMn(1:N-1,1) = dIo(e%mat(i), vi(1:N-1), e%r)
           dRMn(0,1) = 0.0
 
-          r%LHS(loM:hiM,1:N) =       spread(dRMn(0:N-1,0)/RMn(0:N-1,0), 1,M)*cemat(:,0:N-1,0) ! a_n flux
-          r%LHS(loM:hiM,N+1:2*N-1) = spread(dRMn(1:N-1,1)/RMn(1:N-1,1), 1,M)*semat(:,1:N-1,0) ! b_n flu
-
-          if (e%ibnd == 0 .or. (e%ibnd == 1 .and. e%calcin)) then
-             RMn(0:N-1,0) =   Ie(e%mat(i), vi(0:N-1), e%r)
-             RMn(1:N-1,1) =   Io(e%mat(i), vi(1:N-1), e%r)
-             RMn(0,1) = 0.0
-             dRMn(0:N-1,0) = dIe(e%mat(i), vi(0:N-1), e%r)
-             dRMn(1:N-1,1) = dIo(e%mat(i), vi(1:N-1), e%r)
-             dRMn(0,1) = 0.0
-
-             r%LHS(loM:hiM,2*N:3*N-1) = -spread(dRMn(0:N-1,0)/RMn(0:N-1,0), 1,M)*cemat(:,0:N-1,1) ! c_n flux
-             r%LHS(loM:hiM,3*N:4*N-2) = -spread(dRMn(1:N-1,1)/RMn(1:N-1,1), 1,M)*semat(:,1:N-1,1) ! d_n flux
-          end if
-          deallocate(RMn,dRMn)
+          r%LHS(loM:hiM,2*N:3*N-1) = -spread(dRMn(0:N-1,0)/RMn(0:N-1,0), 1,M)*cemat(:,0:N-1,1) ! c_n flux
+          r%LHS(loM:hiM,3*N:4*N-2) = -spread(dRMn(1:N-1,1)/RMn(1:N-1,1), 1,M)*semat(:,1:N-1,1) ! d_n flux
        end if
-
-       ! setup RHS
-       select case(e%ibnd)
-       case(-1)
-          ! put specified head on RHS
-          r%RHS(1:M) = timef(p,e%time,.false.)*e%bdryQ
-       case(0)
-          ! put constant area source term effects on RHS
-          r%RHS(1:M) = -timef(p,e%time,.true.)*e%areaQ*e%Ss/kappa(p,e%parent)**2
-          r%RHS(M+1:2*M) = 0.0_DP ! area source has no flux effects
-       case(1)
-          ! put specified flux effects on RHS
-          r%RHS(1:M) = timef(p,e%time,.false.)*e%bdryQ/ynot(e%r,e%f)
-       end select
+       deallocate(RMn,dRMn)
     end if
+    
+    ! setup RHS
+    select case(e%ibnd)
+    case(-1)
+       ! put specified head on RHS
+       r%RHS(1:M) = timef(p,e%time,.false.)*e%bdryQ
+    case(0)
+       ! put constant area source term effects on RHS
+       r%RHS(1:M) = -timef(p,e%time,.true.)*e%areaQ*e%Ss/kappa(p,e%parent)**2
+       r%RHS(M+1:2*M) = 0.0_DP ! area source has no flux effects
+    case(1)
+       ! put specified flux effects on RHS
+       r%RHS(1:M) = timef(p,e%time,.false.)*e%bdryQ/ynot(e%r,e%f)
+    case(2)
+       continue ! no ellipse "wellbore" storage 
+    end select
   end function ellipse_match_self
 
   function ellipse_match_other(src,trg,dom,p,idx,debug) result(r)

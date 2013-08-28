@@ -118,7 +118,6 @@ contains
           r%LHS(1:M,2*N:3*N-1) = -cmat(:,0:N-1)/c%K ! c_n head
           r%LHS(1:M,3*N:4*N-2) = -smat(:,1:N-1)/c%K ! d_n head
        end if
-
     end if
 
     ! matching or specified total flux
@@ -140,7 +139,6 @@ contains
           r%LHS(loM:hiM,3*N:4*N-2) = -spread(dBn(1:N-1)/Bn(1:N-1),1,M)*smat(:,1:N-1) ! d_n flux
        end if
        deallocate(Bn,dBn)
-       
     end if
 
     ! setup RHS
