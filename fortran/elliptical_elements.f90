@@ -72,11 +72,13 @@ contains
        ncols = 2*N-1
        loM = 1
        hiM = M
-    !!elseif ((e%ibnd == -1 .or. e%ibnd == 1) .and. e%calcin) then
-    !!   nrows = M
-    !!   ncols = 4*N-2
-    !!   loM = 1
-    !!   hiM = M
+    elseif ((e%ibnd == -1 .or. e%ibnd == 1) .and. e%calcin) then
+!!$       nrows = M
+!!$       ncols = 4*N-2
+!!$       loM = 1
+!!$       hiM = M
+       ! TODO: calculating inside a specified head/flux ellipse is broken
+       stop 'UNIMPLEMENTED: e%ibnd=={-1,1} and calcin'
     else
        nrows = M
        ncols = 2*N-1
