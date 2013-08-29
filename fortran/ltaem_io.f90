@@ -1103,7 +1103,8 @@ contains
        write(UECHO,fmt(3)) p(:)%y,           '  ||    shifted particle initial y'
        write(UECHO,fmt(3)) p(:)%ti,     '  ||    particle initial t'
        write(UECHO,fmt(3)) p(:)%tf,     '  ||    particle maximum t'
-       write(UECHO,fmt(1)) p(:)%int,    '  ||    particle integration method'
+       write(UECHO,fmt(1)) p(:)%int,    '  ||    particle integration method '//&
+            & '(1=RKM, 2=RK, 3=root, 4=Euler)'
        write(UECHO,fmt(2)) p(:)%InclIn, '  ||    particle begins inside CH/CF incl?'
     else
        ! no particles

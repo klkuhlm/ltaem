@@ -1,9 +1,9 @@
 # general types
-for t in  "contour" "hydrograph" "particle" ; do
+for t in  "contour" "hydrographs" "particle_track" ; do
     echo "pumping_well $t output"
     ./ltaem ./pumping_well_${t}.in \
         1> pumping_well_${t}.screen \
-        2> pumping_well_${t}.err
+        2> pumping_well_${t}.err 
 done
 
 # specific PDEs associated with hydrograph types

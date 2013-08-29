@@ -562,6 +562,7 @@ contains
 
     N = c%N
     np = size(p,1)
+
     forall (i = 0:N-1) vr(i) = real(i,DP)
 
     if (inside) then

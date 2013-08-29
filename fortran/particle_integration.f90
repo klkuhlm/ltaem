@@ -75,7 +75,7 @@ contains
        ! will particle pass specified end time during this step?
        call trackDone(p%forward,pt,dt,p%tf,done,enddt) 
        if (done) then
-          print *, 'p%forward,pt,dt,p%tf,done,enddt',p%forward,pt,dt,p%tf,done,enddt
+!!$          print *, 'p%forward,pt,dt,p%tf,done,enddt',p%forward,pt,dt,p%tf,done,enddt
           if (enddt < spacing(dt)) then
              ! close enough
              write(*,'(A,I0,2(A,ES13.6E2))') &
