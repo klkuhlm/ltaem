@@ -1,4 +1,4 @@
-T  F  F  T  10  ::  calc?, particle?, contour?, log(t)_deriv?, output
+True  False  False  True True  10  False ::  calc?, particle?, contour?, log(t)_deriv?, Qcalc?, output, (optional debug?)
 well_single_circle_hydrograph.dat
 1.0D0   2.0D0   1.0D-4   ::  por, k, Ss
 0   1.0D0   1.0D-4   1.0D0   :: LEAKY: leakFlag, K2, Ss2, b2
