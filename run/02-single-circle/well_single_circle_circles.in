@@ -1,13 +1,13 @@
 1 10  :: N
-1  :: M
-2  2  :: ibnd
+1 30 :: M
+2  0  :: ibnd
 F  T  :: calcin?
 F  F  :: storin?
 1.0D-2  2.5D-1  :: r
 5.5D-1  0.0D0  :: x0
 5.5D-1  0.0D0  :: y0
-1.0D0  2.0D-3  :: K
-1.0D0  1.0D-1  :: Ss
+1.0D0  2.0D-1  :: K
+1.0D0  1.0D-2  :: Ss
 1.0D0  1.0D0   :: porosity
 0  0  :: leaky type flag
 1.0D0  1.0D0 :: K2

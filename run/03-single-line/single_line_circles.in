@@ -1,6 +1,6 @@
 1  :: N
 1  :: M
--1  :: ibnd
+2  :: ibnd
 F  :: calcin?
 F  :: storin?
 1.0D-3  :: r
