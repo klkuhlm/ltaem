@@ -33,15 +33,19 @@ module kappa_mod
 contains
 
   function kappa_pVect(p,el) result(q)
-    use constants, only : DP
+    use constants, only : DP, PISQ
     use type_definitions, only : element
 
     complex(DP), intent(in), dimension(:) :: p
     type(element), intent(in) :: el ! circle, ellipse, or background
     complex(DP), dimension(size(p)) :: q
 
-    integer :: np
+    integer :: np, i
     complex(DP), allocatable ::  kap2(:), exp2z(:)
+
+    real(DP) :: omega
+    integer, parameter :: NA = 500
+    real(DP), allocatable :: a(:), pdf(:)
 
     np = size(p)
 
@@ -82,14 +86,42 @@ contains
     !! dual porosity 
     !! ##############################
     if(el%dualPorosityFlag) then
-       ! solution adapted from Dougherty and Babu (1984, WRR)
-       q(1:np) = q + &
-            & (1.0 - el%lambda/(el%matrixSs*p(:) + el%lambda))*el%lambda/el%K
+
+       if (el%multiporosityDiffusion == 0) then
+          ! solution adapted from Dougherty and Babu (1984, WRR)
+          q(1:np) = q + &
+               & (1.0 - el%lambda/(el%matrixSs*p(:) + el%lambda))*el%lambda/el%K
+       else
+          ! multiporosity diffusion
+          omega = el%Ss/(el%Ss + el%matrixSs) ! fraction of total storage in fractures
+          allocate(a(NA),pdf(NA))
+    
+          select case(el%multiporosityDiffusion)
+          case(1)
+             
+             forall (i=1:NA)
+                a(i) = (2*i-1)**2 *PISQ*el%Dm/(4*el%LD**2)
+                pdf(i) = 8/((2*i-1)**2 *PISQ)  ! lambda term factored out
+             end forall
+          case(3)
+             forall (i=1:na)
+                a(i) = i**2 *PISQ*el%Dm/el%LD**2
+                pdf(i) = 6/(i**2 *PISQ)  ! lambda term factored out
+             end forall
+
+          case default
+             stop 'cylindrical multiporosity matrix diffusion not impelemented yet'
+          end select
+          
+          q = q + p*(omega + (1-omega)*sum(spread(el%lambda*pdf*a,2,np)/ &
+               & (spread(p,1,NA) + spread(a,2,np)),dim=1))
+       
+          deallocate(a,pdf)
+       end if
     end if
 
     !! sources additive under square root
     q = sqrt(q)
-
 
   end function kappa_pVect
 

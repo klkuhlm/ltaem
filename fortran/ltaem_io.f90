@@ -217,20 +217,27 @@ contains
        stop 2071
     end if
 
-
-    read(UINPUT,*,iostat=ierr) bg%dualPorosityFlag, bg%matrixSs, bg%lambda; ln=ln+1
+    read(UINPUT,*,iostat=ierr) bg%dualPorosityFlag, bg%matrixSs, &
+         & bg%lambda, bg%multiporosityDiffusion, bg%Dm, bg%LD; ln=ln+1
     if (ierr /= 0) then
        write(stderr,*) 'ERROR reading line ',ln,' (dual porosity) input'
        stop 2072
     end if
     
-    if (any([bg%matrixSs,bg%lambda] <= 0.0) .and. bg%dualPorosityFlag) then
-       write(stderr,*) 'ERROR line ',ln,' input: matrix specific storage (bg%matrixSs) and '//&
-            & 'matrix/fracture connection factor (bg%lambda) must be > 0.0: ',&
-            & [bg%matrixSs,bg%lambda]
-       stop 2072
+    if (any([bg%matrixSs,bg%lambda,bg%Dm,bg%LD] <= 0.0) .and. bg%dualPorosityFlag) then
+       write(stderr,*) 'ERROR line ',ln,' input: matrix specific storage (bg%matrixSs), '//&
+            & 'matrix/fracture connection factor (bg%lambda), matrix diffusivity (bg%Dm), '//&
+            & 'and matrix block half-length (bg%LD) must be > 0.0: ',&
+            & [bg%matrixSs,bg%lambda,bg%Dm,bg%LD]
+       stop 20721
     end if
 
+    if (bg%multiporosityDiffusion < 0 .or. bg%multiporosityDiffusion > 3) then
+       write(stderr,*) 'ERROR line ',ln,' input: matrix multiporosity diffusion order '//&
+            &'must be 0 (off) or {1,2,3}: ' ,bg%multiporosityDiffusion
+       stop 20722
+    end if
+    
     ! echo input from first 4 lines to file
     write(UECHO,'(6(L1,1X),I0,1X,A)') s%calc, s%particle, s%contour, s%timeseries, s%deriv, &
          & s%qcalc,s%output,s%outputExplain(s%OEMap(s%output))//&
@@ -257,8 +264,10 @@ contains
     else
        explain = '(no dual porosity)'
     end if
-    write(UECHO,'(L1,1X,A,1X,2(ES12.5,1X),A)') bg%dualPorosityFlag, trim(explain), bg%matrixSs, bg%lambda, &
-         & '  ||   DUAL POROSITY properties : dual porosity?, matrixSs, matrix/fracture lambda'
+    write(UECHO,'(L1,1X,A,1X,2(ES12.5,1X),A)') bg%dualPorosityFlag, trim(explain), bg%matrixSs, &
+         & bg%lambda, bg%multiporosityDiffusion, bg%Dm, bg%LD, &
+         & '  ||   DUAL POROSITY properties : dual porosity?, matrixSs, matrix/fracture lambda, '//&
+         & 'multiporosity diffusion idx, matrix diffusivity, matrix block 1/2 width'
 
     ! desired sution points/times
     read(UINPUT,*,iostat=ierr) s%nx, s%ny, s%nt; ln=ln+1
@@ -564,6 +573,19 @@ contains
           stop 2231
        end if
 
+       read(UCIRC,*,iostat=ierr) c(1:nc)%multiporosityDiffusion; sln=sln+1
+       if (ierr /= 0) c(1:nc)%multiporosityDiffusion = read_int(UCIRC,sln,'circle  ')
+       if (any((c%multiporosityDiffusion < 0 .or. c%multiporosityDiffusion > 3) &
+            & .and. c%dualPorosityFlag)) then
+          write(stderr,*) 'ERROR line ',sln,' circle input; '//&
+               & 'multiporosity diffusion index must be {0,1,2,3}', c%multiporosityDiffusion
+          stop 2232
+       end if
+
+       ! TODO: add error/sanity checking for new parameters
+       read(UCIRC,*,iostat=ierr) c(1:nc)%Dm; sln=sln+1
+       read(UCIRC,*,iostat=ierr) c(1:nc)%LD; sln=sln+1
+
        read(UCIRC,*,iostat=ierr) c(1:nc)%dskin; sln=sln+1
        if (ierr /= 0) c(1:nc)%dskin = read_real(UCIRC,sln,'circle  ')
        if (any(c%dskin <= 0.0)) then
@@ -616,6 +638,9 @@ contains
        write(UECHO,fmt(2)) c(:)%dualPorosityFlag,'  ||   circle dual porosity flag'
        write(UECHO,fmt(3)) c(:)%matrixSs,        '  ||   circle matrix Ss'
        write(UECHO,fmt(3)) c(:)%lambda,          '  ||   circle matrix/fracture connection lambda'
+       write(UECHO,fmt(1)) c(:)%multiporosityDiffusion,  '  ||   circle multiporosity diffusion index'
+       write(UECHO,fmt(3)) c(:)%Dm,          '  ||   circle matrix diffusivity'
+       write(UECHO,fmt(3)) c(:)%LD,          '  ||   circle matrix block half width'
        write(UECHO,fmt(3)) c(:)%dskin,           '  ||   circle boundary dimensionless skin factor'
        write(UECHO,fmt(3)) c(:)%areaQ,          '  ||   circle area rch rate'
        write(UECHO,fmt(3)) c(:)%bdryQ,          '  ||   circle boundary rch rate or head'
@@ -862,6 +887,19 @@ contains
           stop 2412
        end if
 
+       read(UELIP,*,iostat=ierr) e(1:ne)%multiporosityDiffusion; sln=sln+1
+       if (ierr /= 0) e(1:ne)%multiporosityDiffusion = read_int(UELIP,sln,'ellipse ')
+       if (any((e%multiporosityDiffusion < 0 .or. e%multiporosityDiffusion > 3) &
+            & .and. e%dualPorosityFlag)) then
+          write(stderr,*) 'ERROR line ',sln,' ellipse input; '//&
+               &'multiporosity diffusion index must be {0,1,2,3}', e%multiporosityDiffusion
+          stop 2412
+       end if
+
+       ! TODO: add error/sanity checking for new parameters
+       read(UELIP,*,iostat=ierr) e(1:ne)%Dm; sln=sln+1
+       read(UELIP,*,iostat=ierr) e(1:ne)%LD; sln=sln+1
+
        read(UELIP,*,iostat=ierr) e(1:ne)%dskin; sln=sln+1
        if (ierr /= 0) e(1:ne)%dskin = read_real(UELIP,sln,'ellipse ')
        if (any(e%dskin <= 0.0)) then
@@ -917,6 +955,9 @@ contains
        write(UECHO,fmt(2)) e(:)%dualPorosityFlag,'  ||     ellipse dual porosity flag'
        write(UECHO,fmt(3)) e(:)%matrixSs,        '  ||     ellipse matrix Ss'
        write(UECHO,fmt(3)) e(:)%lambda,          '  ||     ellipse matrix/fracture connection lambda'
+       write(UECHO,fmt(1)) e(:)%multiporosityDiffusion,  '  ||   ellipse multiporosity diffusion index'
+       write(UECHO,fmt(3)) e(:)%Dm,          '  ||   ellipse matrix diffusivity'
+       write(UECHO,fmt(3)) e(:)%LD,          '  ||   ellipse matrix block half width'
        write(UECHO,fmt(3)) e(:)%dskin,           '  ||   ellipse boundary dimensionless skin factor'
        write(UECHO,fmt(3)) e(:)%areaQ,          '  ||   ellipse area rch rate'
        write(UECHO,fmt(3)) e(:)%bdryQ,          '  ||   ellipse boundary rch rate or head'

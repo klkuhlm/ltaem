@@ -120,7 +120,8 @@ module type_definitions
 
      ! dual-porosity related (flag, matrix storativity, matrix/fracture exchange param)
      logical :: dualPorosityFlag = .false.
-     real(DP) :: matrixSs = -999., lambda = -999.
+     integer :: multiporosityDiffusion = 0 ! 1=slab, 2=cylinder, 3=spherical
+     real(DP) :: matrixSs = -999., lambda = -999., Dm = -999., LD = -999.
 
      ! specified value across area of element (including background)
      real(DP) :: areaQ = -999.
