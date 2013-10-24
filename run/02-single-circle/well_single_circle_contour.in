@@ -3,7 +3,7 @@ well_single_circle_contour.dat
 1.0D0   2.0D0   1.0D-4   ::  por, k, Ss
 0   1.0D0   1.0D-4   1.0D0   :: LEAKY: leakFlag, K2, Ss2, b2
 False 1.5D-1  2.0D0  1.0  :: UNCONFINED: unconfinedFlag?, Sy, Kz, b
-False 1.0D-5  2.0D0      :: DUALPORO: dualPorosityFlag?, matrixSs, matrix/fracture lambda
+False 1.0D-5  2.0D0    0  1.0D-5  1.0  :: MultiPORO  Flag?, matrixSs, lambda, diffusion idx, Dm, LD
 40  40  8  :: nx, ny, nt
 DUMMY OBS NAME  
 linvec  0.0  1.1    ::    x Vector
