@@ -3,7 +3,7 @@ boise_timeseries.dat
 1.0D0  2.649  08.82D-3           :: por, k (ft/min), Ss (1/ft)
 0 5.0D-2 2.0D-1 2.0D0 	                           :: LEAKY:  leakytype, K2, Ss2, b2
 True   0.07317 1.697D-4  15.0     :: UNCONFINED flag, Sy, Kz (ft/min), b_1 (ft)
-False  1.0D-3  2.0D0                               :: DUALPORO:   dualPorosityFlagm?, matrixSs, matrix/fracture lambda
+False  1.0D-3  2.0D0  1  1.0D-5  1.0  :: MultiPORO  Flag?, matrixSs, lambda, diffusion idx, Dm, LD
 18  18  325  :: nx, ny, nt
 A1|B1|B2|B3|B4|B5|B6|C1|C2|C3|C4|C5|C6|X1|X2|X3|X4|X5
 0.000 -0.890 9.632 12.203  0.750 -10.102 -7.822 10.682 26.806  12.523 -14.203 -29.856 -14.953  14.353 98.450   63.073 -43.029 -125.366 :: x (modified C2 & C5 by 0.1)
