@@ -98,19 +98,19 @@ contains
     
           select case(el%multiporosityDiffusion)
           case(1)
-             
              forall (i=1:NA)
                 a(i) = (2*i-1)**2 *PISQ*el%Dm/(4*el%LD**2)
                 pdf(i) = 8/((2*i-1)**2 *PISQ)  ! lambda term factored out
              end forall
+          case(2)
+             stop 'cylindrical multiporosity matrix diffusion not impelemented yet'
           case(3)
              forall (i=1:na)
                 a(i) = i**2 *PISQ*el%Dm/el%LD**2
                 pdf(i) = 6/(i**2 *PISQ)  ! lambda term factored out
              end forall
-
           case default
-             stop 'cylindrical multiporosity matrix diffusion not impelemented yet'
+             stop 'invalid multiporosity matrix diffusion index'
           end select
           
           q = q + p*(omega + (1-omega)*sum(spread(el%lambda*pdf*a,2,np)/ &
