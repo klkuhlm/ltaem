@@ -2,8 +2,8 @@ T  F  T  T  F  1  ::  calc?, particle?, contour?, log(t)_deriv?, Qcalc?, output_
 fractures_contour.dat
 1.0D0   1.0D-3   1.0D-5       ::  por, k, Ss 
 0   1.0D0   1.0D-4   1.0D0   :: LEAKY:      leakFlag, K2, Ss2, b2
-False 1.5D-1  2.0D0  1.0D0   :: UNCONFINED: unconfinedFlag?< Sy, Kz, b
-True  1.0D-3  2.0D0          :: DUALPORO:   dualPorosityFlagm?, matrixSs, matrix/fracture lambda
+False 1.5D-1  2.0D0  1.0D0   :: UNCONFINED: Flag?< Sy, Kz, b
+True  1.0D-3  2.0D0  1  1.0D-5  1.0  :: MultiPORO  Flag?, matrixSs, lambda, diffusion idx, Dm, LD
 25  70  10 :: nx, ny, nt
 DUMMY OBS NAME  
 LINVEC 0.0   1.24 :: x 
@@ -11,6 +11,6 @@ LINVEC -0.99 2.49 :: y
 LOGVEC -4  4 :: t
 1.0D-6  1.0D-8  12  :: alpha, tolerance, M
 0  fractures_circles.in    :: number of circular elements, circle data file
-4  20 fractures_ellipses5.in    :: number of elliptical elements, ellipse MS, ellipse data file
+4  20 fractures_ellipses.in    :: number of elliptical elements, ellipse MS, ellipse data file
 not_used   ::  particle data file
 
