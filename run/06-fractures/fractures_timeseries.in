@@ -1,9 +1,9 @@
 T  F  F  T  T  10  ::  calc?, particle?, contour?, log(t)_deriv?, Qcalc?, output_flag
-fractures_timeseries-klow.dat
+fractures_timeseries-diff-7.dat
 1.0D0   1.0D-3   1.0D-5       ::  por, k, Ss 
 0   1.0D0   1.0D-4   1.0D0   :: LEAKY:      leakFlag, K2, Ss2, b2
 False 1.5D-1  2.0D0  1.0D0   :: UNCONFINED: unconfinedFlag?, Sy, Kz, b
-True 1.0D-3  2.0D0 1  1.0D-5  1.0  :: MultiPORO  Flag?, matrixSs, lambda, diffusion idx, Dm, LD
+True 1.0D-3  2.0D0 1  1.0D-7  1.0  :: MultiPORO  Flag?, matrixSs, lambda, diffusion idx, Dm, LD
 4  4  100 :: nx, ny, nt
 FRAC01|FRAC12|FRAC23|FRAC-far
  0.0  0.0  0.0  2.0  :: x 
