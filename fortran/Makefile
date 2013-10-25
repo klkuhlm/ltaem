@@ -74,7 +74,7 @@ DFLAGS=-O0 -Wall -Wextra -fcheck=all -g #-std=f2008
 ##	-finit-character=$$((RANDOM%128+1))
 ##DFLAGS+=-fdump-rtl-expand 
 ##LINKOPT=-fbacktrace -B/usr/lib/x86_64-linux-gnu  # needed to make dev version of gcc to work
-PFLAGS=-O2 -march=native -flto ##-fprofile-use 
+PFLAGS=-Ofast -march=native -flto ##-fprofile-use 
 ###############################
 
 PFLAGS+=$(OMP)

@@ -11,26 +11,27 @@ input_string = """T  F  F  T  T  10  ::  calc?, particle?, contour?, log(t)_deri
 0   1.0D0   1.0D-4   1.0D0   :: LEAKY:      leakFlag, K2, Ss2, b2
 False 1.5D-1  2.0D0  1.0D0   :: UNCONFINED: unconfinedFlag?, Sy, Kz, b
 True  %.5g   %.5g   1   %.5g   %.5g  :: MultiPORO  Flag?, matrixSs, lambda, diffusion idx, Dm, LD
-1  1  100 :: nx, ny, nt
+1  1  %i :: nx, ny, nt
 FRAC01
  0.0  0.0  0.0  2.0  :: x 
 -0.25 0.25 0.75 2.0  :: y
-LOGVEC -6.0 8.0 :: t
-1.0D-6  1.0D-8  12  :: alpha, tolerance, M
+LOGVEC -7.0 9.0 :: t
+1.0D-6  1.0D-8  10  :: alpha, tolerance, M
 0  fractures_circles.in    :: number of circular elements, circle data file
-3  20 fractures_ellipses.in    :: number of elliptical elements, ellipse MS, ellipse data file
+%i  20 fractures_ellipses.in    :: number of elliptical elements, ellipse MS, ellipse data file
 not_used   ::  particle data file
 
 """
-
+nlines = 3
+ntobs = 100
 n = 3
 
-lamVec = np.logspace(-10,1,n)
-DmVec = np.logspace(-8,2,n)
-LDVec = np.logspace(-1,2,n)
+lamVec =   np.logspace(-10,1,n)
+DmVec =    np.logspace(-8, 2,n)
+LDVec =    np.logspace(-1, 2,n)
 omegaVec = np.logspace(-6,-1,n)
 
-r =  np.empty((n,n,n,n,400))
+r =  np.empty((n,n,n,n,nlines*ntobs))
 
 fk = 1.0E-3
 fSs = 1.0E-5
@@ -53,7 +54,7 @@ for i,j,k,l in product(range(n),repeat=4):
     matrixSs = fSs*(1/omega - 1)
 
     # variables for substituting into input file
-    v = (outfn,fk,fSs,matrixSs,lam,Dm,LD)
+    v = (outfn,fk,fSs,matrixSs,lam,Dm,LD,ntobs,nlines)
 
     fh = open(infn,'w')
     fh.write(input_string % v)
@@ -63,6 +64,8 @@ for i,j,k,l in product(range(n),repeat=4):
     stdout,stderr = p.communicate()
 
     r[i,j,k,l,:] = np.loadtxt(qfn,usecols=(1,))
+
+    
     
 print 'saving ...'
 np.savez('r.npz',r)

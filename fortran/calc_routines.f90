@@ -164,8 +164,6 @@ contains
     np = size(p,1)
     allocate(flux(np,2,M),rflux(np,M))
 
-!!$    print *, 'DEBUG',M,np,lo,hi
-
     ! default number of integration locations (some circular wells are a single point, 
     ! which doesn't result in an accurate intgration)
     if (M == 1 .and. el%id <= dom%num(1)) then
@@ -179,9 +177,11 @@ contains
     end if
 
     ! compute Cartesian components of flux at matching locations
+    !$OMP PARALLEL DO PRIVATE(i)
     do i = 1,M
        flux(1:np,1:2,i) = velCalcZ(calclocs(i),p,lo,hi,dom,c,e,bg)
     end do
+    !$OMP END PARALLEL DO
 
     ! project flux onto radius vector and integrate w/ trapezoid rule
     if (el%id <= dom%num(1)) then
@@ -191,25 +191,20 @@ contains
                        & spread(sin(el%Pcm(1:M)),1,np)*flux(1:np,2,1:M)
 
        ! Q = r* \int_0^{2 pi} q_r d theta (assume unit thickness)
-       ! trap rule around circle (first & last points same)
+       ! trapezoid rule around circle (first & last points same)
        qp(1:np) = el%r*TWOPI/M*sum(rflux(1:np,1:M),dim=2)
        
     else
        ! ellipse
        ! v_eta = f*(sinh(eta)*cos(psi)*v_x + cosh(eta)*sin(psi)*v_y)
-!!$       print *, 'DEBUG spread1a',shape(el%Pcm(1:M)),':',shape(cos(el%Pcm(1:M))),':',&
-!!$            &shape(cos(el%Pcm(1:M))),':',shape(spread(cos(el%Pcm(1:M)),1,np))
-!!$       print *, 'DEBUG spread1b',shape(sin(el%Pcm(1:M))),':',shape(spread(sin(el%Pcm(1:M)),1,np))
        rflux(:,:) = el%f*(sinh(el%r)*spread(cos(el%Pcm(1:M)),1,np)*flux(1:np,1,1:M) + &
                        & (cosh(el%r)*spread(sin(el%Pcm(1:M)),1,np)*flux(1:np,2,1:M)))
 
        ! Q = f* \int_0^{2 pi} \sqrt{cosh^2 eta - cos^2 psi} q_eta d psi
-!!$       print *, 'DEBUG spread2',shape(cos(2*el%Pcm(1:M))),':',shape(spread(cos(2*el%Pcm(1:M)),1,np))
        qp(:) = el%f*TWOPI/M*sum(rflux(1:np,1:M)*&
             & sqrt((cosh(2*el%r) - spread(cos(2*el%Pcm(1:M)),1,np))/2),dim=2)
 
     end if
-!!$    print *, 'done'
   end function elementFlowrate
 
   !##################################################
