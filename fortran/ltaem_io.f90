@@ -276,14 +276,20 @@ contains
        stop 2073
     end if
     
-    if (any([s%nx,s%ny,s%nt] < 1)) then
+    if (any([s%nx,s%ny] < 0) .or. s%nt < 1) then
        write(stderr,*) 'ERROR input file (line ',ln,') number x,y & t observation locations '//&
-            & '(s%nx,s%ny,s%nt) must be > 0 ', [s%nx,s%ny,s%nt]
+            & '(s%nx,s%ny,s%nt) must be > 0 or >1 ', [s%nx,s%ny,s%nt]
        stop 208
     end if
+    if (any([s%nx,s%ny] < 1) .and. .not. s%Qcalc) then
+       write(stderr,*) 'ERROR: no calculation locations, and Qcalc is false, '//&
+            &'therefore no output would be generated, stopping calculation.'
+       stop 2081
+    end if
     if (s%timeseries .and. s%nx /= s%ny) then
-       write(stderr,*) 'ERROR for time series output nx==ny.  nx=',s%nx,' ny=',s%ny
-       stop 2080
+       write(stdout,*) 'WARNING: for time series output nx==ny.  nx=',s%nx,' ny=',s%ny
+       write(stdout,*) '**** resetting ny to nx ****'
+       s%ny = s%nx
     end if
     allocate(s%x(s%nx), s%y(s%ny), s%t(s%nt))
     if (s%timeseries) then
@@ -372,14 +378,18 @@ contains
     if (.not. s%particle) then
        fmt(1) = '(    (ES12.5,1X),A) '
        write(UECHO,'(3(I0,1X),A)') s%nx, s%ny, s%nt, '  ||    numX, numY, numt'
-       write(fmt(1)(2:5),'(I4.4)') s%nx
-       write(UECHO,'(ES21.14,A)') s%xshift,'  ||    xshift'
-       write(UECHO,fmt(1)) s%x(:)+s%xshift,'  ||    original x Vector'
-       write(UECHO,fmt(1)) s%x(:),         '  ||    shifted x Vector'
-       write(fmt(1)(2:5),'(I4.4)') s%ny
-       write(UECHO,'(ES21.14,A)') s%yshift,'  ||    yshift'
-       write(UECHO,fmt(1)) s%y(:)+s%yshift, '  ||    original y Vector'
-       write(UECHO,fmt(1)) s%y(:),          '  ||    shifted y Vector'
+       if (s%nx > 0 .and. s%ny > 0) then
+          write(fmt(1)(2:5),'(I4.4)') s%nx
+          write(UECHO,'(ES21.14,A)') s%xshift,'  ||    xshift'
+          write(UECHO,fmt(1)) s%x(:)+s%xshift,'  ||    original x Vector'
+          write(UECHO,fmt(1)) s%x(:),         '  ||    shifted x Vector'
+          write(fmt(1)(2:5),'(I4.4)') s%ny
+          write(UECHO,'(ES21.14,A)') s%yshift,'  ||    yshift'
+          write(UECHO,fmt(1)) s%y(:)+s%yshift, '  ||    original y Vector'
+          write(UECHO,fmt(1)) s%y(:),          '  ||    shifted y Vector'
+       else
+          write(UECHO,'(A)') '** zero-length x or y vector specified, only element flowrates computed **'
+       end if
        write(fmt(1)(2:5),'(I4.4)') s%nt
        write(UECHO,fmt(1)) s%t(:), '  ||    t Vector'
     endif
@@ -671,6 +681,7 @@ contains
 
        if(any(c%match .and. c%storin)) then
           write(stdout,*) 'WARNING: wellbore (free-water) storage only implemented for ibnd==2'
+          write(stdout,*) '**** resetting to false ****'
           where(c%match .and. c%storin)
              c%storin = .false.
           end where
@@ -679,8 +690,8 @@ contains
        ! minor checking / correcting
        do j = 1,size(c,dim=1)
           if (c(j)%ibnd == 2 .and. c(j)%N /= 1) then
-             write(stdout,'(A,I0,A)') 'WARNING wells (ibnd==2) must have N=1, fixing circle #',&
-                  & j,' to N=1'
+             write(stdout,'(A,I0,A)') 'WARNING wells (ibnd==2) must have N=1'
+             write(stdout,*) '**** fixing circle #', j,' to N=1 ****'
              c(j)%N = 1
           end if
        end do
@@ -986,6 +997,7 @@ contains
        ! TODO: handle free-water storage for ellipses?
        if(any(e%storin)) then
           write(stdout,*) 'WARNING: wellbore (free-water) storage not handled for ellipses yet'
+          write(stdout,*) '**** resetting to false ****'
           e%storin = .false.
        end if
 

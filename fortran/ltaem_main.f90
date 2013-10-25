@@ -249,6 +249,20 @@ program ltaem_main
            qp(:,nc+j) = elementFlowrate(e(j)%matching,stmp,1,tnP,dom,c,e,bg)
         end do
         write(stdout,'(/)')
+
+        !$OMP PARALLEL DO PRIVATE(lt,lot,hit,lop,hip,k) shared(sol,qp)
+        do lt = minlt,maxlt-1
+           lot = 1 + sum(nt(minlt:lt-1))
+           hit = sum(nt(minlt:lt))
+
+           lop = (lt - minlt)*size(s,1) + 1
+           hip = lop + size(s,1) - 1
+
+           do k = 1,nc+ne
+              sol%Q(lot:hit,k) = L(sol%t(lot:hit), tee(lt), qp(lop:hip,k), sol%INVLT)
+           end do
+        end do
+        !$OMP END PARALLEL DO
      end if
 
      !$OMP PARALLEL DO PRIVATE(calcZ,hp,vp,lot,hit,lop,hip) SHARED(sol)
@@ -288,12 +302,6 @@ program ltaem_main
                  sol%dh(j,i,lot:hit) = L(sol%t(lot:hit), tee(lt), hp(lop:hip), &
                       & sol%INVLT)*sol%t(lot:hit)
               end if
-
-              if (sol%Qcalc .and. j == 1 .and. i == 1) then
-                 do k = 1,nc+ne
-                    sol%Q(lot:hit,k) = L(sol%t(lot:hit), tee(lt), qp(lop:hip,k), sol%INVLT)
-                 end do
-              end if
            end do
         end do
      end do
@@ -323,6 +331,19 @@ program ltaem_main
            qp(:,nc+j) = elementFlowrate(e(j)%matching,stmp,1,tnP,dom,c,e,bg)
         end do
         write(stdout,'(/)')
+
+        !$OMP PARALLEL DO PRIVATE(lt,lot,hit,lop,hip,k) shared(sol,qp)
+        do lt = minlt,maxlt-1
+           lot = 1 + sum(nt(minlt:lt-1))
+           hit = sum(nt(minlt:lt))
+
+           lop = (lt - minlt)*size(s,1) + 1
+           hip = lop + size(s,1) - 1
+           do k = 1, nc+ne
+              sol%Q(lot:hit,k) = L(sol%t(lot:hit), tee(lt), qp(lop:hip,k), sol%INVLT)
+           end do
+        end do
+        !$OMP END PARALLEL DO
      end if
 
      !$OMP PARALLEL DO PRIVATE(calcZ,hp,vp,lot,hit,lop,hip) SHARED(sol)
@@ -350,12 +371,6 @@ program ltaem_main
               hp(lop:hip) = hp(lop:hip)*stmp(lop:hip)
               sol%dh(i,1,lot:hit) = L(sol%t(lot:hit),tee(lt),hp(lop:hip)&
                    &,sol%INVLT)*sol%t(lot:hit)
-           end if
-           
-           if (sol%Qcalc .and. i == 1) then
-              do k = 1, nc+ne
-                 sol%Q(lot:hit,k) = L(sol%t(lot:hit), tee(lt), qp(lop:hip,k), sol%INVLT)
-              end do
            end if
         end do
      end do
