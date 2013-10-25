@@ -237,6 +237,7 @@ program ltaem_main
 
      stmp(1:tnP) = reshape(s,[tnP])
 
+     ! TODO: this block of code is almost exactly repeated below. Refactor into function?
      if (sol%Qcalc) then
         write(stdout,'(A)',advance='no') 'computing element boundary flowrates: '
         allocate(sol%Q(sol%nt,nc+ne),qp(tnP,nc+ne))
@@ -319,6 +320,7 @@ program ltaem_main
 
      stmp(1:tnp) = reshape(s,[tnp])
 
+     ! TODO: see repeated code aboveX
      if (sol%Qcalc) then
         write(stdout,'(A)',advance='no') 'computing element boundary flowrates: '
         allocate(sol%Q(sol%nt,nc+ne),qp(tnP,nc+ne))
