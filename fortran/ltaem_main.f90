@@ -50,7 +50,7 @@ program ltaem_main
   type(ellipse), allocatable :: e(:)
   type(solution) :: sol
   type(particle), allocatable :: part(:)
-  !!type(matching), allocatable :: mv(:)
+
   integer :: i, j, k
   integer :: tnp                              ! total # p (product of dimensions)
   integer :: nc, ne                           ! #circles, #ellipses
@@ -122,8 +122,6 @@ program ltaem_main
 
         allocate(s(2*sol%m+1,minlt:maxlt-1), nt(minlt:maxlt-1), tee(minlt:maxlt-1))
 
-!!$        print *, 'DEBUG t',sol%t
-
         logcycles: do lt = minlt, maxlt-1
            ! number of times falling in this logcycle
            nt(lt) = count(logt >= real(lt,DP) .and. logt < real(lt+1,DP))
@@ -139,8 +137,6 @@ program ltaem_main
         end do logcycles
         deallocate(logt)
      end if
-
-     !!print *, 'DEBUG','minlt',minlt,'maxlt-1',maxlt-1,'tee',tee,'lo',lo
 
      sol%totalnP = size(s) ! total number of Laplace parameters across all times
      tnp = sol%totalnP
@@ -160,7 +156,7 @@ program ltaem_main
 
      ! when in parallel, call once to initialize the results matrices in solution.f90
      !$ call matrix_solution(c,e,dom,sol,s(1,minlt),idxmat(1,minlt))
-     !$ write(stdout,'(A/)') 'solution initialization...'
+     !$ write(stdout,'(A/)') 'parallel solution initialization...'
 
      !$ write(stdout,'(A)',advance="no") 'thr'
      write(stdout,'(A)') ' logt  idx            p'
@@ -237,10 +233,13 @@ program ltaem_main
 
      stmp(1:tnP) = reshape(s,[tnP])
 
-     ! TODO: this block of code is almost exactly repeated below. Refactor into function?
+     ! TODO: this block of code is almost repeated below. Refactor into function?
      if (sol%Qcalc) then
         write(stdout,'(A)',advance='no') 'computing element boundary flowrates: '
         allocate(sol%Q(sol%nt,nc+ne),qp(tnP,nc+ne))
+        if (sol%deriv) then
+           allocate(sol%dQ(sol%nt,nc+ne))
+        end if
         do j = 1,nc
            write(stdout,'(A,I0,1X)',advance='no') 'C',j
            qp(:,j) = elementFlowrate(c(j)%matching,stmp,1,tnP,dom,c,e,bg)
@@ -261,6 +260,10 @@ program ltaem_main
 
            do k = 1,nc+ne
               sol%Q(lot:hit,k) = L(sol%t(lot:hit), tee(lt), qp(lop:hip,k), sol%INVLT)
+              if (sol%deriv) then
+                 sol%dQ(lot:hit,k) = L(sol%t(lot:hit), tee(lt), &
+                      & qp(lop:hip,k)*stmp(lop:hip), sol%INVLT)*sol%t(lot:hit)
+              end if
            end do
         end do
         !$OMP END PARALLEL DO
@@ -318,12 +321,15 @@ program ltaem_main
         allocate(sol%dh(sol%nx,1,sol%nt))
      end if
 
-     stmp(1:tnp) = reshape(s,[tnp])
+     stmp(1:tnp) = reshape(s,[tnP])
 
-     ! TODO: see repeated code aboveX
+     ! TODO: see repeated code above
      if (sol%Qcalc) then
         write(stdout,'(A)',advance='no') 'computing element boundary flowrates: '
         allocate(sol%Q(sol%nt,nc+ne),qp(tnP,nc+ne))
+        if (sol%deriv) then
+           allocate(sol%dQ(sol%nt,nc+ne))
+        end if
         do j = 1,nc
            write(stdout,'(A,I0,1X)',advance='no') 'C',j
            qp(:,j) = elementFlowrate(c(j)%matching,stmp,1,tnP,dom,c,e,bg)
@@ -341,8 +347,13 @@ program ltaem_main
 
            lop = (lt - minlt)*size(s,1) + 1
            hip = lop + size(s,1) - 1
+
            do k = 1, nc+ne
               sol%Q(lot:hit,k) = L(sol%t(lot:hit), tee(lt), qp(lop:hip,k), sol%INVLT)
+              if (sol%deriv) then
+                 sol%dQ(lot:hit,k) = L(sol%t(lot:hit), tee(lt), &
+                      & qp(lop:hip,k)*stmp(lop:hip), sol%INVLT)*sol%t(lot:hit)
+              end if
            end do
         end do
         !$OMP END PARALLEL DO

@@ -27,7 +27,7 @@ nlines = 3
 ntobs = 100
 nvals = 4
 
-lamVec =   np.logspace(-10,2,nvals)
+lamVec =   np.logspace(-2,10,nvals)
 
 #DmVec =    np.logspace(-10,2,nvals)
 #LDVec =    np.logspace(-2, 2,nvals)

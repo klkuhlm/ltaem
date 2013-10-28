@@ -1349,17 +1349,21 @@ contains
           else
              write(20,'(A)') ''
           end if
-          do j = 1, s%ny
-             do k = 1, s%nx
-                if (s%deriv) then
+          if (s%deriv) then
+             do j = 1, s%ny
+                do k = 1, s%nx
                    write(20,'(2('//xfmt//',1X),4('//hfmt//',1X))') &
                         & s%x(k), s%y(j), s%h(k,j,i), s%v(k,j,i,1:2), s%dh(k,j,i)
-                else
+                end do
+             end do
+          else
+             do j = 1, s%ny
+                do k = 1, s%nx
                    write(20,'(2('//xfmt//',1X),3('//hfmt//',1X))') &
                         & s%x(k), s%y(j), s%h(k,j,i), s%v(k,j,i,1:2)
-                end if
+                end do
              end do
-          end do
+          end if
           write(20,'(/)')
        end do
        write(20,'(A)') '# EOF'
@@ -1462,15 +1466,17 @@ contains
              write(20,'(A)') ''
           end if
 
-          do k = 1, s%nt
-             if (s%deriv) then
+          if (s%deriv) then
+             do k = 1, s%nt
                 write (20,'(1X,'//tfmt//',4(1X,'//hfmt//'))') &
                      & s%t(k),s%h(i,1,k),s%v(i,1,k,1:2),s%dh(i,1,k)
-             else
+             end do             
+          else
+             do k = 1, s%nt
                 write (20,'(1X,'//tfmt//',3(1X,'//hfmt//'))') &
                      & s%t(k),s%h(i,1,k),s%v(i,1,k,1:2)
-             end if
-          end do
+             end do
+          end if
           write (20,'(/)')
        end do
        write(20,*) '# EOF'
@@ -1496,15 +1502,17 @@ contains
           else
              write (20,'(A)')   '#     time              head'
           end if
-          do k = 1, s%nt
-             if (s%deriv) then
+          if (s%deriv) then
+             do k = 1, s%nt
                 write (20,'(1X,'//tfmt//',3(1X,'//hfmt//'))') &
                      & s%t(k),s%h(j,1,k),s%dh(j,1,k)
-             else
+             end do
+          else
+             do k = 1, s%nt
                 write (20,'(1X,'//tfmt//',2(1X,'//hfmt//'))') &
                      & s%t(k),s%h(j,1,k)
-             end if
-          end do
+             end do
+          end if
           write (20,'(/)')
        end do
        write(20,*) '# EOF'
@@ -1525,13 +1533,15 @@ contains
           write(chint(1),'(I4.4)') i
           open(unit=20, file=trim(s%outfname)//'_'//chint(1), status='replace', &
                &action='write')
-          do k = 1, s%nt
-             if (s%deriv) then
+          if (s%deriv) then
+             do k = 1, s%nt
                 write (20,'('//tfmt//',2(1X,'//hfmt//'))') s%t(k),s%h(i,1,k),s%dh(i,1,k)
-             else
+             end do
+          else
+             do k = 1, s%nt
                 write (20,'('//tfmt//',1X,'//hfmt//')') s%t(k),s%h(i,1,k)
-             end if
-          end do
+             end do
+          end if
           write(20,'(/)')
           close(20)
        end do
@@ -1612,9 +1622,22 @@ contains
        
        do j = 1,size(s%Q,dim=2)
           write(91,'(A,I0)') '# element ',j
-          do i = 1,s%nt
-             write(91,'('//tfmt//',1X,'//hfmt//')') s%t(i),s%Q(i,j)
-          end do
+          if (s%deriv) then
+             write(91,'(A)') '#     tD      '//'          Q_D          '&
+                  & //'   d(Q_D)/d(log(t))'
+          else
+             write(91,'(A)') '#     tD      '//'          Q_D          '
+          end if
+          
+          if (s%deriv) then
+             do i = 1,s%nt
+                write(91,'('//tfmt//',2(1X,'//hfmt//'))') s%t(i),s%Q(i,j),s%dQ(i,j)
+             end do
+          else
+             do i = 1,s%nt
+                write(91,'('//tfmt//',1X,'//hfmt//')') s%t(i),s%Q(i,j)
+             end do
+          end if
           write(91,'(/)')
        end do
        write(91,'(A)') '# EOF'

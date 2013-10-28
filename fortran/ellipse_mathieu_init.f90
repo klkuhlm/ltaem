@@ -58,11 +58,14 @@ contains
     ! either bail out if too large, or potentially use an
     ! asymptotic expansion (needs investigation)
 
+    !$OMP PARALLEL DO PRIVATE(i)
     do i = 1, tnp
        bg%mat(i) = mathieu_init(kap(i), MM=max(bg%ms,shirtdim(i)))
     end do
+    !$OMP END PARALLEL DO
 
     ! allocate/initialize each element for each value of p
+    !$OMP PARALLEL DO PRIVATE(i,j,kap,shirtdim)
     do j = 1, size(e)
        if (e(j)%ibnd == 0 .or. e(j)%calcin) then
           allocate(e(j)%mat(tnp))
@@ -75,6 +78,7 @@ contains
           end do
        end if
     end do
+    !$OMP END PARALLEL DO
   end subroutine ellipse_init
 
   elemental function shirts(n,q) result(dim)
