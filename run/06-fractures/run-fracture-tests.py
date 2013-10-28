@@ -11,8 +11,8 @@ input_string = """T  F  F  T  T  10  ::  calc?, particle?, contour?, log(t)_deri
 1.0D0   %.5g   %.5g       ::  por, k, Ss 
 0   1.0D0   1.0D-4   1.0D0   :: LEAKY:      leakFlag, K2, Ss2, b2
 False 1.5D-1  2.0D0  1.0D0   :: UNCONFINED: unconfinedFlag?, Sy, Kz, b
-True  %.5g   %.5g   1   %.5g   %.5g  :: MultiPORO  Flag?, matrixSs, lambda, diffusion idx, Dm, LD
-1  1  %i :: nx, ny, nt
+True  %.5g   %.5g   0   %.5g   %.5g  :: MultiPORO  Flag?, matrixSs, lambda, diffusion idx, Dm, LD
+0  0  %i :: nx, ny, nt
 FRAC01
  0.0  0.0  0.0  2.0  :: x 
 -0.25 0.25 0.75 2.0  :: y
@@ -25,30 +25,38 @@ not_used   ::  particle data file
 """
 nlines = 3
 ntobs = 100
-n = 4
+nvals = 4
 
-lamVec =   np.logspace(-10,2,n)
-DmVec =    np.logspace(-8, 2,n)
-omegaVec = np.logspace(-6,-1,n)
+lamVec =   np.logspace(-10,2,nvals)
 
-r =  np.empty((n,n,n,nlines*ntobs))
+#DmVec =    np.logspace(-10,2,nvals)
+#LDVec =    np.logspace(-2, 2,nvals)
+Dm = 1.0
+LD = 1.0
+
+omegaVec = np.logspace(-8,-1,nvals)
+
+#r =  np.empty((nvals,nvals,nvals,nvals,nlines*ntobs))
+r2 =  np.empty((nvals,nvals,nlines*ntobs))
 
 fk = 1.0E-3
 fSs = 1.0E-5
-LD = 1.0
 
-infn = 'fractures_timeseries-pydrive.in'
+infn = 'fractures_timeseries-pydrive2.in'
 exe = ['./ltaem',infn]
-outfn = 'fractures_timeseries-pydrive.dat'
+outfn = 'fractures_timeseries-pydrive2.dat'
 qfn = infn.replace('.in','.Q')
 
-for i,j,k in product(range(n),repeat=3):
+for i,j in product(range(nvals),repeat=2):
     
     lam = lamVec[i]
-    Dm = DmVec[j]
-    omega = omegaVec[k]
+    omega = omegaVec[j]
+    #Dm = DmVec[j]
+    #omega = omegaVec[k]
+    #LD = LDVec[l]
     
-    print i,j,k,lam,Dm,omega
+    #print i,j,k,l,lam,Dm,omega,LD
+    print i,j,lam,omega
 
     # compute matrix Ss from omega and fracture Ss
     matrixSs = fSs*(1/omega - 1)
@@ -63,12 +71,21 @@ for i,j,k in product(range(n),repeat=3):
     p = subprocess.Popen(exe,stdout=PIPE,stderr=PIPE)
     stdout,stderr = p.communicate()
 
-    r[i,j,k,:] = np.loadtxt(qfn,usecols=(1,))
+    fh = open('debug.stdout','w')
+    fh.write(stdout)
+    fh.close()
 
-    uniquename = '-%i-%i-%i' % (i,j,k)
+    fh = open('debug.stderr','w')
+    fh.write(stderr)
+    fh.close()
+
+    r2[i,j,:] = np.loadtxt(qfn,usecols=(1,))
+
+    #uniquename = '-%i-%i-%i-%i' % (i,j,k,l)
+    uniquename = '-%i-%i' % (i,j)
 
     move(outfn,outfn + uniquename)
     move(qfn,qfn + uniquename)
     
 print 'saving ...'
-np.savez('r.npz',r)
+np.savez('r2.npz',r2)
