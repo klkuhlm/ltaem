@@ -65,7 +65,6 @@ contains
     !$OMP END PARALLEL DO
 
     ! allocate/initialize each element for each value of p
-    !$OMP PARALLEL DO PRIVATE(i,j,kap,shirtdim)
     do j = 1, size(e)
        if (e(j)%ibnd == 0 .or. e(j)%calcin) then
           allocate(e(j)%mat(tnp))
@@ -73,12 +72,13 @@ contains
           kap = kappa(p,e(j)%element)
           shirtdim(:) = shirts(e(j)%N+2, kap)
 
+          !$OMP PARALLEL DO PRIVATE(i)
           do i = 1, tnp
              e(j)%mat(i) = mathieu_init(kap(i), MM=max(e(j)%MS,shirtdim(i)))
           end do
+          !$OMP END PARALLEL DO
        end if
     end do
-    !$OMP END PARALLEL DO
   end subroutine ellipse_init
 
   elemental function shirts(n,q) result(dim)

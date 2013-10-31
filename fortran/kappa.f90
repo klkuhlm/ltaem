@@ -43,7 +43,7 @@ contains
     integer :: np, i
     complex(DP), allocatable ::  kap2(:), exp2z(:)
 
-    real(DP) :: omega
+    real(DP) :: omega, beta
     integer, parameter :: NA = 500
     real(DP), allocatable :: a(:), pdf(:)
 
@@ -94,20 +94,22 @@ contains
        else
           ! multiporosity diffusion
           omega = el%Ss/(el%Ss + el%matrixSs) ! fraction of total storage in fractures
+          beta = (1-omega)/omega ! "capacity ratio"
           allocate(a(NA),pdf(NA))
     
           select case(el%multiporosityDiffusion)
           case(1)
              forall (i=1:NA)
-                a(i) = (2*i-1)**2 *PISQ*el%Dm/(4*el%LD**2)
-                pdf(i) = 8/((2*i-1)**2 *PISQ)  ! lambda term factored out
+                ! Warren-Root lambda = kappa/((1-omega)*LD**2)
+                a(i) = (2*i-1)**2 *PISQ*el%lambda/4.0
+                pdf(i) = 8*beta/((2*i-1)**2 *PISQ) 
              end forall
           case(2)
              stop 'cylindrical multiporosity matrix diffusion not impelemented yet'
           case(3)
              forall (i=1:na)
-                a(i) = i**2 *PISQ*el%Dm/el%LD**2
-                pdf(i) = 6/(i**2 *PISQ)  ! lambda term factored out
+                a(i) = i**2 *PISQ*el%lambda
+                pdf(i) = 6*beta/(i**2 *PISQ)
              end forall
           case default
              stop 'invalid multiporosity matrix diffusion index'
