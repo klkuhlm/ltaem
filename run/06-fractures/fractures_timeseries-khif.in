@@ -3,7 +3,7 @@ fractures_timeseries-khi.dat
 1.0D0   4.0D-3   1.0D-5       ::  por, k, Ss 
 0   1.0D0   1.0D-4   1.0D0   :: LEAKY:      leakFlag, K2, Ss2, b2
 False 1.5D-1  2.0D0  1.0D0   :: UNCONFINED: unconfinedFlag?, Sy, Kz, b
-True 1.0D-3  1.0D0          :: DUALPORO:   dualPorosityFlagm?, matrixSs, matrix/fracture lambda
+True 1.0D-3  1.0D0 1 1.0E-7 1500      :: DUALPORO:   dualPorosityFlagm?, matrixSs, matrix/fracture lambda, idx, Dm, NDiffTerms
 1  1  100 :: nx, ny, nt
 FRAC01|FRAC12|FRAC23|FRAC-far
  0.0  0.0  0.0  2.0  :: x 

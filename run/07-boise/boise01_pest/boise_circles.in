@@ -22,7 +22,7 @@ False  ::  DUAL PORO?
 1.0   :: lambda
 0     :: multiporosity diffusion index
 1.0E-5  :: Dm
-1.0    :: LD
+1    :: NDiffTerms
 1.0   :: skin
 0.0  :: area source strength
 0.0 0.0 0.0 0.0 -8.82 +8.82

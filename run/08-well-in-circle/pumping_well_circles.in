@@ -22,7 +22,7 @@ F  F    :: dual porosity flag
 2.0D0  2.0D0   :: fracture/matrix lambda
 0  :: multiporosity diffusion index
 1.0D-5   :: Dm
-1.0   :: LD
+1   :: NDiffTerms
 1.0D0  1.0D0   :: dimensionless skin
 0.0D0   0.0D0   :: area source strength
 2.5D-1  0.0D0   :: boundary source strength

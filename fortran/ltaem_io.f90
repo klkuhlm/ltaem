@@ -218,18 +218,23 @@ contains
     end if
 
     read(UINPUT,*,iostat=ierr) bg%dualPorosityFlag, bg%matrixSs, &
-         & bg%lambda, bg%multiporosityDiffusion, bg%kappa, bg%LD; ln=ln+1
+         & bg%lambda, bg%multiporosityDiffusion, bg%kappa, bg%Ndiffterms; ln=ln+1
     if (ierr /= 0) then
        write(stderr,*) 'ERROR reading line ',ln,' (dual porosity) input'
        stop 2072
     end if
     
-    if (any([bg%matrixSs,bg%lambda,bg%kappa,bg%LD] <= 0.0) .and. bg%dualPorosityFlag) then
+    if (any([bg%matrixSs,bg%lambda,bg%kappa] <= 0.0) .and. bg%dualPorosityFlag) then
        write(stderr,*) 'ERROR line ',ln,' input: matrix specific storage (bg%matrixSs), '//&
-            & 'matrix/fracture connection factor (bg%lambda), matrix/fracture k ratio (bg%kappa), '//&
-            & 'and matrix block half-length (bg%LD) must be > 0.0: ',&
-            & [bg%matrixSs,bg%lambda,bg%kappa,bg%LD]
+            & 'matrix/fracture connection factor (bg%lambda), and matrix/fracture k ratio (bg%kappa) '//&
+            & ' must be > 0.0: ',&
+            & [bg%matrixSs,bg%lambda,bg%kappa]
        stop 20721
+    end if
+
+    if (bg%Ndiffterms < 0) then
+       write(stderr,*) 'ERROR: number of terms for multiporosity diffusion must be >=0'
+       stop 20722
     end if
 
     if (bg%multiporosityDiffusion < 0 .or. bg%multiporosityDiffusion > 3) then
@@ -264,12 +269,12 @@ contains
     else
        explain = '(no dual porosity)'
     end if
-    write(UECHO,'(L1,1X,A,1X,2(ES12.5,1X),A)') bg%dualPorosityFlag, trim(explain), bg%matrixSs, &
-         & bg%lambda, bg%multiporosityDiffusion, bg%kappa, bg%LD, &
+    write(UECHO,'(L1,1X,A,1X,3(ES12.5,1X),I0,A)') bg%dualPorosityFlag, trim(explain), bg%matrixSs, &
+         & bg%lambda, bg%multiporosityDiffusion, bg%kappa, bg%Ndiffterms, &
          & '  ||   DUAL POROSITY properties : dual porosity?, matrixSs, matrix/fracture lambda, '//&
-         & 'multiporosity diffusion idx, matrix/fracture k ratio, matrix block 1/2 width'
+         & 'multiporosity diffusion idx, matrix/fracture k ratio, number terms in diffusion series'
 
-    ! desired sution points/times
+    ! desired solution points/times
     read(UINPUT,*,iostat=ierr) s%nx, s%ny, s%nt; ln=ln+1
     if (ierr /= 0) then
        write(stderr,*) 'ERROR reading line ',ln,' (nx,ny,nt) input'
@@ -594,7 +599,7 @@ contains
 
        ! TODO: add error/sanity checking for new parameters
        read(UCIRC,*,iostat=ierr) c(1:nc)%kappa; sln=sln+1
-       read(UCIRC,*,iostat=ierr) c(1:nc)%LD; sln=sln+1
+       read(UCIRC,*,iostat=ierr) c(1:nc)%Ndiffterms; sln=sln+1
 
        read(UCIRC,*,iostat=ierr) c(1:nc)%dskin; sln=sln+1
        if (ierr /= 0) c(1:nc)%dskin = read_real(UCIRC,sln,'circle  ')
@@ -650,7 +655,7 @@ contains
        write(UECHO,fmt(3)) c(:)%lambda,          '  ||   circle matrix/fracture connection lambda'
        write(UECHO,fmt(1)) c(:)%multiporosityDiffusion,  '  ||   circle multiporosity diffusion index'
        write(UECHO,fmt(3)) c(:)%kappa,          '  ||   circle matrix/fracture k ratio'
-       write(UECHO,fmt(3)) c(:)%LD,          '  ||   circle matrix block half width'
+       write(UECHO,fmt(1)) c(:)%Ndiffterms,          '  ||   circle matrix diffusion series number terms'
        write(UECHO,fmt(3)) c(:)%dskin,           '  ||   circle boundary dimensionless skin factor'
        write(UECHO,fmt(3)) c(:)%areaQ,          '  ||   circle area rch rate'
        write(UECHO,fmt(3)) c(:)%bdryQ,          '  ||   circle boundary rch rate or head'
@@ -909,7 +914,7 @@ contains
 
        ! TODO: add error/sanity checking for new parameters
        read(UELIP,*,iostat=ierr) e(1:ne)%kappa; sln=sln+1
-       read(UELIP,*,iostat=ierr) e(1:ne)%LD; sln=sln+1
+       read(UELIP,*,iostat=ierr) e(1:ne)%Ndiffterms; sln=sln+1
 
        read(UELIP,*,iostat=ierr) e(1:ne)%dskin; sln=sln+1
        if (ierr /= 0) e(1:ne)%dskin = read_real(UELIP,sln,'ellipse ')
@@ -968,7 +973,7 @@ contains
        write(UECHO,fmt(3)) e(:)%lambda,          '  ||     ellipse matrix/fracture connection lambda'
        write(UECHO,fmt(1)) e(:)%multiporosityDiffusion,  '  ||   ellipse multiporosity diffusion index'
        write(UECHO,fmt(3)) e(:)%kappa,          '  ||   ellipse matrix/fracture k ratio'
-       write(UECHO,fmt(3)) e(:)%LD,          '  ||   ellipse matrix block half width'
+       write(UECHO,fmt(1)) e(:)%Ndiffterms,          '  ||   ellipse matrix diffusion series number terms'
        write(UECHO,fmt(3)) e(:)%dskin,           '  ||   ellipse boundary dimensionless skin factor'
        write(UECHO,fmt(3)) e(:)%areaQ,          '  ||   ellipse area rch rate'
        write(UECHO,fmt(3)) e(:)%bdryQ,          '  ||   ellipse boundary rch rate or head'

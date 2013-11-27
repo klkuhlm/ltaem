@@ -11,7 +11,7 @@ input_string = """T  F  F  T  T  10  ::  calc?, particle?, contour?, log(t)_deri
 1.0D0   %.5g   %.5g       ::  por, k, Ss 
 0   1.0D0   1.0D-4   1.0D0   :: LEAKY:      leakFlag, K2, Ss2, b2
 False 1.5D-1  2.0D0  1.0D0   :: UNCONFINED: unconfinedFlag?, Sy, Kz, b
-True  %.5g   %.5g   1   %.5g   %.5g  :: MultiPORO  Flag?, matrixSs, lambda, diffusion idx, Dm, LD
+True  %.5g   %.5g   1   %.5g   %i  :: MultiPORO  Flag?, matrixSs, lambda, diffusion idx, Dm, Nterms
 0  0  %i :: nx, ny, nt
 FRAC01
  0.0  0.0  0.0  2.0  :: x 
