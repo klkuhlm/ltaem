@@ -51,7 +51,7 @@ contains
     character(1024) :: buf 
     character(lenFN+5) :: echofname
     character(lenFN) :: circleFname, ellipseFname, particleFname
-    integer :: ierr, j, ntot, nC, nE, ln = 1, sln,s1,s2,slen, idx
+    integer :: ierr, j, ntot, nC, nE, ln = 0, sln,s1,s2,slen, idx
     real(DP) :: tmp
     character(55) :: explain
 

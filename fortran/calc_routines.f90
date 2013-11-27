@@ -157,24 +157,32 @@ contains
     complex(DP), dimension(size(p,1)) :: qp
 
     complex(DP), allocatable :: flux(:,:,:), rflux(:,:), calclocs(:)
+    real(DP), allocatable :: projangles(:)
     integer :: M, np, i
-    integer, parameter :: MINLOCS = 8
+    integer, parameter :: MINLOCS = 18
 
     M = el%M
     np = size(p,1)
-    allocate(flux(np,2,M),rflux(np,M))
 
     ! default number of integration locations (some circular wells are a single point, 
     ! which doesn't result in an accurate intgration)
     if (M == 1 .and. el%id <= dom%num(1)) then
-       allocate(calclocs(MINLOCS))
+       allocate(calclocs(MINLOCS),projangles(MINLOCS))
        forall (i=1:MINLOCS)
-          calclocs(i) = el%z + el%r*exp(EYE*(-PI + TWOPI/M*(i-1)))
+          projangles(i) = (-PI + TWOPI/M*(i-1))
        end forall
+       
+       ! putting bdry flux calculations exactly on boundary for M=1 elements (IBND=2)
+       ! results in zero flux; bump calculation location just outside well
+       calclocs(1:MINLOCS) = el%z + (el%r + epsilon(el%r))*exp(EYE*projangles(:))
+       M = MINLOCS
     else
-       allocate(calclocs(M))
+       allocate(calclocs(M),projangles(M))
        calclocs = el%Zom
+       projangles = el%Pcm
     end if
+
+    allocate(flux(np,2,M),rflux(np,M))
 
     ! compute Cartesian components of flux at matching locations
     !$OMP PARALLEL DO PRIVATE(i)
@@ -187,8 +195,8 @@ contains
     if (el%id <= dom%num(1)) then
        ! circle
        ! v_r = cos(theta)*v_x + sin(theta)*v_y
-       rflux(1:np,1:M) = spread(cos(el%Pcm(1:M)),1,np)*flux(1:np,1,1:M) + &
-                       & spread(sin(el%Pcm(1:M)),1,np)*flux(1:np,2,1:M)
+       rflux(1:np,1:M) = spread(cos(projangles(:)),1,np)*flux(1:np,1,1:M) + &
+                       & spread(sin(projangles(:)),1,np)*flux(1:np,2,1:M)
 
        ! Q = r* \int_0^{2 pi} q_r d theta (assume unit thickness)
        ! trapezoid rule around circle (first & last points same)
@@ -399,7 +407,7 @@ contains
 
     ! TODO: this should handle geometry more generally like 
     ! in the element_geometry.f90 ComputeElementHierarchy() subroutine
-    ! or at least use the resutls from that here.
+    ! or at least use the results of that here.
 
     ! determine if calc point is inside an inclusion
     inout(1:ntot) = 0

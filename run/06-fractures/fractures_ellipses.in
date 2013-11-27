@@ -33,15 +33,7 @@ F             :: dual porosity flag
 1  0.0D0  0.0D0 :: 02 area time flag, tpar1, tpar2
 1  0.0D0  0.0D0 :: 03 area time flag, tpar1, tpar2
 1  0.0D0  0.0D0 :: 04 area time flag, tpar1, tpar2
-1  0.0D0  0.0D0 :: 05 area time flag, tpar1, tpar2
-1  0.0D0  0.0D0 :: 06 area time flag, tpar1, tpar2
-1  0.0D0  0.0D0 :: 07 area time flag, tpar1, tpar2
-1  0.0D0  0.0D0 :: 08 area time flag, tpar1, tpar2
 1  0.0D0  0.0D0 :: 01 boundary time flag, tpar1, tpar2
 1  0.0D0  0.0D0 :: 02 boundary time flag, tpar1, tpar2
 1  0.0D0  0.0D0 :: 03 boundary time flag, tpar1, tpar2
 1  0.0D0  0.0D0 :: 04 boundary time flag, tpar1, tpar2
-1  0.0D0  0.0D0 :: 05 boundary time flag, tpar1, tpar2
-1  0.0D0  0.0D0 :: 06 boundary time flag, tpar1, tpar2
-1  0.0D0  0.0D0 :: 07 boundary time flag, tpar1, tpar2
-1  0.0D0  0.0D0 :: 08 boundary time flag, tpar1, tpar2
