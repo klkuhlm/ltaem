@@ -218,7 +218,7 @@ contains
     end if
 
     read(UINPUT,*,iostat=ierr) bg%dualPorosityFlag, bg%matrixSs, &
-         & bg%lambda, bg%multiporosityDiffusion, bg%kappa, bg%Ndiffterms; ln=ln+1
+         & bg%lambda, bg%multiporosityDiffusion, bg%kappa, bg%NDiffTerms; ln=ln+1
     if (ierr /= 0) then
        write(stderr,*) 'ERROR reading line ',ln,' (dual porosity) input'
        stop 2072
@@ -232,7 +232,7 @@ contains
        stop 20721
     end if
 
-    if (bg%Ndiffterms < 0) then
+    if (bg%NDiffTerms < 0) then
        write(stderr,*) 'ERROR: number of terms for multiporosity diffusion must be >=0'
        stop 20722
     end if
@@ -270,7 +270,7 @@ contains
        explain = '(no dual porosity)'
     end if
     write(UECHO,'(L1,1X,A,1X,2(ES12.5,1X),I0,1X,ES12.5,1X,I0,A)') bg%dualPorosityFlag, trim(explain), &
-         & bg%matrixSs, bg%lambda, bg%multiporosityDiffusion, bg%kappa, bg%Ndiffterms, &
+         & bg%matrixSs, bg%lambda, bg%multiporosityDiffusion, bg%kappa, bg%NDiffTerms, &
          & '  ||   DUAL POROSITY properties : dual porosity?, matrixSs, matrix/fracture lambda, '//&
          & 'multiporosity diffusion idx, matrix/fracture k ratio, number terms in diffusion series'
 
@@ -599,7 +599,9 @@ contains
 
        ! TODO: add error/sanity checking for new parameters
        read(UCIRC,*,iostat=ierr) c(1:nc)%kappa; sln=sln+1
-       read(UCIRC,*,iostat=ierr) c(1:nc)%Ndiffterms; sln=sln+1
+       if (ierr /= 0) c(1:nc)%kappa = read_real(UCIRC,sln,'circle  ')
+       read(UCIRC,*,iostat=ierr) c(1:nc)%NDiffTerms; sln=sln+1
+       if (ierr /= 0) c(1:nc)%kappa = read_int(UCIRC,sln,'circle  ')
 
        read(UCIRC,*,iostat=ierr) c(1:nc)%dskin; sln=sln+1
        if (ierr /= 0) c(1:nc)%dskin = read_real(UCIRC,sln,'circle  ')
@@ -655,7 +657,7 @@ contains
        write(UECHO,fmt(3)) c(:)%lambda,          '  ||   circle matrix/fracture connection lambda'
        write(UECHO,fmt(1)) c(:)%multiporosityDiffusion,  '  ||   circle multiporosity diffusion index'
        write(UECHO,fmt(3)) c(:)%kappa,          '  ||   circle matrix/fracture k ratio'
-       write(UECHO,fmt(1)) c(:)%Ndiffterms,          '  ||   circle matrix diffusion series number terms'
+       write(UECHO,fmt(1)) c(:)%NDiffTerms,          '  ||   circle matrix diffusion series number terms'
        write(UECHO,fmt(3)) c(:)%dskin,           '  ||   circle boundary dimensionless skin factor'
        write(UECHO,fmt(3)) c(:)%areaQ,          '  ||   circle area rch rate'
        write(UECHO,fmt(3)) c(:)%bdryQ,          '  ||   circle boundary rch rate or head'
@@ -914,7 +916,9 @@ contains
 
        ! TODO: add error/sanity checking for new parameters
        read(UELIP,*,iostat=ierr) e(1:ne)%kappa; sln=sln+1
-       read(UELIP,*,iostat=ierr) e(1:ne)%Ndiffterms; sln=sln+1
+       if (ierr /= 0) e(1:ne)%kappa = read_real(UELIP,sln,'ellipse ')
+       read(UELIP,*,iostat=ierr) e(1:ne)%NDiffTerms; sln=sln+1
+       if (ierr /= 0) e(1:ne)%NDiffTerms = read_int(UELIP,sln,'ellipse ')       
 
        read(UELIP,*,iostat=ierr) e(1:ne)%dskin; sln=sln+1
        if (ierr /= 0) e(1:ne)%dskin = read_real(UELIP,sln,'ellipse ')
@@ -973,7 +977,7 @@ contains
        write(UECHO,fmt(3)) e(:)%lambda,          '  ||     ellipse matrix/fracture connection lambda'
        write(UECHO,fmt(1)) e(:)%multiporosityDiffusion,  '  ||   ellipse multiporosity diffusion index'
        write(UECHO,fmt(3)) e(:)%kappa,          '  ||   ellipse matrix/fracture k ratio'
-       write(UECHO,fmt(1)) e(:)%Ndiffterms,          '  ||   ellipse matrix diffusion series number terms'
+       write(UECHO,fmt(1)) e(:)%NDiffTerms,          '  ||   ellipse matrix diffusion series number terms'
        write(UECHO,fmt(3)) e(:)%dskin,           '  ||   ellipse boundary dimensionless skin factor'
        write(UECHO,fmt(3)) e(:)%areaQ,          '  ||   ellipse area rch rate'
        write(UECHO,fmt(3)) e(:)%bdryQ,          '  ||   ellipse boundary rch rate or head'
