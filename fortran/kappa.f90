@@ -102,20 +102,21 @@ contains
              forall (i=1:NA)
                 ! Warren-Root lambda = kappa/((1-omega)*LD**2)
                 a(i) = (2*i-1)**2 *PISQ*el%lambda/4.0
-                pdf(i) = 8*beta/((2*i-1)**2 *PISQ) 
+                pdf(i) = 8.0*beta/((2*i-1)**2 *PISQ) 
              end forall
           case(2)
              stop 'cylindrical multiporosity matrix diffusion not impelemented yet'
           case(3)
              forall (i=1:na)
                 a(i) = i**2 *PISQ*el%lambda
-                pdf(i) = 6*beta/(i**2 *PISQ)
+                pdf(i) = 6.0*beta/(i**2 *PISQ)
              end forall
           case default
              stop 'invalid multiporosity matrix diffusion index'
           end select
           
-          q = q + p*(omega + (1-omega)*sum(spread(el%lambda*pdf*a,2,np)/ &
+          ! TODO: this is not an additive term (FIX?)
+          q = p*omega*(1 + sum(spread(el%lambda*pdf*a,2,np)/ &
                & (spread(p,1,NA) + spread(a,2,np)),dim=1))
        
           deallocate(a,pdf)
