@@ -269,8 +269,8 @@ contains
     else
        explain = '(no dual porosity)'
     end if
-    write(UECHO,'(L1,1X,A,1X,3(ES12.5,1X),I0,A)') bg%dualPorosityFlag, trim(explain), bg%matrixSs, &
-         & bg%lambda, bg%multiporosityDiffusion, bg%kappa, bg%Ndiffterms, &
+    write(UECHO,'(L1,1X,A,1X,2(ES12.5,1X),I0,1X,ES12.5,1X,I0,A)') bg%dualPorosityFlag, trim(explain), &
+         & bg%matrixSs, bg%lambda, bg%multiporosityDiffusion, bg%kappa, bg%Ndiffterms, &
          & '  ||   DUAL POROSITY properties : dual porosity?, matrixSs, matrix/fracture lambda, '//&
          & 'multiporosity diffusion idx, matrix/fracture k ratio, number terms in diffusion series'
 
