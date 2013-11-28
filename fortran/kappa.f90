@@ -103,14 +103,14 @@ contains
                 forall (i=1:el%NDiffterms)
                    ! Warren-Root lambda = kappa/((1-omega)*LD**2)
                    a(i) = (2*i-1)**2 *PISQ*el%lambda/4.0
-                   pdf(i) = 8.0*beta/((2*i-1)**2 *PISQ) 
+                   pdf(i) = 8*beta/((2*i-1)**2 *PISQ) 
                 end forall
              case(2)
                 stop 'cylindrical multiporosity matrix diffusion not impelemented yet'
              case(3)
                 forall (i=1:el%NDiffterms)
                    a(i) = i**2 *PISQ*el%lambda
-                   pdf(i) = 6.0*beta/(i**2 *PISQ)
+                   pdf(i) = 6*beta/(i**2 *PISQ)
                 end forall
              case default
                 stop 'invalid multiporosity matrix diffusion index'
@@ -125,13 +125,13 @@ contains
              ! activated for case where Nterms == 0
              select case(el%multiporosityDiffusion)
              case(1)
-                q = p*(omega + sqrt(el%lambda*(1-omega)/(3.0*p))*&
+                q = p*(omega + sqrt(el%lambda*(1-omega)/(3*p))*&
                      & tanh(sqrt(3*(1-omega)*p/el%lambda)))
              case(2)
                 stop 'cylindrical multiporosity matrix diffusion not impelemented yet'
              case(3)
-                q = p*(omega + (sqrt(15.0*(1-omega*p)/el%lambda)/ &
-                     & tanh(sqrt(15*(1-omega*p)/el%lambda)) - 1)/(5.0*p))
+                q = p*(omega + (sqrt(15*(1-omega*p)/el%lambda)/ &
+                     & tanh(sqrt(15*(1-omega*p)/el%lambda)) - 1)/(5*p))
              case default
                 stop 'invalid multiporosity matrix diffusion index'
              end select
