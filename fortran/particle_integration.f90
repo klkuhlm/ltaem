@@ -530,7 +530,7 @@ contains
   ! TODO: modify sinkCheck or create sourceCheck for reverse tracking
   function sinkCheck(px,py,c,e) result(partEnd)
     use constants, only : DP, EYE
-    use utility, only : cacosh
+    use utility, only : acosh
     use type_definitions, only : ellipse, circle
     implicit none
 
@@ -547,13 +547,13 @@ contains
     ! TODO: then pass back a signal to take a smaller time step
 
     ! did the particle enter an ibnd==2 circle (well)?
-    if (any(c%ibnd == 2 .and. abs(pz - c%z) <= c%r)) then
+    if (any(c%ibnd == 2 .and. abs(pz - c%z) < (c%r+epsilon(c%r)))) then
        partEnd = .true.
        goto 999
     end if
 
     ! did the particle enter an ibnd==2 ellipse (line sink)?
-    if (any(e%ibnd == 2 .and. real(cacosh((pz-e%z)*exp(-EYE*e%theta)/e%f)) <= e%r)) then
+    if (any(e%ibnd == 2 .and. real(acosh((pz-e%z)*exp(-EYE*e%theta)/e%f)) < (e%r+epsilon(e%r)))) then
        partEnd = .true.
        goto 999
     end if

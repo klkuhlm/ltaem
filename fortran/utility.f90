@@ -26,7 +26,7 @@ module utility
   implicit none
 
   private
-  public :: v2c, diag, logspace, linspace, outer, ccosh, cacosh, ynot, rotate_vel, rotate_vel_mat
+  public :: v2c, diag, logspace, linspace, outer, cosh, acosh, ynot, rotate_vel, rotate_vel_mat
   public :: cos_recurrence, sin_recurrence
 
   interface diag
@@ -41,6 +41,15 @@ module utility
      module procedure outerprod_r, outerprod_d, outerprod_z, outerprod_dz, outerprod_zd
   end interface
 
+  ! overload intrinsic hyperbolic functions for complex argument
+  interface cosh
+     module procedure ccosh
+  end interface cosh
+  
+  interface acosh
+     module procedure cacosh
+  end interface acosh
+  
 contains
 
   function cos_recurrence(x,n) result(c)
