@@ -30,6 +30,11 @@ module kappa_mod
      module procedure  kappa_pVect, kappa_pScal
   end interface
 
+  ! overload implicit tanh() for complex argument
+  interface tanh
+     module procedure ctanh
+  end interface tanh
+
 contains
 
   function kappa_pVect(p,el) result(q)
@@ -125,12 +130,12 @@ contains
              select case(el%multiporosityDiffusion)
              case(1)
                 q = p*(omega + sqrt(el%lambda*(1-omega)/(3.0*p))*&
-                     & ctanh(sqrt(3*(1-omega)*p/el%lambda)))
+                     & tanh(sqrt(3*(1-omega)*p/el%lambda)))
              case(2)
                 stop 'cylindrical multiporosity matrix diffusion not impelemented yet'
              case(3)
                 q = p*(omega + (sqrt(15.0*(1-omega*p)/el%lambda)/ &
-                     & ctanh(sqrt(15*(1-omega*p)/el%lambda)) - 1)/(5.0*p))
+                     & tanh(sqrt(15*(1-omega*p)/el%lambda)) - 1)/(5.0*p))
              case default
                 stop 'invalid multiporosity matrix diffusion index'
              end select
