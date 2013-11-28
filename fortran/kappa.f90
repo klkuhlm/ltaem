@@ -30,16 +30,12 @@ module kappa_mod
      module procedure  kappa_pVect, kappa_pScal
   end interface
 
-  ! overload implicit tanh() for complex argument
-  interface tanh
-     module procedure ctanh
-  end interface tanh
-
 contains
 
   function kappa_pVect(p,el) result(q)
     use constants, only : DP, PISQ
     use type_definitions, only : element
+    use utility, only : tanh
 
     complex(DP), intent(in), dimension(:) :: p
     type(element), intent(in) :: el ! circle, ellipse, or background
@@ -160,18 +156,6 @@ contains
     q = sum(kappa_pVect([p],el))
 
   end function kappa_pscal
-
-  ! ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  elemental function ctanh(z) result(f)
-    use constants, only : DP
-    complex(DP), intent(in) :: z
-    complex(DP) :: f
-    real(DP) :: x,y
-    x = real(z)
-    y = aimag(z)
-    f = cmplx(tanh(2*x)/(1+cos(2*y)/cosh(2*x)), &
-         & sin(2*y)/(cosh(2*x)+cos(2*y)),DP)
-  end function ctanh
 
 end module kappa_mod
 

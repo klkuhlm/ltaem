@@ -26,8 +26,8 @@ module utility
   implicit none
 
   private
-  public :: v2c, diag, logspace, linspace, outer, cosh, acosh, ynot, rotate_vel, rotate_vel_mat
-  public :: cos_recurrence, sin_recurrence
+  public :: v2c, diag, logspace, linspace, outer, ynot, rotate_vel, rotate_vel_mat
+  public :: cos_recurrence, sin_recurrence, cosh, acosh, tanh
 
   interface diag
      module procedure diagonal_z, diagonal_d
@@ -50,6 +50,10 @@ module utility
      module procedure cacosh
   end interface acosh
   
+  interface tanh
+     module procedure ctanh
+  end interface tanh
+
 contains
 
   function cos_recurrence(x,n) result(c)
@@ -141,6 +145,17 @@ contains
     y = aimag(z)
     f = cmplx(cosh(x)*cos(y), sinh(x)*sin(y),DP)
   end function ccosh
+
+  elemental function ctanh(z) result(f)
+    use constants, only : DP
+    complex(DP), intent(in) :: z
+    complex(DP) :: f
+    real(DP) :: x,y
+    x = real(z)
+    y = aimag(z)
+    f = cmplx(tanh(2*x)/(1+cos(2*y)/cosh(2*x)), &
+         & sin(2*y)/(cosh(2*x)+cos(2*y)),DP)
+  end function ctanh
 
   elemental function cacosh(z) result(f)
     use constants, only : DP
