@@ -335,6 +335,10 @@ contains
 
        if (.not. (c(i)%ibnd == 2 .and. (.not. c(i)%storin))) then
           ! coefficients come from least-squares solution above
+          if (sol%debug) then
+             print *, 'copy least-squares results into coeff: circle',i
+          end if
+          
           c(i)%coeff(idx,:) = b(col(i,0):col(i,2))
        else
           ! a specified-flux point source (known strength, and zero unknowns)
@@ -343,6 +347,11 @@ contains
              deallocate(c(i)%coeff)
              allocate(c(i)%coeff(sol%totalnP,1))
           end if
+
+          if (sol%debug) then
+             print *, 'compute well coefficients for circle',i
+          end if
+
           ! get a0 coefficient from well routine
           c(i)%coeff(idx,1) = well(c(i),p)
        end if
@@ -354,6 +363,10 @@ contains
           allocate(e(i)%coeff(sol%totalnp,col(nc+i,1)))
        end if
        if (.not. e(i)%ibnd == 2) then
+          if (sol%debug) then
+             print *, 'copy least-squares results into coeff: ellipse',i
+          end if
+
           ! coefficients from least-squares solution above
           e(i)%coeff(idx,:) = b(col(nc+i,0):col(nc+i,2))
        else
@@ -363,6 +376,11 @@ contains
              ! allocate space for all the even (a_n) coefficients
              allocate(e(i)%coeff(sol%totalnP,2*e(i)%N-1))
           end if
+
+          if (sol%debug) then
+             print *, 'compute line coefficients for ellipse',i
+          end if
+
           ! get coefficients from line routine (only even-order, even coeff used)
           e(i)%coeff(idx,:) = 0.0
           e(i)%coeff(idx,1:e(i)%N:2) = line(e(i),p,idx) ! a_(2n)

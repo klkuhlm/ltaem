@@ -98,8 +98,9 @@ contains
     end if
 
     if (debug) then
-       print '(A,I0,A,4(I0,1X))', 'CIRCLE_MATCH_SELF parent: ',&
-            & c%parent%id,' (nrows,ncols,loM,hiM): ',nrows,ncols,loM,hiM
+       print '(A,I0,A,5(I0,1X))', 'CIRCLE_MATCH_SELF parent: ',&
+            & c%parent%id,' (ibnd,nrows,ncols,loM,hiM): ',&
+            & c%ibnd,nrows,ncols,loM,hiM
     end if
 
     allocate(r%LHS(nrows,ncols), r%RHS(nrows))
@@ -196,6 +197,13 @@ contains
     s = src%id
     forall (j = 0:N-1) vi(j) = real(j,DP)
 
+    if (debug) then
+       loM = -999
+       hiM = -888
+       loN = -777
+       hiN = -666
+    end if
+    
     M = trg%M
     ! target element determines number of rows
     if (trg%ibnd == 0) then
