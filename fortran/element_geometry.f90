@@ -213,7 +213,6 @@ contains
   subroutine ComputeElementHierarchy(dom,sol,c,e)
     use constants, only : DP
     use type_definitions, only : domain, solution, circle, ellipse
-    use utility, only : cacosh
     use geomConv, only : xy2eR
     use, intrinsic :: iso_fortran_env, only : stderr => error_unit
 

@@ -35,6 +35,7 @@ contains
   function kappa_pVect(p,el) result(q)
     use constants, only : DP, PISQ
     use type_definitions, only : element
+    use utility, only : tanh
 
     complex(DP), intent(in), dimension(:) :: p
     type(element), intent(in) :: el ! circle, ellipse, or background
@@ -102,14 +103,14 @@ contains
                 forall (i=1:el%NDiffterms)
                    ! Warren-Root lambda = kappa/((1-omega)*LD**2)
                    a(i) = (2*i-1)**2 *PISQ*el%lambda/4.0
-                   pdf(i) = 8.0*beta/((2*i-1)**2 *PISQ) 
+                   pdf(i) = 8*beta/((2*i-1)**2 *PISQ) 
                 end forall
              case(2)
                 stop 'cylindrical multiporosity matrix diffusion not impelemented yet'
              case(3)
                 forall (i=1:el%NDiffterms)
                    a(i) = i**2 *PISQ*el%lambda
-                   pdf(i) = 6.0*beta/(i**2 *PISQ)
+                   pdf(i) = 6*beta/(i**2 *PISQ)
                 end forall
              case default
                 stop 'invalid multiporosity matrix diffusion index'
@@ -124,19 +125,17 @@ contains
              ! activated for case where Nterms == 0
              select case(el%multiporosityDiffusion)
              case(1)
-                q = sqrt(p*(omega + sqrt(el%lambda*(1-omega)/(3*p))*&
-                     & ctanh(sqrt(3*(1-omega)*p/el%lambda))))
+                q = p*(omega + sqrt(el%lambda*(1-omega)/(3*p))*&
+                     & tanh(sqrt(3*(1-omega)*p/el%lambda)))
              case(2)
                 stop 'cylindrical multiporosity matrix diffusion not impelemented yet'
              case(3)
-                q = sqrt(p*(omega + (sqrt(15.0*(1-omega*p)/el%lambda)/ &
-                     & ctanh(sqrt(15*(1-omega*p)/el%lambda)) - 1.0)/(5.0*p)))
+                q = p*(omega + (sqrt(15*(1-omega*p)/el%lambda)/ &
+                     & tanh(sqrt(15*(1-omega*p)/el%lambda)) - 1)/(5*p))
              case default
                 stop 'invalid multiporosity matrix diffusion index'
              end select
           end if
-
-       
           deallocate(a,pdf)
        end if
     end if
@@ -157,18 +156,6 @@ contains
     q = sum(kappa_pVect([p],el))
 
   end function kappa_pscal
-
-  ! ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  elemental function ctanh(z) result(f)
-    use constants, only : DP
-    complex(DP), intent(in) :: z
-    complex(DP) :: f
-    real(DP) :: x,y
-    x = real(z)
-    y = aimag(z)
-    f = cmplx(tanh(2*x)/(1+cos(2*y)/cosh(2*x)), &
-         & sin(2*y)/(cosh(2*x)+cos(2*y)),DP)
-  end function ctanh
 
 end module kappa_mod
 

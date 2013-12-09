@@ -50,11 +50,11 @@ contains
     ! elliptical coordinate from unrotated local complex Cartesian with respect to ellipse
     use constants, only : DP, EYE
     use type_definitions, only : ellipse
-    use utility, only : cacosh
+    use utility, only : acosh
     complex(DP), intent(in) :: z
     type(ellipse), intent(in) :: e
     complex(DP) :: zeta
-    zeta = cacosh(z*exp(-EYE*e%theta)/e%f)
+    zeta = acosh(z*exp(-EYE*e%theta)/e%f)
   end function xy2eR
   elemental function xy2eA(z,e) result(zeta)
     ! elliptical coordinate from global complex Cartesian
@@ -87,11 +87,11 @@ contains
     ! local unrotated Cartesian from elemental elliptical
     use constants, only : DP, EYE
     use type_definitions, only : ellipse
-    use utility, only : ccosh
+    use utility, only : cosh
     complex(DP), intent(in) :: zeta
     type(ellipse), intent(in) :: e
     complex(DP) :: z
-    z = e%f*ccosh(zeta)*exp(EYE*e%theta)
+    z = e%f*cosh(zeta)*exp(EYE*e%theta)
   end function e2xyR
   elemental function e2xyA(zeta,e) result(z)
     ! global Cartesian from elemental elliptical

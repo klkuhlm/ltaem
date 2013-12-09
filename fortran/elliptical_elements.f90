@@ -91,8 +91,9 @@ contains
     end if
 
     if (debug) then
-       print '(A,I0,A,4(I0,1X))', 'ELLIPSE_MATCH_SELF parent: ',&
-            & e%parent%id,' (nrows,ncols,loM,hiM): ',nrows,ncols,loM,hiM
+       print '(A,I0,A,5(I0,1X))', 'ELLIPSE_MATCH_SELF parent: ',&
+            & e%parent%id,' (ibnd,nrows,ncols,loM,hiM): ',&
+            & e%ibnd,nrows,ncols,loM,hiM
     end if
 
     allocate(r%LHS(nrows,ncols), r%RHS(nrows))
@@ -192,6 +193,13 @@ contains
     s = src%id  
     forall (j = 0:N-1) vi(j) = j
 
+    if (debug) then
+       loM = -999
+       hiM = -888
+       loN = -777
+       hiN = -666
+    end if
+
     M = trg%M
     ! target element determines number of rows
     if (trg%ibnd == 0) then
@@ -228,7 +236,7 @@ contains
     r%LHS = cmplx(0,0,DP)
     r%RHS = cmplx(0,0,DP)
 
-    if (nrows > 0) then
+    if (nrows > 0) then ! is target matching?
 
        if (dom%inclBg(s,t) .or. dom%InclIn(s,t) .or. dom%InclIn(t,s)) then
 
@@ -298,12 +306,14 @@ contains
                    factor = 1.0_DP
                 end if
                 
-!!$                ! TODO this was copied over from circular elements -- needs to be checked/fixed
-!!$
-!!$                ! specified flux (finite-radius well no storage)
-!!$                ! save head effects of well onto RHS
-!!$                r%RHS(1:M) = factor*line(src,p)*r%LHS(1:M,1)
-!!$                r%LHS(1:M,1) = 0.0 ! LHS matrix re-allocated to zero size below
+                ! >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+                ! TODO: copied from circular elements -- check/fix
+                ! <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+                ! specified flux (finite-radius well no storage)
+                ! save head effects of well onto RHS
+                r%RHS(1:M) = factor*line(src,p,idx)*r%LHS(1:M,1)
+                r%LHS(1:M,1) = 0.0 ! LHS matrix re-allocated to zero size below
              end if
 
           end if
@@ -423,14 +433,16 @@ contains
           end if
           deallocate(RMn,RMn0,cemat,semat)
 
-          if (src%ibnd == 2) then
-             ! sum line source effects and move to RHS, re-setting LHS to 0 unknowns
-             ! only uses even-order even coefficients (~1/4 of 2N-1)
-             r%RHS(1:hiM) = -sum(spread(line(src,p,idx),1,hiM)*r%LHS(1:hiM,1:N:2))
-             deallocate(r%LHS)
-             allocate(r%LHS(hiM,0))
-          end if
        end if
+    end if
+    if (src%ibnd == 2) then
+       if (nrows > 0) then
+          ! sum line source effects and move to RHS, re-setting LHS to 0 unknowns
+          ! only uses even-order even coefficients (~1/4 of 2N-1)
+          r%RHS(1:hiM) = -sum(spread(line(src,p,idx),1,hiM)*r%LHS(1:hiM,1:N:2))
+       end if
+       deallocate(r%LHS)
+       allocate(r%LHS(nrows,0))
     end if
 
   end function ellipse_match_other
@@ -570,7 +582,7 @@ contains
 
   function line(e,p,idx) result(a2n)
     ! this function returns the coefficients for a specified-flux line source
-    use constants, only : DP, PI
+    use constants, only : DP, TWOPI
     use time_mod, only : timef
     use type_definitions, only : ellipse
     use mathieu_functions, only : Ke,dKe
@@ -579,25 +591,23 @@ contains
     complex(DP), intent(in) :: p
     integer, intent(in) :: idx
     complex(DP), dimension(ceiling(e%N/2.0)) :: a2n ! only even coefficients of even order
-    real(DP), dimension(0:e%ms-1) :: vs
+    real(DP), dimension(0:max(e%ms-1,e%N)) :: vs
     real(DP), dimension(1:e%ms,ceiling(e%N/2.0)) :: arg
-    integer, dimension(0:e%ms-1) :: vi
+    integer, dimension(0:max(e%ms-1,e%N)) :: vi
     integer :: i, N, MS, nmax
 
     N = e%N
     MS = e%ms
     nmax = ceiling(e%N/2.0)
-    forall (i = 0:MS-1) vi(i) = i ! integer vector
+    forall (i = 0:max(MS,N)-1) vi(i) = i ! integer vector
     vs = -1.0 ! sign vector
     where (mod(vi,2) == 0) vs = 1.0
 
     arg(1:MS,1:nmax) = spread(vs(0:MS-1)/real(1-(2*vi(0:MS-1))**2,DP),2,nmax)
-
+    
     ! factor of 4 different from Kuhlman & Neuman (J. Eng. Mathematics) paper
-    ! include Radial/dRadial MF here to balance with those in general solution
-    a2n(1:nmax) = timef(p,e%time,.false.)*e%bdryQ/(2.0*PI)* &
-            & Ke(e%parent%mat(idx), vi(0:N-1:2), e%r) / dKe(e%parent%mat(idx), vi(0:N-1:2), e%r)* &
-            & (-vs(0:N-1:2))*sum(arg(1:MS,1:nmax)*conjg(e%parent%mat(idx)%A(1:MS,0:nmax-1,0)),dim=1)
+    a2n(1:nmax) = timef(p,e%time,.false.)*e%bdryQ/TWOPI* &
+            & (-vs(0:N-1:2))*sum(arg*conjg(e%parent%mat(idx)%A(1:MS,0:nmax-1,0)),dim=1)
 
   end function line
 

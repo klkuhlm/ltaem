@@ -146,6 +146,7 @@ contains
 
     use type_definitions, only : matching, element, domain, circle, ellipse
     use constants, only : DP, PI, EYE, TWOPI
+    use utility, only : cosh ! complex cosh
 
     type(matching), intent(in) :: el
     complex(DP), dimension(:), intent(in) :: p
@@ -157,24 +158,34 @@ contains
     complex(DP), dimension(size(p,1)) :: qp
 
     complex(DP), allocatable :: flux(:,:,:), rflux(:,:), calclocs(:)
+    real(DP), allocatable :: projangles(:)
+    real(DP) :: safeR
     integer :: M, np, i
-    integer, parameter :: MINLOCS = 8
+    integer, parameter :: MINLOCS = 18
 
     M = el%M
     np = size(p,1)
-    allocate(flux(np,2,M),rflux(np,M))
 
-    ! default number of integration locations (some circular wells are a single point, 
-    ! which doesn't result in an accurate intgration)
-    if (M == 1 .and. el%id <= dom%num(1)) then
-       allocate(calclocs(MINLOCS))
-       forall (i=1:MINLOCS)
-          calclocs(i) = el%z + el%r*exp(EYE*(-PI + TWOPI/M*(i-1)))
-       end forall
-    else
-       allocate(calclocs(M))
-       calclocs = el%Zom
+    if (M < MINLOCS) then
+       M = MINLOCS
     end if
+    
+    allocate(calclocs(M),projangles(M))
+    forall (i=1:M)
+       projangles(i) = (-PI + TWOPI/M*(i-1))
+    end forall
+    !! TODO: more generally, you might want the ability to bump this inside the element perimeter too...
+    safeR = el%r + epsilon(el%r) ! bump calc locations just outside perimeter of element
+    
+    if (el%id <= dom%num(1)) then
+       ! circles
+       calclocs(1:M) = el%z + safeR*exp(EYE*projangles(:))
+    else 
+       ! ellipses
+       calclocs(1:M) = el%z + el%f*cosh(cmplx(safeR,projangles,DP))*exp(EYE*el%theta)
+    end if
+
+    allocate(flux(np,2,M),rflux(np,M))
 
     ! compute Cartesian components of flux at matching locations
     !$OMP PARALLEL DO PRIVATE(i)
@@ -187,8 +198,8 @@ contains
     if (el%id <= dom%num(1)) then
        ! circle
        ! v_r = cos(theta)*v_x + sin(theta)*v_y
-       rflux(1:np,1:M) = spread(cos(el%Pcm(1:M)),1,np)*flux(1:np,1,1:M) + &
-                       & spread(sin(el%Pcm(1:M)),1,np)*flux(1:np,2,1:M)
+       rflux(1:np,1:M) = spread(cos(projangles),1,np)*flux(1:np,1,1:M) + &
+                       & spread(sin(projangles),1,np)*flux(1:np,2,1:M)
 
        ! Q = r* \int_0^{2 pi} q_r d theta (assume unit thickness)
        ! trapezoid rule around circle (first & last points same)
@@ -197,12 +208,12 @@ contains
     else
        ! ellipse
        ! v_eta = f*(sinh(eta)*cos(psi)*v_x + cosh(eta)*sin(psi)*v_y)
-       rflux(:,:) = el%f*(sinh(el%r)*spread(cos(el%Pcm(1:M)),1,np)*flux(1:np,1,1:M) + &
-                       & (cosh(el%r)*spread(sin(el%Pcm(1:M)),1,np)*flux(1:np,2,1:M)))
+       rflux(:,:) = el%f*(sinh(el%r)*spread(cos(projangles),1,np)*flux(1:np,1,1:M) + &
+                       & (cosh(el%r)*spread(sin(projangles),1,np)*flux(1:np,2,1:M)))
 
        ! Q = f* \int_0^{2 pi} \sqrt{cosh^2 eta - cos^2 psi} q_eta d psi
        qp(:) = el%f*TWOPI/M*sum(rflux(1:np,1:M)*&
-            & sqrt((cosh(2*el%r) - spread(cos(2*el%Pcm(1:M)),1,np))/2),dim=2)
+            & sqrt((cosh(2*safeR) - spread(cos(2*projangles),1,np))/2),dim=2)
 
     end if
   end function elementFlowrate
@@ -399,7 +410,7 @@ contains
 
     ! TODO: this should handle geometry more generally like 
     ! in the element_geometry.f90 ComputeElementHierarchy() subroutine
-    ! or at least use the resutls from that here.
+    ! or at least use the results of that here.
 
     ! determine if calc point is inside an inclusion
     inout(1:ntot) = 0
