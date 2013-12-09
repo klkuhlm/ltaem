@@ -225,10 +225,10 @@ program ltaem_main
   elseif(sol%contour) then ! x,y locations outer product of x,y vectors
 
      write(stdout,'(A)') 'compute solution for plotting contours'
-     allocate(sol%h(sol%nx,sol%ny,sol%nt),   hp(tnP), &
-          &   sol%v(sol%nx,sol%ny,sol%nt,2), vp(tnP,2), stmp(tnP))
+     allocate(sol%h(sol%nt,sol%nx,sol%ny),   hp(tnP), &
+          &   sol%v(sol%nt,2,sol%nx,sol%ny), vp(tnP,2), stmp(tnP))
      if (sol%deriv) then
-        allocate(sol%dh(sol%nx,sol%ny,sol%nt))
+        allocate(sol%dh(sol%nt,sol%nx,sol%ny))
      end if
 
      stmp(1:tnP) = reshape(s,[tnP])
@@ -297,13 +297,13 @@ program ltaem_main
               lop = (lt - minlt)*size(s,dim=1) + 1
               hip = lop + size(s,dim=1) - 1
 
-              sol%h(j,i,lot:hit) =     L(sol%t(lot:hit), tee(lt), hp(lop:hip), sol%INVLT)
-              sol%v(j,i,lot:hit,1:2) = L(sol%t(lot:hit), tee(lt), vp(lop:hip,1:2), sol%INVLT)
+              sol%h(lot:hit,j,i) =     L(sol%t(lot:hit), tee(lt), hp(lop:hip), sol%INVLT)
+              sol%v(lot:hit,1:2,j,i) = L(sol%t(lot:hit), tee(lt), vp(lop:hip,1:2), sol%INVLT)
 
               if (sol%deriv) then
                  ! multiply solution by p for derivative
                  hp(lop:hip) = hp(lop:hip)*stmp(lop:hip)
-                 sol%dh(j,i,lot:hit) = L(sol%t(lot:hit), tee(lt), hp(lop:hip), &
+                 sol%dh(lot:hit,j,i) = L(sol%t(lot:hit), tee(lt), hp(lop:hip), &
                       & sol%INVLT)*sol%t(lot:hit)
               end if
            end do
@@ -315,10 +315,10 @@ program ltaem_main
   elseif(sol%timeseries) then ! x,y locations are in pairs; e.g. inner product
 
      write(stdout,'(A)') 'compute solution for plotting time series'
-     allocate(sol%h(sol%nx,1,sol%nt), hp(tnP), sol%v(sol%nx,1,sol%nt,2), &
+     allocate(sol%h(sol%nt,sol%nx,1), hp(tnP), sol%v(sol%nt,2,sol%nx,1), &
           & vp(tnP,2), stmp(tnP))
      if (sol%deriv) then
-        allocate(sol%dh(sol%nx,1,sol%nt))
+        allocate(sol%dh(sol%nt,sol%nx,1))
      end if
 
      stmp(1:tnp) = reshape(s,[tnP])
@@ -376,13 +376,13 @@ program ltaem_main
            hip = lop + size(s,1) - 1
 
            ! don't need second dimension of results matrices
-           sol%h(i,1,lot:hit) =     L(sol%t(lot:hit),tee(lt),hp(lop:hip),sol%INVLT)
-           sol%v(i,1,lot:hit,1:2) = L(sol%t(lot:hit),tee(lt),vp(lop:hip,1:2),sol%INVLT)
+           sol%h(lot:hit,i,1) =     L(sol%t(lot:hit),tee(lt),hp(lop:hip),sol%INVLT)
+           sol%v(lot:hit,1:2,i,1) = L(sol%t(lot:hit),tee(lt),vp(lop:hip,1:2),sol%INVLT)
 
            if (sol%deriv) then
               ! multiply solution by p for derivative
               hp(lop:hip) = hp(lop:hip)*stmp(lop:hip)
-              sol%dh(i,1,lot:hit) = L(sol%t(lot:hit),tee(lt),hp(lop:hip)&
+              sol%dh(lot:hit,i,1) = L(sol%t(lot:hit),tee(lt),hp(lop:hip)&
                    &,sol%INVLT)*sol%t(lot:hit)
            end if
         end do

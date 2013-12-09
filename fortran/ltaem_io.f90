@@ -1362,14 +1362,14 @@ contains
              do j = 1, s%ny
                 do k = 1, s%nx
                    write(20,'(2('//xfmt//',1X),4('//hfmt//',1X))') &
-                        & s%x(k), s%y(j), s%h(k,j,i), s%v(k,j,i,1:2), s%dh(k,j,i)
+                        & s%x(k), s%y(j), s%h(i,k,j), s%v(i,1:2,k,j), s%dh(i,k,j)
                 end do
              end do
           else
              do j = 1, s%ny
                 do k = 1, s%nx
                    write(20,'(2('//xfmt//',1X),3('//hfmt//',1X))') &
-                        & s%x(k), s%y(j), s%h(k,j,i), s%v(k,j,i,1:2)
+                        & s%x(k), s%y(j), s%h(i,k,j), s%v(i,1:2,k,j)
                 end do
              end do
           end if
@@ -1414,7 +1414,7 @@ contains
           open(unit=20, file=trim(s%outfname)//'_head_'//chint(2)//'.dat', &
                & status='replace', action='write')
           do i = 1, s%ny
-             write (20,'('//chint(1)//'(1x,'//hfmt//'))') (s%h(j,i,k), j=1,s%nx)
+             write (20,'('//chint(1)//'(1x,'//hfmt//'))') (s%h(k,j,i), j=1,s%nx)
           end do
           close(20)
 
@@ -1423,7 +1423,7 @@ contains
              open(unit=20, file=trim(s%outfname)//'_dhead_'//chint(2)//'.dat', &
                   & status='replace', action='write')
              do i = 1, s%ny
-                write (20,'('//chint(1)//'(1x,'//hfmt//'))') (s%dh(j,i,k), j=1,s%nx)
+                write (20,'('//chint(1)//'(1x,'//hfmt//'))') (s%dh(k,j,i), j=1,s%nx)
              end do
              close(20)
           end if
@@ -1432,7 +1432,7 @@ contains
           open(unit=20, file=trim(s%outfname)//'_velx_'//chint(2)//'.dat', &
                & status='replace', action='write')
           do i = 1, s%ny
-             write (20,'('//chint(1)//'(1x,'//hfmt//'))') (s%v(j,i,k,1), j=1,s%nx)
+             write (20,'('//chint(1)//'(1x,'//hfmt//'))') (s%v(k,1,j,i), j=1,s%nx)
           end do
           close(20)
 
@@ -1440,7 +1440,7 @@ contains
           open(unit=20, file=trim(s%outfname)//'_vely_'//chint(2)//'.dat', &
                & status='replace', action='write')
           do i = 1, s%ny
-             write (20,'('//chint(1)//'(1x,'//hfmt//'))') (s%v(j,i,k,2), j=1,s%nx)
+             write (20,'('//chint(1)//'(1x,'//hfmt//'))') (s%v(k,2,j,i), j=1,s%nx)
           end do
           close(20)
        end do
@@ -1478,12 +1478,12 @@ contains
           if (s%deriv) then
              do k = 1, s%nt
                 write (20,'(1X,'//tfmt//',4(1X,'//hfmt//'))') &
-                     & s%t(k),s%h(i,1,k),s%v(i,1,k,1:2),s%dh(i,1,k)
+                     & s%t(k),s%h(k,i,1),s%v(k,1:2,i,1),s%dh(k,i,1)
              end do             
           else
              do k = 1, s%nt
                 write (20,'(1X,'//tfmt//',3(1X,'//hfmt//'))') &
-                     & s%t(k),s%h(i,1,k),s%v(i,1,k,1:2)
+                     & s%t(k),s%h(k,i,1),s%v(k,1:2,i,1)
              end do
           end if
           write (20,'(/)')
@@ -1514,12 +1514,12 @@ contains
           if (s%deriv) then
              do k = 1, s%nt
                 write (20,'(1X,'//tfmt//',3(1X,'//hfmt//'))') &
-                     & s%t(k),s%h(j,1,k),s%dh(j,1,k)
+                     & s%t(k),s%h(k,j,1),s%dh(k,j,1)
              end do
           else
              do k = 1, s%nt
                 write (20,'(1X,'//tfmt//',2(1X,'//hfmt//'))') &
-                     & s%t(k),s%h(j,1,k)
+                     & s%t(k),s%h(k,j,1)
              end do
           end if
           write (20,'(/)')
@@ -1544,11 +1544,11 @@ contains
                &action='write')
           if (s%deriv) then
              do k = 1, s%nt
-                write (20,'('//tfmt//',2(1X,'//hfmt//'))') s%t(k),s%h(i,1,k),s%dh(i,1,k)
+                write (20,'('//tfmt//',2(1X,'//hfmt//'))') s%t(k),s%h(k,i,1),s%dh(k,i,1)
              end do
           else
              do k = 1, s%nt
-                write (20,'('//tfmt//',1X,'//hfmt//')') s%t(k),s%h(i,1,k)
+                write (20,'('//tfmt//',1X,'//hfmt//')') s%t(k),s%h(k,i,1)
              end do
           end if
           write(20,'(/)')
