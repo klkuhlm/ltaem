@@ -32,12 +32,12 @@ BLASLIB=-lblas
 ##BLASLIB=blas.a
 
 ### use Intel math kernel library
-#MKLROOT=/opt/intel/mkl/lib/intel64
-#LAPACKLIB= -Wl,--start-group  \
-#	$(MKLROOT)/libmkl_intel_lp64.a \
-#	$(MKLROOT)/libmkl_sequential.a \
-#	$(MKLROOT)/libmkl_core.a \
-#	-Wl,--end-group -lpthread -lm
+MKLROOT=/opt/intel/mkl/lib/intel64
+LAPACKLIB= -Wl,--start-group  \
+	$(MKLROOT)/libmkl_intel_lp64.a \
+	$(MKLROOT)/libmkl_sequential.a \
+	$(MKLROOT)/libmkl_core.a \
+	-Wl,--end-group -lpthread -lm
 
 # main-program related
 ####################################
@@ -53,28 +53,28 @@ OBJS=$(EXTERNAL) constants.o $(KKLOW) geometryUtil.o $(KKHIGH)
 SRCS=$(OBJS:.o=.f90) $(MAIN:.o=.f90)
 
 ####################### ifort >= 12.0 ##########
-#F90=ifort
-#OMP=-openmp
-#CPP=-cpp
-##DFLAGS=-O0 -g -traceback -warn all -check bounds -check pointers -check uninit -check format -check output_conversion
-#DFLAGS=-O0 -g -traceback -check all # -warn all
-#PFLAGS=-xHOST -O3 -fast  
+F90=ifort
+OMP=-openmp
+CPP=-cpp
+#DFLAGS=-O0 -g -traceback -warn all -check bounds -check pointers -check uninit -check format -check output_conversion
+DFLAGS=-O0 -g -traceback -check all # -warn all
+PFLAGS=-xHOST -O3 -fast  
 ################################################
 
 ## gfortran >= 4.6.1 #################
-F90= gfortran
-##F90=~/local/bin/gfortran
-OMP=-fopenmp
-CPP=-cpp
-##DFLAGS=-O2 -march=native -fprofile-generate -flto
-DFLAGS=-O0 -Wall -Wextra -fcheck=all -g 
-##DFLAGS+=-gdwarf-4 -fmodule-private -pedantic -Wunderflow \
-##	-finit-integer=$$((RANDOM%9999-5000)) -finit-real=snan \
-##	-ffpe-trap=invalid -finit-logical=false \
-##	-finit-character=$$((RANDOM%128+1))
-##DFLAGS+=-fdump-rtl-expand 
-##LINKOPT=-fbacktrace -B/usr/lib/x86_64-linux-gnu  # needed to make dev version of gcc to work
-PFLAGS=-Ofast -march=native -flto ##-fprofile-use 
+#F90= gfortran
+###F90=~/local/bin/gfortran
+#OMP=-fopenmp
+#CPP=-cpp
+###DFLAGS=-O2 -march=native -fprofile-generate -flto
+#DFLAGS=-O0 -Wall -Wextra -fcheck=all -g 
+###DFLAGS+=-gdwarf-4 -fmodule-private -pedantic -Wunderflow \
+###	-finit-integer=$$((RANDOM%9999-5000)) -finit-real=snan \
+###	-ffpe-trap=invalid -finit-logical=false \
+###	-finit-character=$$((RANDOM%128+1))
+###DFLAGS+=-fdump-rtl-expand 
+###LINKOPT=-fbacktrace -B/usr/lib/x86_64-linux-gnu  # needed to make dev version of gcc to work
+#PFLAGS=-Ofast -march=native -flto ##-fprofile-use 
 ###############################
 
 PFLAGS+=$(OMP)
