@@ -31,13 +31,13 @@ BLASLIB=-lblas
 ##LAPACKLIB=lapack.a
 ##BLASLIB=blas.a
 
-### use Intel math kernel library
-MKLROOT=/opt/intel/mkl/lib/intel64
-LAPACKLIB= -Wl,--start-group  \
-	$(MKLROOT)/libmkl_intel_lp64.a \
-	$(MKLROOT)/libmkl_sequential.a \
-	$(MKLROOT)/libmkl_core.a \
-	-Wl,--end-group -lpthread -lm
+##### use Intel math kernel library
+##MKLROOT=/opt/intel/mkl/lib/intel64
+##LAPACKLIB= -Wl,--start-group  \
+##	$(MKLROOT)/libmkl_intel_lp64.a \
+##	$(MKLROOT)/libmkl_sequential.a \
+##	$(MKLROOT)/libmkl_core.a \
+##	-Wl,--end-group -lpthread -lm
 
 # main-program related
 ####################################
@@ -62,8 +62,8 @@ PFLAGS=-xHOST -O3 -fast
 ################################################
 
 ## gfortran >= 4.6.1 #################
-##F90= gfortran
-F90=~/local/bin/gfortran
+F90= gfortran
+##F90=~/local/bin/gfortran
 OMP=-fopenmp
 CPP=-cpp
 ##DFLAGS=-O2 -march=native -fprofile-generate -flto

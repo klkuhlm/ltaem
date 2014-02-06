@@ -1,0 +1,40 @@
+1  10 10 10 10 10  :: N  
+1  25 25 25 25 25  :: M
+2  0  0  0  0  0  :: ibnd
+F  T  T  T  T  T  :: calcin?
+F  F  F  F  F  F  :: storin?
+1.0D-4  1.5  3.0  4.5  6.0  7.5  :: r
+0.0D0     :: x0
+0.0D0     :: y0
+1.0D0   6.0E-2  0.03   0.015  0.6    6.0     :: K   <-- left-most value is for inside well, other 5 are inside circles
+1.0D0   1.0E-5  1.0E-5 1.0E-5 1.0E-5 1.0E-5   :: Ss  <-- same for specific storage
+1.0D0     :: porosity
+0    :: leaky type flag
+1.0D0    :: K2
+1.0D0    :: Ss2
+1.0D0    :: b2
+F   :: unconfined?
+1.5D-1   :: Sy
+2.0D-2   :: Kz
+1.0D0     :: b
+F      :: dual porosity flag
+1.0D-5   :: matrix Ss
+2.0D0    :: fracture/matrix lambda
+0             :: multiporosity diffusion index
+1.0D-5    :: matrix diffusivity         
+1          :: matrix series # terms
+1.0D0    :: dimensionless skin
+0.0D0   0.0D0   :: area source strength
+-2.5D-1  0.0D0   :: boundary source strength
+1  0.0D0  0.0D0  :: area time flag, tpar1, tpar2
+1  0.0D0  0.0D0  :: boundary time flag, tpar1, tpar2
+1  0.0D0  0.0D0  :: area time flag, tpar1, tpar2
+1  0.0D0  0.0D0  :: boundary time flag, tpar1, tpar2
+1  0.0D0  0.0D0  :: area time flag, tpar1, tpar2
+1  0.0D0  0.0D0  :: boundary time flag, tpar1, tpar2
+1  0.0D0  0.0D0  :: area time flag, tpar1, tpar2
+1  0.0D0  0.0D0  :: boundary time flag, tpar1, tpar2
+1  0.0D0  0.0D0  :: area time flag, tpar1, tpar2
+1  0.0D0  0.0D0  :: boundary time flag, tpar1, tpar2
+1  0.0D0  0.0D0  :: area time flag, tpar1, tpar2
+1  0.0D0  0.0D0  :: boundary time flag, tpar1, tpar2
