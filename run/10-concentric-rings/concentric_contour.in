@@ -1,6 +1,6 @@
-True  False  True  True  True 1 False  :: calc?, particle?, contour?, log(t)_deriv?, Qcalc?, output_flag
+True  False  True  True  True 1 True  :: calc?, particle?, contour?, log(t)_deriv?, Qcalc?, output_flag
 concentric_contours.dat    :: output filename
-1.0D0   10.0   1.0D-5     :: por, k, Ss  <-- ouside outermost circle
+1.0D0   1.0E-5   1.0D-5     :: por, k, Ss  <-- ouside outermost circle
 0   1.0D0   1.0D-4   1.0D0  :: LEAKY: leakFlag, K2, Ss2, b2
 False 1.5D-1  2.0D0  1.0D0   :: UNCONFINED: unconfinedFlag?, Sy, Kz, b
 False 1.0D-5  2.0D0    1  1.0D-5  1  :: MultiPORO  Flag?, matrixSs, lambda, diffusion idx, Dm, NDiffTerms
@@ -10,7 +10,7 @@ LINVEC 0.0 10.0             :: x
 LINVEC 0.0 10.0             :: y
 LOGVEC -4.0 3.0           :: t
 1.0D-6  1.0D-8  10          :: alpha, tolerance, M
-3  concentric_circles.in  :: number of circular elements, circle data file (5 circles + well = 6)
+5  concentric_circles.in  :: number of circular elements, circle data file (5 circles + well = 6)
 0  20 not_used              :: number of elliptical elements, ellipse MS, ellipse data file
 not_used                    ::  particle data file
 

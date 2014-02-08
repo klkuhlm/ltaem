@@ -401,8 +401,9 @@ contains
 
     complex(DP), dimension(sum(dom%num)) :: Zgp
     integer, dimension(sum(dom%num)) :: inout
+    real(DP), dimension(sum(dom%num)) :: rvec
 
-    integer :: nc, ne, ntot, j, first, second, third, k
+    integer :: nc, ne, ntot, j, k
 
     nc = dom%num(1)
     ne = dom%num(2)
@@ -444,30 +445,23 @@ contains
           inside = 0
        case (1) ! inside one element
           inside = inout(1)
-       case (2) ! inside two elements
-          if (dom%InclUp(inout(1)) == 0) then
-             inside = inout(2)
-          else
-             inside = inout(1)
-          end if
-       case (3) ! inside three elements
-          do first = 1,3
-             do second = 1,3
-                if (second /= first) then
-                   do third = 1,3
-                      if ((third /= first) .and. (third /= second)) then
-                         if (dom%InclIn(inout(first),inout(second))  .and. &
-                              & dom%InclIn(inout(third),inout(first))) then
-                            inside = inout(second)
-                         end if
-                      end if
-                   end do
-                end if
-             end do
+       case (2:) ! inside multiple elements
+
+          inside = 1
+          
+          do j = 1,nc
+             rvec(j) = c(j)%r
           end do
-       case default
-          write(stderr,*) 'CALCLOCATION ERROR: more than triply-nested inclusions', dom%InclIn
-          stop
+          do j = 1,ne
+             rvec(nc+j) = e(j)%r
+          end do
+
+          ! pick smallest radius element
+          do j = 1,ntot
+             if (rvec(j) < rvec(inside)) then
+                inside = j
+             end if
+          end do
        end select
     else
        ! no matching elements
