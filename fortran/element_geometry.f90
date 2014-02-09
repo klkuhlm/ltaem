@@ -95,9 +95,11 @@ contains
           c(i)%Zom(1) = c(i)%z
        end if
 
-!!$       write(*,'(A,I0,A)',advance='no') 'Zom ',i,' :'
-!!$       write(*,*) c(i)%Zom
-
+       if (sol%debug) then
+          write(*,'(A,I0,A)',advance='no') 'Zom ',i,' :'
+          write(*,*) c(i)%Zom
+       end if
+       
     end do
 
     ! elliptical element self-geometry
@@ -134,11 +136,13 @@ contains
              c(i)%G(j)%Rgm(1:M) = abs(Zgm) ! r
              c(i)%G(j)%Pgm(1:M) = atan2(aimag(Zgm),real(Zgm)) ! theta
 
-!!$             write(*,'(2(I0,1X),A)',advance='no') i,j,':Rgm'
-!!$             write(*,*) c(i)%G(j)%Rgm
-!!$             write(*,'(2(I0,1X),A)',advance='no') i,j,':Pgm'
-!!$             write(*,*) c(i)%G(j)%Pgm
-
+             if (sol%debug) then
+                write(*,'(2(I0,1X),A)',advance='no') i,j,':Rgm'
+                write(*,*) c(i)%G(j)%Rgm
+                write(*,'(2(I0,1X),A)',advance='no') i,j,':Pgm'
+                write(*,*) c(i)%G(j)%Pgm
+             end if
+             
              deallocate(Zgm)
              other => null()
           end if
@@ -266,6 +270,9 @@ contains
 
           ! TODO: steps 1 and 2 should be done by solving the equations for the circles/ellipses
           ! but it is easier to do it with a discrete representation of the boundaries 
+          
+          ! took care of the easy case (circle-on-circle), but more difficult circle-ellipse,
+          ! and ellipse-ellipse cases remain.
 
           ! two cases where one element center is inside another
           !  1) elements intersect (2 pts) or touch (1 point) = BAD
@@ -275,14 +282,22 @@ contains
           do i = 1, nc
              do j = 1, nc
                 if (i /= j) then
-                   ! all points on circumference must be either inside or outside
-                   if (any(abs(c(i)%G(j)%Rgm(:) - c(i)%r) <= 0.0) .or. &
-                        & (any(c(i)%G(j)%Rgm(:) < c(i)%r) .and. &
-                        &  any(c(i)%G(j)%Rgm(:) > c(i)%r))) then
-                      print *, c(i)%r,'::',c(i)%G(j)%Rgm(:)
-                      write(stderr,*) 'ERROR: INTERSECTING CIRCLES: ',i,j
+                   
+                   if (Rcg(i,j) > (c(i)%r + c(j)%r)) then
+                      ! distance between circles greater than sum of radii
+                      cycle
+                   elseif (Rcg(i,j) < abs(c(i)%r - c(j)%r)) then
+                      ! one circle completely contained within the other
+                      cycle
+                   elseif ((Rcg(i,j) < epsilon(0.0)) .and. &
+                        & (abs(c(i)%r - c(j)%r) < epsilon(0.0))) then
+                      write(stderr,*) 'ERROR: COINCIDENT CIRCLES: ',i,j
                       stop 400
+                   else
+                      write(stderr,*) 'ERROR: INTERSECTING CIRCLES: ',i,j
+                      stop 4000
                    end if
+
                 end if
              end do
           end do
