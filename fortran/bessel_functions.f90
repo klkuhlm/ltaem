@@ -94,7 +94,7 @@ contains
        call cbesi(z=z(j), fnu=0.0_DP, kode=1, n=num, cy=tmp(0:num-1), nz=numzero, ierr=ierr)
        ! either 0 or 3 are acceptable return codes
        if (.not.(ierr == 0 .or. ierr == 3)) then
-          write(stderr,'(A,3(1X,I0))') 'CBESI_VECTZ error (numzero=',numzero,', ierr=',ierr,&
+          write(stderr,*) 'CBESI_VECTZ error (numzero=',numzero,', ierr=',ierr,&
                &', j=',j, ', num=',num,') z(j)=',z(j),'z',z
           call abort()
           stop 223

@@ -402,8 +402,9 @@ contains
     complex(DP), dimension(sum(dom%num)) :: Zgp
     integer, dimension(sum(dom%num)) :: inout
     real(DP), dimension(sum(dom%num)) :: rvec
+    real(DP) :: minr
 
-    integer :: nc, ne, ntot, j, k
+    integer :: nc, ne, ntot, j, count, idx
 
     nc = dom%num(1)
     ne = dom%num(2)
@@ -415,7 +416,7 @@ contains
 
     ! determine if calc point is inside an inclusion
     inout(1:ntot) = 0
-    k = 0
+    count = 0
 
     ! components of vector from center of circle to observation point
     Zgp(1:nc) = xy2cA(Z,c(:))
@@ -423,8 +424,8 @@ contains
     Pgp(1:nc) = aimag(Zgp(1:nc)) ! theta
     do j = 1,nc
        if (Rgp(j) < c(j)%r) then    ! inside (not including on boundary)
-          k = k+1
-          inout(k) = j
+          count = count+1
+          inout(count) = j  
        end if
     end do
 
@@ -434,21 +435,19 @@ contains
     Pgp(nc+1:ntot) = aimag(Zgp(1:ne)) ! psi
     do j = 1,ne
        if (Rgp(j+nc) < e(j)%r) then    ! inside (not including on boundary)
-          k = k+1
-          inout(k) = j+nc
+          count = count+1
+          inout(count) = j+nc
        end if
     end do
 
     if (ntot > 0) then
-       select case (k)
+       select case (count)
        case (0) ! inside nothing (background)
           inside = 0
        case (1) ! inside one element
           inside = inout(1)
        case (2:) ! inside multiple elements
 
-          inside = 1
-          
           do j = 1,nc
              rvec(j) = c(j)%r
           end do
@@ -456,10 +455,16 @@ contains
              rvec(nc+j) = e(j)%r
           end do
 
-          ! pick smallest radius element
+          ! pick smallest-radius nested element as immediate parent
+          ! TODO: check this is valid with mixed circles/ellipses
+          minr = huge(1.0)
           do j = 1,ntot
-             if (rvec(j) < rvec(inside)) then
-                inside = j
+             idx = inout(j) 
+             if (idx > 0) then
+                if (rvec(idx) < minr) then
+                   minr = rvec(idx)
+                   inside = idx
+                end if
              end if
           end do
        end select
@@ -470,7 +475,7 @@ contains
        Pgp = -999.
     end if
 
-    ! move observation points inside ibnd==2 elements
+    ! move observation points inside ibnd==2 elements to edge of element
     where (Rgp(1:nc) < c%r .and. c%ibnd == 2)
        Rgp(1:nc) = c%r
     end where

@@ -268,7 +268,7 @@ program ltaem_main
         end do
         !$OMP END PARALLEL DO
      end if
-
+     
      !$OMP PARALLEL DO PRIVATE(calcZ,hp,vp,lot,hit,lop,hip) SHARED(sol)
      do j = 1,sol%nx
         !$ write (*,'(I0,1X)',advance="no") OMP_get_thread_num()

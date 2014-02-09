@@ -1,13 +1,13 @@
-1  10 10 10 10 10  :: N  
-1  25 25 25 25 25  :: M
-2  0  0  0  0  0  :: ibnd
-F  T  T  T  T  T  :: calcin?
-F  F  F  F  F  F  :: storin?
-1.0D-4 1.5 3.0 4.5 6.0 7.5   :: r
+1    4    6   8  10  12  :: N  
+1    10  18  24  25  30  :: M
+2    0   0   0   0   0  :: ibnd
+F    T   T   T   T   T  :: calcin?
+F    F   F   F   F   F  :: storin?
+0.01 1.5 3.0 4.5 6.0 8.0  :: r
 0.0D0     :: x0
 0.0D0     :: y0
-1.0D0   6.0E-2  0.03   0.015  0.6    6.0     :: K   <-- left-most value is for inside well, other 5 are inside circles
-1.0D0   1.0E-5  1.0E-5 1.0E-5 1.0E-5 1.0E-5   :: Ss  <-- same for specific storage
+1.0D0  1.0D0  1.0D0  1.0D0  1.0D0  1.0D0  
+1.0D0  1.0D0  1.0D0  1.0D0  1.0D0  1.0D0  
 1.0D0     :: porosity
 0    :: leaky type flag
 1.0D0    :: K2
