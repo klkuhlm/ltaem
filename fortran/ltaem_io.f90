@@ -244,13 +244,19 @@ contains
     end if
     
     ! echo input from first 4 lines to file
-    write(UECHO,'(6(L1,1X),I0,1X,A)') s%calc, s%particle, s%contour, s%timeseries, s%deriv, &
-         & s%qcalc,s%output,s%outputExplain(s%OEMap(s%output))//&
-         & '  ||    re-calculate coefficients?, particle?, contour?, timeseries?, '//&
-         &'log(t) deriv?, Qcalc?, output flag (1:2 gnuplot/matlab contours, '//&
+    write(UECHO,'(A)') '=============== OPTIONS GOVERNING EXECUTION ==============='
+    write(UECHO,'(L1,1X,A)') s%calc, '  ||  re-calculate coefficients?'
+    write(UECHO,'(L1,1X,A)') s%particle, '  ||  particle tracking?'
+    write(UECHO,'(L1,1X,A)') s%contour, '  ||  compute solution for contour map? (many locations, few times)'
+    write(UECHO,'(L1,1X,A)') s%timeseries, '  ||  compute solution for timeseries? (few locations, many times)'
+    write(UECHO,'(L1,1X,A)') s%deriv, '  ||  compute log(t) derivative of heads?'
+    write(UECHO,'(L1,1X,A)') s%qcalc, '  ||  compute element boundary flux? (saved to .Q file)'
+    write(UECHO,'(I0,1X,A)') s%output,trim(s%outputExplain(s%OEMap(s%output)))//&
+         & '  ||    output flag (1:2 gnuplot/matlab contours, '//&
          & '10:11 gnuplot time series w/wo vel, 12: matlab time series, '//&
          &'20:21 pathline/streakline gnuplot)'
     write(UECHO,'(2A)') trim(s%outFname),'  ||    output file name'
+    write(UECHO,'(A)') '=============== BACKGROUND PROPERTIES ==============='
     write(UECHO,'(3(ES12.5,1X),A)') bg%por, bg%k, bg%ss,'  ||   AQUIFER properties : por, k, Ss'
     write(UECHO,'(I0,1X,A,1X,3(ES12.5,1X),A)') bg%leakFlag, trim(bg%leakFlagExplain(bg%leakFlag)), &
          & bg%aquitardK, bg%aquitardSs, bg%aquitardb, &
@@ -382,6 +388,7 @@ contains
 
     if (.not. s%particle) then
        fmt(1) = '(    (ES12.5,1X),A) '
+       write(UECHO,'(A)') '=============== CALCULATION LOCATIONS/TIMES ==============='
        write(UECHO,'(3(I0,1X),A)') s%nx, s%ny, s%nt, '  ||    numX, numY, numt'
        if (s%nx > 0 .and. s%ny > 0) then
           write(fmt(1)(2:5),'(I4.4)') s%nx
@@ -417,6 +424,7 @@ contains
     if (s%alpha <= 0.0) then
        write(stdout,'(A,ES12.5)') 'WARNING: deHoog alpha is typically > 0 ',s%alpha
     end if
+    write(UECHO,'(A)') '=============== INVERSE LAPLACE TRANSFORM PARAMETERS ==============='
     write(UECHO,'(2(ES12.5,1X),I0,A)') s%alpha, s%tol, s%m,'  ||    deHoog: alpha, tol, M'
 
     ! circular (includes wells)
@@ -628,6 +636,7 @@ contains
        fmt(2) = '('//chint//'(L1,1X),A)     ' ! logical
        fmt(3) = '('//chint//'(ES13.5,1X),A) ' ! real
 
+       write(UECHO,'(A)') '=============== CIRCULAR ELEMENT PROPERTIES ==============='
        write(UECHO,'(I0,A)') dom%num(1),        '  ||   # circular elements (including wells)'
        write(UECHO,fmt(1)) c(:)%n,              '  ||   # circular free parameter (Fourier coefficients)'
        write(UECHO,fmt(1)) c(:)%m,              '  ||   # circular matching locations'
@@ -945,6 +954,7 @@ contains
        fmt(2) = '('//chint//'(L1,1X),A)     ' ! logical
        fmt(3) = '('//chint//'(ES13.5,1X),A) ' ! real
 
+       write(UECHO,'(A)') '=============== ELLIPTICAL ELEMENT PROPERTIES ==============='
        write(UECHO,'(I0,A)') dom%num(2),        '  ||   # elliptical elements (including lines)'
        write(UECHO,fmt(1)) e(:)%n,              '  ||   # elliptical free parameter (Fourier coeffs)'
        write(UECHO,fmt(1)) e(:)%m,              '  ||   # ellipse matching locations'
@@ -1032,6 +1042,7 @@ contains
     write(chint,'(I4.4)') dom%num(2)
     fmt(3) = '('//chint//'(ES11.5,1X),A) ' ! ellipses
 
+    write(UECHO,'(A)') '=============== COMPUTED PROPERTIES ==============='
     if (dom%num(1) > 0) then
        write(UECHO,fmt(2)) c(:)%alpha,'  ||    circle hydraulic diffusivity'
        write(UECHO,fmt(2)) c(:)%T,    '  ||    circle transmissivity'
