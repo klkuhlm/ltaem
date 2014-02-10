@@ -98,7 +98,7 @@ contains
     end if
 
     if (debug) then
-       print '(A,I0,A,5(I0,1X))', 'CIRCLE_MATCH_SELF parent: ',&
+       print '(2(A,I0),A,5(I0,1X))', 'CIRCLE_MATCH_SELF ',c%id,', parent: ',&
             & c%parent%id,' (ibnd,nrows,ncols,loM,hiM): ',&
             & c%ibnd,nrows,ncols,loM,hiM
     end if
@@ -277,7 +277,7 @@ contains
                 hiN = 2*N-1
 
                 if (debug) then
-                   print '(2(A,2(I0,1X)),A,I0)', 'CIRCLE_MATCH_OTHER: (loN,hiN)',&
+                   print '(2(A,2(I0,1X)),A,I0)', 'CIRCLE_MATCH_OTHER: (loN,hiN): ',&
                         & loN,hiN,' Bn,Bn0 shape: ',shape(Bn),':',shape(Bn0)
                 end if
                 
