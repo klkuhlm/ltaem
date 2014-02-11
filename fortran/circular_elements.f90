@@ -122,7 +122,7 @@ contains
     end if
 
     ! matching or specified total flux
-    if (c%ibnd == 0 .or. c%ibnd == +1 .or. (c%ibnd == 2 .and. c%storIn)) then
+    if (c%ibnd == 0 .or. c%ibnd == 1 .or. (c%ibnd == 2 .and. c%storIn)) then
        allocate(Bn(0:N-1), dBn(0:N-1))
        kap = kappa(p,c%parent)
        call dBK(kap*c%r,N,Bn(0:N-1),dBn(0:N-1))
@@ -277,8 +277,7 @@ contains
                 hiN = 2*N-1
 
                 if (debug) then
-                   print '(2(A,2(I0,1X)),A,I0)', 'CIRCLE_MATCH_OTHER: (loN,hiN): ',&
-                        & loN,hiN,' Bn,Bn0 shape: ',shape(Bn),':',shape(Bn0)
+                   print '(A,2(I0,1X))', 'CIRCLE_MATCH_OTHER HEAD OUTSIDE: (loN,hiN): ', loN,hiN
                 end if
                 
                 ! head effects on target element
@@ -302,6 +301,10 @@ contains
                    ! is source inside of specified head/flux element? (no other previous part)
                    loN = 1
                    hiN = 2*N-1
+                end if
+
+                if (debug) then
+                   print '(A,2(I0,1X))', 'CIRCLE_MATCH_OTHER HEAD INSIDE: (loN,hiN): ', loN,hiN
                 end if
 
                 ! head effects on other element
@@ -352,6 +355,10 @@ contains
                 loN = 1
                 hiN = 2*N-1
 
+                if (debug) then
+                   print '(A,2(I0,1X))', 'CIRCLE_MATCH_OTHER FLUX OUTSIDE: (loN,hiN): ', loN,hiN
+                end if
+
              else
                 ! use interior Bessel functions (In)
                 kap = kappa(p,src%element)
@@ -368,6 +375,10 @@ contains
                    ! inside of specified flux element
                    loN = 1
                    hiN = 2*N-1
+                end if
+                
+                if (debug) then
+                   print '(A,2(I0,1X))', 'CIRCLE_MATCH_OTHER FLUX INSIDE: (loN,hiN): ', loN,hiN
                 end if
              end if
 

@@ -89,8 +89,8 @@ contains
 
        if (sol%debug) then
           print '(A,I0,A,2(I0,1X),3(A,I0))', 'SOL circ-self i: ',i,&
-               & ' LHS shape: ',shape(res(i,i)%LHS),&
-               & ' RHS length: ',size(res(i,i)%RHS),&
+               & ' LHS_shape: ',shape(res(i,i)%LHS),&
+               & ' RHS_length: ',size(res(i,i)%RHS),&
                & ' row: ',row(i,1),' col: ',col(i,1)
 
           print '(A,I0,A)', 'SOL circ-self i: ',i,' LHS'
@@ -99,7 +99,7 @@ contains
           if (ncol > 0) then 
              write(fmt2(5:7),'(I3.3)') ncol
              write(fmt(8:10),'(I3.3)') ncol
-             write(*,fmt2) (j,j=1,ncol)
+             print fmt2, (j,j=1,ncol)
              do j = 1, nrow
                 print fmt, j,res(i,i)%LHS(j,:)
              end do
@@ -125,8 +125,8 @@ contains
              res(j,i) = circle_match(c(i),c(j)%matching,dom,p,sol%debug)
              if (sol%debug) then
                 print '(2(A,2(I0,1X)),A,I0)', 'SOL circ-circ i,j: ',i,j,&
-                     & ' LHS shape: ',shape(res(j,i)%LHS),&
-                     & ' RHS size: ',size(res(j,i)%RHS)
+                     & ' LHS_shape: ',shape(res(j,i)%LHS),&
+                     & ' RHS_size: ',size(res(j,i)%RHS)
 
                 print '(A,2(I0,1X),A)', 'SOL circ-circ i,j: ',i,j,' LHS'
                 nrow = size(res(j,i)%LHS,1) 
@@ -163,8 +163,8 @@ contains
           res(jj,i) = circle_match(c(i),e(j)%matching,dom,p,sol%debug)
           if (sol%debug) then
              print '(2(A,2(I0,1X)),A,I0)', 'SOL circ-ellip i,j: ',i,jj,&
-                  & ' LHS shape:',shape(res(jj,i)%LHS),&
-                  & ' RHS size:',size(res(jj,i)%RHS)
+                  & ' LHS_shape:',shape(res(jj,i)%LHS),&
+                  & ' RHS_size:',size(res(jj,i)%RHS)
 
              print '(A,2(I0,1X),A)', 'SOL circ-ellip i,j: ',i,jj,' LHS'
              nrow = size(res(jj,i)%LHS,1) 
@@ -204,8 +204,8 @@ contains
 
        if (sol%debug) then
           print '(A,I0,A,2(I0,1X),3(A,I0))', 'SOL ellip-self i: ',ii,&
-               & ' LHS shape:',shape(res(ii,ii)%LHS),&
-               & ' RHS size:',size(res(ii,ii)%RHS),&
+               & ' LHS_shape:',shape(res(ii,ii)%LHS),&
+               & ' RHS_size:',size(res(ii,ii)%RHS),&
                & ' row: ',row(ii,1),' col: ',col(ii,1)
 
           print '(A,I0,A)', 'SOL ellip-self i: ',ii,' LHS'
@@ -311,8 +311,8 @@ contains
        ! this routine works for all three potential use cases
        ! M>N (overdetermined), M==N (even-determined), and M<N (underdetermined)
        if (sol%debug) then
-          print *, 'ZGELS debug',bigM,bigN,size(work),':: bshape',&
-               & shape(b),':: Ashape',shape(A)
+          print *, 'ZGELS debug :: bigM,bigN',bigM,bigN,' :: work ',size(work),&
+               & ':: bshape', shape(b),':: Ashape',shape(A)
        end if
 
        call ZGELS(TRANSA='N', M=bigM, N=bigN, NRHS=1, A=A(:,:), LDA=bigM, B=b(:), &
