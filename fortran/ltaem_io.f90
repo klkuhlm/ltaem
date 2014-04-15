@@ -1475,6 +1475,7 @@ contains
        ! locations separated by blank lines
        open(unit=20, file=s%outfname, status='replace', action='write')
        write (20,'(A)') '# LT-AEM time series output   -*-auto-revert-*-'
+       write (20,'(A,I0,A)') '# ',s%nx,' locations'
        do i = 1, s%nx
           write (20,'(2(A,'//xfmt//'),3X,A)') '# location: x=',s%x(i),' y=',&
                & s%y(i),trim(s%obsname(i))
@@ -1514,6 +1515,7 @@ contains
        ! locations separated by blank lines (no velocity)
        open(unit=20, file=s%outfname, status='replace', action='write')
        write (20,'(A)') '# LT-AEM time series output    -*-auto-revert-*-'
+       write (20,'(A,I0,A)') '# ',s%nx,' locations'
        do j = 1, s%nx
           write (20,'(2(A,'//xfmt//'),3X,A)') '# location: x=',s%x(j),' y=',&
                &s%y(j),trim(s%obsname(j))
@@ -1578,6 +1580,7 @@ contains
        ! particles separated by blank lines
        open(unit=20, file=s%outfname, status='replace', action='write')
        write (20,'(A)') '# LT-AEM particle tracking output  -*-auto-revert-*-'
+       write (20,'(A,I0,A)') '# ',size(p,dim=1),' particles'
        do i = 1, size(p,dim=1)
           write (20,'(A,I0,A)') '# particle ',i,' '//trim(p(i)%schemeExplain(p(i)%int))
           write (20,'(A)')   &
@@ -1605,6 +1608,7 @@ contains
 
        open(unit=90, file=s%outfname, status='replace', action='write')
        write (90,'(A)') '# ltaem particle tracking streakfile output   -*-auto-revert-*-'
+       write (20,'(A,I0,A)') '# ',size(p,dim=1),' particles'
 
        ! max number of times for all particles
        nt = maxval(p(:)%numt,dim=1)

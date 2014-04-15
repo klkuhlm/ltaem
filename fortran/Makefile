@@ -52,18 +52,18 @@ OBJS=$(EXTERNAL) constants.o $(KKLOW) geometryUtil.o $(KKHIGH)
 
 SRCS=$(OBJS:.o=.f90) $(MAIN:.o=.f90)
 
-####################### ifort >= 12.0 ##########
-F90=ifort
-OMP=-openmp
-CPP=-cpp
-#DFLAGS=-O0 -g -traceback -warn all -check bounds -check pointers -check uninit -check format -check output_conversion
-DFLAGS=-O0 -g -traceback -check all # -warn all
-PFLAGS=-xHOST -O3 -fast  
-################################################
+######################### ifort >= 12.0 ##########
+##F90=ifort
+##OMP=-openmp
+##CPP=-cpp
+###DFLAGS=-O0 -g -traceback -warn all -check bounds -check pointers -check uninit -check format -check output_conversion
+##DFLAGS=-O0 -g -traceback -check all # -warn all
+##PFLAGS=-xHOST -O3 -fast  
+##################################################
 
 ## gfortran >= 4.6.1 #################
-F90= gfortran
-##F90=~/local/bin/gfortran
+##F90= gfortran
+F90=~/local/bin/gfortran
 OMP=-fopenmp
 CPP=-cpp
 ##DFLAGS=-O2 -march=native -fprofile-generate -flto
