@@ -1475,7 +1475,7 @@ contains
        ! locations separated by blank lines
        open(unit=20, file=s%outfname, status='replace', action='write')
        write (20,'(A)') '# LT-AEM time series output   -*-auto-revert-*-'
-       write (20,'(A,I0,A)') '# ',s%nx,' locations'
+       write (20,'(A,2(I0,A))') '# ',s%nx,' locations ',s%nt,' times'
        do i = 1, s%nx
           write (20,'(2(A,'//xfmt//'),3X,A)') '# location: x=',s%x(i),' y=',&
                & s%y(i),trim(s%obsname(i))
@@ -1515,7 +1515,7 @@ contains
        ! locations separated by blank lines (no velocity)
        open(unit=20, file=s%outfname, status='replace', action='write')
        write (20,'(A)') '# LT-AEM time series output    -*-auto-revert-*-'
-       write (20,'(A,I0,A)') '# ',s%nx,' locations'
+       write (20,'(A,2(I0,A))') '# ',s%nx,' locations ',s%nt,' times'
        do j = 1, s%nx
           write (20,'(2(A,'//xfmt//'),3X,A)') '# location: x=',s%x(j),' y=',&
                &s%y(j),trim(s%obsname(j))
