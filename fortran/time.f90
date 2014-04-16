@@ -119,7 +119,7 @@ contains
        !! piecewise linear pumping rate with n steps, from ti(1) to tf
        !! no jumps in value (no vertical slopes)
        n = -flag - 100
-       allocate(ti(n),W(0:n+1),y(1:n),denom(1:n),numer(1:n))
+       allocate(ti(n),W(0:n+1),y(1:n+1),denom(1:n),numer(1:n))
 
        ! unpack initial times, pumping rates and final time
        ti(1:n) = par(1:n)
@@ -129,6 +129,7 @@ contains
        ! compute slope between each pair of points
        W(0) = 0.0
        W(n+1) = 0.0
+       y(n+1) = 0.0
        denom = [ti(2:n),tf] - ti(1:n)
        numer = y(2:n+1) - y(1:n)
        where (abs(denom) < epsilon(abs(numer)))
