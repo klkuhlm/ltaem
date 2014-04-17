@@ -13,7 +13,7 @@ for t in  "contour" "hydrographs" "particle_track" ; do
 done
 
 # specific PDEs associated with hydrograph types
-for t in  "dualporosity" "leaky1" "leaky2" "leaky3" ; do 
+for t in  "dualporosity" "leaky1" "leaky2" "leaky3" "stepwiseQ" "linearQ"; do 
     echo "pumping_well ${t} hydrographs"
     ./ltaem ./pumping_well_${t}_hydrographs.in \
         1> pumping_well_${t}_hydrographs.screen \

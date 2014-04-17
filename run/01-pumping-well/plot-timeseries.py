@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # read timeseriesoutput
-fn = 'pumping_well_dualporosity_hydrographs.dat'
+fn = 'pumping_well_linearQ_hydrographs.dat'
 
 fh = open(fn,'r')
 lines = fh.readlines()
@@ -67,30 +67,37 @@ md = mdv[loc]
 
 # three side-by-side timeseries plots
 fig = plt.figure(figsize=(12,6))
-plt.subplot(131)
-plt.loglog(t,np.abs(h),label='head')
-plt.legend(loc=0)
-plt.xlabel('time')
-plt.ylabel('head')
-plt.axis('equal')
-plt.grid()
+ax = fig.add_subplot(131)
+ax.loglog(t,np.abs(h),label='head')
+ax.set_xscale('linear')
+ax.set_yscale('linear')
+ax.legend(loc=0)
+ax.set_xlabel('time')
+ax.set_ylabel('head')
+ax.axis('equal')
+ax.grid()
 
-plt.subplot(132)
-plt.loglog(t,np.abs(dh),label='derivative')
-plt.legend(loc=0)
-plt.xlabel('time')
-plt.ylabel('$\partial$ head/$\\ln t$')
-plt.grid()
-plt.axis('equal')
+ax = fig.add_subplot(132)
+ax.loglog(t,dh,label='derivative')
+ax.set_xscale('linear')
+ax.set_yscale('linear')
+ax.legend(loc=0)
+ax.set_xlabel('time')
+ax.set_ylabel('$\partial$ head/$\\ln t$')
+ax.set_ylim([-20,20])
+ax.grid()
+#ax.axis('equal')
 
-plt.subplot(133)
-plt.semilogx(t,v[:,0],'r:',label='$v_x$')
-plt.semilogx(t,v[:,1],'g--',label='$v_y$')
-plt.semilogx(t,np.abs(v[:,0]+v[:,1]*1j),'k-',label='$|v|$')
-plt.legend(loc=0)
-plt.xlabel('time')
-plt.ylabel('velocity')
-plt.grid()
+ax = fig.add_subplot(133)
+ax.semilogx(t,v[:,0],'r:',label='$v_x$')
+ax.semilogx(t,v[:,1],'g--',label='$v_y$')
+ax.semilogx(t,np.abs(v[:,0]+v[:,1]*1j),'k-',label='$|v|$')
+ax.set_xscale('linear')
+ax.set_yscale('linear')
+ax.legend(loc=0)
+ax.set_xlabel('time')
+ax.set_ylabel('velocity')
+ax.grid()
 
 plt.suptitle('%s (x=%.5g, y=%.5g)' % (md['name'],md['xloc'],md['yloc']))
 plt.tight_layout()

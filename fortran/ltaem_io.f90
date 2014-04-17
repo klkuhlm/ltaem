@@ -1197,7 +1197,7 @@ contains
 
     character(46) :: lfmt = '(I0,1X,    (ES12.5,1X),A,    (ES12.5,1X),A,I0)'
     character(8) :: lincon
-    integer :: ierr
+    integer :: ierr, tsize
 
     if             (area .and. el%AreaTime < -100 .or. &
          & ((.not. area) .and. el%BdryTime < -100)) then
@@ -1222,17 +1222,18 @@ contains
                 &', par1, par2 for '//tp,j
         else
            ! piecewise-constant/linear time behavior           
-           allocate(el%ATPar(-2*el%AreaTime+1))
+           tsize = mod(abs(el%AreaTime),100) ! handle both piecewise constant (-100:-1) and piecewise linear (-infinity:-101)
+           allocate(el%ATPar(2*tsize+1))
            read(UIN,*,iostat=ierr) el%AreaTime,el%ATPar(:)
            if (ierr /= 0) then
               write(stderr,*) 'ERROR reading line ',ln,' area piecewise-'//&
                    &trim(lincon)//' time behavior (ATpar) ',tp,j,'input'
               stop 2203
            end if
-           write(lfmt(8:11), '(I4.4)') size(el%ATPar(:-el%AreaTime+1),1)
-           write(lfmt(26:29),'(I4.4)') size(el%ATPar(-el%AreaTime+2:),1)
-           write(UECH,lfmt) el%AreaTime,el%ATPar(:-el%AreaTime+1),'| ',&
-                & el%ATPar(-el%AreaTime+2:), &
+           write(lfmt(8:11), '(I4.4)') size(el%ATPar(:tsize+1),1)
+           write(lfmt(26:29),'(I4.4)') size(el%ATPar(tsize+2:),1)
+           write(UECH,lfmt) el%AreaTime,el%ATPar(:tsize+1),'| ',&
+                & el%ATPar(tsize+2:), &
                 &'  ||    Area ti, tf | piecewise-'//trim(lincon)//' strength for '//tp,j
         end if
      else
@@ -1248,17 +1249,18 @@ contains
                 &'  ||  Bdry time behavior '//trim(el%timeExplain(el%BdryTime))//&
                 &', par1, par2 for '//tp,j
         else
-           allocate(el%BTPar(-2*el%BdryTime+1))
+           tsize = mod(abs(el%BdryTime),100)
+           allocate(el%BTPar(2*tsize+1))
            read(UIN,*,iostat=ierr) el%BdryTime,el%BTPar(:)
            if (ierr /= 0) then
               write(stderr,*) 'ERROR reading line ',ln,' boundary piecewise- '//&
                    &trim(lincon)//' time behavior (BTpar) ',tp,j,'input'
               stop 2203
            end if
-           write(lfmt(8:11), '(I4.4)') size(el%BTPar(:-el%BdryTime+1),1)
-           write(lfmt(26:29),'(I4.4)') size(el%BTPar(-el%BdryTime+2:),1)
-           write(UECH,lfmt) el%BdryTime,el%BTPar(:-el%BdryTime+1),' | ',&
-                & el%BTPar(-el%BdryTime+2:), &
+           write(lfmt(8:11), '(I4.4)') size(el%BTPar(:tsize+1),1)
+           write(lfmt(26:29),'(I4.4)') size(el%BTPar(tsize+2:),1)
+           write(UECH,lfmt) el%BdryTime,el%BTPar(:tsize+1),' | ',&
+                & el%BTPar(tsize+2:), &
                 &'  ||    Bdry ti, tf | piecewise-'//trim(lincon)//' strength for '//tp,j
         end if
      end if
