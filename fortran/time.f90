@@ -47,8 +47,8 @@ contains
 
     integer :: n, np, flag
     real(DP), allocatable :: ti(:), y(:), dy(:), W(:), par(:)
-    real(DP), allocatable :: denom(:), numer(:)
-    real(DP) :: tf
+    real(DP), allocatable :: denom(:), numer(:), b(:), deltaW(:)
+    real(DP) :: tf, bf, deltaWf
 
     np = size(p,1)
 
@@ -119,7 +119,7 @@ contains
        !! piecewise linear pumping rate with n steps, from ti(1) to tf
        !! no jumps in value (no vertical slopes)
        n = -flag - 100
-       allocate(ti(n),W(0:n+1),y(1:n+1),denom(1:n),numer(1:n))
+       allocate(ti(n),W(0:n+1),y(1:n+1),denom(n),numer(n),b(n),deltaW(n))
 
        ! unpack initial times, pumping rates and final time
        ti(1:n) = par(1:n)
@@ -127,22 +127,30 @@ contains
        y(1:n) = par(n+2:2*n+1)
 
        ! compute slope between each pair of points
-       W(0) = 0.0
+       W(0) = 0.0      ! 0 and n+1 are "ghost" slopes for FD calc
        W(n+1) = 0.0
-       y(n+1) = 0.0
+       y(n+1) = 0.0    ! assume specified BC at tf
        denom = [ti(2:n),tf] - ti(1:n)
        numer = y(2:n+1) - y(1:n)
        where (abs(denom) < epsilon(abs(numer)))
-          ! TODO: probably a better way to handle this
+          ! ensure no "divide by zero" errors
           denom = denom + spacing(denom)
        end where
+       
        W(1:n) = numer/denom ! rise/run
 
-       mult(1:np) = (sum(spread(W(1:n) - W(0:n-1),2,np)*&
-            & exp(-outer(ti(1:n),p(1:np))),dim=1) - &
-            & sum(W(1:n) - W(0:n-1))*exp(-tf*p(:)))/p(:)**2
+       ! change in slope between sections
+       deltaW(1:n) = W(1:n) - W(0:n-1)
+       deltaWf = sum(deltaW)
 
-       deallocate(ti,W,y,denom)
+       ! intercept of lines shifted down to start on x-axis
+       b(1:n) = -deltaW(1:n)*ti(1:n)
+       bf = -deltaWf*tf
+
+       mult(1:np) = sum((outer(deltaW,p**(-2)) + spread(b,2,np)) * exp(-outer(ti,p)),dim=1) - &
+            & (deltaWf/p**2 + bf)*exp(-tf*p(:))
+
+       deallocate(ti,W,y,denom,b,deltaW)
 
     end select
     deallocate(par)
