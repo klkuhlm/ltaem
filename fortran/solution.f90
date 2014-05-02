@@ -313,6 +313,8 @@ contains
        if (sol%debug) then
           print *, 'ZGELS debug :: bigM,bigN',bigM,bigN,' :: work ',size(work),&
                & ':: bshape', shape(b),':: Ashape',shape(A)
+          print *, '1:TRANSA=','N', ', 2:M=',bigM, ', 3:N=',bigN, ', 4:NRHS=',1, ', 5:A=',A(:,:), ', 6:LDA=',bigM, ', 7:B=',b(:), &
+            & ', 8:LDB=',bigM, ', 9:WORK=',work, ', 10:LDWORK=',size(work), ', 11:INFO=',ierr
        end if
 
        call ZGELS(TRANSA='N', M=bigM, N=bigN, NRHS=1, A=A(:,:), LDA=bigM, B=b(:), &

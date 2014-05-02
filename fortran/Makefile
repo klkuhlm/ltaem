@@ -67,7 +67,7 @@ F90=~/local/bin/gfortran
 OMP=-fopenmp
 CPP=-cpp
 ##DFLAGS=-O2 -march=native -fprofile-generate -flto
-DFLAGS=-O0 -Wall -Wextra -fcheck=all -g 
+DFLAGS=-O0 -Wall -Wextra  -g -fcheck=all
 ##DFLAGS+=-gdwarf-4 -fmodule-private -pedantic -Wunderflow \
 ##	-finit-integer=$$((RANDOM%9999-5000)) -finit-real=snan \
 ##	-ffpe-trap=invalid -finit-logical=false \

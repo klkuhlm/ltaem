@@ -68,7 +68,7 @@ contains
     nt = size(t)
 
     ! there will be problems is fp(:)==0, or any values are NaN
-    if(maxval(abs(fp)) > tiny(1.0D0) .and. all(fp == fp)) then
+!!$    if(maxval(abs(fp)) > tiny(1.0D0) .and. all(fp == fp)) then
 
        ! Re(p) -- this is the de Hoog parameter c
        gamma = lap%alpha - log(lap%tol)/(2.0*tee)
@@ -125,11 +125,11 @@ contains
        ! F=A/B represents accelerated trapezoid rule
        ft(1:nt) =  exp(gamma*t(:))/tee * real(A(2*M,:)/B(2*M,:))
 
-    else  !! entire f(p) vector is zero
-       ft = 0.0
-!!       write(*,*) 'f(t) not computed: t=',t, &
-!!            & ' because max|fp|=', maxval(abs(fp)), ' any(NaN) ? ->',any(fp/=fp)
-    end if
+!!$    else  !! entire f(p) vector is zero
+!!$       ft = 0.0
+!!$!!       write(*,*) 'f(t) not computed: t=',t, &
+!!$!!            & ' because max|fp|=', maxval(abs(fp)), ' any(NaN) ? ->',any(fp/=fp)
+!!$    end if
   end function deHoog_invLap_vect
 
   function deHoog_invLap_scalt(t,tee,fp,lap) result(ft)

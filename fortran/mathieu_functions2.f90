@@ -267,7 +267,7 @@ contains
 
     ce(:,EV) = sum(spread(mf%A(:,j(EV),0),2,nz)* &
          & spread(cos(outer(2*v,PIOV2-z)),3,nje),dim=1)
-
+    
     ce(:,OD) = sum(spread(mf%B(:,j(OD),1),2,nz)* &
          & spread(sin(outer(2*v+1,PIOV2-z)),3,njo),dim=1)
 

@@ -1,6 +1,6 @@
 1   :: N
 1   :: M
--1   :: ibnd
+2   :: ibnd
 T   :: calcin?
 F   :: storin?
 1.0D-4   :: r
@@ -25,6 +25,6 @@ F      :: dual porosity flag
 1         :: matrix series # terms
 1.0D0    :: dimensionless skin
 0.0D0     :: area source strength
--2.5D-1   :: boundary source strength
+-0.1   :: boundary source strength
 1  0.0D0  0.0D0  :: area time flag, tpar1, tpar2
--102  0.5 3.5 6.5 0.0 1.0   :: boundary time flag, tpar1, tpar2
+-103  0.0 0.5 3.5 6.5 0.0 0.0 1.0   :: boundary time flag, tpar1, tpar2
