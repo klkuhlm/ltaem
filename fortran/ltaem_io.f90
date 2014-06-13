@@ -1355,7 +1355,7 @@ contains
        ! times separated by double blank lines
 
        open(unit=20, file=s%outfname, status='replace', action='write')
-       write(20,*) '# LT-AEM contour map output     -*-auto-revert-*-'
+       write(20,'(A)') '# 1 LT-AEM contour map output     -*-auto-revert-*-'
        write(20,'(A,I0)') '# t: ', s%nt
        write(20,'(A,I0)') '# x: ', s%nx
        write(20,'(A,I0)') '# y: ', s%ny
@@ -1476,7 +1476,7 @@ contains
        ! column of time values at a location through time
        ! locations separated by blank lines
        open(unit=20, file=s%outfname, status='replace', action='write')
-       write (20,'(A)') '# LT-AEM time series output   -*-auto-revert-*-'
+       write (20,'(A)') '# 10 LT-AEM time series output   -*-auto-revert-*-'
        write (20,'(A,2(I0,A))') '# ',s%nx,' locations ',s%nt,' times'
        do i = 1, s%nx
           write (20,'(2(A,'//xfmt//'),3X,A)') '# location: x=',s%x(i),' y=',&
@@ -1516,7 +1516,7 @@ contains
        ! column of time values at a location through time
        ! locations separated by blank lines (no velocity)
        open(unit=20, file=s%outfname, status='replace', action='write')
-       write (20,'(A)') '# LT-AEM time series output    -*-auto-revert-*-'
+       write (20,'(A)') '# 11 LT-AEM time series output    -*-auto-revert-*-'
        write (20,'(A,2(I0,A))') '# ',s%nx,' locations ',s%nt,' times'
        do j = 1, s%nx
           write (20,'(2(A,'//xfmt//'),3X,A)') '# location: x=',s%x(j),' y=',&
@@ -1581,7 +1581,7 @@ contains
        ! columns of time values for starting locations
        ! particles separated by blank lines
        open(unit=20, file=s%outfname, status='replace', action='write')
-       write (20,'(A)') '# LT-AEM particle tracking output  -*-auto-revert-*-'
+       write (20,'(A)') '# 20 LT-AEM particle tracking output  -*-auto-revert-*-'
        write (20,'(A,I0,A)') '# ',size(p,dim=1),' particles'
        do i = 1, size(p,dim=1)
           write (20,'(A,I0,A)') '# particle ',i,' '//trim(p(i)%schemeExplain(p(i)%int))
@@ -1609,7 +1609,7 @@ contains
        ! each block is a requested time, each row a particle
 
        open(unit=90, file=s%outfname, status='replace', action='write')
-       write (90,'(A)') '# ltaem particle tracking streakfile output   -*-auto-revert-*-'
+       write (90,'(A)') '# 21 LT-AEM particle tracking streakfile output   -*-auto-revert-*-'
        write (20,'(A,I0,A)') '# ',size(p,dim=1),' particles'
 
        ! max number of times for all particles
@@ -1644,7 +1644,7 @@ contains
     ! each element includes a timeseries of flowrate
     if (s%Qcalc) then
        open(unit=91, file=s%qfname, status='replace', action='write')
-       write(91,'(A)') '# ltaem element total flowrates  -*-auto-revert-*-'
+       write(91,'(A)') '# LT-AEM element total flowrates  -*-auto-revert-*-'
        
        do j = 1,size(s%Q,dim=2)
           write(91,'(A,I0)') '# element ',j
