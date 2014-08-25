@@ -302,7 +302,7 @@ module type_definitions
      ! starting x&y location, inital & final times
      real(DP) :: x = -999., y = -999., ti = -999., tf = -999.
 
-     ! which integration scheme to use (for each particle??)
+     ! which integration scheme to use (for each particle)
      ! 1 = Runge-Kutta-Merson (4th order adaptive)
      ! 2 = Runge-Kutta        (4th order)
      ! 3 = Analytical        (root-finding method)

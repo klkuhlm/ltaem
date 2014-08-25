@@ -183,7 +183,7 @@ contains
     end if
     
     read(UINPUT,*,iostat=ierr) bg%leakFlag, bg%aquitardK, bg%aquitardSs, bg%aquitardb; ln=ln+1
-    if (ierr /= 0) then
+    if (ierr /= 0 .and. bg%leakFlag /= 0) then
        write(stderr,*) 'ERROR on line ',ln,' input file (leaky aquitard props)'
        stop 2050
     end if
@@ -198,7 +198,7 @@ contains
     end if
 
     read(UINPUT,*,iostat=ierr) bg%unconfinedFlag, bg%Sy, bg%kz, bg%b; ln=ln+1
-    if (ierr /= 0) then
+    if (ierr /= 0 .and. bg%unconfinedFlag) then
        write(stderr,*) 'ERROR on line ',ln,' input file (unconfined)'
        stop 2060
     end if
@@ -219,7 +219,7 @@ contains
 
     read(UINPUT,*,iostat=ierr) bg%dualPorosityFlag, bg%matrixSs, &
          & bg%lambda, bg%multiporosityDiffusion, bg%kappa, bg%NDiffTerms; ln=ln+1
-    if (ierr /= 0) then
+    if (ierr /= 0 .and. bg%dualPorosityFlag) then
        write(stderr,*) 'ERROR reading line ',ln,' (dual porosity) input'
        stop 2072
     end if
