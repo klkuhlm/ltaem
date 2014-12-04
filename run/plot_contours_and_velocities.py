@@ -8,7 +8,7 @@ else:
     print 'pass base filename as argument'
     exit
 
-particle = True
+particle = False
 
 t = np.atleast_1d(np.loadtxt(basefn+'_t.dat'))
 nt = t.shape[0]
@@ -28,7 +28,7 @@ for val in range(nt):
     v[:,:,1,val] = np.loadtxt('%s_vely_%4.4i.dat' % (basefn,val+1))
 
 # read in data defining boundaries of elements
-fh = open(basefn.replace('_contour.xyz','.geom'),'r')
+fh = open(basefn + '.geom','r')
 junk = fh.readline() # throw away first line
 elements = []
 for row in fh:
@@ -42,7 +42,7 @@ fh.close()
 del elements[-1] # EOF comment at end
 
 if particle:
-    fh = open(basefn.replace('_contour.xyz','_particles.dat'),'r')
+    fh = open(basefn + '_particles.dat','r')
     particles = []
     junk = fh.readline()
     for row in fh:

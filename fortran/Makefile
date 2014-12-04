@@ -62,12 +62,12 @@ SRCS=$(OBJS:.o=.f90) $(MAIN:.o=.f90)
 ##################################################
 
 ## gfortran >= 4.6.1 #################
-##F90= gfortran
-F90=~/local/bin/gfortran
+F90= gfortran
+#F90=~/local/bin/gfortran
 OMP=-fopenmp
 CPP=-cpp
 ##DFLAGS=-O2 -march=native -fprofile-generate -flto
-DFLAGS=-O0 -Wall -Wextra  -g -fcheck=all -ffpe-trap=invalid,zero,overflow
+DFLAGS=-O0 -Wall -Wextra  -g -fcheck=all ##-ffpe-trap=invalid,zero,overflow 
 ##DFLAGS+=-fdump-rtl-expand 
 ##LINKOPT=-fbacktrace -B/usr/lib/x86_64-linux-gnu  # needed to make dev version of gcc to work?
 PFLAGS=-O2 -march=native -pipe -funroll-loops -ftree-vectorize
