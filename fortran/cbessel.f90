@@ -14,8 +14,7 @@ Module Complex_Bessel
   public  :: cbesh, cbesi, cbesj, cbesk, cbesy, cairy, cbiry 
 
   ! Oct 2011: replaced function gamln() with Fortran2008 built-in log_gamma()
-  ! June 2013: changed real comparisons to use ULP*spacing(), compute pi-related constants at compile time
-
+  
   ! June 2013 consolidated common constants from individual routines
   integer, parameter, private  :: DP = selected_real_kind(15, 307)
   real(DP), parameter, private :: HPI = 2.0_DP*atan(1.0_DP)   !! PI/2 = 1.57079632679489662
@@ -26,7 +25,7 @@ Module Complex_Bessel
   real(DP), parameter, private :: SPI = 3.0_DP/(2.0_DP*atan(1.0_DP))  ! 6/pi = 1.90985931710274 
   complex(DP), parameter, private :: CONE =  (1.0_DP,0.0_DP),  CTWO = (2.0_DP,0.0_DP)
   complex(DP), parameter, private :: CZERO = (0.0_DP,0.0_DP),  CI =   (0.0_DP,1.0_DP)
-  real(DP), parameter, private :: ULP = 2.0_DP
+  real(DP), parameter, private :: ULP = 1.0_DP/2.0_DP
 
 CONTAINS
 
@@ -194,8 +193,7 @@ CONTAINS
     xx = REAL(z, KIND=dp)
     yy = AIMAG(z)
     ierr = 0
-    !!IF (xx == 0.0_dp .AND. yy == 0.0_dp) ierr = 1
-    IF (abs(xx) <= ULP*spacing(0.0_dp) .AND. abs(yy) <= ULP*spacing(0.0_dp)) ierr = 1
+    IF (abs(xx) < spacing(0.0_dp)*ULP .AND. abs(yy) < spacing(0.0_dp)*ULP) ierr = 1
     IF (fnu < 0.0_dp) ierr = 1
     IF (m < 1 .OR. m > 2) ierr = 1
     IF (kode < 1 .OR. kode > 2) ierr = 1
@@ -269,9 +267,7 @@ CONTAINS
                    END IF
                 END IF
 
-!!10              IF (.NOT.(xn < 0.0_dp .OR. (xn == 0.0_dp .AND. yn < 0.0_dp  &
-!!                     .AND. m == 2))) THEN
-10              IF (.NOT.(xn < 0.0_dp .OR. (abs(xn) <= ULP*spacing(0.0_dp) .AND. yn < 0.0_dp  &
+10              IF (.NOT.(xn < 0.0_dp .OR. (abs(xn) < spacing(0.0_dp)*ULP .AND. yn < 0.0_dp  &
                      .AND. m == 2))) THEN
 
                    !-----------------------------------------------------------------------
@@ -293,13 +289,10 @@ CONTAINS
                 !     UNIFORM ASYMPTOTIC EXPANSIONS FOR FNU > FNUL
                 !-----------------------------------------------------------------------
                 mr = 0
-!!                IF (.NOT.(xn >= 0.0_dp .AND. (xn /= 0.0_dp .OR. yn >= 0.0_dp  &
-!!                     .OR. m /= 2))) THEN
-                IF (.NOT.(xn >= 0.0_dp .AND. (abs(xn) > ULP*spacing(0.0_dp) .OR. yn >= 0.0_dp  &
+                IF (.NOT.(xn >= 0.0_dp .AND. (abs(xn) >= spacing(0.0_dp)*ULP .OR. yn >= 0.0_dp  &
                      .OR. m /= 2))) THEN
                    mr = -mm
-                   !!IF (xn == 0.0_dp .AND. yn < 0.0_dp) zn = -zn
-                   IF (abs(xn) <= ULP*spacing(0.0_dp) .AND. yn < 0.0_dp) zn = -zn
+                   IF (abs(xn) < spacing(0.0_dp)*ULP .AND. yn < 0.0_dp) zn = -zn
                 END IF
                 CALL cbunk(zn, fnu, kode, mr, nn, cy, nw, tol, elim, alim)
                 IF (nw < 0) GO TO 60
@@ -1031,8 +1024,7 @@ CONTAINS
     nz = 0
     xx = REAL(z, KIND=dp)
     yy = AIMAG(z)
-    !!IF (yy == 0.0_dp .AND. xx == 0.0_dp) ierr = 1
-    IF (abs(yy) <= ULP*spacing(0.0_dp) .AND. abs(xx) <= ULP*spacing(0.0_dp)) ierr = 1
+    IF (abs(yy) < spacing(0.0_dp)*ULP .AND. abs(xx) < spacing(0.0_dp)*ULP) ierr = 1
     IF (fnu < 0.0_dp) ierr = 1
     IF (kode < 1 .OR. kode > 2) ierr = 1
     IF (n < 1) ierr = 1
@@ -1316,8 +1308,7 @@ CONTAINS
     yy = AIMAG(z)
     ierr = 0
     nz = 0
-    !!IF (xx == 0.0_dp .AND. yy == 0.0_dp) ierr = 1
-    IF (abs(xx) <= ULP*spacing(0.0_dp) .AND. abs(yy) <= ULP*spacing(0.0_dp)) ierr = 1
+    IF (abs(xx) < spacing(0.0_dp)*ULP .AND. abs(yy) < spacing(0.0_dp)*ULP) ierr = 1
     IF (fnu < 0.0_dp) ierr = 1
     IF (kode < 1 .OR. kode > 2) ierr = 1
     IF (n < 1) ierr = 1
@@ -1397,10 +1388,7 @@ CONTAINS
              zu = zu * atol
              cy(i) = zu - zv
              IF (yy < 0.0_dp) cy(i) = CONJG(cy(i))
-             !!IF (cy(i) == CMPLX(0.0_dp, 0.0_dp, KIND=dp) .AND. ey == 0.0_dp) nz = nz + 1
-             IF ((abs(real(cy(i))) <= ULP*spacing(0.0_DP) .and. &
-                & abs(aimag(cy(i))) <= ULP*spacing(0.0_DP)) .AND. &
-                & abs(ey) <= ULP*spacing(0.0_dp)) nz = nz + 1
+             IF (abs(cy(i)) < spacing(0.0_dp)*ULP .AND. abs(ey) < spacing(0.0_dp)*ULP) nz = nz + 1
              csgn = ci * csgn
              cspn = -ci * cspn
           END DO
@@ -1663,8 +1651,7 @@ CONTAINS
        ck = -ABS(bk)
        zta = CMPLX(ck, ak, KIND=dp)
     END IF
-    !!IF (zi == 0.0_dp) THEN
-    IF (abs(zi) <= ULP*spacing(0.0_dp)) THEN
+    IF (abs(zi) < spacing(0.0_dp)*ULP) THEN
        IF (zr <= 0.0_dp) THEN
           zta = CMPLX(0.0_dp, ak, KIND=dp)
        END IF
@@ -2006,8 +1993,7 @@ CONTAINS
        ck = -ABS(bk)
        zta = CMPLX(ck, ak, KIND=dp)
     END IF
-    !!IF (zi == 0.0_dp .AND. zr <= 0.0_dp) zta = CMPLX(0.0_dp, ak, KIND=dp)
-    IF (abs(zi) <= ULP*spacing(0.0_dp) .AND. zr <= 0.0_dp) zta = CMPLX(0.0_dp, ak, KIND=dp)
+    IF (abs(zi) < spacing(0.0_dp)*ULP .AND. zr <= 0.0_dp) zta = CMPLX(0.0_dp, ak, KIND=dp)
     aa = REAL(zta, KIND=dp)
     IF (kode /= 2) THEN
        !-----------------------------------------------------------------------
@@ -3062,8 +3048,7 @@ CONTAINS
     ang = thpi
     IF (zthr < 0.0_dp .OR. zthi >= 0.0_dp) THEN
        ang = hpi
-       !!IF (zthr /= 0.0_dp) THEN
-       IF (abs(zthr) > ULP*spacing(0.0_dp)) THEN
+       IF (abs(zthr) >= spacing(0.0_dp)*ULP) THEN
           ang = ATAN(zthi/zthr)
           IF (zthr < 0.0_dp) ang = ang + pi
        END IF
@@ -3192,8 +3177,7 @@ CONTAINS
 
     nz = 0
     az = ABS(z)
-    !!IF (az /= 0.0_dp) THEN
-    IF (abs(az) > ULP*spacing(0.0_dp)) THEN
+    IF (abs(az) >= spacing(0.0_dp)*ULP) THEN
        x = REAL(z, KIND=dp)
        arm = 1.0D+3 * TINY(0.0_dp)
        rtr1 = SQRT(arm)
@@ -3304,12 +3288,10 @@ CONTAINS
           GO TO 60
        END IF
        nz = n
-       !!IF (fnu == 0.0_dp) nz = nz - 1
-       IF (abs(fnu) <= ULP*spacing(0.0_dp)) nz = nz - 1
+       IF (abs(fnu) < spacing(0.0_dp)*ULP) nz = nz - 1
     END IF
     y(1) = czero
-    !!IF (fnu == 0.0_dp) y(1) = cone
-    IF (abs(fnu) <= ULP*spacing(0.0_dp)) y(1) = cone
+    IF (abs(fnu) < spacing(0.0_dp)*ULP) y(1) = cone
     IF (n == 1) RETURN
     y(2:n) = czero
     RETURN
@@ -3386,8 +3368,7 @@ CONTAINS
        jl = int(rl + rl + 2)
        yy = AIMAG(z)
        p1 = czero
-       !!IF (yy /= 0.0_dp) THEN
-       IF (abs(yy) > ULP*spacing(0.0_dp)) THEN
+       IF (abs(yy) >= spacing(0.0_dp)*ULP) THEN
           !-----------------------------------------------------------------------
           !     CALCULATE EXP(PI*(0.5+FNU+N-IL)*I) TO MINIMIZE LOSSES OF
           !     SIGNIFICANCE WHEN FNU OR N IS LARGE
@@ -3621,8 +3602,7 @@ CONTAINS
        y(i) = czero
        nz = nz + 1
        IF (i /= 1) THEN
-          !!IF (y(i-1) /= czero) THEN
-          IF (abs(y(i-1)) > ULP*spacing(0.0_DP)) THEN
+          IF (abs(y(i-1)) >= spacing(0.0_dp)*ULP) THEN
              y(i-1) = czero
              nz = nz + 1
           END IF
@@ -3799,8 +3779,7 @@ CONTAINS
        y(kk) = s1 * cspn + s2
        kk = kk - 1
        cspn = -cspn
-       !!IF (c2 == czero) THEN
-       IF (abs(real(c2)) <= ULP*spacing(0.0_DP) .and. abs(aimag(c2)) <= ULP*spacing(0.0_DP)) THEN
+       IF (abs(c2) < spacing(0.0_dp)*ULP) THEN
           kdflg = 1
           CYCLE
        END IF
@@ -4020,8 +3999,7 @@ CONTAINS
        cs = -ci * cs
        nz = nz + 1
        IF (i /= 1) THEN
-          !!IF (y(i-1) /= czero) THEN
-          IF (abs(y(i-1)) > ULP*spacing(0.0_DP)) THEN
+          IF (abs(y(i-1)) >= spacing(0.0_dp)*ULP) THEN
              y(i-1) = czero
              nz = nz + 1
           END IF
@@ -4208,8 +4186,7 @@ CONTAINS
        kk = kk - 1
        cspn = -cspn
        cs = -cs * ci
-       !!IF (c2 == czero) THEN
-       IF (abs(real(c2)) <= ULP*spacing(0.0_DP) .and. abs(aimag(c2)) <= ULP*spacing(0.0_DP)) THEN
+       IF (abs(c2) < spacing(0.0_dp)*ULP) THEN
           kdflg = 1
           CYCLE
        END IF
@@ -4890,10 +4867,8 @@ CONTAINS
     as2 = ABS(s2)
     aa = REAL(s1, KIND=dp)
     aln = AIMAG(s1)
-    !!IF (aa /= 0.0_dp .OR. aln /= 0.0_dp) THEN
-    IF (abs(aa) > ULP*spacing(0.0_dp) .OR. abs(aln) > ULP*spacing(0.0_dp)) THEN
-       !!IF (as1 /= 0.0_dp) THEN
-       IF (abs(as1) > ULP*spacing(0.0_dp)) THEN
+    IF (abs(aa) >= spacing(0.0_dp)*ULP .OR. abs(aln) >= spacing(0.0_dp)*ULP) THEN
+       IF (abs(as1) >= spacing(0.0_dp)*ULP) THEN
           xx = REAL(zr, KIND=dp)
           aln = -xx - xx + LOG(as1)
           s1d = s1
@@ -5035,8 +5010,7 @@ CONTAINS
        p2 = pt
        t1 = t1 - cone
     END DO
-    !!IF (REAL(p1) == 0.0_dp .AND. AIMAG(p1) == 0.0_dp) THEN
-    IF (abs(REAL(p1)) <= ULP*spacing(0.0_dp) .AND. abs(AIMAG(p1)) <= ULP*spacing(0.0_dp)) THEN
+    IF (abs(real(p1)) < spacing(0.0_dp)*ULP .AND. abs(AIMAG(p1)) < spacing(0.0_dp)*ULP) THEN
        p1 = CMPLX(tol, tol, KIND=dp)
     END IF
     cy(n) = p2 / p1
@@ -5047,8 +5021,7 @@ CONTAINS
     cdfnu = fnu * rz
     DO  i = 2, n
        pt = cdfnu + t1 * rz + cy(k+1)
-       !!IF (REAL(pt) == 0.0_dp .AND. AIMAG(pt) == 0.0_dp) THEN
-       IF (abs(REAL(pt)) <= ULP*spacing(0.0_dp) .AND. abs(AIMAG(pt)) <= ULP*spacing(0.0_dp)) THEN
+       IF (abs(REAL(pt)) < spacing(0.0_dp)*ULP .AND. abs(AIMAG(pt)) < spacing(0.0_dp)*ULP) THEN
           pt = CMPLX(tol, tol, KIND=dp)
        END IF
        cy(k) = cone / pt
@@ -5119,8 +5092,7 @@ CONTAINS
     rz = ctwo / z
     inu = int(fnu + 0.5_dp)
     dnu = fnu - inu
-    !!IF (ABS(dnu) /= 0.5_dp) THEN
-    IF (abs(ABS(dnu)-0.5_dp) > ULP*spacing(0.5_dp)) THEN
+    IF (ABS(dnu) >= spacing(0.5_dp)*ULP) THEN
        dnu2 = 0.0_dp
        IF (ABS(dnu) > tol) dnu2 = dnu * dnu
        IF (caz <= r1) THEN
@@ -5131,8 +5103,7 @@ CONTAINS
           smu = LOG(rz)
           fmu = smu * dnu
           CALL cshch(fmu, csh, cch)
-          !!IF (dnu /= 0.0_dp) THEN
-          IF (abs(dnu) > ULP*spacing(0.0_dp)) THEN
+          IF (abs(dnu) >= spacing(0.0_dp)*ULP) THEN
              fc = dnu * pi
              fc = fc / SIN(fc)
              smu = csh / dnu
@@ -5245,18 +5216,15 @@ CONTAINS
        coef = coef * pt
     END IF
 
-!!50  IF (ABS(dnu) == 0.5_dp) GO TO 210
-50  IF (abs(ABS(dnu)-0.5_dp) <= ULP*spacing(0.5_DP)) GO TO 210
+50  IF (ABS(dnu) < spacing(0.5_dp)*ULP) GO TO 210
     !-----------------------------------------------------------------------
     !     MILLER ALGORITHM FOR ABS(Z) > R1
     !-----------------------------------------------------------------------
     ak = COS(pi*dnu)
     ak = ABS(ak)
-    !!IF (ak == 0.0_dp) GO TO 210
-    IF (abs(ak) <= ULP*spacing(0.0_dp)) GO TO 210
+    IF (abs(ak) < spacing(0.0_dp)*ULP) GO TO 210
     fhs = ABS(0.25_dp - dnu2)
-    !!IF (fhs == 0.0_dp) GO TO 210
-    IF (abs(fhs)  <= ULP*spacing(0.0_dp)) GO TO 210
+    IF (abs(fhs) < spacing(0.0_dp)*ULP) GO TO 210
     !-----------------------------------------------------------------------
     !     COMPUTE R2=F(E). IF ABS(Z) >= R2, USE FORWARD RECURRENCE TO
     !     DETERMINE THE BACKWARD INDEX K. R2=F(E) IS A STRAIGHT LINE ON
@@ -5267,8 +5235,7 @@ CONTAINS
     t1 = MAX(t1,12.0_dp)
     t1 = MIN(t1,60.0_dp)
     t2 = tth * t1 - 6.0_dp
-    !!IF (xx == 0.0_dp) THEN
-    IF (abs(xx) <= ULP*spacing(0.0_dp)) THEN
+    IF (abs(xx) < spacing(0.0_dp)*ULP) THEN
        t1 = hpi
     ELSE
        t1 = ATAN(yy/xx)
