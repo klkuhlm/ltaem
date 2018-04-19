@@ -9,7 +9,7 @@ NW LOC|NE LOC|SE LOC|SW LOC|W LOC|N LOC|E LOC|S LOC
 -1.25  1.25  1.25 -1.25 -1.25  0.0   1.25  0.0    ::    x 
  1.25  1.25 -1.25 -1.25  0.0   1.25  0.0  -1.25   ::    y 
 LOGVEC -5.0 3.0 :: t 
-1.0D-6  1.0D-8  10  :: alpha, tolerance, M
+1.0D-16  1.0D-15  10  :: alpha, tolerance, M
 1  pumping_well_circles.in     :: number of circular elements, circle data file
 0  20 not_used    :: number of elliptical elements, ellipse MS, ellipse data file
 not_used   ::  particle data file

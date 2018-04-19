@@ -9,7 +9,7 @@ DUMMY NAME
 LINVEC 0.0 5.0  ::    x Vector
 LINVEC 0.0 5.0  ::    y Vector
 0.0001 0.001 0.01 0.1 :: t
-1.0D-6  1.0D-8  10  :: alpha, tolerance, M
+1.0D-16  1.0D-15  10  :: alpha, tolerance, M
 1  pumping_well_circles.in     :: number of circular elements, circle data file
 0  20, not_used    :: number of elliptical elements, ellipse MS, ellipse data file
 pumping_well_particle.in   ::  particle data file

@@ -71,7 +71,8 @@ DFLAGS=-Og -Wall -Wextra  -g -fcheck=all ##-ffpe-trap=invalid,zero,overflow
 ##DFLAGS+=-fdump-rtl-expand 
 ##LINKOPT=-fbacktrace -B/usr/lib/x86_64-linux-gnu  # needed to make dev version of gcc to work?
 #PFLAGS=-O2 -march=native -pipe -funroll-loops -ftree-vectorize
-PFLAGS=-O3 -march=native
+#PFLAGS=-O2 -march=native -fno-expensive-optimizations -g -fcheck=all
+PFLAGS=-Og -g -fcheck=all
 #################################
 
 PFLAGS+=$(OMP)
