@@ -289,8 +289,8 @@ contains
                    elseif (Rcg(i,j) < abs(c(i)%r - c(j)%r)) then
                       ! one circle completely contained within the other
                       cycle
-                   elseif ((Rcg(i,j) < epsilon(0.0)) .and. &
-                        & (abs(c(i)%r - c(j)%r) < epsilon(0.0))) then
+                   elseif ((Rcg(i,j) < spacing(0.0)/2.0) .and. &
+                        & (abs(c(i)%r - c(j)%r) < spacing(0.0)/2.0)) then
                       write(stderr,*) 'ERROR: COINCIDENT CIRCLES: ',i,j
                       stop 400
                    else

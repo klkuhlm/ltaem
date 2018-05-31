@@ -71,10 +71,10 @@ program ltaem_main
 
   intrinsic :: get_command_argument
   call get_command_argument(1,sol%inFName)
-  if (len_trim(sol%infname) == 0) then
+  if (len_trim(sol%inFName) == 0) then
      write(stdout,'(A)') 'no command-line filename supplied, '&
           &//'using default input file: input.in'
-     sol%infname = 'input.in'
+     sol%inFName = 'input.in'
   end if
 
   ! some parallel-related statistics ("!$" is special OMP directive)

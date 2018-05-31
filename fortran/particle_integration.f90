@@ -46,10 +46,10 @@ contains
     type(element), intent(in) :: bg
 
     integer :: count, lt, los, his, ns
-    logical :: partEnd, done
+    logical :: partEnd, partCut, done
     real(DP), dimension(2) :: vInit,vTrap,vAB3,vAB2,vSF
     real(DP), dimension(2) :: fwdEuler,Trap,halfAB,fullAB,Simp,x0
-    real(DP) :: error, pt, px, py, dt, length, enddt
+    real(DP) :: error, pt, px, py, dt, length, enddt, px0, py0
     real(DP), parameter :: SAFETY = 0.9
 
     !!complex(DP), dimension(21,2) :: tmp
@@ -124,19 +124,23 @@ contains
        ! magnitude of total step taken (straight line)
        length = abs(v2c(Simp) - v2c(x0))
 
+       ! partEnd indicates particle entered sink
+       ! partCut indicates particle swept out too large an angle with respect to a sink (heuristic)
+       call sinkCheck(Simp(1),Simp(2),c,e,px,py,partEnd,partCut)
+
        ! only advance to next step if error level is acceptable
        ! _and_ resulting step is less than prescribed limit
        ! _or_ we have gotten to the minimum step size (proceed anyways)
-       if ((error < p%tol .and. length <= p%maxL) .or. abs(dt) <= p%mindt) then
+       if (.not. partCut .and. ((error < p%tol .and. length <= p%maxL) .or. abs(dt) <= p%mindt)) then
           pt = pt + dt
+          px0 = px
+          py0 = py
           px = Simp(1)
           py = Simp(2)
           p%r(count,1:3) = [pt,px,py]
           ! velocity associated with previous step
           p%r(count-1,4:5) = vSF(1:2)
           count = count + 1
-
-          partEnd = sinkCheck(px,py,c,e)
 
           if (partEnd) then
              write(*,'(A,I0,A,ES13.6E2)') 'particle ',p%id,' entered a sink at t=',pt
@@ -146,13 +150,13 @@ contains
                 call reallocate(p,ubound(p%r,dim=1)*2)
              end if
           end if
-       end if
+        end if
 
        ! new step size based on error estimate:
        ! Numerical Recipes, Press et al 1992, eqn 16.2.10, p 712
        if ((.not. partEnd) .and. (.not. done)) then
 
-          if (length > p%maxL) then
+          if (partCut .or. length > p%maxL) then
              ! cut time step to minimize distance
              ! integrated in one step
              dt = dt/3.0
@@ -196,12 +200,11 @@ contains
     type(element), intent(in) :: bg
 
     integer :: i, numdt, lt, ns, los, his
-    real(DP) :: pt, px, py, dt
+    real(DP) :: pt, px, py, dt, px0, py0
     real(DP), dimension(2) :: FwdEuler,BkwdEuler,MidPt,Simp,x0
     real(DP), dimension(2) :: vInit,vBkwdEuler,vMidpt,vSimp
-    logical :: sink 
+    logical :: sink, partCut
 
-    sink = .false.
     ns = size(s,dim=1)
     pt = p%ti
     px = p%x
@@ -243,15 +246,18 @@ contains
        Simp(1:2) = x0(:) + dt/6.0*(vinit(:) + 2*vBkwdEuler(:) + 2*vMidpt(:) + vSimp(:))
 
        pt = pt + dt
+       px0 = px
+       py0 = py
        px = Simp(1)
        py = Simp(2)
 
        p%r(i,1:3) = [pt,px,py]
        p%r(i-1,4:5) = vSimp(1:2)
 
-       if (sinkCheck(px,py,c,e)) then
+       ! partCut not used
+       call sinkCheck(px,py,c,e,px0,py0,sink,partCut) 
+       if (sink) then
           write(*,'(A,I0,A,ES13.6E2)') 'particle ',p%id,' entered a sink at t=',pt
-          sink = .true.
           exit rk
        end if
     end do rk
@@ -288,11 +294,10 @@ contains
     type(element), intent(in) :: bg
 
     integer :: i, numdt, lt, los, his, ns
-    real(DP) :: pt, px, py, dt
+    real(DP) :: pt, px, py, dt, px0, py0
     real(DP), dimension(2) :: vel
-    logical :: sink
+    logical :: sink, partCut
 
-    sink = .false.
     ns = size(s,dim=1)
     pt = p%ti
     px = p%x
@@ -317,6 +322,8 @@ contains
 
        vel = L(pt,tee(lt),V([px,py],s(:,lt),los,his,dom,c,e,bg),sol%INVLT)
 
+       px0 = px
+       py0 = py
        px = px + dt*vel(1)
        py = py + dt*vel(2)
        pt = pt + dt
@@ -324,9 +331,10 @@ contains
        p%r(i,1:3) = [pt,px,py]
        p%r(i-1,4:5) = vel(1:2)
 
-       if (sinkCheck(px,py,c,e)) then
+       ! partCut not used
+       call sinkCheck(px,py,c,e,px0,py0,sink,partCut) 
+       if (sink) then
           write(*,'(A,I0,A,ES13.6E2)') 'particle ',p%id,' entered a sink at t=',pt
-          sink = .true.
           exit fe
        end if
     end do fe
@@ -440,7 +448,10 @@ contains
             & (outer(s(:,lt),ploc(:,3)) - spread(loc(:),1,ns))
        if (all(abs(ploc(:,3) - ploc(:,2)) < ITERTOL)) then
           ! compute inverse Laplace transform of optimized location
-          vel = L(t(1),tee(lt),fpv(:,:,3),sol%INVLT)
+         vel = L(t(1),tee(lt),fpv(:,:,3),sol%INVLT)
+
+         ! TODO: need to perform sink check here.
+         
           p%r(1,1) = p%dt
           p%r(1,2:3) = p%r(0,2:3) + p%dt*vel(:)
           print *, 'finished in',i,'iterations of',MAXITER
@@ -525,46 +536,61 @@ contains
   end subroutine reallocate
 
   !###########################################################################
-  ! check if particle has moved into a sink (left flow domain)
+  ! check if particle has moved into a sink (exited flow domain)
 
   ! TODO: modify sinkCheck or create sourceCheck for reverse tracking
-  function sinkCheck(px,py,c,e) result(partEnd)
+  subroutine sinkCheck(px,py,c,e,px0,py0,partEnd,partCut)
     use constants, only : DP, EYE
     use utility, only : acosh
     use type_definitions, only : ellipse, circle
     implicit none
 
-    real(DP), intent(in) :: px,py
+    real(DP), intent(in) :: px,py,px0,py0
     type(circle),  dimension(:), intent(in) :: c
     type(ellipse), dimension(:), intent(in) :: e
-    logical :: partEnd
-    complex(DP) :: pz
-
+    logical, intent(out) :: partEnd, partCut
+    complex(DP) :: pz,pz0,z,z0
+    real(DP), parameter :: ANGLE_TOL = atan(1.0_DP) ! 45 degrees
+    real(DP) :: length
+    integer :: i
+    
     partEnd = .false.
+    partCut = .false.
     pz = cmplx(px,py,DP)
-
-    ! TODO: try to check whether particle passed near a well during last time step
-    ! TODO: then pass back a signal to take a smaller time step
+    pz0 = cmplx(px0,py0,DP)
+    length = abs(pz - pz0)
 
     ! did the particle enter an ibnd==2 circle (well)?
     if (any(c%ibnd == 2 .and. abs(pz - c%z) < (c%r+epsilon(c%r)))) then
        partEnd = .true.
        goto 999
+    else
+      do i = 1, size(c)
+        if (c(i)%ibnd == 2) then
+          z = pz - c(i)%z
+          z0 = pz0 - c(i)%z
+          if (abs(atan2(aimag(z),real(z)) - atan2(aimag(z0),real(z0))) >= ANGLE_TOL) then
+            ! too large an angle swept out wrt source, cut timestep (only applies to MKR)
+            partCut = .true.
+          end if
+        end if
+      end do
     end if
 
     ! did the particle enter an ibnd==2 ellipse (line sink)?
     if (any(e%ibnd == 2 .and. real(acosh((pz-e%z)*exp(-EYE*e%theta)/e%f)) < (e%r+epsilon(e%r)))) then
        partEnd = .true.
        goto 999
+       ! TODO: handle ANGLE_TOL problem for ellipses too
     end if
 
     ! TODO handle flowing into a constant head/flux element (from inside or
     !      from outside, circles or ellipses
 
-    ! TODO dealing with area-sinks is more complex, will be dealt with later
+    ! TODO dealing with distributed sinks (or sources in reverse tracking) is more complex, will be dealt with later
 
 999 continue
-  end function sinkCheck
+  end subroutine sinkCheck
 
 end module particle_integrate
 
