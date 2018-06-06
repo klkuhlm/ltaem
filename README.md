@@ -56,5 +56,3 @@ to provide you with an executable for your platform, if you have
 issues compiling it.  If you run into a bug or missing feature, I
 might be able to accommodate you, but this depends on the amount of
 work required to fix/implement the feature of concern.
-
-August, 2013
