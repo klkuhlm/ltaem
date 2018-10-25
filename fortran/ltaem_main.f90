@@ -102,10 +102,10 @@ program ltaem_main
 
         nt(minlt:maxlt) = 1
 
-        forall(lt = minlt:maxlt)
-           tee(lt) = min(10.0**(lt + MOST_LOGT), maxval(part(:)%tf))*TMAX_MULT
-           s(:,lt) = pvalues(tee(lt),sol%INVLT)
-        end forall
+        do concurrent (lt = minlt:maxlt)
+          tee(lt) = min(10.0**(lt + MOST_LOGT), maxval(part(:)%tf))*TMAX_MULT
+          s(:,lt) = pvalues(tee(lt),sol%INVLT)
+        end do
 
         ! to make it possible for particles / contours to share code...
         maxlt = maxlt + 1

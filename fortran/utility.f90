@@ -185,9 +185,9 @@ contains
        v = [lo]
     else
        dx = (hi-lo)/(num-1)
-       forall (i=1:num) 
-          v(i) = lo + (i-1)*dx
-       end forall
+       do concurrent (i=1:num) 
+         v(i) = lo + (i-1)*dx
+       end do
     end if
   end function linspace
 
@@ -223,11 +223,15 @@ contains
      complex(DP), dimension(size(A,dim=1)-abs(n)) :: d
      integer :: i
      if (n >= 0) then
-        ! diagonal in lower triangle (+) or main diag (0)
-        forall (i=1:size(A,dim=1)-n) d(i) = A(i+n,i)
+       ! diagonal in lower triangle (+) or main diag (0)
+       do concurrent (i=1:size(A,dim=1)-n)
+         d(i) = A(i+n,i)
+       end do
      else
         ! diagonal in upper triangle (-)
-        forall (i=1:size(A,dim=1)+n) d(i) = A(i,i-n)
+       do concurrent (i=1:size(A,dim=1)+n)
+         d(i) = A(i,i-n)
+       end do
      end if
    end function diagonal_z
 
@@ -238,11 +242,15 @@ contains
      real(DP), dimension(size(A,dim=1)-abs(n)) :: d
      integer :: i
      if (n >= 0) then
-        ! diagonal in lower triangle (+) or main diag (0)
-        forall (i=1:size(A,dim=1)-n) d(i) = A(i+n,i)
+       ! diagonal in lower triangle (+) or main diag (0)
+       do concurrent (i=1:size(A,dim=1)-n)
+         d(i) = A(i+n,i)
+       end do
      else
         ! diagonal in upper triangle (-)
-        forall (i=1:size(A,dim=1)+n) d(i) = A(i,i-n)
+       do concurrent (i=1:size(A,dim=1)+n)
+         d(i) = A(i,i-n)
+       end do
      end if
    end function diagonal_d
 

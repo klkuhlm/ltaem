@@ -100,18 +100,18 @@ contains
           if (el%NDiffTerms > 0) then
              select case(el%multiporosityDiffusion)
              case(1)
-                forall (i=1:el%NDiffterms)
-                   ! Warren-Root lambda = kappa/((1-omega)*LD**2)
-                   a(i) = (2*i-1)**2 *PISQ*el%lambda/4.0
-                   pdf(i) = 8*beta/((2*i-1)**2 *PISQ) 
-                end forall
+                do concurrent (i=1:el%NDiffterms)
+                  ! Warren-Root lambda = kappa/((1-omega)*LD**2)
+                  a(i) = (2*i-1)**2 *PISQ*el%lambda/4.0
+                  pdf(i) = 8*beta/((2*i-1)**2 *PISQ) 
+                end do
              case(2)
                 stop 'cylindrical multiporosity matrix diffusion not impelemented yet'
              case(3)
-                forall (i=1:el%NDiffterms)
-                   a(i) = i**2 *PISQ*el%lambda
-                   pdf(i) = 6*beta/(i**2 *PISQ)
-                end forall
+                do concurrent (i=1:el%NDiffterms)
+                  a(i) = i**2 *PISQ*el%lambda
+                  pdf(i) = 6*beta/(i**2 *PISQ)
+                end do
              case default
                 stop 'invalid multiporosity matrix diffusion index'
              end select

@@ -272,12 +272,12 @@ contains
        allocate(work(33*bigN))
     end if
 
-    forall (i = 1:ntot)
+    do concurrent (i = 1:ntot)
        row(i,0) = 1 + sum(row(1:i-1,1))  ! lower bound
        row(i,2) = sum(row(1:i,1))        ! upper bound
        col(i,0) = 1 + sum(col(1:i-1,1))
        col(i,2) = sum(col(1:i,1))
-    end forall
+     end do
 
     if (sol%debug) then
        print *, 'SOL row:'

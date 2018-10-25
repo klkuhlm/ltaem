@@ -117,7 +117,9 @@ contains
     M = mat%M
 
     allocate(v(0:M),vi(0:M))
-    forall (j=0:M) v(j) = cmplx(j,0,DP)
+    do concurrent (j=0:M)
+      v(j) = cmplx(j,0,DP)
+    end do
     where(mod([(j,j=0,M)],2) == 0)
        vi = cmplx(1,0,DP)
     elsewhere
@@ -147,10 +149,14 @@ contains
 
     ! main diagonal/ r counting from 0:m-1 like McLachlan
     Coeff(:,:) = cmplx(0,0,DP)
-    forall(i=1:M-1) Coeff(i+1,i+1) = cmplx((2*i)**2, 0, DP)
+    do concurrent (i=1:M-1)
+      Coeff(i+1,i+1) = cmplx((2*i)**2, 0, DP)
+    end do
 
     ! off diagonals
-    forall(i=1:m, j=1:m, j == i+1 .or. j == i-1) Coeff(i,j) = q
+    do concurrent (i=1:m, j=1:m, j == i+1 .or. j == i-1)
+      Coeff(i,j) = q
+    end do
 
     ! special case
     Coeff(2,1) = 2.0*q
@@ -174,8 +180,12 @@ contains
     Coeff(:,:) = cmplx(0,0,DP)
     Coeff(1,1) = 1.0_DP + q
 
-    forall(i=1:m-1) Coeff(i+1,i+1) = cmplx((2*i+1)**2, 0, DP)
-    forall(i=1:m, j=1:m, j == i+1 .or. j == i-1) Coeff(i,j) = q
+    do concurrent (i=1:m-1)
+      Coeff(i+1,i+1) = cmplx((2*i+1)**2, 0, DP)
+    end do
+    do concurrent (i=1:m, j=1:m, j == i+1 .or. j == i-1)
+      Coeff(i,j) = q
+    end do
 
     call ZGEEV(JOBVL='N', JOBVR='V', N=M, A=Coeff, LDA=M, W=mat%mcn(m+1:2*m),&
          & VL=dc, LDVL=di, VR=mat%A(1:m,0:m-1,1), LDVR=M, &
@@ -197,8 +207,12 @@ contains
     !! (but starting from one, rather than zero)
     Coeff(:,:) = cmplx(0,0,DP)
 
-    forall(i=1:m) Coeff(i,i) = cmplx((2*i)**2, 0, DP)
-    forall(i=1:m, j=1:m, j == i+1 .or. j == i-1) Coeff(i,j) = q
+    do concurrent (i=1:m)
+      Coeff(i,i) = cmplx((2*i)**2, 0, DP)
+    end do
+    do concurrent (i=1:m, j=1:m, j == i+1 .or. j == i-1)
+      Coeff(i,j) = q
+    end do
 
     call ZGEEV(JOBVL='N', JOBVR='V', N=M, A=Coeff, LDA=M, W=mat%mcn(2*m+1:3*m),&
          & VL=dc, LDVL=di, VR=mat%B(1:m,0:m-1,0),LDVR=M,&
@@ -219,8 +233,12 @@ contains
     Coeff(:,:) = cmplx(0,0,DP)
     Coeff(1,1) = 1.0_DP - q
 
-    forall(i=1:m-1) Coeff(i+1,i+1) = cmplx((2*i+1)**2, 0, DP)
-    forall(i=1:m, j=1:m, j == i+1 .or. j == i-1) Coeff(i,j) = q
+    do concurrent (i=1:m-1)
+      Coeff(i+1,i+1) = cmplx((2*i+1)**2, 0, DP)
+    end do
+    do concurrent (i=1:m, j=1:m, j == i+1 .or. j == i-1)
+      Coeff(i,j) = q
+    end do
 
     call ZGEEV(JOBVL='N', JOBVR='V', N=M, A=Coeff, LDA=M, W=mat%mcn(3*m+1:4*m),&
          & VL=dc, LDVL=di, VR=mat%B(1:m,0:m-1,1), LDVR=M,&
@@ -1050,7 +1068,9 @@ contains
     call check_order(n)
 
     ! compute vector of integers counting up
-    forall (j=0:mf%m-1) i(j+1) = j
+    do concurrent (j=0:mf%m-1)
+      i(j+1) = j
+    end do
     v = cmplx(i,0,DP)
 
     ! compute the "sign" vector
@@ -1058,7 +1078,9 @@ contains
     where (mod(i,2) == 1) vi = cmplx(-1,0,DP)
 
     ! indexing vectors based on even/odd-ness of n
-    forall (j=1:size(n)) nn(j) = j
+    do concurrent (j=1:size(n))
+      nn(j) = j
+    end do
 
     EV = pack(nn,mod(n,2) == 0)
     OD = pack(nn,mod(n,2) == 1)
@@ -1082,7 +1104,9 @@ contains
     call check_order(n)
 
     ! compute vector of integers counting up
-    forall (j=0:mf%m-1) i(j+1) = j
+    do concurrent (j=0:mf%m-1)
+      i(j+1) = j
+    end do
     v = cmplx(i,0,DP)
 
     ! compute the "sign" vector
@@ -1094,7 +1118,9 @@ contains
     v2 = sqrtq*exp( z)
 
     ! indexing vectors based on even/odd-ness of n
-    forall (j=1:size(n)) nn(j) = j
+    do concurrent (j=1:size(n))
+      nn(j) = j
+    end do
 
     EV = pack(nn,mod(n,2) == 0)
     OD = pack(nn,mod(n,2) == 1)
@@ -1119,7 +1145,9 @@ contains
     call check_order(n)
 
     ! compute vector of integers counting up
-    forall (j=0:mf%m-1) i(j+1) = j
+    do concurrent (j=0:mf%m-1)
+      i(j+1) = j
+    end do
     v = cmplx(i,0,DP)
 
     ! compute the "sign" vector
@@ -1133,7 +1161,9 @@ contains
     v2 = epz(1,:)*sqrtq
 
     ! indexing vectors based on even/odd-ness of n
-    forall (j=1:size(n)) nn(j) = j
+    do concurrent (j=1:size(n))
+      nn(j) = j
+    end do
 
     EV = pack(nn,mod(n,2) == 0)
     OD = pack(nn,mod(n,2) == 1)

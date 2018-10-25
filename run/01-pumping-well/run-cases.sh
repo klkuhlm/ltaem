@@ -1,5 +1,6 @@
 # general types
-for t in  "contour" "hydrographs" "particle_track" ; do
+# "particle_track"  <<<< this was blowing up and producing gigabytes of output
+for t in  "contour" "hydrographs" ; do
     echo "pumping_well $t output"
     ./ltaem ./pumping_well_${t}.in \
         1> pumping_well_${t}.screen \

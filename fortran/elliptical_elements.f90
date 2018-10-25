@@ -58,7 +58,9 @@ contains
 
     N = e%N
     M = e%M
-    forall (j = 0:N-1) vi(j) = j
+    do concurrent (j = 0:N-1)
+      vi(j) = j
+    end do
 
     if (e%ibnd == 0) then
        nrows = 2*M
@@ -191,7 +193,9 @@ contains
     N = src%N ! number of coefficients in the source elliptical element
     t = trg%id  
     s = src%id  
-    forall (j = 0:N-1) vi(j) = j
+    do concurrent (j = 0:N-1)
+      vi(j) = j
+    end do
 
     if (debug) then
        loM = -999
@@ -336,6 +340,8 @@ contains
                    RMn0(1:N-1,1) = Ko(src%parent%mat(idx), vi(1:N-1), src%r)
                    RMn0(0,1) = 0.0
                    K = src%parent%K
+                else
+                   K = -999  ! compiler complained this might be used uninitialized
                 end if
                 dcemat(1:M,0:N-1) = dce(src%parent%mat(idx), vi(0:N-1), src%G(t)%Pgm(:))
                 dRMn(1:M,0:N-1,0) = dKe(src%parent%mat(idx), vi(0:N-1), src%G(t)%Rgm(:))
@@ -467,7 +473,9 @@ contains
 
     N = e%N
     np = size(p,1)
-    forall (i = 0:N-1) vi(i) = i
+    do concurrent (i = 0:N-1)
+      vi(i) = i
+    end do
 
     if (inside) then
        if (e%match) then
@@ -528,7 +536,9 @@ contains
 
     N = e%N
     np = size(p,1)
-    forall (i = 0:N-1) vi(i) = i
+    do concurrent (i = 0:N-1)
+      vi(i) = i
+    end do
 
     if (inside) then
        if (e%match) then
@@ -599,7 +609,9 @@ contains
     N = e%N
     MS = e%ms
     nmax = ceiling(e%N/2.0)
-    forall (i = 0:max(MS,N)-1) vi(i) = i ! integer vector
+    do concurrent (i = 0:max(MS,N)-1)
+      vi(i) = i ! integer vector
+    end do
     vs = -1.0 ! sign vector
     where (mod(vi,2) == 0) vs = 1.0
 

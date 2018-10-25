@@ -172,9 +172,9 @@ contains
     end if
     
     allocate(calclocs(M),projangles(M))
-    forall (i=1:M)
-       projangles(i) = (-PI + TWOPI/M*(i-1))
-    end forall
+    do concurrent (i=1:M)
+      projangles(i) = (-PI + TWOPI/M*(i-1))
+    end do
     !! TODO: more generally, you might want the ability to bump this inside the element perimeter too...
     safeR = el%r + epsilon(el%r) ! bump calc locations just outside perimeter of element
     

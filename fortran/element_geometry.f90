@@ -65,9 +65,9 @@ contains
        M = c(i)%M
        allocate(c(i)%Pcm(M))
        dth = TWOPI/M
-       forall(j = 1:M)
+       do concurrent(j = 1:M)
           c(i)%Pcm(j) = -PI + dth*(j-1)
-       end forall
+       end do
 
        c(i)%id = i ! global ID
     end do
@@ -75,9 +75,9 @@ contains
        M = e(i)%M
        allocate(e(i)%Pcm(M))
        dth = TWOPI/M
-       forall (j = 1:M)
+       do concurrent (j = 1:M)
           e(i)%Pcm(j) = -PI + dth*(j-1)
-       end forall
+       end do
 
        e(i)%id = i+nc ! global ID
     end do
@@ -242,7 +242,9 @@ contains
        allocate(nondiag(ntot,ntot))
        ! logical mask for non-diagonal elements
        nondiag = .true.
-       forall(i = 1:ntot) nondiag(i,i) = .false.
+       do concurrent(i = 1:ntot)
+         nondiag(i,i) = .false.
+       end do
 
        dom%InclIn = .false. !! dom%InclIn(0:ntot,1:ntot) logical
        dom%InclUp = -huge(1) !! dom%InclUp(1:ntot)       integer
@@ -375,14 +377,16 @@ contains
        ! ## 3.1 remove bigger elements from inside
        ! smaller elements, for the case they are concentric
        allocate(R(ntot), nest(ntot), iv(ntot))
-       forall (i = 1:ntot) iv(i) = i
+       do concurrent (i = 1:ntot)
+         iv(i) = i
+       end do
        R(1:nc) = c(1:nc)%r
        ! TODO : double-check that circle/ellipse can be compared validly in this manner
        R(nc+1:ntot) = e(1:ne)%r  
 
-       forall (i = 1:ntot, j = 1:ntot, i /= j .and. dom%InclIn(i,j).and.dom%InclIn(j,i) .and. R(i) < R(j))
+       do concurrent (i = 1:ntot, j = 1:ntot, i /= j .and. dom%InclIn(i,j).and.dom%InclIn(j,i) .and. R(i) < R(j))
           dom%InclIn(i,j) = .false.
-       end forall
+        end do
 
        deallocate(R)
 
@@ -447,9 +451,9 @@ contains
        end do
 
        ! an element isn't in its own background (by convention)
-       forall (i = 1:ntot)
-          dom%InclBg(i,i) = .false.
-       end forall
+       do concurrent (i = 1:ntot)
+         dom%InclBg(i,i) = .false.
+       end do
 
        deallocate(nest,iv)
 

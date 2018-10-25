@@ -56,7 +56,9 @@ contains
 
     N = c%N
     M = c%M
-    forall (j = 0:N-1) vi(j) = real(j,DP)
+    do concurrent (j = 0:N-1)
+      vi(j) = real(j,DP)
+    end do
     
     if (c%ibnd == 0) then
        ! matching
@@ -195,7 +197,9 @@ contains
     N = src%N ! number of coefficients in the source circular element
     t = trg%id
     s = src%id
-    forall (j = 0:N-1) vi(j) = real(j,DP)
+    do concurrent (j = 0:N-1)
+      vi(j) = real(j,DP)
+    end do
 
     if (debug) then
        loM = -999
@@ -525,8 +529,10 @@ contains
 
     N = c%N
     np = size(p,1)
-    forall (i = 0:N-1) vr(i) = real(i,DP)
-
+    do concurrent (i = 0:N-1)
+      vr(i) = real(i,DP)
+    end do
+    
     if (inside) then
        if (c%ibnd == 0) then
           n0 = 2*N ! inside of matching circle
@@ -582,7 +588,9 @@ contains
     N = c%N
     np = size(p,1)
 
-    forall (i = 0:N-1) vr(i) = real(i,DP)
+    do concurrent (i = 0:N-1)
+      vr(i) = real(i,DP)
+    end do
 
     if (inside) then
        if (c%match) then
