@@ -66,7 +66,7 @@ program ltaem_main
   complex(DP), allocatable :: qp(:,:) ! Laplace-space flowrate into/out of element
   logical :: fail
 
-  ! constants that shouldn't be adjusted too often
+  ! constants?
   real(DP), parameter :: MOST_LOGT = 0.999, TMAX_MULT = 2.0_DP  
 
   intrinsic :: get_command_argument
