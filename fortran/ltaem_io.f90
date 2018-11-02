@@ -36,7 +36,7 @@ contains
   subroutine readInput(s,dom,bg,c,e,p)
 
     use constants, only : DP, lenFN, PI
-    use type_definitions, only : solution, particle, domain, element, circle, ellipse
+    use type_definitions, only : solution, particle, domain, element, circle, ellipse, explain_type
     use, intrinsic :: iso_fortran_env, only : stdout => output_unit, stderr => error_unit
 
     type(solution), intent(inout) :: s
@@ -46,6 +46,7 @@ contains
     type(circle),   intent(out), allocatable :: c(:)
     type(ellipse),  intent(out), allocatable :: e(:)
 
+    type(explain_type) :: explain
     character(4) :: chint
     character(20), dimension(3) :: fmt
     character(1024) :: buf 
@@ -53,7 +54,7 @@ contains
     character(lenFN) :: circleFname, ellipseFname, particleFname
     integer :: ierr, j, ntot, nC, nE, ln = 0, sln,s1,s2,slen, idx
     real(DP) :: tmp
-    character(55) :: explain
+    character(55) :: explain_txt
 
     ! unit numbers for input/output files
     integer, parameter :: UINPUT = 15, UECHO = 16, UCIRC = 22, UELIP = 33, UPAR = 44 
@@ -94,7 +95,7 @@ contains
     backspace(UINPUT) ! optional input parameter (read first input line again)
     read(UINPUT,*,iostat=ierr) s%calc, s%particle, s%contour, s%deriv, s%Qcalc, s%output, s%debug
     if (ierr /= 0) then
-       s%debug = .false.
+      s%debug = .false.
     end if
     
     if ((.not. s%particle) .and. (.not. s%contour)) then
@@ -244,7 +245,7 @@ contains
     write(UECHO,'(L1,1X,A)') s%timeseries, '  ||  compute solution for timeseries? (few locations, many times)'
     write(UECHO,'(L1,1X,A)') s%deriv, '  ||  compute log(t) derivative of heads?'
     write(UECHO,'(L1,1X,A)') s%qcalc, '  ||  compute element boundary flux? (saved to .Q file)'
-    write(UECHO,'(I0,1X,A)') s%output,trim(s%outputExplain(s%OEMap(s%output)))//&
+    write(UECHO,'(I0,1X,A)') s%output,trim(explain%output(s%OEMap(s%output)))//&
          & '  ||    output flag (1:2 gnuplot/matlab contours, '//&
          & '10:11 gnuplot time series w/wo vel, 12: matlab time series, '//&
          &'20:21 pathline/streakline gnuplot)'
@@ -252,24 +253,24 @@ contains
     write(UECHO,'(A)') '=============== BACKGROUND PROPERTIES ==============='
     write(UECHO,'(3(ES12.5,1X),A)') bg%por, bg%k, bg%ss,'  ||   AQUIFER properties : '//&
          &'porosity, hydraulic conductivity, specific storage'
-    write(UECHO,'(I0,1X,A,1X,3(ES12.5,1X),A)') bg%leakFlag, trim(bg%leakFlagExplain(bg%leakFlag)), &
+    write(UECHO,'(I0,1X,A,1X,3(ES12.5,1X),A)') bg%leakFlag, trim(explain%leakFlag(bg%leakFlag)), &
          & bg%aquitardK, bg%aquitardSs, bg%aquitardb, &
          & '  ||   adjacent AQUITARD properties : leaky flag, hydraulic condictivity, specific storage, thickness'
 
     if (bg%unconfinedFlag) then
-       explain = '(unconfined aquifer ON)'
+       explain_txt = '(unconfined aquifer ON)'
     else
-       explain = '(unconfined aquifer OFF)'
+       explain_txt = '(unconfined aquifer OFF)'
     end if
-    write(UECHO,'(L1,1X,A,1X,3(ES12.5,1X),A)') bg%unconfinedFlag, trim(explain), bg%Sy, bg%kz, bg%b, &
+    write(UECHO,'(L1,1X,A,1X,3(ES12.5,1X),A)') bg%unconfinedFlag, trim(explain_txt), bg%Sy, bg%kz, bg%b, &
          & '  ||   UNCONFINED aquifer properties : unconfined?, specific yield, vertical hydraulic conductivity, thickness'
 
     if (bg%dualPorosityFlag) then
-       explain = '(dual porosity aquifer ON)'
+       explain_txt = '(dual porosity aquifer ON)'
     else
-       explain = '(dual porosity aquifer OFF)'
+       explain_txt = '(dual porosity aquifer OFF)'
     end if
-    write(UECHO,'(L1,1X,A,1X,2(ES12.5,1X),I0,1X,ES12.5,1X,I0,A)') bg%dualPorosityFlag, trim(explain), &
+    write(UECHO,'(L1,1X,A,1X,2(ES12.5,1X),I0,1X,ES12.5,1X,I0,A)') bg%dualPorosityFlag, trim(explain_txt), &
          & bg%matrixSs, bg%lambda, bg%multiporosityDiffusion, bg%kappa, bg%NDiffTerms, &
          & '  ||   DUAL POROSITY aquifer properties : dual porosity?, matrix specific storage, matrix/fracture lambda, '//&
          & 'multiporosity diffusion index, matrix/fracture K ratio, number terms in diffusion series'
@@ -1217,13 +1218,14 @@ contains
   end subroutine readInput
 
   subroutine read_time_behaviors(UIN,UECH,el,j,ln,tp,area) 
-    use type_definitions, only : time
+    use type_definitions, only : time, explain_type
     use, intrinsic :: iso_fortran_env, only : stderr => error_unit
     integer, intent(in) :: UIN, UECH, ln, j
     type(time), intent(inout) :: el
     character(7), intent(in) :: tp
     logical, intent(in) :: area
 
+    type(explain_type) :: explain
     character(46) :: lfmt = '(I0,1X,    (ES12.5,1X),A,    (ES12.5,1X),A,I0)'
     character(8) :: lincon
     integer :: ierr, tsize
@@ -1247,7 +1249,7 @@ contains
               stop 2202
            end if
            write(UECH,'(I0,2(1X,ES12.5),A,I0)') el%AreaTime, el%ATPar(:),&
-                &'  ||  Area time behavior '//trim(el%TimeExplain(el%areaTime))//&
+                &'  ||  Area time behavior '//trim(explain%time(el%areaTime))//&
                 &', par1, par2 for '//tp,j
         else
            ! piecewise-constant/linear time behavior           
@@ -1275,7 +1277,7 @@ contains
               stop 2205
            end if
            write(UECH,'(I0,2(1X,ES12.5),A,I0)') el%BdryTime, el%BTPar(:),&
-                &'  ||  Bdry time behavior '//trim(el%timeExplain(el%BdryTime))//&
+                &'  ||  Bdry time behavior '//trim(explain%time(el%BdryTime))//&
                 &', par1, par2 for '//tp,j
         else
            tsize = mod(abs(el%BdryTime),100)
@@ -1354,12 +1356,13 @@ contains
   !******************************************************
   subroutine writeResults(s,p)
 
-    use type_definitions, only : solution, particle
+    use type_definitions, only : solution, particle, explain_type
     use, intrinsic :: iso_fortran_env, only : stdout => output_unit, stderr => error_unit
 
     type(solution), intent(inout) :: s
     type(particle), dimension(:), intent(inout) :: p
 
+    type(explain_type) :: explain
     character(4), dimension(2) :: chint
     integer :: i, j, k, nt
 
@@ -1613,7 +1616,7 @@ contains
        write (20,'(A)') '# 20 LT-AEM particle tracking output  -*-auto-revert-*-'
        write (20,'(A,I0,A)') '# ',size(p,dim=1),' particles'
        do i = 1, size(p,dim=1)
-          write (20,'(A,I0,A)') '# particle ',i,' '//trim(p(i)%schemeExplain(p(i)%int))
+          write (20,'(A,I0,A)') '# particle ',i,' '//trim(explain%particle(p(i)%int))
           write (20,'(A)')   &
           & '#     time              x                    y                  '//&
           &'velx                 vely '

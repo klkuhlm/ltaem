@@ -26,20 +26,19 @@ module type_definitions
 
   private
   public :: domain, time, element, match_result, matching, circle, ellipse, &
-       & INVLT, solution, particle, mathieu
-  public :: print_match_result
+       & INVLT, solution, particle, mathieu, explain_type, print_match_result
 
   type :: mathieu
      ! things required to compute mathieu functions
-     integer :: M = -999,  buffer = -999
-     complex(DP) :: q = (-999.,-999.)
+     integer :: M = -9999,  buffer = -9999
+     complex(DP) :: q = (-9.9D+20,-9.9D+20)
      complex(DP), allocatable :: mcn(:), A(:,:,:), B(:,:,:)  ! 4*M; 1:M, 0:M-1, 0:1
   end type mathieu
 
   type :: domain
      ! number of each type of element
      ! 1=circles (wells as special case), 2=ellipses (lines as special case)
-     integer, dimension(2) :: num = [-999,-999]
+     integer, dimension(2) :: num = [-9999,-9999]
 
      ! index of parent element
      integer, allocatable :: InclUp(:)
@@ -49,6 +48,47 @@ module type_definitions
      logical, allocatable :: InclIn(:,:), InclBg(:,:)
   end type domain
 
+  type :: explain_type
+    character(55), dimension(10) :: time = [&
+         & '[step on @ tpar(1)]                                    ',&
+         & '[finite width pulse; tpar(1:2) = on/off times]         ',&
+         & '[instantaneous pulse @ tpar(1)]                        ',&
+         & '[stairs; stair width=tpar(1), off @ tpar(2)]           ',&
+         & '[+only square wave; tpar(1)=period/2, off @ tpar(2)]   ',&
+         & '[cos(tpar(1)*t); on @ tpar(2)]                         ',&
+         & '[+only triangular wave; tpar(1)=period/4, on @ tpar(2)]',&
+         & '[+/- square wave; tpar(1)=period/4, on @ tpar(2)]      ',&
+         & '[piecewise-constant rate]                              ',&
+         & '[piecewise-linear rate]                                ']
+    
+    character(39), dimension(0:3) :: leakFlag = &
+         & ['(no leakage)                           ',&
+         &  '(no-drawdown condition beyond aquitard)',&
+         &  '(no-flow condition beyond aquitard)    ',&
+         &  '(infinitely thick aquitard)            ']
+    
+    character(24), dimension(-1:2) :: ibnd = [&
+         & '(specified total head)  ',&
+         & '(matching)              ',&
+         & '(specified total flux)  ',&
+         & '(specified element flux)']
+    
+    character(34), dimension(7) :: output = [&
+         & '(gnuplot contour map)             ',&
+         & '(matlab contour map)              ',&
+         & '(gnuplot time series w/ velocity) ',&
+         & '(inverse time series w/o velocity)',&
+         & '(gnuplot time series w/o velocity)',&
+         & '(gnuplot pathlines)               ',&
+         & '(gnuplot streakline)              ']
+    
+    character(39), dimension(4) :: particle = [&
+         & 'Runge-Kutta-Merson (4th order adaptive)',&
+         & 'Runge-Kutta  (4th order)               ',&
+         & 'Analytical   (root-finding)            ',&
+         & 'Forward Euler  (1st order)             ']
+  end type explain_type
+  
   type :: time
      ! all elements inherit the time behavior from this type
 
@@ -73,20 +113,8 @@ module type_definitions
      !                tpar(n+2:2*n+1) = strength at each of n linear segment
      ! (is multiplied by constant strength too -- you probably want to set that to unity)
 
-     character(55), dimension(10) :: TimeExplain = [&
-          & '[step on @ tpar(1)]                                    ',&
-          & '[finite width pulse; tpar(1:2) = on/off times]         ',&
-          & '[instantaneous pulse @ tpar(1)]                        ',&
-          & '[stairs; stair width=tpar(1), off @ tpar(2)]           ',&
-          & '[+only square wave; tpar(1)=period/2, off @ tpar(2)]   ',&
-          & '[cos(tpar(1)*t); on @ tpar(2)]                         ',&
-          & '[+only triangular wave; tpar(1)=period/4, on @ tpar(2)]',&
-          & '[+/- square wave; tpar(1)=period/4, on @ tpar(2)]      ',&
-          & '[piecewise-constant rate]                              ',&
-          & '[piecewise-linear rate]                                ']
-
      ! type of time behavior for AREA/Boundary Head/Flux (see above)
-     integer :: AreaTime = -999, BdryTime = -999
+     integer :: AreaTime = -9999, BdryTime = -9999
 
      ! parameters related to different time behaviors (on, off, etc)
      real(DP), allocatable :: ATPar(:), BTPar(:)
@@ -95,37 +123,32 @@ module type_definitions
   type, extends(time) :: element
 
      ! global id for the current element
-     integer :: id = -999
+     integer :: id = -9999
 
      ! porosity, constant area source term
      ! main aquifer hydraulic conductivity and Ss for element
-     real(DP) :: por = -999., k = -999., Ss = -999., b = -999., alpha = -999., T = -999.
+     real(DP) :: por = -9.9D+20, k = -9.9D+20, Ss = -9.9D+20, b = -9.9D+20, alpha = -9.9D+20, T = -9.9D+20
 
      ! leaky-related (adjoining aquitard/aquifer parameters)
      ! 0= no leakage
      ! 1= case I, no-drawdown condition at top of aquitard
      ! 2= case II, no-flow condition at top of aquitard
      ! 3= aquitard thickness -> infinity (no bc)
-     integer :: leakFlag  = -999
-     character(39), dimension(0:3) :: leakFlagExplain = &
-          & ['(no leakage)                           ',&
-          &  '(no-drawdown condition beyond aquitard)',&
-          &  '(no-flow condition beyond aquitard)    ',&
-          &  '(infinitely thick aquitard)            ']
-     real(DP) :: aquitardK = -999., aquitardSs = -999., aquitardb = -999.
+     integer :: leakFlag  = -9999
+     real(DP) :: aquitardK = -9.9D+20, aquitardSs = -9.9D+20, aquitardb = -9.9D+20
 
      ! unconfined-related (flag, specific yield, and vertical K)
      logical ::  unconfinedFlag = .false.
-     real(DP) :: Sy = -999., Kz = -999.
+     real(DP) :: Sy = -9.9D+20, Kz = -9.9D+20
 
      ! dual-porosity related (flag, matrix storativity, matrix/fracture exchange param)
      logical :: dualPorosityFlag = .false.
      integer :: multiporosityDiffusion = 0 ! 1=slab, 2=cylinder, 3=spherical
-     real(DP) :: matrixSs = -999., lambda = -999., kappa = -999.
-     integer :: NDiffterms = -999
+     real(DP) :: matrixSs = -9.9D+20, lambda = -9.9D+20, kappa = -9.9D+20
+     integer :: NDiffterms = -9999
 
      ! specified value across area of element (including background)
-     real(DP) :: areaQ = -999.
+     real(DP) :: areaQ = -9.9D+20
 
      ! whether to calculate solution (Helmholtz eqn) inside element
      ! and whether to compute storage (using mass conservation ODE) inside element
@@ -137,7 +160,7 @@ module type_definitions
 
      ! structure containing matrices of mathieu function parameters
      type(mathieu), allocatable :: mat(:)
-     integer :: ms = -999 ! not used in circle
+     integer :: ms = -9999 ! not used in circle
 
   end type element
 
@@ -150,39 +173,34 @@ module type_definitions
      ! structure for storing intermediate results
      complex(DP), allocatable :: LHS(:,:), RHS(:)
   end type match_result
-
+  
   type, extends(element) :: matching
      ! number of FS terms, number of matching points on circles/ellipses
      ! for lines/wells can be one (e.g., borehole storage) or zero (known Q)
-     integer :: n = -999, m = -999
+     integer :: n = -9999, m = -9999
 
      ! type of element: -1=specified head TOTAL, 0=match, +1=specified flux TOTAL
      !                  -2=specified head ELEMENT, +2=specified flux ELEMENT
      ! -2 doesn't really make sense from a physical perspective : not implemented
-     character(24), dimension(-1:2) :: ibndExplain = [&
-          & '(specified total head)  ',&
-          & '(matching)              ',&
-          & '(specified total flux)  ',&
-          & '(specified element flux)']
-     integer :: ibnd = -999
+     integer :: ibnd = -9999
 
      ! whether inclusion is a matching(T) or specified(F) inclusion
      logical :: match = .false.
 
      ! specified value along boundary area of element
-     real(DP) :: bdryQ = -999.
+     real(DP) :: bdryQ = -9.9D+20
 
      ! dimensionless skin at boundary of element
-     real(DP) :: dskin = -999.
+     real(DP) :: dskin = -9.9D+20
 
      ! location of center of element
-     real(DP) :: x = -999., y =-999.
-     complex(DP) :: z = (-999.,-999.)
+     real(DP) :: x = -9.9D+20, y =-9.9D+20
+     complex(DP) :: z = (-9.9D+20,-9.9D+20)
 
      ! "radius" of element (eta for ellipses)
      ! semi-focal distance (zero for circles)
      ! angle of rotation (zero for circles)
-     real(DP) :: r = -999., f = -999., theta = -999.
+     real(DP) :: r = -9.9D+20, f = -9.9D+20, theta = -9.9D+20
 
      ! vector of matching location angles
      ! theta for circles, psi for ellipses
@@ -210,12 +228,12 @@ module type_definitions
      ! Inverse Laplace Transform parameters
 
      ! abcissa of convergence, LT tolerance
-     real(DP) :: alpha = -999., tol = -999.
+     real(DP) :: alpha = -9.9D+20, tol = -9.9D+20
 
      ! number of Fourier series terms
-     integer :: M = -999
+     integer :: M = -9999
   end type INVLT
-
+  
   ! things relating to the numerical solution, independent from flow elements
   type, extends(INVLT) :: solution
 
@@ -223,7 +241,7 @@ module type_definitions
 
      ! integrate particle lines vs. calculate at set locations/times
      logical :: particle = .false.
-     integer :: nPart = -999
+     integer :: nPart = -9999
 
      ! compute flowrates across each element for contour/time series?
      logical :: Qcalc = .false.
@@ -232,11 +250,11 @@ module type_definitions
      logical :: skipDump = .false.
 
      ! total number of laplace parameters
-     integer :: totalnP = -999
+     integer :: totalnP = -9999
 
      ! number of particle timesteps to skip when plotting streaklines
      ! (only one value for all particles)
-     integer :: streakSkip = -999
+     integer :: streakSkip = -9999
 
      ! calculate contours (thru space) vs. calculate time series
      logical :: contour = .false.
@@ -263,24 +281,16 @@ module type_definitions
      ! 20= pathline Gnuplot (column of times, particles separated by blank lines);
      ! 21= streakline Gnuplot (each block a requested time, each row a particle);
 
-     character(34), dimension(7) :: outputExplain = [&
-          & '(gnuplot contour map)             ',&
-          & '(matlab contour map)              ',&
-          & '(gnuplot time series w/ velocity) ',&
-          & '(inverse time series w/o velocity)',&
-          & '(gnuplot time series w/o velocity)',&
-          & '(gnuplot pathlines)               ',&
-          & '(gnuplot streakline)              ']
      integer, dimension(21) :: OEMap = [1,2,0,0,0,0,0,0,0,&
                                       & 3,4,5,0,0,0,0,0,0,0,&
                                       & 6,7]
 
      ! aquitardLeak and unconfined
-     integer :: output = -999, aquitardLeak = -999, unconfined= -999
+     integer :: output = -9999, aquitardLeak = -9999, unconfined= -9999
 
      ! x-spacing vector, y-spacing vector, time vector
-     integer :: nx = -999, ny = -999, nt = -999
-     real(DP) :: xshift = -999., yshift = -999.
+     integer :: nx = -9999, ny = -9999, nt = -9999
+     real(DP) :: xshift = -9.9D+20, yshift = -9.9D+20
      real(DP), allocatable :: x(:), y(:), t(:)
      character(32), allocatable :: obsname(:)
 
@@ -291,7 +301,7 @@ module type_definitions
      real(DP),    allocatable :: h(:,:,:), v(:,:,:,:), dh(:,:,:), Q(:,:), dQ(:,:)
 
   end type solution
-
+  
   ! particle related parameters (one for each particle)
   !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   type :: particle
@@ -300,26 +310,20 @@ module type_definitions
      logical :: forward = .true.
 
      ! starting x&y location, inital & final times
-     real(DP) :: x = -999., y = -999., ti = -999., tf = -999.
+     real(DP) :: x = -9.9D+20, y = -9.9D+20, ti = -9.9D+20, tf = -9.9D+20
 
      ! which integration scheme to use (for each particle)
      ! 1 = Runge-Kutta-Merson (4th order adaptive)
      ! 2 = Runge-Kutta        (4th order)
      ! 3 = Analytical        (root-finding method)
      ! 4 = Fwd Euler          (1st order)
-     integer :: int = -999, id = -999
+     integer :: int = -9999, id = -9999
      
-     character(39), dimension(4) :: schemeExplain = [&
-          & 'Runge-Kutta-Merson (4th order adaptive)',&
-          & 'Runge-Kutta  (4th order)               ',&
-          & 'Analytical   (root-finding)            ',&
-          & 'Forward Euler  (1st order)             ']
-
      ! error tolerance, minimum stepsize, and max step length for rkm
-     real(DP) :: tol = -999., mindt = -999., maxL = -999.
+     real(DP) :: tol = -9.9D+20, mindt = -9.9D+20, maxL = -9.9D+20
 
      ! step size for other integration schemes (initial stepsize for rkm)
-     real(DP) :: dt = -999.
+     real(DP) :: dt = -9.9D+20
 
      ! particle starts inside a constant head or constant flux inclusion?
      logical :: InclIn = .false.
@@ -330,7 +334,7 @@ module type_definitions
      real(DP), allocatable :: r(:,:)
 
      ! number of time steps actuall used (some algorithms are adaptive)
-     integer :: numt = -999
+     integer :: numt = -9999
   end type particle
 
 contains
