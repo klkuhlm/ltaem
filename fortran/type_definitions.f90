@@ -49,6 +49,7 @@ module type_definitions
   end type domain
 
   type :: explain_type
+    ! explanation text (only used in ltaem_io.f90)
     character(55), dimension(10) :: time = [&
          & '[step on @ tpar(1)]                                    ',&
          & '[finite width pulse; tpar(1:2) = on/off times]         ',&
@@ -122,6 +123,8 @@ module type_definitions
 
   type, extends(time) :: element
 
+     logical :: debug = .false.
+    
      ! global id for the current element
      integer :: id = -9999
 
@@ -305,7 +308,8 @@ module type_definitions
   ! particle related parameters (one for each particle)
   !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   type :: particle
-
+     logical :: debug = .false.
+    
      ! is particle tracked backwards or forwards?
      logical :: forward = .true.
 

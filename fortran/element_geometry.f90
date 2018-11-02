@@ -272,6 +272,11 @@ contains
 
           ! TODO: steps 1 and 2 should be done by solving the equations for the circles/ellipses
           ! but it is easier to do it with a discrete representation of the boundaries 
+
+          ! this implements it in matlab (circle-circle, circle-ellipse, and ellipse-ellipse)
+          ! https://www.mathworks.com/matlabcentral/fileexchange/28318-conics-intersection
+          ! C++ implementation
+          ! https://bitbucket.org/pierluigi/conicsintersection
           
           ! took care of the easy case (circle-on-circle), but more difficult circle-ellipse,
           ! and ellipse-ellipse cases remain.

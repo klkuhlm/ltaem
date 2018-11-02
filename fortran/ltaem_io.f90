@@ -96,6 +96,7 @@ contains
     read(UINPUT,*,iostat=ierr) s%calc, s%particle, s%contour, s%deriv, s%Qcalc, s%output, s%debug
     if (ierr /= 0) then
       s%debug = .false.
+      
     end if
     
     if ((.not. s%particle) .and. (.not. s%contour)) then
@@ -1215,6 +1216,19 @@ contains
     endif
     close(UINPUT) ! main input file
     close(UECHO) ! input echo file
+
+    if (s%debug) then
+      bg%debug = .true.
+      c%debug = .true.
+      e%debug = .true.
+      p%debug = .true.
+    else
+      bg%debug = .true.
+      c%debug = .true.
+      e%debug = .true.
+      p%debug = .true.
+    end if
+    
   end subroutine readInput
 
   subroutine read_time_behaviors(UIN,UECH,el,j,ln,tp,area) 
