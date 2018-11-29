@@ -62,7 +62,7 @@ contains
        ! either 0 or 3 are acceptable return codes
        if (.not.(ierr == 0 .or. ierr == 3)) then
           write(stderr,*) 'CBESK_VECTZ error (numzero=',numzero,', ierr=',ierr,', j=',j,&
-               & ', num=',num,') z(j)=',z(j),'z',z
+               & ', num=',num,') z(j)=',z(j)
           !call abort() ! to dump for checking backtrace in gdb
           !stop 222
        end if
@@ -95,7 +95,7 @@ contains
        ! either 0 or 3 are acceptable return codes
        if (.not.(ierr == 0 .or. ierr == 3)) then
           write(stderr,*) 'CBESI_VECTZ error (numzero=',numzero,', ierr=',ierr,&
-               &', j=',j, ', num=',num,') z(j)=',z(j),'z',z
+               &', j=',j, ', num=',num,') z(j)=',z(j)
           !call abort()
           !stop 223
        end if
