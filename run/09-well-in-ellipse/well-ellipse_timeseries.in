@@ -10,7 +10,7 @@ DUMMY OBS NAME
 -0.25 0.25 0.75 2.0  :: y
 LOGVEC -4.0 6.0 :: t
 1.0D-16  1.0D-15  10  :: alpha, tolerance, M
-0  well-ellipse_circles.in    :: number of circular elements, circle data file
-1  20 well-ellipse_ellipses.in    :: number of elliptical elements, ellipse MS, ellipse data file
+0  well-ellipse_circles.cin    :: number of circular elements, circle data file
+1  20 well-ellipse_ellipses.ein    :: number of elliptical elements, ellipse MS, ellipse data file
 not_used   ::  particle data file
 

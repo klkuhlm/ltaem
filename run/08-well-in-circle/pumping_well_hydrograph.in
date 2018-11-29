@@ -10,7 +10,7 @@ LINVEC 0.25 1.5             :: x
 LINVEC 0.25 1.5             :: y
 LOGVEC -5.0 3.0           :: t
 1.0D-16  1.0D-15  10          :: alpha, tolerance, M
-2  pumping_well_circles.in  :: number of circular elements, circle data file
+2  pumping_well_circles.cin  :: number of circular elements, circle data file
 0  20 not_used              :: number of elliptical elements, ellipse MS, ellipse data file
 not_used                    ::  particle data file
 
