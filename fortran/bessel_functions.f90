@@ -57,6 +57,10 @@ contains
     complex(DP), dimension(0:num-1) :: tmp
     integer :: numzero, ierr, j
 
+    if (any(abs(z)/2.0_DP < spacing(0.0_DP))) then
+      print *, 'AGH! ZERO BESSELK_0 input',size(z)
+    end if
+    
     do j = 1,size(z,dim=1)
        call cbesk(z=z(j), fnu=0.0_DP, kode=1, n=num, cy=tmp(0:num-1), nz=numzero, ierr=ierr)
        ! either 0 or 3 are acceptable return codes
@@ -76,6 +80,7 @@ contains
     complex(DP), intent(in) :: z
     integer, intent(in) :: num
     complex(DP), dimension(0:num-1) :: K
+    if (abs(z)/2.0_DP < spacing(0.0_DP)) print *, 'AGH! ZERO BESSELK input',z
     K = sum( besk_vectz([z],num), dim=1)
   end function besk_zscal
 
@@ -158,7 +163,7 @@ contains
     integer, intent(in) :: n
     complex(DP), intent(out), dimension(size(z,dim=1),0:n-1) :: K, KD
     complex(DP), dimension(size(z,dim=1),0:max(n,2)) :: Ktmp
-    integer :: nz, mn
+    integer :: nz, mn, j
     nz = size(z,dim=1)
     mn = max(n,2)
 

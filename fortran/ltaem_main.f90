@@ -117,16 +117,15 @@ program ltaem_main
         lo = 1
         logt(:) = log10(sol%t(:))
         minlt =   floor(minval(logt(:)))
-        ! add epsilon to ensure is bumped up to next log cycle if on fence
-        maxlt = ceiling(maxval(logt(:)) + epsilon(1.0))
+        maxlt = ceiling(maxval(logt(:)))
 
         allocate(s(2*sol%m+1,minlt:maxlt-1), nt(minlt:maxlt-1), tee(minlt:maxlt-1))
-
+        
         logcycles: do lt = minlt, maxlt-1
-           ! number of times falling in this logcycle
+          ! number of times falling in this logcycle
            nt(lt) = count(logt >= real(lt,DP) .and. logt < real(lt+1,DP))
            if (nt(lt) == 0) then
-              cycle logcycles
+             cycle logcycles
            end if
            
            ! T=2*max time in this logcycle

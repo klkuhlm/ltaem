@@ -270,7 +270,7 @@ contains
     !! calculation point is outside all inclusions
     if (in == 0) then
        do j = 1,nc
-          if (dom%InclUp(j) == 0) then  ! circle is also in background
+         if (dom%InclUp(j) == 0) then  ! circle is also in background
              dH(1:np,1:2) = circle_deriv(p,c(j),lo,hi,Rgp(j),Pgp(j),.false.)
              ! project onto X and Y
              v(1:np,1) = v(:,1) + cos(Pgp(j))*dH(:,1) - sin(Pgp(j))*dH(:,2)/Rgp(j) ! x

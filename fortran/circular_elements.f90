@@ -603,7 +603,7 @@ contains
        dBRgp(1:np,0:N-1) = spread(kap(:),2,N)*dBRgp(:,:)
        BR0(1:np,0:N-1) = bI(c%r*kap(:),N)
     else
-       n0 = 1
+      n0 = 1
        kap(1:np) = kappa(p(:),c%parent)
        call dBK(Rgp*kap(:),N,BRgp(1:np,0:N-1),dBRgp(1:np,0:N-1))
        dBRgp(1:np,0:N-1) = spread(kap(1:np),2,N)*dBRgp(:,:)
