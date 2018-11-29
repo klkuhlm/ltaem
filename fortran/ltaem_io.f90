@@ -88,7 +88,8 @@ contains
     read(UINPUT,*,iostat=ierr) s%calc, s%particle, s%contour, s%deriv, s%Qcalc, s%output; ln=ln+1
     if (ierr /= 0) then
       write(stderr,*) 'ERROR: line ',ln,' (flags: calc, particle, contour, deriv, Qcalc, output) of ',s%infname
-      write(stderr,*) 'WARNING: may have specified a circle or ellipse input file as main input file on command line'
+      write(stderr,*) 'WARNING: may have specified a secondary (i.e., circle, ellipse, or particle) '//&
+           &'input file as main input file on command line'
       stop 110
     end if
 

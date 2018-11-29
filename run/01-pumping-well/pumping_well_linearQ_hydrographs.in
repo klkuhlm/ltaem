@@ -10,7 +10,7 @@ NW LOC|NE LOC|SE LOC|SW LOC|W LOC|N LOC|E LOC|S LOC
  0.25  0.25 -0.25 -0.25  0.0   0.25  0.0  -0.25   ::    y 
 LINVEC 0.1 7.0 :: t 
 1.0D-16  1.0D-15  150  :: alpha, tolerance, M
-1  pumping_well_circles_linearQ.in     :: number of circular elements, circle data file
+1  pumping_well_circles_linearQ.cin     :: number of circular elements, circle data file
 0  20 not_used    :: number of elliptical elements, ellipse data file
 not_used   ::  particle data file
 
