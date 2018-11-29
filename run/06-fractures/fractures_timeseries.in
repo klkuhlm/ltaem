@@ -10,7 +10,7 @@ FRAC01|FRAC12|FRAC23
  0.1  0.6 0.75  :: y
 LOGVEC -12.0 2.0 :: t
 1.0D-16  1.0D-15  10  :: alpha, tolerance, M
-0  fractures_circles.in    :: number of circular elements, circle data file
-4  20 fractures_ellipses.in    :: number of elliptical elements, background ellipse MS, ellipse data file
+0  fractures_circles.cin    :: number of circular elements, circle data file
+4  20 fractures_ellipses.ein    :: number of elliptical elements, background ellipse MS, ellipse data file
 not_used   ::  particle data file
 

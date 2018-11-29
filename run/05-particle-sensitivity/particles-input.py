@@ -21,7 +21,7 @@ for i in range(ny):
 
         for k,(dx,dy) in enumerate(zip([0.0,delta,0.0],[0.0,0.0,delta])):
             
-            fh = open('particles.in','w')
+            fh = open('particles.pin','w')
             fh.write("""1  1     :: #particles, streakSkip
 T        :: forward tracking?
 1        :: integration scheme (1=RKM,2=RK,3=analytic,4=fwd Euler)

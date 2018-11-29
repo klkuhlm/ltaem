@@ -10,7 +10,7 @@ LOC SW|LOC SE|LOC NE|LOC NW
 0.1 0.1 0.9 0.9   ::    y Vector
 LOGVEC -4.0 2.0   :: t
 1.0D-16  1.0D-15  10  :: alpha, tolerance, M
-2  well_single_circle_circles.in     :: number of circular elements, circle data file
+2  well_single_circle_circles.cin     :: number of circular elements, circle data file
 0  20 not_used    :: number of elliptical elements, ellipse data file
 not_used   ::  particle data file
 

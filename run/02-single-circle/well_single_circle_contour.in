@@ -10,7 +10,7 @@ linvec  0.0  1.1    ::    x Vector
 linvec  0.0  1.1    ::    y Vector
 logvec  -4.0  2.0   ::    t Vector
 1.0D-16  1.0D-15  10  :: alpha, tolerance, M
-2  well_single_circle_circles.in     :: number of circular elements, circle data file
+2  well_single_circle_circles.cin     :: number of circular elements, circle data file
 0  20 not_used    :: number of elliptical elements, ellipse data file
 not_used   ::  particle data file
 
