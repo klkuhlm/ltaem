@@ -163,7 +163,7 @@ contains
     integer, intent(in) :: n
     complex(DP), intent(out), dimension(size(z,dim=1),0:n-1) :: K, KD
     complex(DP), dimension(size(z,dim=1),0:max(n,2)) :: Ktmp
-    integer :: nz, mn, j
+    integer :: nz, mn
     nz = size(z,dim=1)
     mn = max(n,2)
 
