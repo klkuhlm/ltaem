@@ -1,4 +1,4 @@
-T  F  T  T  F  1  T ::  calc?, particle?, contour?, log(t)_deriv?, Qcalc?, output_flag, (optional debug flag)
+T  F  T  T  F  1  F ::  calc?, particle?, contour?, log(t)_deriv?, Qcalc?, output_flag, (optional debug flag)
 well-ellipse_contour.dat
 1.0D0   1.0D-3   1.0D-5       ::  por, k, Ss 
 0   1.0D0   1.0D-4   1.0D0   :: LEAKY:      leakFlag, K2, Ss2, b2
