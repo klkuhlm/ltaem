@@ -39,7 +39,7 @@ directory as blas.a and lapack.a, or the Makefile needs to be changed
 to point to them.
 
 A recent version of gfortran is required (>= 5.0), because of the
-use of the ieee_arithmatic intrinsic Fortran2003 module.
+use of the ieee_arithmetic intrinsic Fortran2003 module.
 
 With the two libraries in place, compilation should work with just the
 simple "make" command from the source directory.  This copies the
