@@ -27,15 +27,14 @@ False  ::  DUAL PORO?
 0.0  :: area source strength
 0.0 0.0 0.0 0.0 -8.82 +8.82
 1 0.0 0.0 : 1 area time flag
-1 0.0 0.0 : 1 bdry time flag
 1 0.0 0.0 : 2 area time flag
-1 0.0 0.0 : 2 bdry time flag
 1 0.0 0.0 : 3 area time flag
-1 0.0 0.0 : 3 bdry time flag
 1 0.0 0.0 : 4 area time flag
-1 0.0 0.0 : 4 bdry time flag
 1 0.0 0.0 : 5 area time flag
-2 1.0D-4 2.6065D+2 : 5 bdry time flag
 1 0.0 0.0 : 6 area time flag
+1 0.0 0.0 : 1 bdry time flag
+1 0.0 0.0 : 2 bdry time flag
+1 0.0 0.0 : 3 bdry time flag
+1 0.0 0.0 : 4 bdry time flag
+2 1.0D-4 2.6065D+2 : 5 bdry time flag
 2 1.0D-4 2.6065D+2 : 6 bdry time flag
-
