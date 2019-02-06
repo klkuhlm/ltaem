@@ -239,6 +239,7 @@ contains
     type(element), intent(in) :: bg
     complex(DP), dimension(size(p,1),2) :: v, dH
 
+    real(DP), parameter :: SMALL = 1.0E-8
     real(DP) :: hsq
     real(DP), dimension(sum(dom%num)) :: Rgp, Pgp
     type(element), pointer :: elin => null()
@@ -256,8 +257,8 @@ contains
 
     ! eliminate divide by zero or infinite BF errors when calculation point
     ! is exactly at the center of an element
-    where(abs(Rgp) < epsilon(0.0))
-       Rgp = epsilon(0.0)
+    where(abs(Rgp) < SMALL)
+       Rgp = Rgp + 2*SMALL
     end where
 
     v(1:np,1:2) = cmplx(0,0,DP)
@@ -393,6 +394,9 @@ contains
     use geomConv, only : xy2cA, xy2eA
     use, intrinsic :: iso_fortran_env, only : stderr => error_unit
 
+    use ieee_arithmetic, only : ieee_is_nan
+    integer :: i
+    
     complex(DP), intent(in) :: Z
     type(circle),  dimension(:), intent(in) :: c
     type(ellipse), dimension(:), intent(in) :: e
@@ -406,7 +410,7 @@ contains
     real(DP) :: minr
 
     integer :: nc, ne, ntot, j, count, idx
-
+    
     nc = dom%num(1)
     ne = dom%num(2)
     ntot = nc+ne
@@ -421,6 +425,15 @@ contains
 
     ! components of vector from center of circle to observation point
     Zgp(1:nc) = xy2cA(Z,c(:))
+    do i=1,nc
+      if (ieee_is_nan(real(Zgp(i))) .or. ieee_is_nan(aimag(Zgp(i)))) then
+        print *, 'GEOMETRY FAILURE at location Z=',Z
+        print *, 'Zgp:',Zgp
+        call abort()
+        stop 666
+      end if
+    end do
+    
     Rgp(1:nc) = real(Zgp(1:nc))   ! r
     Pgp(1:nc) = aimag(Zgp(1:nc)) ! theta
     do j = 1,nc

@@ -572,7 +572,11 @@ contains
     use time_mod, only : timef
     use type_definitions, only : circle
     use bessel_functions, only : bK, bI, dbk, dbi
-
+    
+    use ieee_arithmetic, only : ieee_is_nan
+    integer :: j
+    complex(DP) :: tmp
+    
     complex(DP), dimension(:), intent(in) :: p
     type(circle), intent(in) :: c
     integer, intent(in) :: lo,hi
@@ -604,10 +608,19 @@ contains
        BR0(1:np,0:N-1) = bI(c%r*kap(:),N)
     else
       n0 = 1
-       kap(1:np) = kappa(p(:),c%parent)
-       call dBK(Rgp*kap(:),N,BRgp(1:np,0:N-1),dBRgp(1:np,0:N-1))
-       dBRgp(1:np,0:N-1) = spread(kap(1:np),2,N)*dBRgp(:,:)
-       BR0(1:np,0:N-1) =  bK(c%r*kap(:),N)
+      kap(1:np) = kappa(p(:),c%parent)
+      do j=1,np
+        tmp = Rgp*kap(j)
+        if (ieee_is_nan(real(tmp)) .or. ieee_is_nan(aimag(tmp))) then
+          print *, 'DEBUG1:(p)',p(j)
+          print *, 'DEBUG2:(kap)',kap(j)
+          print *, 'DEBUG3:(Rgp)',Rgp
+        end if
+      end do
+      
+      call dBK(Rgp*kap(:),N,BRgp(1:np,0:N-1),dBRgp(1:np,0:N-1))
+      dBRgp(1:np,0:N-1) = spread(kap(1:np),2,N)*dBRgp(:,:)
+      BR0(1:np,0:N-1) =  bK(c%r*kap(:),N)
     end if
 
     aa(1:np,0:N-1) = c%coeff(lo:hi,n0:n0+N-1)
