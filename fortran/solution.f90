@@ -320,7 +320,7 @@ contains
        call ZGELS(TRANSA='N', M=bigM, N=bigN, NRHS=1, A=A(:,:), LDA=bigM, B=b(:), &
             & LDB=bigM, WORK=work, LDWORK=size(work), INFO=ierr)
        if (ierr /= 0) then
-          write(*,'(A,I0,"(",ES10.3,",",ES10.3,")")') 'ZGELS error: ',ierr,' p:',p
+          write(*,'(A,I0,"(",ES10.3,",",ES10.3,")")') 'ZGELS error: ',ierr,p
           stop 999
        else
        end if

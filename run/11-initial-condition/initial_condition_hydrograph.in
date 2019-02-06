@@ -1,0 +1,17 @@
+True  False  False  True  True 11  :: calc?, particle?, contour?, log(t)_deriv?, Qcalc?, output_flag
+pumping_well_hydrograph.dat    :: output filename
+1.0D0   2.0D-2   1.0D-5     :: por, k, Ss
+0   1.0D0   1.0D-4   1.0D0  :: LEAKY: leakFlag, K2, Ss2, b2
+False 1.5D-1  2.0D0  1.0D0   :: UNCONFINED: unconfinedFlag?, Sy, Kz, b
+False 1.0D-5  2.0D0 1  1.0D-5  1  :: MultiPORO  Flag?, matrixSs, lambda, diffusion idx, Dm, NDiffTerms
+2  2  300                   :: nx, ny, nt
+OBS1|OBS2o
+LINVEC 0.25 1.5             :: x 
+LINVEC 0.25 1.5             :: y
+LOGVEC -5.0 3.0           :: t
+1.0D-16  1.0D-15  10          :: alpha, tolerance, M
+2  pumping_well_circles.cin  :: number of circular elements, circle data file
+0  20 not_used              :: number of elliptical elements, ellipse MS, ellipse data file
+not_used                    ::  particle data file
+
+     
