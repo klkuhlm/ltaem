@@ -97,7 +97,6 @@ contains
     read(UINPUT,*,iostat=ierr) s%calc, s%particle, s%contour, s%deriv, s%Qcalc, s%output, s%debug
     if (ierr /= 0) then
       s%debug = .false.
-      
     end if
     
     if ((.not. s%particle) .and. (.not. s%contour)) then
@@ -252,6 +251,7 @@ contains
          & '10:11 gnuplot time series w/wo vel, 12: matlab time series, '//&
          &'20:21 pathline/streakline gnuplot)'
     write(UECHO,'(2A)') trim(s%outFname),'  ||    output file name'
+    write(UECHO,'(L1,1X,A)') s%debug, '  || debugging output'
     write(UECHO,'(A)') '=============== BACKGROUND PROPERTIES ==============='
     write(UECHO,'(3(ES12.5,1X),A)') bg%por, bg%k, bg%ss,'  ||   AQUIFER properties : '//&
          &'porosity, hydraulic conductivity, specific storage'
@@ -381,10 +381,17 @@ contains
     end if
 
     if (any(s%t <= 0.0)) then
-       write(stderr,*) 'ERROR: value (line ',ln,') require t>0',s%t
+       write(stderr,*) 'ERROR: value (line ',ln,') requires t>0',s%t
        stop 2085
     end if
 
+    if (s%nt >= 2) then
+      if (any((s%t(2:s%nt) - s%t(1:s%nt-1)) <= 0.0)) then
+         write(stderr,*) 'ERROR: value (line ',ln,') requires monotonically increasing times',s%t
+         stop 2086
+      end if
+    end if
+    
     if (.not. s%particle) then
        fmt(1) = '(    (ES12.5,1X),A) '
        write(UECHO,'(A)') '=============== CALCULATION LOCATIONS/TIMES ==============='
@@ -1219,15 +1226,16 @@ contains
     close(UECHO) ! input echo file
 
     if (s%debug) then
+      ! solution struct not always passed into all routines
       bg%debug = .true.
       c%debug = .true.
       e%debug = .true.
       p%debug = .true.
     else
-      bg%debug = .true.
-      c%debug = .true.
-      e%debug = .true.
-      p%debug = .true.
+      bg%debug = .false.
+      c%debug = .false.
+      e%debug = .false.
+      p%debug = .false.
     end if
     
   end subroutine readInput
