@@ -6,7 +6,7 @@ ln -sf ../ltaem .
 ./run-cases.sh
 cd ..
 
-for d in {01a-,02-,03-,04-,05-,06-,07-,08-,09-,10-,11-}; do
+for d in {01a-,02-,03-,04-,06-,07-,08-,09-,10-,11-}; do
     cd ${d}*
     echo "now in $(pwd)"
     ln -sf ../ltaem .
@@ -17,4 +17,10 @@ for d in {01a-,02-,03-,04-,05-,06-,07-,08-,09-,10-,11-}; do
     cd ..
 done
 
-            
+cd 05-particle-sensitivity
+echo "now in $(pwd)"
+ln -sf ../ltaem .
+python particle-input.py > python_particle_input_screen.out
+python plot-results.py > python_plot_results_screen.out
+cd ..
+
