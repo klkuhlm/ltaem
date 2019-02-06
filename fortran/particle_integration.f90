@@ -75,8 +75,10 @@ contains
        ! will particle pass specified end time during this step?
        call trackDone(p%forward,pt,dt,p%tf,done,enddt) 
        if (done) then
-!!$          print *, 'p%forward,pt,dt,p%tf,done,enddt',p%forward,pt,dt,p%tf,done,enddt
-          if (enddt < spacing(dt)) then
+         if (p%debug) then
+           print *, 'p%forward,pt,dt,p%tf,done,enddt',p%forward,pt,dt,p%tf,done,enddt
+         end if
+         if (enddt < spacing(dt)) then
              ! close enough
              write(*,'(A,I0,2(A,ES13.6E2))') &
                   & 'particle ',p%id,' reached final time:',pt,'=',p%tf
@@ -172,7 +174,9 @@ contains
           end if
 
           if (abs(dt) <= p%mindt) then
-             write(*,'(3(A,ES13.6E2))') 'min step; dt=',dt,' error=',error, ' pt=',pt
+             if (p%debug) then
+               write(*,'(3(A,ES13.6E2))') 'min step; dt=',dt,' error=',error, ' pt=',pt
+             end if
              dt = p%mindt
              if (.not. p%forward) dt = -dt
           end if
@@ -318,7 +322,9 @@ contains
 
        ! full step forward Euler
        call getsrange(pt,lo,ns,los,his,lt)
-       !!!print *, 'FE t>:',pt,' lo>:',lo,' ns>:',ns,' los<:',los,' his<:',his,' lt<:',lt
+       if (p%debug) then
+         print *, 'FE t>:',pt,' lo>:',lo,' ns>:',ns,' los<:',los,' his<:',his,' lt<:',lt
+       end if
 
        vel = L(pt,tee(lt),V([px,py],s(:,lt),los,his,dom,c,e,bg),sol%INVLT)
 
@@ -550,7 +556,7 @@ contains
     type(ellipse), dimension(:), intent(in) :: e
     logical, intent(out) :: partEnd, partCut
     complex(DP) :: pz,pz0,z,z0
-    real(DP), parameter :: ANGLE_TOL = atan(1.0_DP) ! 45 degrees
+    real(DP), parameter :: ANGLE_TOL = atan(1.0_DP)/2.0 ! 45/2 degrees
     real(DP) :: length
     integer :: i
     
