@@ -1,6 +1,7 @@
 #!/bin/bash
 
 cd 01-pumping-well
+echo "now in $(pwd)"
 ln -sf ../ltaem .
 ./run-cases.sh
 cd ..
