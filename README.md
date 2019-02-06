@@ -38,8 +38,8 @@ libraries for blas and lapack should be linked or copied to the source
 directory as blas.a and lapack.a, or the Makefile needs to be changed
 to point to them.
 
-A recent version of gfortran is required (>= 4.6.1), due to a bug in
-previous releases of this compiler regarding extended fortran types.
+A recent version of gfortran is required (>= 5.0), because of the
+use of the ieee_arithmatic intrinsic Fortran2003 module.
 
 With the two libraries in place, compilation should work with just the
 simple "make" command from the source directory.  This copies the
