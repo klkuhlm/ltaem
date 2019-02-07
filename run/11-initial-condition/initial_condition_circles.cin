@@ -1,5 +1,5 @@
-1  20  20  1  :: N      # el 1 is pumping well, el 2 is larger circle, el 3 is smaller circle inside el2
-1  50  50  1  :: M      # el 2 has non-zero initial condition, el 3 has zero initial condition
+1  50  50  1  :: N      # el 1 is pumping well, el 2 is larger circle, el 3 is smaller circle inside el2
+1 100 100  1  :: M      # el 2 has non-zero initial condition, el 3 has zero initial condition
 2  0   0   2  :: ibnd
 F  T   T   F  :: calcin?
 F  F   F   F  :: storin?
@@ -24,11 +24,11 @@ F  F  F F  :: dual porosity flag
 1.0E-5   :: Dm
 1   :: NDiffTerms
 1.0    :: dimensionless skin
-0.0  -2.0  0.0  0.0 :: area source strength   # source term is -\Phi_0/alpha
+0.0  -2.0  1.0  0.0 :: area source strength   # source term is -\Phi_0/alpha
 -0.02  0.0  0.0  0.02  :: boundary source strength
 1  0.0  0.0  :: area1 time flag, tpar1, tpar2
 3  0.0  0.0  :: area2 time flag, tpar1, tpar2       # 3 is "instantaeous in time" at t=0 for initial condition
-1  0.0  0.0  :: area3 time flag, tpar1, tpar2
+3  0.0  0.0  :: area3 time flag, tpar1, tpar2
 1  0.0  0.0  :: area4 time flag, tpar1, tpar2
 1  0.0  0.0  :: boundary1 time flag, tpar1, tpar2
 1  0.0  0.0  :: boundary2 time flag, tpar1, tpar2
