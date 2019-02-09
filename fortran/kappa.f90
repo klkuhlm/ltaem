@@ -32,7 +32,7 @@ module kappa_mod
 
 contains
 
-  function kappa_pVect(p,el) result(q)
+  function kappa_pVect(p,el,sq_arg) result(q)
     use constants, only : DP, PISQ
     use type_definitions, only : element
     use utility, only : tanh
@@ -40,13 +40,21 @@ contains
     complex(DP), intent(in), dimension(:) :: p
     type(element), intent(in) :: el ! circle, ellipse, or background
     complex(DP), dimension(size(p)) :: q
-
+    logical, intent(in), optional :: sq_arg
+    logical :: squared
+    
     integer :: np, i
     complex(DP), allocatable ::  kap2(:), exp2z(:)
 
     real(DP) :: omega, beta
     real(DP), allocatable :: a(:), pdf(:)
 
+    if (.not. present(sq_arg)) then
+      squared = .false.
+    else
+      squared = sq_arg
+    end if
+    
     np = size(p)
 
     !! standard confined definition
@@ -141,19 +149,29 @@ contains
     end if
 
     !! sources additive under square root
-    q = sqrt(q)
-
+    if (.not. squared) then
+      q = sqrt(q)
+    end if
+    
   end function kappa_pVect
 
   !! scalar version useful in matching
-  function kappa_pscal(p,el) result(q)
+  function kappa_pscal(p,el,sq_arg) result(q)
     use constants, only : DP
     use type_definitions, only : element
     complex(DP), intent(in) :: p
     type(element), intent(in) :: el
+    logical, optional, intent(in) :: sq_arg
     complex(DP) :: q
-
-    q = sum(kappa_pVect([p],el))
+    logical :: squared
+    
+    if (.not. present(sq_arg)) then
+      squared = .false.
+    else
+      squared = sq_arg
+    end if
+    
+    q = sum(kappa_pVect([p],el,squared))
 
   end function kappa_pscal
 

@@ -148,12 +148,12 @@ contains
     select case(c%ibnd)
     case(-1)
        ! put specified head on RHS
-       r%RHS(1:M) = timef(p,c%time,.false.)*c%bdryQ
+       r%RHS(1:M) = timef(p,c%time,.false.) * c%bdryQ
     case(0)
-       ! put constant area source term effects (from inside the element) on RHS
-       ! TODO : handle area source in background
-       r%RHS(1:M) = -timef(p,c%time,.true.)*c%areaQ*c%Ss/kappa(p,c%element)**2
-       r%RHS(M+1:2*M) = 0.0 ! constant area source has no flux effects
+      ! put constant area source term effects (from inside the element) on RHS
+      ! TODO : handle area source in background
+      r%RHS(1:M) = -(timef(p,c%time,.true.)  * c%areaQ * c%Ss / (c%K * kappa(p,c%element,.true.))) ! optional 3rd argument -> kappa**2
+      r%RHS(M+1:2*M) = 0.0 ! constant area source has no flux effects
     case(1)
        ! put specified flux effects on RHS
        ! TODO : check addition of aquifer thickness to denominator

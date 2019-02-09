@@ -132,7 +132,7 @@ contains
 
        ! apply potential source term on inside of element
        ! <<<openmp is having trouble here, sometimes I get invalid memory access errors>>>
-       H(1:np) = H(:) - elin%areaQ*elin%Ss*timef(p,elin%time,.true.)/kappa(p,elin)**2
+       H(1:np) = H(:) - elin%areaQ*elin%Ss*timef(p,elin%time,.true.)/kappa(p,elin,.true.) ! optional 3rd argument -> kappa**2
        H(1:np) = H(:)/elin%K ! convert to head
        
        elin => null()
