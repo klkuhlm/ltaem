@@ -1,6 +1,6 @@
 True  False  True  True  True 1 False  :: calc?, particle?, contour?, log(t)_deriv?, Qcalc?, output_flag (DEBUG, optional)
 initial_condition_contour.dat    :: output filename
-1.0   0.02   1.0E-3     :: por, k, Ss
+1.0   0.02   0.01     :: por, k, Ss
 0   1.0   1.0E-3   1.0  :: LEAKY: leakFlag, K2, Ss2, b2
 False 0.15  2.0    1.0   :: UNCONFINED: unconfinedFlag?, Sy, Kz, b
 False 1.0E-5  2.0 1  1.0E-5  1  :: MultiPORO  Flag?, matrixSs, lambda, diffusion idx, Dm, NDiffTerms
@@ -8,7 +8,7 @@ False 1.0E-5  2.0 1  1.0E-5  1  :: MultiPORO  Flag?, matrixSs, lambda, diffusion
 DUMMY OBS NAME  
 LINVEC -3.0 3.0             :: x 
 LINVEC -3.0 3.0             :: y
-LOGVEC -4.0 0.0           :: t
+LOGVEC -4.0 -1.0           :: t
 1.0E-16  1.0E-15  10          :: alpha, tolerance, M
 4  initial_condition_circles.cin  :: number of circular elements, circle data file
 0  20 not_used              :: number of elliptical elements, ellipse MS, ellipse data file

@@ -1,5 +1,5 @@
-1  50  50  1  :: N      # el 1 is pumping well, el 2 is larger circle, el 3 is smaller circle inside el2
-1 100 100  1  :: M      # el 2 has non-zero initial condition, el 3 has zero initial condition
+1  20  20  1  :: N      # el 1 is pumping well, el 2 is larger circle, el 3 is smaller circle inside el2
+1  50  50  1  :: M      # el 2 has non-zero initial condition, el 3 has zero initial condition
 2  0   0   2  :: ibnd
 F  T   T   F  :: calcin?
 F  F   F   F  :: storin?
@@ -7,7 +7,7 @@ F  F   F   F  :: storin?
 1.5    0.0   0.0   0.0   :: x0
 0.0    0.0   0.0   0.0   :: y0
 0.02   0.02  0.02  0.02   :: K
-1.0E-3  1.0E-3  1.0E-3  1.0E-3  :: Ss
+0.1  0.1  0.1  0.1  :: Ss
 1.0    1.0   1.0  1.0    :: porosity
 0  0  0  0 :: leaky type flag
 1.0  :: K2

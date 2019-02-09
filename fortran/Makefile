@@ -24,13 +24,13 @@ EXTERNAL=cbessel.o
 KKLOW=type_definitions.o utility.o bessel_functions.o mathieu_functions2.o
 
 ####### use system libraries 
-##LAPACKLIB=-llapack
-##BLASLIB=-lblas
+LAPACKLIB=-llapack
+BLASLIB=-lblas
 
 ## if no system libraries put statically linked libraries in this directory
-FBLASLAPACKDIR=/home/klkuhlm/src/petsc/tgcc-c-debug/externalpackages/fblaslapack-3.4.2
-LAPACKLIB=${FBLASLAPACKDIR}/libflapack.a
-BLASLIB=${FBLASLAPACKDIR}/libfblas.a
+#FBLASLAPACKDIR=/home/klkuhlm/src/petsc/tgcc-c-debug/externalpackages/fblaslapack-3.4.2
+#LAPACKLIB=${FBLASLAPACKDIR}/libflapack.a
+#BLASLIB=${FBLASLAPACKDIR}/libfblas.a
 
 ##### use Intel math kernel library
 ##MKLROOT=/opt/intel/mkl/lib/intel64
@@ -63,8 +63,8 @@ SRCS=$(OBJS:.o=.f90) $(MAIN:.o=.f90)
 ######################################################
 
 #### gfortran >= 4.6.1 #################
-##F90= gfortran
-F90=/usr/local/stow/gcc-trunk/bin/gfortran
+F90= gfortran
+##F90=/usr/local/stow/gcc-trunk/bin/gfortran
 OMP=-fopenmp
 CPP=-cpp
 ###DFLAGS=-O2 -march=native -fprofile-generate -flto
