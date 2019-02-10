@@ -152,7 +152,8 @@ contains
     case(0)
       ! put constant area source term effects (from inside the element) on RHS
       ! TODO : handle area source in background
-      r%RHS(1:M) = -(timef(p,c%time,.true.)  * c%areaQ * c%Ss / (c%K * kappa(p,c%element,.true.))) ! optional 3rd argument -> kappa**2
+      ! optional 3rd kappa argument -> kappa**2
+      r%RHS(1:M) = -(timef(p,c%time,.true.) * c%areaQ / (c%alpha * kappa(p,c%element,.true.))) 
       r%RHS(M+1:2*M) = 0.0 ! constant area source has no flux effects
     case(1)
        ! put specified flux effects on RHS
@@ -288,6 +289,9 @@ contains
                 r%LHS(1:M,loN:loN+N-1) = Bn(:,0:N-1)/spread(Bn0(0:N-1),1,M)*cmat(:,0:N-1)/src%parent%K ! a_n
                 r%LHS(1:M,loN+N:hiN)   = Bn(:,1:N-1)/spread(Bn0(1:N-1),1,M)*smat(:,1:N-1)/src%parent%K ! b_n
 
+                !r%RHS(1:M) = -(timef(p,src%parent%time,.true.) * src%parent%areaQ / &
+                !     &(src%parent%alpha * kappa(p,src%element,.true.)))
+                
              else
                 ! can target element "see" the inside of the source element?
                 ! i.e., is the source element the parent?
@@ -314,6 +318,11 @@ contains
                 ! head effects on other element
                 r%LHS(1:M,loN:loN+N-1) = -Bn(:,0:N-1)/spread(Bn0(0:N-1),1,M)*cmat(:,0:N-1)/src%K ! c_n
                 r%LHS(1:M,loN+N:hiN)   = -Bn(:,1:N-1)/spread(Bn0(1:N-1),1,M)*smat(:,1:N-1)/src%K ! d_n
+
+                ! head effects of parent, if that element has area source term
+                r%RHS(1:M) = (timef(p,src%time,.true.) * src%areaQ / (src%alpha * kappa(p,src%element,.true.)))
+                r%RHS(M+1:2*M) = 0.0
+                
              end if
 
              if (src%ibnd == 2 .and. (dom%inclBg(s,t) .or. dom%inclIn(t,s))) then
