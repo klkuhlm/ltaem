@@ -28,9 +28,10 @@ F    :: dual porosity flag
 0.0  0.0  0.02 -0.02 :: boundary source strength
 3  0.0  0.0  :: area1 time flag, tpar1, tpar2       # 3 is "instantaeous in time" at t=0 for initial condition
 3  0.0  0.0  :: area2 time flag, tpar1, tpar2      # 3 
-1  0.0  0.0  :: area3 time flag, tpar1, tpar2
-1  0.0  0.0  :: area4 time flag, tpar1, tpar2
 1  0.0  0.0  :: boundary1 time flag, tpar1, tpar2
 1  0.0  0.0  :: boundary2 time flag, tpar1, tpar2
+
 1  0.0  0.0  :: boundary3 time flag, tpar1, tpar2
 1  0.0  0.0  :: boundary4 time flag, tpar1, tpar2
+1  0.0  0.0  :: area3 time flag, tpar1, tpar2
+1  0.0  0.0  :: area4 time flag, tpar1, tpar2

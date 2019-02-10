@@ -106,7 +106,8 @@ contains
     end if
 
     allocate(r%LHS(nrows,ncols), r%RHS(nrows))
-
+    r%RHS = cmplx(0,0,DP)
+    
     cmat(1:M,0:N-1) = cos(outer(c%Pcm(:),vi(0:N-1)))
     smat(1:M,1:N-1) = sin(outer(c%Pcm(:),vi(1:N-1)))
 
@@ -148,23 +149,23 @@ contains
     select case(c%ibnd)
     case(-1)
        ! put specified head on RHS
-       r%RHS(1:M) = timef(p,c%time,.false.) * c%bdryQ
+       r%RHS(1:M) = r%RHS(1:M) + timef(p,c%time,.false.) * c%bdryQ
     case(0)
       ! put constant area source term effects (from inside the element) on RHS
       ! TODO : handle area source in background
       ! optional 3rd kappa argument -> kappa**2
-      r%RHS(1:M) = -(timef(p,c%time,.true.) * c%areaQ / (c%alpha * kappa(p,c%element,.true.))) 
-      r%RHS(M+1:2*M) = 0.0 ! constant area source has no flux effects
+      r%RHS(1:M) = r%RHS(1:M) - (timef(p,c%time,.true.) * c%areaQ / (c%alpha * kappa(p,c%element,.true.))) 
+      !r%RHS(M+1:2*M) = 0.0 ! constant area source has no flux effects
     case(1)
        ! put specified flux effects on RHS
        ! TODO : check addition of aquifer thickness to denominator
-       r%RHS(1:M) = timef(p,c%time,.false.)*c%bdryQ/(2.0*PI*c%r*c%b)
+       r%RHS(1:M) = r%RHS(1:M) + timef(p,c%time,.false.)*c%bdryQ/(2.0*PI*c%r*c%b)
     case(2)
        if (c%StorIn) then
           ! effects of wellbore storage and skin on finite-radius well
           ! effects of other elements on this one show up in off-diagonals
           r%LHS(1:M,1) = storwell(c,p)*r%LHS(1:M,1)
-          r%RHS(1:M) = timef(p,c%time,.false.)*c%bdryQ/(PI*c%r*c%parent%T)
+          r%RHS(1:M) = r%RHS(1:M) + timef(p,c%time,.false.)*c%bdryQ/(PI*c%r*c%parent%T)
        else
           continue ! no wellbore storage; nothing to do, since matrix is zero-sized
        end if
@@ -289,8 +290,9 @@ contains
                 r%LHS(1:M,loN:loN+N-1) = Bn(:,0:N-1)/spread(Bn0(0:N-1),1,M)*cmat(:,0:N-1)/src%parent%K ! a_n
                 r%LHS(1:M,loN+N:hiN)   = Bn(:,1:N-1)/spread(Bn0(1:N-1),1,M)*smat(:,1:N-1)/src%parent%K ! b_n
 
-                !r%RHS(1:M) = -(timef(p,src%parent%time,.true.) * src%parent%areaQ / &
-                !     &(src%parent%alpha * kappa(p,src%element,.true.)))
+                ! head effects due to area source term of inner child on outer parent
+                r%RHS(1:M) = r%RHS(1:M) + (timef(p,src%parent%time,.true.) * src%parent%areaQ / &
+                     &(src%parent%alpha * kappa(p,src%parent,.true.)))
                 
              else
                 ! can target element "see" the inside of the source element?
@@ -320,8 +322,7 @@ contains
                 r%LHS(1:M,loN+N:hiN)   = -Bn(:,1:N-1)/spread(Bn0(1:N-1),1,M)*smat(:,1:N-1)/src%K ! d_n
 
                 ! head effects of parent, if that element has area source term
-                r%RHS(1:M) = (timef(p,src%time,.true.) * src%areaQ / (src%alpha * kappa(p,src%element,.true.)))
-                r%RHS(M+1:2*M) = 0.0
+                r%RHS(1:M) = r%RHS(1:M) + (timef(p,src%time,.true.) * src%areaQ / (src%alpha * kappa(p,src%element,.true.)))
                 
              end if
 
@@ -343,7 +344,7 @@ contains
 
                    ! specified flux (finite-radius well no storage)
                    ! save head effects of well onto RHS
-                   r%RHS(1:M) = factor*well(src,p)*r%LHS(1:M,1)
+                   r%RHS(1:M) = r%RHS(1:M) + factor*well(src,p)*r%LHS(1:M,1)
                    r%LHS(1:M,1) = 0.0 ! LHS matrix re-allocated to zero size below
                 end if
              end if
