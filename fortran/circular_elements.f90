@@ -106,6 +106,7 @@ contains
     end if
 
     allocate(r%LHS(nrows,ncols), r%RHS(nrows))
+    r%LHS = cmplx(0,0,DP)
     r%RHS = cmplx(0,0,DP)
     
     cmat(1:M,0:N-1) = cos(outer(c%Pcm(:),vi(0:N-1)))
@@ -290,9 +291,9 @@ contains
                 r%LHS(1:M,loN:loN+N-1) = Bn(:,0:N-1)/spread(Bn0(0:N-1),1,M)*cmat(:,0:N-1)/src%parent%K ! a_n
                 r%LHS(1:M,loN+N:hiN)   = Bn(:,1:N-1)/spread(Bn0(1:N-1),1,M)*smat(:,1:N-1)/src%parent%K ! b_n
 
-                ! head effects due to area source term of inner child on outer parent
-                r%RHS(1:M) = r%RHS(1:M) + (timef(p,src%parent%time,.true.) * src%parent%areaQ / &
-                     &(src%parent%alpha * kappa(p,src%parent,.true.)))
+                ! head effects due to area source term of inner source on outer target
+                r%RHS(1:M) = r%RHS(1:M) + (timef(p,trg%time,.true.) * trg%areaQ / &
+                     &(trg%alpha * kappa(p,trg%element,.true.)))
                 
              else
                 ! can target element "see" the inside of the source element?
@@ -322,7 +323,7 @@ contains
                 r%LHS(1:M,loN+N:hiN)   = -Bn(:,1:N-1)/spread(Bn0(1:N-1),1,M)*smat(:,1:N-1)/src%K ! d_n
 
                 ! head effects of parent, if that element has area source term
-                r%RHS(1:M) = r%RHS(1:M) + (timef(p,src%time,.true.) * src%areaQ / (src%alpha * kappa(p,src%element,.true.)))
+                r%RHS(1:M) = r%RHS(1:M) + (timef(p,src%time,.true.) * src%areaQ / (src%alpha * kap**2))
                 
              end if
 
