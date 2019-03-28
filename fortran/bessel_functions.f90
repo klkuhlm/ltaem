@@ -58,7 +58,7 @@ contains
     integer :: numzero, ierr, j
 
     if (any(abs(z)/2.0_DP < spacing(0.0_DP))) then
-      print *, 'AGH! ZERO BESSELK_0 input',size(z)
+      print *, 'AGH! ZERO BESSELK input',size(z)
     end if
     
     do j = 1,size(z,dim=1)
