@@ -11,8 +11,6 @@ double _Complex arb_K(double gcc_nu, double _Complex gcc_z, int kode)
   
   // built-in double precision complex
   double _Complex gcc_K;
-
-  int kode;
   
   acb_init(acb_res);
   acb_init(acb_nu);
@@ -60,8 +58,6 @@ double _Complex arb_I(double gcc_nu, double _Complex gcc_z, int kode)
 
   // built-in double precision complex
   double _Complex gcc_I;
-
-  int kode;
 
   acb_init(acb_res);
   acb_init(acb_nu);

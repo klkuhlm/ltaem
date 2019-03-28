@@ -1,8 +1,9 @@
 Module Complex_Bessel
 
-  use, intrinsic :: iso_c_binding, only : C_DOUBLE_COMPLEX, C_DOUBLE, C_INT
-  use constants, only :: DP
-  
+  ! provide interface to arb modified bessel function routines
+  ! using interface like amos routines
+
+  use constants, only : DP
   implicit none
 
   private
@@ -11,29 +12,26 @@ Module Complex_Bessel
   ! interfaces to c wrappers
   
   interface
-     function arb_K(nu,z,kode) bind(c,name="arb_K") result(K)
-       use, intrinsic :: iso_c_binding, only : C_DOUBLE_COMPLEX, C_DOUBLE
+     function arb_K(nu,z,scaled) bind(c,name="arb_K") result(K)
+       use, intrinsic :: iso_c_binding, only : C_DOUBLE_COMPLEX, C_DOUBLE, C_INT
        complex(C_DOUBLE_COMPLEX), intent(in), value :: z
        real(C_DOUBLE), intent(in), value :: nu
-       integer(C_INT), intent(in), value :: kode
+       integer(C_INT), intent(in), value :: scaled
        complex(C_DOUBLE_COMPLEX) :: K
      end function arb_K
   end interface
-
   interface
-     function arb_I(nu,z,kode) bind(c,name="arb_I") result(I)
-       use, intrinsic :: iso_c_binding, only : C_DOUBLE_COMPLEX, C_DOUBLE
+     function arb_I(nu,z,scaled) bind(c,name="arb_I") result(I)
+       use, intrinsic :: iso_c_binding, only : C_DOUBLE_COMPLEX, C_DOUBLE, C_INT
        complex(C_DOUBLE_COMPLEX), intent(in), value :: z
        real(C_DOUBLE), intent(in), value :: nu
-       integer(C_INT), intent(in), value :: kode
+       integer(C_INT), intent(in), value :: scaled
        complex(C_DOUBLE_COMPLEX) :: I
      end function arb_I
   end interface
-
   contains
 
-    ! use same call signature as amos routines
-    
+    ! use same call signature as amos routines    
     subroutine cbesk(z, fnu, kode, n, cy, nz, ierr)
       COMPLEX (dp), INTENT(IN)   :: z      ! argument
       REAL (dp), INTENT(IN)      :: fnu    ! lowest order requested
