@@ -1,4 +1,4 @@
-Module Complex_Bessel_arb
+Module Complex_Bessel
 
   ! provide interface to arb modified bessel function routines
   ! using interface like amos routines
@@ -76,4 +76,4 @@ Module Complex_Bessel_arb
       ierr = 0
       
     end subroutine cbesi  
-  end Module Complex_Bessel_Arb
+  end Module Complex_Bessel

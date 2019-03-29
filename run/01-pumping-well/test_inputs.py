@@ -5,7 +5,7 @@ values = [1.0,1.0,0.1,0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,0.00001,1.0E-6,1
 nval = len(values)
 subs = [-2,0,'junk']
 
-check_output(["cp","pumping_well_circles.in","circles.in"])
+check_output(["cp","pumping_well_circles.in","circles.cin"])
 
 for j in range(nval):
     for s in subs: 
@@ -26,7 +26,7 @@ NAME 1|NAME 2|NAME 3
 %s -2.37179e+00 -2.24359e+00 -2.11538e+00  :: y
 %s 0.001 0.01 0.1 :: t
 %s  %s  %s  :: alpha, tolerance, M
-1  circles.in     :: number of circular elements, circle data file
+1  circles.cin     :: number of circular elements, circle data file
 0  %s not_used    :: number of elliptical elements, ellipse MS, ellipse data file 
 not_used   ::  particle data file
 """ % tuple(v))
@@ -51,7 +51,7 @@ NAME 1|NAME 2|NAME 3
 %s -2.37179e+00 -2.24359e+00 -2.11538e+00  :: y
 %s 0.001 0.01 0.1 :: t
 %s  %s  %s  :: alpha, tolerance, M
-1  circles.in     :: number of circular elements, circle data file
+1  circles.cin     :: number of circular elements, circle data file
 0  %s not_used    :: number of elliptical elements, ellipse MS, ellipse data file 
 not_used   ::  particle data file
 """ % tuple(values))
@@ -69,7 +69,7 @@ for j in range(nval):
         v[j] = s
         P = Popen(["./ltaem","input.in"],stdout=PIPE,stderr=PIPE)
 
-        fh = open('circles.in','w')
+        fh = open('circles.cin','w')
         fh.write("""%s  :: N
 %s  :: M
 %s  :: ibnd
