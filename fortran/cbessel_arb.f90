@@ -1,9 +1,10 @@
-Module Complex_Bessel
+Module Complex_Bessel_arb
 
   ! provide interface to arb modified bessel function routines
   ! using interface like amos routines
 
-  use constants, only : DP
+  !use constants, only : DP
+  integer, parameter :: DP = selected_real_kind(15,307)
   implicit none
 
   private
@@ -45,12 +46,11 @@ Module Complex_Bessel
       real(DP) :: order
 
       do i = 0,n-1
-        ! could openMP this?
         order = fnu + real(i,DP)
         cy(n) = arb_K(order, z, kode)
       end do
 
-      ! dummies for now
+      ! return codes are dummies for now
       nz = 0
       ierr = 0
       
@@ -73,10 +73,8 @@ Module Complex_Bessel
         cy(n) = arb_I(order, z, kode)
       end do
 
-      ! dummies for now
       nz = 0
       ierr = 0
       
-    end subroutine cbesi
-  
-end Module Complex_Bessel
+    end subroutine cbesi  
+  end Module Complex_Bessel_Arb
