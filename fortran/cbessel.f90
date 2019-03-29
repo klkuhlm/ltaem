@@ -5092,7 +5092,7 @@ CONTAINS
     rz = ctwo / z
     inu = int(fnu + 0.5_dp)
     dnu = fnu - inu
-    IF (ABS(dnu)*ULP >= spacing(0.5_dp)) THEN
+    IF (ABS(dnu - 0.5_DP)*ULP >= spacing(0.0_dp)) THEN
        dnu2 = 0.0_dp
        IF (ABS(dnu) > tol) dnu2 = dnu * dnu
        IF (caz <= r1) THEN
@@ -5216,7 +5216,7 @@ CONTAINS
        coef = coef * pt
     END IF
 
-50  IF (ABS(dnu)*ULP < spacing(0.5_dp)) GO TO 210
+50  IF (ABS(dnu - 0.5_DP)*ULP < spacing(0.0_dp)) GO TO 210
     !-----------------------------------------------------------------------
     !     MILLER ALGORITHM FOR ABS(Z) > R1
     !-----------------------------------------------------------------------

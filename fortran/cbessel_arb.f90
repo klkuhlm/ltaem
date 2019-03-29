@@ -3,8 +3,7 @@ Module Complex_Bessel_arb
   ! provide interface to arb modified bessel function routines
   ! using interface like amos routines
 
-  !use constants, only : DP
-  integer, parameter :: DP = selected_real_kind(15,307)
+  use constants, only : DP
   implicit none
 
   private

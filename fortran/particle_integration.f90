@@ -107,10 +107,6 @@ contains
        Trap(1:2) = x0(1:2) + dt/6.0*(vInit(1:2) + vTrap(1:2))
 
        ! Adams-Bashforth 1/2-step predictor
-       print *, 'TRAP',Trap
-       print *, 'x0',x0
-       print *, 'Vinit',vinit
-       print *, 'Vtrap',vtrap
        vAB3 = L(pt+dt/3.0,tee(lt), V(Trap,s(:,lt),los,his,dom,c,e,bg), sol%INVLT)
        halfAB(1:2) = x0(1:2) + dt/8.0*(vInit(1:2) + 3*vAB3(1:2))
 
