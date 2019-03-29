@@ -41,6 +41,8 @@ Module Complex_Bessel
       INTEGER, INTENT(OUT)       :: nz     ! number good values
       INTEGER, INTENT(OUT)       :: ierr   ! error code
 
+      real(DP), dimension(n) :: rcy, icy
+      
       integer :: i
       real(DP) :: order
 
@@ -49,9 +51,18 @@ Module Complex_Bessel
         cy(n) = arb_K(order, z, kode)
       end do
 
-      ! return codes are dummies for now
-      nz = 0
       ierr = 0
+      rcy = real(cy)
+      icy = aimag(cy)
+      
+      if (any(abs(rcy) > huge(1.0_DP)) .or. any(abs(icy) > huge(1.0_DP))) then
+        ierr = 1
+      end if
+
+      if (any(rcy /= rcy) .or. any(icy /= icy)) then
+        ierr = 2
+      end if
+      nz = 0
       
     end subroutine cbesk
   
@@ -63,7 +74,9 @@ Module Complex_Bessel
       COMPLEX (dp), INTENT(OUT)  :: cy(n)
       INTEGER, INTENT(OUT)       :: nz
       INTEGER, INTENT(OUT)       :: ierr
-
+      
+      real(DP), dimension(n) :: rcy, icy
+      
       integer :: i
       real(DP) :: order
 
@@ -72,8 +85,18 @@ Module Complex_Bessel
         cy(n) = arb_I(order, z, kode)
       end do
 
-      nz = 0
       ierr = 0
+      rcy = real(cy)
+      icy = aimag(cy)
+      
+      if (any(abs(rcy) > huge(1.0_DP)) .or. any(abs(icy) > huge(1.0_DP))) then
+        ierr = 1
+      end if
+
+      if (any(rcy /= rcy) .or. any(icy /= icy)) then
+        ierr = 2
+      end if
+      nz = 0
       
     end subroutine cbesi  
   end Module Complex_Bessel
