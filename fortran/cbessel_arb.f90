@@ -41,27 +41,27 @@ Module Complex_Bessel
       INTEGER, INTENT(OUT)       :: nz     ! number good values
       INTEGER, INTENT(OUT)       :: ierr   ! error code
 
-      real(DP), dimension(n) :: rcy, icy
+      !!real(DP), dimension(n) :: rcy, icy
       
       integer :: i
       real(DP) :: order
 
       do i = 0,n-1
         order = fnu + real(i,DP)
-        cy(n) = arb_K(order, z, kode)
+        cy(i+1) = arb_K(order, z, kode)
       end do
 
       ierr = 0
-      rcy = real(cy)
-      icy = aimag(cy)
-      
-      if (any(abs(rcy) > huge(1.0_DP)) .or. any(abs(icy) > huge(1.0_DP))) then
-        ierr = 1
-      end if
-
-      if (any(rcy /= rcy) .or. any(icy /= icy)) then
-        ierr = 2
-      end if
+      !!rcy = real(cy)
+      !!icy = aimag(cy)
+      !!
+      !!if (any(abs(rcy) > huge(1.0_DP)) .or. any(abs(icy) > huge(1.0_DP))) then
+      !!  ierr = 1
+      !!end if
+      !!
+      !!if (any(rcy /= rcy) .or. any(icy /= icy)) then
+      !!  ierr = 2
+      !!end if
       nz = 0
       
     end subroutine cbesk
@@ -75,27 +75,27 @@ Module Complex_Bessel
       INTEGER, INTENT(OUT)       :: nz
       INTEGER, INTENT(OUT)       :: ierr
       
-      real(DP), dimension(n) :: rcy, icy
+      !!real(DP), dimension(n) :: rcy, icy
       
       integer :: i
       real(DP) :: order
 
       do i=0,n-1
         order = fnu + real(i,DP)
-        cy(n) = arb_I(order, z, kode)
+        cy(i+1) = arb_I(order, z, kode)
       end do
 
       ierr = 0
-      rcy = real(cy)
-      icy = aimag(cy)
-      
-      if (any(abs(rcy) > huge(1.0_DP)) .or. any(abs(icy) > huge(1.0_DP))) then
-        ierr = 1
-      end if
-
-      if (any(rcy /= rcy) .or. any(icy /= icy)) then
-        ierr = 2
-      end if
+      !!rcy = real(cy)
+      !!icy = aimag(cy)
+      !!
+      !!if (any(abs(rcy) > huge(1.0_DP)) .or. any(abs(icy) > huge(1.0_DP))) then
+      !!  ierr = 1
+      !!end if
+      !!
+      !!if (any(rcy /= rcy) .or. any(icy /= icy)) then
+      !!  ierr = 2
+      !!end if
       nz = 0
       
     end subroutine cbesi  

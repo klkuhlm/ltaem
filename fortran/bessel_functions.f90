@@ -69,9 +69,9 @@ contains
                & ', num=',num,') z(j)=',z(j)
           call abort() ! to dump for checking backtrace in gdb
           stop 222
-       end if
+        end if
        K(j,0:num-1) = tmp(0:num-1)
-    end do
+     end do
   end function besk_vectz
 
   ! K Bessel function for scalar argument / vector of N
