@@ -1,5 +1,2 @@
 Issues, thoughts and notes:
-Feb 2019:
-* Computed Q for circular elements (11), gives wrong value for last time. Specified Q=0.2 produces about right answer, but produces 0 for t=1 or t=0.1, whichever one is last time (if the final time is not an integer in log-space, the results look better).
-* for certain values of material properties, it bombs  out with ierr=2 in CBESI routine (e.g., Ss too high). Could this be solved switching to arb for Bessel functions? Mathieu functions would likely be very slow (unless they were implemented in c using arb directly -- since he now has eigenvalue routines?). If I only compute double-precision, but ensure the results have full significance to all digits, this may let it work with fewer terms. I have the quad-precision linkage to arb in my well-test code.
 * 
