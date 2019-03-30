@@ -2,9 +2,8 @@
 // functions of complex argument and real order
 // http://fredrikj.net/arb/acb_hypgeom.html
 #include "acb_hypgeom.h"
-#include <stdio.h>
 
-double _Complex arb_K(double gcc_nu, double _Complex gcc_z, int kode){
+double _Complex arb_K(double gcc_nu, double _Complex gcc_z, int kode) {
 
   // arb complex types
   acb_t acb_z, acb_res, acb_nu;
@@ -26,24 +25,20 @@ double _Complex arb_K(double gcc_nu, double _Complex gcc_z, int kode){
   acb_set_d(acb_nu, gcc_nu);
 
   int extra = 30;
-  //int count = 0;
-  int acc;
   // compute Bessel function 
-  //if (kode == 1){
+  if (kode == 1) {
     do {
+      // unscaled
       acb_hypgeom_bessel_k(acb_res, acb_nu, acb_z, DP + extra);
       extra *= 2;
-      //count += 1;
-      acc = acb_rel_accuracy_bits(acb_res);
-    } while (acc < DP);
-    //}
-  //else // scaled
-    //do {
-    //  acb_hypgeom_bessel_k_scaled(acb_res, acb_nu, acb_z, DP + extra);
-    //  extra *= 2;
-    //} while (acb_rel_accuracy_bits(acb_res) < DP);    
-
-    //printf("arbK: %d,%d  ",count,acc);
+    } while (acb_rel_accuracy_bits(acb_res) < DP);
+  } else {
+    do {
+      // scaled
+      acb_hypgeom_bessel_k_scaled(acb_res, acb_nu, acb_z, DP + extra);
+      extra *= 2;
+    } while (acb_rel_accuracy_bits(acb_res) < DP);    
+  }
     
   //  arb_res -> gcc_K
   __real__(gcc_K) = arf_get_d(arb_midref(acb_realref(acb_res)), ARF_RND_DOWN);
@@ -57,7 +52,7 @@ double _Complex arb_K(double gcc_nu, double _Complex gcc_z, int kode){
   return gcc_K;
 }
 
-double _Complex arb_I(double gcc_nu, double _Complex gcc_z, int kode){
+double _Complex arb_I(double gcc_nu, double _Complex gcc_z, int kode) {
 
   // arb complex types
   acb_t acb_z, acb_res, acb_nu;
@@ -79,24 +74,20 @@ double _Complex arb_I(double gcc_nu, double _Complex gcc_z, int kode){
   acb_set_d(acb_nu, gcc_nu);
 
   int extra = 30;
-  //int count = 0;
-  int acc;
   // compute bessel function
-  //if (kode == 1){
+  if (kode == 1){
     do {
+      // unscaled
       acb_hypgeom_bessel_i(acb_res, acb_nu, acb_z, DP + extra);
       extra *= 2;
-      //count += 1;
-      acc = acb_rel_accuracy_bits(acb_res);
-    } while (acc < DP);
-    //}
-  //else
-    //do {
-    //  acb_hypgeom_bessel_i_scaled(acb_res, acb_nu, acb_z, DP + extra);
-    //  extra *= 2;
-    //} while (acb_rel_accuracy_bits(acb_res) < DP);
-
-    //printf("arbI: %d,%d  ",count,acc);
+    } while (acb_rel_accuracy_bits(acb_res) < DP);
+  } else {
+    do {
+      // scaled
+      acb_hypgeom_bessel_i_scaled(acb_res, acb_nu, acb_z, DP + extra);
+      extra *= 2;
+    } while (acb_rel_accuracy_bits(acb_res) < DP);
+  }
     
   //  arb_res -> gcc_I
   __real__(gcc_I) = arf_get_d(arb_midref(acb_realref(acb_res)), ARF_RND_DOWN);
