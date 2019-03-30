@@ -1,8 +1,8 @@
-16  16  8   8   4  4        :: N
-32  32  16  16  8  8        :: M
-0   0   0   0   2  2        :: CIIbnd
-T   T   T   T   F  F        :: calcin?
-F   F   F   F   F  F        :: storin?
+16  16  16  16   1  1        :: N
+48  48  48  48   1  1        :: M
+0   0   0   0    2  2        :: CIIbnd
+T   T   T   T    F  F        :: calcin?
+F   F   F   F    F  F        :: storin?
   0.21    0.21     0.19     0.19     0.01    0.01   :: r
 -29.956  26.706  -29.956   26.706  -29.956  26.706  :: x  3*(C5,C2)
  -0.850   1.720   -0.850    1.720   -0.850   1.720  :: y  3*(C5,C2)
@@ -14,9 +14,9 @@ F   F   F   F   F  F        :: storin?
 1.0    :: Ss2
 1.0    :: b2
 False      :: UNCONFINED?
-1.0     :: Sy
-1.0     :: Kz
-1.0     :: b
+0.15     :: Sy
+1.697D-1    :: Kz
+15.0        :: b
 False  ::  DUAL PORO?
 1.0   :: matrix Ss
 1.0   :: lambda
@@ -25,7 +25,7 @@ False  ::  DUAL PORO?
 1    :: NDiffTerms
 1.0   :: skin
 0.0  :: area source strength
-0.0 0.0 0.0 0.0 -8.82 +8.82
+0.0 0.0 0.0 0.0 -8.82 +8.82  :: bdry source strength
 1 0.0 0.0 : 1 area time flag
 1 0.0 0.0 : 2 area time flag
 1 0.0 0.0 : 3 area time flag
