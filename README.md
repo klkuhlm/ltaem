@@ -41,6 +41,16 @@ to point to them.
 A recent version of gfortran is required (>= 5.0), because of the
 use of the ieee_arithmetic intrinsic Fortran2003 module.
 
+arb (http://arblib.org) is an optional dependency. specifying ARB=1 as
+part of the make command will comple wrapper code to use the arbitrary
+precision arb library for K and I bessel functions, instead of the
+amos fortran code. The arb library should work for any argument (very
+large or small) and will always give double-precision accurate
+results, but the library is much slower than amos (double precision
+only).  Arb must be a recent version, since the scaled bessel
+functions aren't in all versions of the library. Arb then requires
+flint, mpfr, and mpc.
+
 With the two libraries in place, compilation should work with just the
 simple "make" command from the source directory.  This copies the
 compiled executable into the "run" sub directory, where there are many
