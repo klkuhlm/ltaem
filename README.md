@@ -1,6 +1,6 @@
-this is the Fortran03 implementation of the Laplace-Transform Analytic
-Element Method (LT-AEM) for inputs consisting of combinations of
-circles, points, ellipses, and line segments.
+this is the Modern Fortran implementation of the Laplace-Transform
+Analytic Element Method (LT-AEM) for inputs consisting of combinations
+of circles, points, ellipses, and line segments.
 
 This code has been described in the following publications
 ----------------------------------------------------------
@@ -41,21 +41,21 @@ to point to them.
 A recent version of gfortran is required (>= 5.0), because of the
 use of the ieee_arithmetic intrinsic Fortran2003 module.
 
-arb (http://arblib.org) is an optional dependency. specifying ARB=1 as
-part of the make command will comple wrapper code to use the arbitrary
+arb (http://arblib.org) is an optional dependency. Specifying ARB=1 as
+an argument to make will comple wrapper code to use the arbitrary
 precision arb library for K and I bessel functions, instead of the
 amos fortran code. The arb library should work for any argument (very
 large or small) and will always give double-precision accurate
 results, but the library is much slower than amos (double precision
-only).  Arb must be a recent version, since the scaled bessel
-functions aren't in all versions of the library. Arb then requires
-flint, mpfr, and mpc.
+only). Arb must be a recent version, since the scaled bessel functions
+aren't in all versions of the library. Arb then requires flint, mpfr,
+and mpc.
 
-With the two libraries in place, compilation should work with just the
-simple "make" command from the source directory.  This copies the
-compiled executable into the "run" sub directory, where there are many
-input files (unfortunately of various vintages -- some might not work
-with the latest version of the code).
+With the two (or optionally three) libraries in place, compilation
+should work with just the simple "make" command from the source
+directory.  This copies the compiled executable into the "run" sub
+directory, where there are many input files (unfortunately of various
+vintages -- some might not work with the latest version of the code).
 
 
 Code Author Contact Info
