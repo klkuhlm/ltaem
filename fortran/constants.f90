@@ -25,6 +25,8 @@ module constants
 
   public
 
+  ! NB: there are a pile of constants in cbessel, not used elsewhere.
+  
   ! real with range 300 orders of mag, 15 sig figs
   integer, parameter :: DP = selected_real_kind(p=15,r=300)
 
