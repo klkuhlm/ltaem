@@ -30,9 +30,9 @@ LAPACKLIB=-llapack
 BLASLIB=-lblas
 
 ## if no system libraries put statically linked libraries in this directory
-#FBLASLAPACKDIR=/home/klkuhlm/src/petsc/tgcc-c-debug/externalpackages/fblaslapack-3.4.2
-#LAPACKLIB=${FBLASLAPACKDIR}/libflapack.a
-#BLASLIB=${FBLASLAPACKDIR}/libfblas.a
+FBLASLAPACKDIR=/home/klkuhlm/src/petsc/tgcc-c-debug/externalpackages/fblaslapack-3.4.2
+LAPACKLIB=${FBLASLAPACKDIR}/libflapack.a
+BLASLIB=${FBLASLAPACKDIR}/libfblas.a
 
 ##### use Intel math kernel library
 ##MKLROOT=/opt/intel/mkl/lib/intel64
@@ -69,13 +69,13 @@ SRCS=$(OBJS:.o=.f90) $(MAIN:.o=.f90)
 ######################################################
 
 #### gfortran >= 4.6.1 #################
-F90=gfortran
-CC=gcc
-##F90=/usr/local/stow/gcc-trunk/bin/gfortran
+#F90=gfortran
+CC=/usr/local/stow/gcc-trunk/bin/gcc
+F90=/usr/local/stow/gcc-trunk/bin/gfortran
 OMP=-fopenmp
 CPP=-cpp
 ###DFLAGS=-O2 -march=native -fprofile-generate -flto
-DFLAGS=-Og -Wall -Wextra  -g #-fcheck=all ##-ffpe-trap=invalid #,zero,overflow 
+DFLAGS=-Og -Wall -Wextra  -g -fcheck=all #-ffpe-trap=overflow,underflow 
 ###DFLAGS+=-fdump-rtl-expand 
 ###LINKOPT=-fbacktrace -B/usr/lib/x86_64-linux-gnu  # needed to make dev version of gcc to work?
 ##PFLAGS=-O2 -march=native -pipe -funroll-loops -ftree-vectorize
