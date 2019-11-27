@@ -1673,10 +1673,10 @@ contains
 
        ! max number of times for all particles
        nt = maxval(p(:)%numt,dim=1)
-
+       
        do i = 1, nt, s%streakSkip
           ! use maxval to ensure a non-zero time is reported
-          write (90,'(A'//tfmt//')') '# time:', maxval(p(i)%r(:,1))
+          write (90,'(A,'//tfmt//')') '# time:', maxval(p(i)%r(:,1))
           write (90,'(A)') '#  particle       x            y&
                &           velx         vely'
           do j = 1, size(p,dim=1)
