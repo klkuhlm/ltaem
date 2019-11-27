@@ -30,15 +30,15 @@ module type_definitions
 
   type :: mathieu
      ! things required to compute mathieu functions
-     integer :: M = -9999,  buffer = -9999
-     complex(DP) :: q = (-9.9D+20,-9.9D+20)
+     integer :: M,  buffer
+     complex(DP) :: q
      complex(DP), allocatable :: mcn(:), A(:,:,:), B(:,:,:)  ! 4*M; 1:M, 0:M-1, 0:1
   end type mathieu
 
   type :: domain
      ! number of each type of element
      ! 1=circles (wells as special case), 2=ellipses (lines as special case)
-     integer, dimension(2) :: num = [-9999,-9999]
+     integer, dimension(2) :: num
 
      ! index of parent element
      integer, allocatable :: InclUp(:)
@@ -115,7 +115,7 @@ module type_definitions
      ! (is multiplied by constant strength too -- you probably want to set that to unity)
 
      ! type of time behavior for AREA/Boundary Head/Flux (see above)
-     integer :: AreaTime = -9999, BdryTime = -9999
+     integer :: AreaTime, BdryTime
 
      ! parameters related to different time behaviors (on, off, etc)
      real(DP), allocatable :: ATPar(:), BTPar(:)
@@ -123,47 +123,47 @@ module type_definitions
 
   type, extends(time) :: element
 
-     logical :: debug = .false.
+     logical :: debug
     
      ! global id for the current element
-     integer :: id = -9999
+     integer :: id 
 
      ! porosity, constant area source term
      ! main aquifer hydraulic conductivity and Ss for element
-     real(DP) :: por = -9.9D+20, k = -9.9D+20, Ss = -9.9D+20, b = -9.9D+20, alpha = -9.9D+20, T = -9.9D+20
+     real(DP) :: por, k, Ss, b, alpha, T
 
      ! leaky-related (adjoining aquitard/aquifer parameters)
      ! 0= no leakage
      ! 1= case I, no-drawdown condition at top of aquitard
      ! 2= case II, no-flow condition at top of aquitard
      ! 3= aquitard thickness -> infinity (no bc)
-     integer :: leakFlag  = -9999
-     real(DP) :: aquitardK = -9.9D+20, aquitardSs = -9.9D+20, aquitardb = -9.9D+20
+     integer :: leakFlag
+     real(DP) :: aquitardK, aquitardSs, aquitardb
 
      ! unconfined-related (flag, specific yield, and vertical K)
-     logical ::  unconfinedFlag = .false.
-     real(DP) :: Sy = -9.9D+20, Kz = -9.9D+20
+     logical ::  unconfinedFlag
+     real(DP) :: Sy, Kz
 
      ! dual-porosity related (flag, matrix storativity, matrix/fracture exchange param)
-     logical :: dualPorosityFlag = .false.
-     integer :: multiporosityDiffusion = 0 ! 1=slab, 2=cylinder, 3=spherical
-     real(DP) :: matrixSs = -9.9D+20, lambda = -9.9D+20, kappa = -9.9D+20
-     integer :: NDiffterms = -9999
+     logical :: dualPorosityFlag
+     integer :: multiporosityDiffusion ! 1=slab, 2=cylinder, 3=spherical
+     real(DP) :: matrixSs, lambda, kappa
+     integer :: NDiffterms
 
      ! specified value across area of element (including background)
-     real(DP) :: areaQ = -9.9D+20
+     real(DP) :: areaQ
 
      ! whether to calculate solution (Helmholtz eqn) inside element
      ! and whether to compute storage (using mass conservation ODE) inside element
      ! StorIn is only checked if CalcIn is false for an element.
-     logical :: CalcIn = .false., StorIn = .false.
+     logical :: CalcIn, StorIn
 
      ! pointer to the parent element
      type(element), pointer :: parent => null()
 
      ! structure containing matrices of mathieu function parameters
      type(mathieu), allocatable :: mat(:)
-     integer :: ms = -9999 ! not used in circle
+     integer :: ms ! not used in circle
 
   end type element
 
@@ -180,30 +180,30 @@ module type_definitions
   type, extends(element) :: matching
      ! number of FS terms, number of matching points on circles/ellipses
      ! for lines/wells can be one (e.g., borehole storage) or zero (known Q)
-     integer :: n = -9999, m = -9999
+     integer :: n, m
 
      ! type of element: -1=specified head TOTAL, 0=match, +1=specified flux TOTAL
      !                  -2=specified head ELEMENT, +2=specified flux ELEMENT
      ! -2 doesn't really make sense from a physical perspective : not implemented
-     integer :: ibnd = -9999
+     integer :: ibnd
 
      ! whether inclusion is a matching(T) or specified(F) inclusion
-     logical :: match = .false.
+     logical :: match
 
      ! specified value along boundary area of element
-     real(DP) :: bdryQ = -9.9D+20
+     real(DP) :: bdryQ
 
      ! dimensionless skin at boundary of element
-     real(DP) :: dskin = -9.9D+20
+     real(DP) :: dskin
 
      ! location of center of element
-     real(DP) :: x = -9.9D+20, y =-9.9D+20
-     complex(DP) :: z = (-9.9D+20,-9.9D+20)
+     real(DP) :: x, y
+     complex(DP) :: z
 
      ! "radius" of element (eta for ellipses)
      ! semi-focal distance (zero for circles)
      ! angle of rotation (zero for circles)
-     real(DP) :: r = -9.9D+20, f = -9.9D+20, theta = -9.9D+20
+     real(DP) :: r, f, theta
 
      ! vector of matching location angles
      ! theta for circles, psi for ellipses
@@ -231,45 +231,45 @@ module type_definitions
      ! Inverse Laplace Transform parameters
 
      ! abcissa of convergence, LT tolerance
-     real(DP) :: alpha = -9.9D+20, tol = -9.9D+20
+     real(DP) :: alpha, tol
 
      ! number of Fourier series terms
-     integer :: M = -9999
+     integer :: M
   end type INVLT
   
   ! things relating to the numerical solution, independent from flow elements
   type, extends(INVLT) :: solution
 
-     logical :: debug = .false.  ! debugging output?
+     logical :: debug  ! debugging output?
 
      ! integrate particle lines vs. calculate at set locations/times
-     logical :: particle = .false.
-     integer :: nPart = -9999
+     logical :: particle
+     integer :: nPart
 
      ! compute flowrates across each element for contour/time series?
-     logical :: Qcalc = .false.
+     logical :: Qcalc
 
      ! dump matching results to file for restart?
-     logical :: skipDump = .false.
+     logical :: skipDump
 
      ! total number of laplace parameters
-     integer :: totalnP = -9999
+     integer :: totalnP
 
      ! number of particle timesteps to skip when plotting streaklines
      ! (only one value for all particles)
-     integer :: streakSkip = -9999
+     integer :: streakSkip
 
      ! calculate contours (thru space) vs. calculate time series
-     logical :: contour = .false.
+     logical :: contour
      ! calculate values at few locations through time
-     logical :: timeseries = .false.
+     logical :: timeseries
      ! re-calculate coefficient matrix, or load saved file (BGcoefffname)
-     logical :: calc = .false.
+     logical :: calc
 
      ! input/output filenames
-     character(lenFN) :: outfName='ERROR-unset', infName='ERROR-unset'
-     character(lenFN) :: elemHfName='ERROR-unset', geomfName='ERROR-unset'
-     character(lenFN) :: echofName='ERROR-unset', qfName='ERROR-unset'
+     character(lenFN) :: outfName, infName
+     character(lenFN) :: elemHfName, geomfName
+     character(lenFN) :: echofName, qfName
      character(13) :: coefffName = 'dump-vars.out'
 
      ! output index
@@ -289,16 +289,16 @@ module type_definitions
                                       & 6,7]
 
      ! aquitardLeak and unconfined
-     integer :: output = -9999, aquitardLeak = -9999, unconfined= -9999
+     integer :: output, aquitardLeak, unconfined
 
      ! x-spacing vector, y-spacing vector, time vector
-     integer :: nx = -9999, ny = -9999, nt = -9999
-     real(DP) :: xshift = -9.9D+20, yshift = -9.9D+20
+     integer :: nx, ny, nt
+     real(DP) :: xshift, yshift
      real(DP), allocatable :: x(:), y(:), t(:)
      character(32), allocatable :: obsname(:)
 
      ! compute log-derivative of solution?
-     logical :: deriv = .false.
+     logical :: deriv
 
      ! containers for time-domain final results (x,y,t,[i:j])
      real(DP),    allocatable :: h(:,:,:), v(:,:,:,:), dh(:,:,:), Q(:,:), dQ(:,:)
@@ -308,29 +308,29 @@ module type_definitions
   ! particle related parameters (one for each particle)
   !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   type :: particle
-     logical :: debug = .false.
+     logical :: debug
     
      ! is particle tracked backwards or forwards?
-     logical :: forward = .true.
+     logical :: forward
 
      ! starting x&y location, inital & final times
-     real(DP) :: x = -9.9D+20, y = -9.9D+20, ti = -9.9D+20, tf = -9.9D+20
+     real(DP) :: x, y, ti, tf
 
      ! which integration scheme to use (for each particle)
      ! 1 = Runge-Kutta-Merson (4th order adaptive)
      ! 2 = Runge-Kutta        (4th order)
      ! 3 = Analytical        (root-finding method)
      ! 4 = Fwd Euler          (1st order)
-     integer :: int = -9999, id = -9999
+     integer :: int, id
      
      ! error tolerance, minimum stepsize, and max step length for rkm
-     real(DP) :: tol = -9.9D+20, mindt = -9.9D+20, maxL = -9.9D+20
+     real(DP) :: tol, mindt, maxL
 
      ! step size for other integration schemes (initial stepsize for rkm)
-     real(DP) :: dt = -9.9D+20
+     real(DP) :: dt
 
      ! particle starts inside a constant head or constant flux inclusion?
-     logical :: InclIn = .false.
+     logical :: InclIn
 
      ! results from particle tracking (for each particle)
      ! first dimension is long enough to hold all needed times
@@ -338,7 +338,7 @@ module type_definitions
      real(DP), allocatable :: r(:,:)
 
      ! number of time steps actuall used (some algorithms are adaptive)
-     integer :: numt = -9999
+     integer :: numt
   end type particle
 
 contains
