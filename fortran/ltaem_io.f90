@@ -52,13 +52,15 @@ contains
     character(1024) :: buf 
     character(lenFN+5) :: echofname
     character(lenFN) :: circleFname, ellipseFname, particleFname
-    integer :: ierr, j, ntot, nC, nE, ln = 0, sln,s1,s2,slen, idx
+    integer :: ierr, j, ntot, nC, nE, ln, sln,s1,s2,slen, idx
     real(DP) :: tmp
     character(55) :: explain_txt
 
     ! unit numbers for input/output files
     integer, parameter :: UINPUT = 15, UECHO = 16, UCIRC = 22, UELIP = 33, UPAR = 44 
 
+    ln = 0
+    
     open(unit=UINPUT, file=s%infname, status='old', action='read', iostat=ierr)
     if (ierr /= 0) then
        write(stderr,'(2A)') 'ERROR READINPUT: error opening input file ',trim(s%infname)
@@ -1249,10 +1251,12 @@ contains
     logical, intent(in) :: area
 
     type(explain_type) :: explain
-    character(46) :: lfmt = '(I0,1X,    (ES12.5,1X),A,    (ES12.5,1X),A,I0)'
+    character(46) :: lfmt
     character(8) :: lincon
     integer :: ierr, tsize
 
+    lfmt = '(I0,1X,    (ES12.5,1X),A,    (ES12.5,1X),A,I0)'
+    
     if             (area .and. el%AreaTime < -100 .or. &
          & ((.not. area) .and. el%BdryTime < -100)) then
        lincon = 'linear'
@@ -1390,8 +1394,8 @@ contains
     integer :: i, j, k, nt
 
     ! adjust the formats of time, location, and results here
-    character(6) :: tfmt = 'ES13.5', xfmt = 'ES12.4'
-    character(9) :: hfmt = 'ES22.14e3'
+    character(6), parameter :: tfmt = 'ES13.5', xfmt = 'ES12.4'
+    character(9), parameter :: hfmt = 'ES22.14e3'
 
     ! remove shift applied at beginning
     s%x(:) = s%x(:) + s%xshift
@@ -1669,10 +1673,10 @@ contains
 
        ! max number of times for all particles
        nt = maxval(p(:)%numt,dim=1)
-
+       
        do i = 1, nt, s%streakSkip
           ! use maxval to ensure a non-zero time is reported
-          write (90,'(A'//tfmt//')') '# time:', maxval(p(i)%r(:,1))
+          write (90,'(A,'//tfmt//')') '# time:', maxval(p(i)%r(:,1))
           write (90,'(A)') '#  particle       x            y&
                &           velx         vely'
           do j = 1, size(p,dim=1)
