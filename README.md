@@ -26,4 +26,4 @@ With the two (or optionally three) libraries in place, compilation should work w
 
 Code Author Contact Info
 ============================================================ 
-If you need assistance or have questions, do not hesitate to contact me (klkuhlm <at> sandia <dot> gov) regarding the code. My website includes more reference and publications: http://kris.kuhlmans.net  I may be able to provide you with an executable for your platform, if you have issues compiling it.  If you run into a bug or missing feature, I might be able to accommodate you, but this depends on the amount of work required to fix/implement the feature of concern.
+If you need assistance or have questions, do not hesitate to contact me (klkuhlm _at_ sandia _dot_ gov) regarding the code. My website includes more reference and publications: http://kris.kuhlmans.net  I may be able to provide you with an executable for your platform, if you have issues compiling it.  If you run into a bug or missing feature, I might be able to accommodate you, but this depends on the amount of work required to fix/implement the feature of concern.
