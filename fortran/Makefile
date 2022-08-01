@@ -34,7 +34,8 @@ BLASLIB=-lblas
 #LAPACKLIB=${FBLASLAPACKDIR}/libflapack.a
 #BLASLIB=${FBLASLAPACKDIR}/libfblas.a
 
-##### use Intel math kernel library
+
+####### use Intel math kernel library
 ##MKLROOT=/opt/intel/mkl/lib/intel64
 ##LAPACKLIB= -Wl,--start-group  \
 ##	$(MKLROOT)/libmkl_intel_lp64.a \
@@ -59,27 +60,27 @@ endif
 
 SRCS=$(OBJS:.o=.f90) $(MAIN:.o=.f90)
 
-############################# ifort >= 12.0 ##########
-#F90=ifort
-#OMP=-openmp
-#CPP=-cpp
-#####DFLAGS=-O0 -g -traceback -warn all -check bounds -check pointers -check uninit -check format -check output_conversion
-####DFLAGS=-O0 -g -traceback -check all -warn all
-#PFLAGS=-xHOST -O3 -fast  
-######################################################
+############################### ifort >= 12.0 ##########
+##F90=ifort
+##OMP=-openmp
+##CPP=-cpp
+#######DFLAGS=-O0 -g -traceback -warn all -check bounds -check pointers -check uninit -check format -check output_conversion
+######DFLAGS=-O0 -g -traceback -check all -warn all
+##PFLAGS=-xHOST -O3 -fast  
+########################################################
 
 #### gfortran >= 4.6.1 #################
-F90=gfortran
-#CC=/usr/local/stow/gcc-trunk/bin/gcc
-#F90=/usr/local/stow/gcc-trunk/bin/gfortran
-OMP=-fopenmp
-CPP=-cpp
+#F90=gfortran
+CC=/usr/local/stow/gcc-trunk/bin/gcc
+F90=/usr/local/stow/gcc-trunk/bin/gfortran
+##OMP=-fopenmp
+##CPP=-cpp
 ###DFLAGS=-O2 -march=native -fprofile-generate -flto
 DFLAGS=-Og -Wall -Wextra  -g -fcheck=all #-ffpe-trap=overflow,underflow 
 ###DFLAGS+=-fdump-rtl-expand 
-###LINKOPT=-fbacktrace -B/usr/lib/x86_64-linux-gnu  # needed to make dev version of gcc to work?
+##LINKOPT=-fbacktrace -B/usr/lib/x86_64-linux-gnu  # needed to make dev version of gcc to work?
 ##PFLAGS=-O2 -march=native -pipe -funroll-loops -ftree-vectorize
-PFLAGS=-O3 -g -march=native
+PFLAGS=-O3 -g -march=native -flto
 #PFLAGS=-Og -g -fcheck=all
 #################################
 
@@ -93,7 +94,7 @@ else
   FLAGS=$(DFLAGS)
 endif
 
-LINKFLAG=$(FLAGS) $(LINKOPT) #-fuse-ld=gold -Xlinker --emit-relocs
+LINKFLAG=$(FLAGS) $(LINKOPT) -fuse-ld=gold -flto
 
 # the link step
 ifdef ARB
