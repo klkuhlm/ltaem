@@ -23,6 +23,6 @@ arb (http://arblib.org) is an optional dependency. Specifying ARB=1 as an argume
 With the two (or optionally three) libraries in place, compilation should work with just the simple "make" command from the source directory.  This copies the compiled executable into the "run" sub directory, where there are many input files (unfortunately of various vintages -- some might not work with the latest version of the code).
 
 
-Code Author Contact Info
+Author Contact Info
 ============================================================ 
 If you need assistance or have questions, contact me (klkuhlm _at_ sandia _dot_ gov) regarding the code. My website includes more reference and publications: http://kris.kuhlmans.net  I may be able to provide you with an executable for your platform, if you have issues compiling it.  If you run into a bug or missing feature, I might be able to accommodate you, but this depends on the amount of work required to fix/implement the feature of concern.
