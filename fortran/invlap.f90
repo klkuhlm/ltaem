@@ -79,12 +79,12 @@ contains
     ! rhombus rule for filling in triangular Q-D table
     do r = 1,M
       ! start with e, column 1, 0:2*M-2
-      max = 2*(M-r)
+      max = 2*(M-r) + 1
       e(0:max,r) = q(1:max+1,r) - q(0:max,r) + e(1:max+1,r-1)
       if (r /= M) then
         ! start with q, column 2, 0:2*M-3
         rq = r+1
-        max = 2*(M-rq)+1
+        max = 2*(M-rq) + 2
         q(0:max,rq) = q(1:max+1,rq-1) * e(1:max+1,rq-1) / e(0:max,rq-1)
       end if
     end do
