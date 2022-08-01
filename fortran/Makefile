@@ -26,8 +26,8 @@ KKLOW=type_definitions.o utility.o bessel_functions.o mathieu_functions2.o
 ARBLOW=bessel_arb_wrapper.o cbessel_arb.o
 
 ####### use system libraries 
-#LAPACKLIB=-llapack
-#BLASLIB=-lblas
+LAPACKLIB=-llapack
+BLASLIB=-lblas
 
 ## if no system libraries put statically linked libraries in this directory
 #FBLASLAPACKDIR=/home/klkuhlm/src/petsc/tgcc-c-debug/externalpackages/fblaslapack-3.4.2
@@ -35,12 +35,12 @@ ARBLOW=bessel_arb_wrapper.o cbessel_arb.o
 #BLASLIB=${FBLASLAPACKDIR}/libfblas.a
 
 ##### use Intel math kernel library
-MKLROOT=/opt/intel/mkl/lib/intel64
-LAPACKLIB= -Wl,--start-group  \
-	$(MKLROOT)/libmkl_intel_lp64.a \
-	$(MKLROOT)/libmkl_sequential.a \
-	$(MKLROOT)/libmkl_core.a \
-	-Wl,--end-group -lpthread -lm
+##MKLROOT=/opt/intel/mkl/lib/intel64
+##LAPACKLIB= -Wl,--start-group  \
+##	$(MKLROOT)/libmkl_intel_lp64.a \
+##	$(MKLROOT)/libmkl_sequential.a \
+##	$(MKLROOT)/libmkl_core.a \
+##	-Wl,--end-group -lpthread -lm
 
 # main-program related
 ####################################
@@ -60,20 +60,20 @@ endif
 SRCS=$(OBJS:.o=.f90) $(MAIN:.o=.f90)
 
 ############################# ifort >= 12.0 ##########
-F90=ifort
-OMP=-openmp
-CPP=-cpp
+#F90=ifort
+#OMP=-openmp
+#CPP=-cpp
 #####DFLAGS=-O0 -g -traceback -warn all -check bounds -check pointers -check uninit -check format -check output_conversion
 ####DFLAGS=-O0 -g -traceback -check all -warn all
-PFLAGS=-xHOST -O3 -fast  
+#PFLAGS=-xHOST -O3 -fast  
 ######################################################
 
 #### gfortran >= 4.6.1 #################
-##F90=gfortran
+F90=gfortran
 #CC=/usr/local/stow/gcc-trunk/bin/gcc
 #F90=/usr/local/stow/gcc-trunk/bin/gfortran
-##OMP=-fopenmp
-##CPP=-cpp
+OMP=-fopenmp
+CPP=-cpp
 ###DFLAGS=-O2 -march=native -fprofile-generate -flto
 DFLAGS=-Og -Wall -Wextra  -g -fcheck=all #-ffpe-trap=overflow,underflow 
 ###DFLAGS+=-fdump-rtl-expand 
