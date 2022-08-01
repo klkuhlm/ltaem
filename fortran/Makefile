@@ -34,6 +34,7 @@ BLASLIB=-lblas
 #LAPACKLIB=${FBLASLAPACKDIR}/libflapack.a
 #BLASLIB=${FBLASLAPACKDIR}/libfblas.a
 
+
 ####### use Intel math kernel library
 ##MKLROOT=/opt/intel/mkl/lib/intel64
 ##LAPACKLIB= -Wl,--start-group  \
