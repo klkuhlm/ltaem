@@ -1,2 +1,21 @@
 Issues, thoughts and notes:
-* 
+*  failure in test case 06-fractures with -fcheck=all (looks like something invalid with the geometry calculation?)
+
+At line 332 of file element_geometry.f90
+Fortran runtime warning: An array temporary was created
+At line 332 of file element_geometry.f90
+Fortran runtime warning: An array temporary was created
+
+Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+
+Backtrace for this error:
+#0  0x7f99f3b64f0f in ???
+#1  0x7f99f3bbd94d in ???
+#2  0x4ebcbf in computeelementhierarchy
+	at /home/klkuhlm/repos/ltaem/fortran/element_geometry.f90:333
+#3  0x4f62ab in __geometry_MOD_distanceanglecalcs
+	at /home/klkuhlm/repos/ltaem/fortran/element_geometry.f90:174
+#4  0x50de45 in ltaem_main
+	at /home/klkuhlm/repos/ltaem/fortran/ltaem_main.f90:90
+#5  0x519cb8 in main
+	at /home/klkuhlm/repos/ltaem/fortran/ltaem_main.f90:31
