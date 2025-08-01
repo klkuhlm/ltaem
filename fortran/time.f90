@@ -134,7 +134,7 @@ contains
        numer = y(2:n+1) - y(1:n)
        where (abs(denom) < epsilon(abs(numer)))
           ! TODO: probably a better way to handle this
-          denom = denom + spacing(denom)
+          denom = denom + 1.0E-12 !spacing(denom)
        end where
        W(1:n) = numer/denom ! rise/run
 

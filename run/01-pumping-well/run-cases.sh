@@ -1,6 +1,6 @@
 # general types
 # "particle_track"  <<<< this was blowing up and producing gigabytes of output
-for t in  "contour" "hydrographs" ; do
+for t in  "contour" "hydrographs" "particle_track"; do
     echo "pumping_well $t output"
     LD_LIBRARY_PATH=/home/klkuhlm/src/gcc/local/lib64 ./ltaem ./pumping_well_${t}.in \
         1> pumping_well_${t}.screen \

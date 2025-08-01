@@ -67,7 +67,7 @@ contains
        if (.not.(ierr == 0 .or. ierr == 3)) then
           write(stderr,*) 'CBESK_VECTZ error (numzero=',numzero,', ierr=',ierr,', j=',j,&
                & ', num=',num,') z(j)=',z(j)
-          call abort() ! to dump for checking backtrace in gdb
+          !call abort() ! to dump for checking backtrace in gdb
           stop 222
         end if
        K(j,0:num-1) = tmp(0:num-1)
@@ -101,7 +101,7 @@ contains
        if (.not.(ierr == 0 .or. ierr == 3)) then
           write(stderr,*) 'CBESI_VECTZ error (numzero=',numzero,', ierr=',ierr,&
                &', j=',j, ', num=',num,') z(j)=',z(j)
-          call abort()
+          !call abort()
           stop 223
        end if
        I(j,0:num-1) = tmp(0:num-1)

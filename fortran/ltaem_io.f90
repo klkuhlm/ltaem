@@ -65,7 +65,7 @@ contains
     if (ierr /= 0) then
        write(stderr,'(2A)') 'ERROR READINPUT: error opening input file ',trim(s%infname)
        stop 100
-    endif
+    end if
 
     ! search for '.' in filename from the end of the string
     idx = index(s%infName,'.',back=.true.)  
@@ -84,7 +84,7 @@ contains
     else
        ! add a file variable at top of file to set Emacs to auto-revert mode
        write(UECHO,'(A)') '-*-auto-revert-*-'
-    endif
+    end if
 
     ! solution-specific and background aquifer parameters
     read(UINPUT,*,iostat=ierr) s%calc, s%particle, s%contour, s%deriv, s%Qcalc, s%output; ln=ln+1
@@ -412,7 +412,7 @@ contains
        end if
        write(fmt(1)(2:5),'(I4.4)') s%nt
        write(UECHO,fmt(1)) s%t(:), '  ||    t Vector'
-    endif
+    end if
 
     ! deHoog et al. inverse Laplace transform parameters
     read(UINPUT,*,iostat=ierr) s%alpha, s%tol, s%m; ln=ln+1
@@ -1223,7 +1223,7 @@ contains
     else
        ! no particles
        allocate(p(0))
-    endif
+    end if
     close(UINPUT) ! main input file
     close(UECHO) ! input echo file
 
