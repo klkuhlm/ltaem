@@ -60,6 +60,11 @@ contains
     !! standard confined definition
     q(1:np) = p(:)/el%alpha
 
+    if (el%wave) then
+      !! wave solution (another time derivative)
+      q(1:np) = q(:) * p
+    end if
+    
     !! leaky
     !! ##############################
     if (el%leakFlag /= 0) then

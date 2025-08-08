@@ -98,6 +98,9 @@ contains
        mult(1:np) = exp(-par(2)*p)* &
             &  (1.0 - exp(-par(1)*p/2.0))/ &
             & ((1.0 + exp(-par(1)*p/2.0))*p)
+    case(9)
+       ! sine wave shifted to start at t=par2
+       mult(1:np) = exp(-par(2)*p)*par(1)/(p**2 + par(1)**2)
     case(-100:-1)
        !! arbitrary piecewise constant pumping rate with n steps, from ti(1) to tf
        n = -flag

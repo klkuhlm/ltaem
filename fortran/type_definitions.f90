@@ -123,7 +123,8 @@ module type_definitions
 
   type, extends(time) :: element
 
-     logical :: debug
+    logical :: debug
+    logical :: wave   ! solve wave problem (2nd time deriv)?     
     
      ! global id for the current element
      integer :: id 

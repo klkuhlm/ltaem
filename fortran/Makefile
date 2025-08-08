@@ -70,9 +70,10 @@ SRCS=$(OBJS:.o=.f90) $(MAIN:.o=.f90)
 ########################################################
 
 #### gfortran >= 4.6.1 #################
-#F90=gfortran
-CC=/usr/local/stow/gcc-trunk/bin/gcc
-F90=/usr/local/stow/gcc-trunk/bin/gfortran
+CC=gcc
+F90=gfortran
+#CC=/usr/local/stow/gcc-trunk/bin/gcc
+#F90=/usr/local/stow/gcc-trunk/bin/gfortran
 ##OMP=-fopenmp
 ##CPP=-cpp
 ###DFLAGS=-O2 -march=native -fprofile-generate -flto

@@ -170,6 +170,13 @@ contains
        write(stderr,*) 'ERROR: line',ln,'(basic background properties: por, k, ss) of',s%infname
        stop 204
     end if
+    backspace(UINPUT)
+    read(UINPUT,*,iostat=ierr) bg%por, bg%k, bg%ss, bg%wave
+    if (ierr /= 0) then
+      ! optional
+      bg%wave = .false.
+    end if
+    
     if (any([bg%por,bg%k,bg%ss] <= 0.0)) then
        write(stderr,*) 'ERROR: value (line ',ln,') bg%por, bg%k, bg%ss '&
             & // 'must all be > 0.0: ',[bg%por,bg%k,bg%ss]
@@ -255,8 +262,8 @@ contains
     write(UECHO,'(2A)') trim(s%outFname),'  ||    output file name'
     write(UECHO,'(L1,1X,A)') s%debug, '  || debugging output'
     write(UECHO,'(A)') '=============== BACKGROUND PROPERTIES ==============='
-    write(UECHO,'(3(ES12.5,1X),A)') bg%por, bg%k, bg%ss,'  ||   AQUIFER properties : '//&
-         &'porosity, hydraulic conductivity, specific storage'
+    write(UECHO,'(3(ES12.5,1X),L1,A)') bg%por, bg%k, bg%ss, bg%wave, '  ||   AQUIFER properties : '//&
+         &'porosity, hydraulic conductivity, specific storage, wave eqn?'
     write(UECHO,'(I0,1X,A,1X,3(ES12.5,1X),A)') bg%leakFlag, trim(explain%leakFlag(bg%leakFlag)), &
          & bg%aquitardK, bg%aquitardSs, bg%aquitardb, &
          & '  ||   adjacent AQUITARD properties : leaky flag, hydraulic condictivity, specific storage, thickness'
@@ -484,6 +491,19 @@ contains
        read(UCIRC,*,iostat=ierr) c(1:nc)%StorIn; sln=sln+1 
        if (ierr /= 0) c(1:nc)%StorIn = read_logical(UCIRC,sln,'circle  ')
 
+       read(UCIRC,*,iostat=ierr) c(1:nc)%wave; sln=sln+1
+       if (ierr /= 0) then
+           backspace(UCIRC)
+           read(UCIRC,*,iostat=ierr) c(1)%wave
+           if (ierr /= 0) then
+             ! optional, assume false
+             c(1:nc)%wave = .false.
+             backspace(UCIRC)
+           else
+             c(1:nc)%wave = c(1)%wave
+           end if
+       end if
+       
        read(UCIRC,*,iostat=ierr) c(1:nc)%r; sln=sln+1
        if (ierr /= 0) c(1:nc)%r = read_real(UCIRC,sln,'circle  ')
        if (any(c%r <= 0.0)) then
@@ -666,6 +686,7 @@ contains
        write(UECHO,fmt(2)) c(:)%match,          '  ||   circle matching array'
        write(UECHO,fmt(2)) c(:)%calcin,         '  ||   calculate inside this circle?'
        write(UECHO,fmt(2)) c(:)%storin,         '  ||   calculate circle free-water storage effects?'
+       write(UECHO,fmt(2)) c(:)%wave,           '  ||   calculate wave equation inside element?'
        write(UECHO,fmt(3)) c(:)%r,              '  ||   circle radius'
        write(UECHO,fmt(3)) c(:)%x+s%xshift,     '  ||   original circle center x'
        write(UECHO,fmt(3)) c(:)%x,              '  ||   shifted circle center x'
@@ -792,6 +813,20 @@ contains
 
        read(UELIP,*,iostat=ierr) e(1:ne)%storIn; sln=sln+1
        if (ierr /= 0) e(1:ne)%storIn = read_logical(UELIP,sln,'ellipse ')
+
+       read(UELIP,*,iostat=ierr) e(1:ne)%wave; sln=sln+1
+       if (ierr /= 0) then
+           backspace(UELIP)
+           read(UELIP,*,iostat=ierr) e(1)%wave
+           if (ierr /= 0) then
+             ! optional, assume false
+             e(1:ne)%wave = .false.
+             backspace(UELIP)
+           else
+             e(1:ne)%wave = e(1)%wave
+           end if
+       end if
+
 
        read(UELIP,*,iostat=ierr) e(1:ne)%r; sln=sln+1   ! eta
        if (ierr /= 0) e(1:ne)%r = read_real(UELIP,sln,'ellipse ')      
@@ -1002,6 +1037,7 @@ contains
        write(UECHO,fmt(2)) e(:)%match,          '  ||   ellipse matching array'
        write(UECHO,fmt(2)) e(:)%calcin,         '  ||   calculate inside this ellipse?'
        write(UECHO,fmt(2)) e(:)%storin,         '  ||   calculate free-water storage for this ellipse?'
+       write(UECHO,fmt(2)) e(:)%wave,           '  ||   calculate wave equation inside ellipse?'
        write(UECHO,fmt(3)) e(:)%r,              '  ||   ellipse radius (eta)'
        write(UECHO,fmt(3)) e(:)%x+s%xshift,     '  ||   original ellipse center x'
        write(UECHO,fmt(3)) e(:)%x,              '  ||   shifted ellipse center x'
