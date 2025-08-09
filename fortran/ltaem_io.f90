@@ -1454,10 +1454,10 @@ contains
        write(20,'(A,I0)') '# t: ', s%nt
        write(20,'(A,I0)') '# x: ', s%nx
        write(20,'(A,I0)') '# y: ', s%ny
-       write(20,'(A,I0)') '# locations:', s%nx*s%ny
+       write(20,'(A,I0)') '# locations: ', s%nx*s%ny
 
        do i = 1, s%nt
-          write(20,'(A,'//tfmt//')') ' # t= ',s%t(i)
+          write(20,'(A,'//tfmt//')') '# t= ',s%t(i)
           write(20,'(A)',advance='no')   &
           & '#      X           Y               head'//&
           & '                velx                  vely'

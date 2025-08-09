@@ -129,7 +129,7 @@ program ltaem_main
            end if
            
            ! T=2*max time in this logcycle
-           !!print *, 'DBG:',lt,lo,nt(lt),lo+nt(lt)-1,maxval(sol%t(lo:lo+nt(lt)-1))
+           print *, 'DBG:',lt,lo,nt(lt),lo+nt(lt)-1,maxval(sol%t(lo:lo+nt(lt)-1))
            tee(lt) = maxval(sol%t(lo:lo+nt(lt)-1))*TMAX_MULT
            s(:,lt) = pvalues(tee(lt),sol%INVLT)
            lo = lo + nt(lt)
