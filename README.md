@@ -1,4 +1,6 @@
-this is the Modern Fortran (Fortran 2003/2008) implementation of the Laplace-Transform Analytic Element Method (LT-AEM) for computing the head and velocity due to superposition of elements consisting of combinations of circles, points, ellipses, and line segments. The method also has several particle tracking routines implemented.
+this is the Modern Fortran (Fortran 2003/2008) implementation of the Laplace-Transform Analytic Element Method (LT-AEM) for computing the head and its gradient (darcy velocity) due to superposition of elements consisting of combinations of circles, points, ellipses, and line segments. The method also has several particle tracking routines implemented.
+
+The LT-AEM was developed to solve the diffusion equation (first time derivative, Laplacian in space), but it has recently been demonstrated can also be used to solve the wave equation (second time derivative and Laplacian in space).
 
 This software has been described in the following publications
 ----------------------------------------------------------
