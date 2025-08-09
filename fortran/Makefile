@@ -81,7 +81,7 @@ DFLAGS=-Og -Wall -Wextra  -g -fcheck=all #-ffpe-trap=overflow,underflow
 ###DFLAGS+=-fdump-rtl-expand 
 ##LINKOPT=-fbacktrace -B/usr/lib/x86_64-linux-gnu  # needed to make dev version of gcc to work?
 ##PFLAGS=-O2 -march=native -pipe -funroll-loops -ftree-vectorize
-PFLAGS=-O3 -g -march=native -flto
+PFLAGS=-O3 -march=native -flto=auto
 #PFLAGS=-Og -g -fcheck=all
 #################################
 
@@ -95,7 +95,7 @@ else
   FLAGS=$(DFLAGS)
 endif
 
-LINKFLAG=$(FLAGS) $(LINKOPT) -fuse-ld=gold -flto
+LINKFLAG=$(FLAGS) $(LINKOPT) -flto=auto
 
 # the link step
 ifdef ARB

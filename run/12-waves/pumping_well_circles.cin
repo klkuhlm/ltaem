@@ -3,7 +3,7 @@
 -1   :: ibnd
 F   :: calcin?
 F   :: storin?
-T   :: waves?
+F   :: waves?
 1.0D-4   :: r
 0.0D0    :: x0
 0.0D0    :: y0
