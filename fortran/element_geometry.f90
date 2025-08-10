@@ -329,9 +329,11 @@ contains
        ! check centers of elements (rows = ellipses, columns = all elements)
        if (ne > 0) then
           allocate(Eeg(ne,ntot),Z(ne,ntot))
-          Z(1:ne,ne+1:ntot) = spread(c%z,1,ne) - spread(e%z,2,nc) 
-          Eeg(1:ne,ne+1:ntot) = real(xy2eR(Z(1:ne,1:nc),spread(e,2,nc)))
-
+          if (nc > 0) then
+             Z(1:ne,ne+1:ntot) = spread(c%z,1,ne) - spread(e%z,2,nc) 
+             Eeg(1:ne,ne+1:ntot) = real(xy2eR(Z(1:ne,1:nc),spread(e,2,nc)))
+          end if
+         
           Z(1:ne,1:ne) = spread(e%z,1,ne) - spread(e%z,2,ne)
           Eeg(1:ne,1:ne) = real(xy2eR(Z(1:ne,nc+1:ntot),spread(e,2,ne)))
           deallocate(Z)
