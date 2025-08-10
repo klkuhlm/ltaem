@@ -117,19 +117,20 @@ program ltaem_main
         lo = 1
         logt(:) = log10(sol%t(:))
         minlt =   floor(minval(logt(:)))
-        maxlt = ceiling(maxval(logt(:)))
+        ! adding the tiny helps catch round-off errors when ending exactly on a log cycle (which is common)
+        maxlt = ceiling(maxval(logt(:) + spacing(logt(sol%nt))))
 
         allocate(s(2*sol%m+1,minlt:maxlt-1), nt(minlt:maxlt-1), tee(minlt:maxlt-1))
-        
+
         logcycles: do lt = minlt, maxlt-1
-          ! number of times falling in this logcycle
-           nt(lt) = count(logt >= real(lt,DP) .and. logt < real(lt+1,DP))
+          ! number of times falling in (or on the edge of) this logcycle
+          nt(lt) = count(logt >= real(lt,DP) .and. logt < real(lt+1,DP))
+          !print *, 'DBG:',lt,lo,nt(lt),lo+nt(lt)-1,maxval(sol%t(lo:lo+nt(lt)-1))
            if (nt(lt) == 0) then
              cycle logcycles
            end if
            
            ! T=2*max time in this logcycle
-           print *, 'DBG:',lt,lo,nt(lt),lo+nt(lt)-1,maxval(sol%t(lo:lo+nt(lt)-1))
            tee(lt) = maxval(sol%t(lo:lo+nt(lt)-1))*TMAX_MULT
            s(:,lt) = pvalues(tee(lt),sol%INVLT)
            lo = lo + nt(lt)
