@@ -92,11 +92,11 @@ PFLAGS=-O3 -march=native -flto=auto
 # based on whethere the environment variable PERF is defined
 ifdef PERF
   FLAGS=$(PFLAGS)
+  LINKFLAG=$(FLAGS) $(LINKOPT)
 else
   FLAGS=$(DFLAGS)
+  LINKFLAG=$(DFLAGS) 
 endif
-
-LINKFLAG=$(FLAGS) $(LINKOPT) 
 
 # the link step
 ifdef ARB
