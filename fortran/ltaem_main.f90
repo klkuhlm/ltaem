@@ -395,5 +395,10 @@ program ltaem_main
   ! write output to file
   call writeResults(sol,part)
 
+  ! deallocate stuff
+  deallocate(c,e,p,s,nt,tee,sol%x,sol%y,sol%t)
+  if allocated(sol%obsname) then
+    deallocate(sol%obsname)
+  end if
 end program ltaem_main
 
