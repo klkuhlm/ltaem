@@ -396,9 +396,12 @@ program ltaem_main
   call writeResults(sol,part)
 
   ! deallocate stuff
-  deallocate(c,e,p,s,nt,tee,sol%x,sol%y,sol%t)
-  if allocated(sol%obsname) then
-    deallocate(sol%obsname)
-  end if
+  deallocate(c,e,part,s,nt,tee,sol%x,sol%y,sol%t,dom%InclIn,dom%InclUp,dom%InclBG,sol%h,sol%v)
+  if (allocated(sol%obsname)) deallocate(sol%obsname)
+  if (allocated(hp)) deallocate(hp,vp,stmp)
+  if (allocated(Qp)) deallocate(sol%Q,Qp)
+  if (allocated(sol%dQ)) deallocate(sol%dQ)
+  if (allocated(sol%dh)) deallocate(sol%dh)
+  if (allocated(idxmat)) deallocate(idxmat)
 end program ltaem_main
 
