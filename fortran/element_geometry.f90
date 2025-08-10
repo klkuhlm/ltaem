@@ -228,7 +228,6 @@ contains
 
     real(DP), allocatable :: Rcg(:,:), Eeg(:,:), R(:)
     complex(DP), allocatable :: Z(:,:)
-    logical, allocatable :: nondiag(:,:)
     integer, allocatable :: iv(:), nest(:), val(:)
     integer :: i, j, n, parent
     character(4) :: chint
@@ -238,13 +237,6 @@ contains
     ntot = sum(dom%num)
 
     if (ntot > 1) then
-
-       allocate(nondiag(ntot,ntot))
-       ! logical mask for non-diagonal elements
-       nondiag = .true.
-       do concurrent(i = 1:ntot)
-         nondiag(i,i) = .false.
-       end do
 
        dom%InclIn = .false. !! dom%InclIn(0:ntot,1:ntot) logical
        dom%InclUp = -huge(1) !! dom%InclUp(1:ntot)       integer
@@ -257,18 +249,30 @@ contains
        ! check centers of elements (rows = circles, columns = all elements)
        if (nc > 0) then
           allocate(Rcg(nc,ntot))
-          where (nondiag(1:nc,1:nc))
-             ! don't compute distance to self
-             Rcg(1:nc,1:nc) = abs(spread(c%z,1,nc) - spread(c%z,2,nc))
-          end where
-          Rcg(1:nc,nc+1:ntot) = abs(spread(e%z,1,nc) - spread(c%z,2,ne))
+          !Rcg = -999.9 ! for debugging
+          do i = 1, nc
+            do j = 1, nc
+              if (i /= j) then
+                Rcg(i,j) = abs(c(j)%z - c(i)%z)
+              end if
+            end do
+            do j = 1, ne
+              Rcg(i,nc + j) = abs(e(j)%z - c(i)%z)
+            end do
+          end do
 
           ! nondiag handles zero distance-to-self case
-          where (Rcg(1:nc,1:ntot) < spread(c(1:nc)%r,2,ntot) .and. nondiag(1:nc,1:ntot))
-             ! Is center of target element (2nd dim)
-             ! inside radius of source element (1st dim)?
-             dom%InclIn(1:nc,1:ntot) = .true.
-          end where
+          do i = 1, nc
+            do j = 1, ntot
+              if (Rcg(i,j) < c(i)%r) then
+                if (i /= j) then
+                  ! Is center of target element (2nd dim)
+                  ! inside radius of source element (1st dim)?
+                  dom%InclIn(i,j) = .true.
+                end if
+              end if
+            end do
+          end do
 
           ! TODO: steps 1 and 2 should be done by solving the equations for the circles/ellipses
           ! but it is easier to do it with a discrete representation of the boundaries 
@@ -327,29 +331,40 @@ contains
        ! determine what elliptical element each circular + elliptical element falls inside ...
 
        ! check centers of elements (rows = ellipses, columns = all elements)
+       ! elipses come first in columns, _then_ circles
        if (ne > 0) then
-          allocate(Eeg(ne,ntot),Z(ne,ntot))
-          if (nc > 0) then
-             Z(1:ne,ne+1:ntot) = spread(c%z,1,ne) - spread(e%z,2,nc) 
-             Eeg(1:ne,ne+1:ntot) = real(xy2eR(Z(1:ne,1:nc),spread(e,2,nc)))
-          end if
-         
-          Z(1:ne,1:ne) = spread(e%z,1,ne) - spread(e%z,2,ne)
-          Eeg(1:ne,1:ne) = real(xy2eR(Z(1:ne,nc+1:ntot),spread(e,2,ne)))
-          deallocate(Z)
-
-          ! no straightforward way to do this with where and a mask.
-          do i = 1,ne
-             do j = 1,ntot
-                if ((Eeg(i,j) < e(i)%r) .and. (i /= j-nc)) then
-                   dom%InclIn(nc+i,j) = .true.
-                end if
+         allocate(Eeg(ne,ntot),Z(ne,ntot))
+         !Eeg = -999.9
+         !Z = cmplx(-999.9, -888.8, DP)
+         if (nc > 0) then
+           do i = 1, ne
+             do j = 1, nc
+               Z(i,ne + j) = c(j)%z - e(i)%z 
+               Eeg(i,ne + j) = real(xy2eR(Z(i,ne + j), e(i)))
              end do
-          end do
+           end do
+         end if
 
-          deallocate(Eeg)
+         do i = 1, ne
+           do j = 1, ne
+             if (i /= j) then
+               Z(i,j) = e(j)%z - e(i)%z
+               Eeg(i,j) = real(xy2eR(Z(i,j), e(i)))
+             end if
+           end do
+         end do
+         deallocate(Z)
 
-          ! check ellipse-on-circle intersection
+         do i = 1,ne
+           do j = 1,ntot
+             if ((Eeg(i,j) < e(i)%r) .and. (i /= j-nc)) then
+               dom%InclIn(nc+i,j) = .true.
+             end if
+           end do
+         end do
+         deallocate(Eeg)
+
+         ! check ellipse-on-circle intersection
           do i = 1, ne
              do j = 1, nc
                 if (any(abs(e(i)%G(j)%Rgm(:) - e(i)%r) <= 0.0) .or. &
