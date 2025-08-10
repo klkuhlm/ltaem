@@ -261,11 +261,10 @@ contains
             end do
           end do
 
-          ! nondiag handles zero distance-to-self case
           do i = 1, nc
             do j = 1, ntot
-              if (Rcg(i,j) < c(i)%r) then
-                if (i /= j) then
+              if (i /= j) then
+                if (Rcg(i,j) < c(i)%r) then
                   ! Is center of target element (2nd dim)
                   ! inside radius of source element (1st dim)?
                   dom%InclIn(i,j) = .true.

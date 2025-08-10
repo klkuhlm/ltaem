@@ -1,8 +1,8 @@
 # general types
 # "particle_track"  <<<< this was blowing up and producing gigabytes of output
 
-EXE="./ltaem"
-# EXE="valgrind --leak-check=full --show-leak-kinds=all ./ltaem"
+#EXE="./ltaem"
+EXE="valgrind --leak-check=full --show-leak-kinds=all ./ltaem"
 
 for t in  "contour" "hydrographs" ; do
     echo "pumping_well $t output"
