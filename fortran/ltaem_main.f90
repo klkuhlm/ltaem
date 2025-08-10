@@ -31,7 +31,7 @@ program ltaem_main
   use constants, only : DP
   use type_definitions, only : domain, element, matching, circle, ellipse, solution, INVLT, particle
   use file_ops, only : readinput, writeresults, read_coeff, dump_coeff
-  use inverse_Laplace_Transform, only : L => deHoog_invlap, pvalues => deHoog_pvalues
+  use inverse_Laplace_Transform, only : Linv => deHoog_invlap, pvalues => deHoog_pvalues
   use particle_integrate, only : rungeKuttaMerson, rungeKutta, fwdEuler, analytic
   use solution_mod, only : matrix_solution
   use calc_routines, only : headCalc, velCalc, elementFlowrate
@@ -259,9 +259,9 @@ program ltaem_main
            hip = lop + size(s,1) - 1
 
            do k = 1,nc+ne
-              sol%Q(lot:hit,k) = L(sol%t(lot:hit), tee(lt), qp(lop:hip,k), sol%INVLT)
+              sol%Q(lot:hit,k) = Linv(sol%t(lot:hit), tee(lt), qp(lop:hip,k), sol%INVLT)
               if (sol%deriv) then
-                 sol%dQ(lot:hit,k) = L(sol%t(lot:hit), tee(lt), &
+                 sol%dQ(lot:hit,k) = Linv(sol%t(lot:hit), tee(lt), &
                       & qp(lop:hip,k)*stmp(lop:hip), sol%INVLT)*sol%t(lot:hit)
               end if
            end do
@@ -297,13 +297,13 @@ program ltaem_main
               lop = (lt - minlt)*size(s,dim=1) + 1
               hip = lop + size(s,dim=1) - 1
 
-              sol%h(lot:hit,j,i) =     L(sol%t(lot:hit), tee(lt), hp(lop:hip), sol%INVLT)
-              sol%v(lot:hit,1:2,j,i) = L(sol%t(lot:hit), tee(lt), vp(lop:hip,1:2), sol%INVLT)
+              sol%h(lot:hit,j,i) =     Linv(sol%t(lot:hit), tee(lt), hp(lop:hip), sol%INVLT)
+              sol%v(lot:hit,1:2,j,i) = Linv(sol%t(lot:hit), tee(lt), vp(lop:hip,1:2), sol%INVLT)
 
               if (sol%deriv) then
                  ! multiply solution by p for derivative
                  hp(lop:hip) = hp(lop:hip)*stmp(lop:hip)
-                 sol%dh(lot:hit,j,i) = L(sol%t(lot:hit), tee(lt), hp(lop:hip), &
+                 sol%dh(lot:hit,j,i) = Linv(sol%t(lot:hit), tee(lt), hp(lop:hip), &
                       & sol%INVLT)*sol%t(lot:hit)
               end if
            end do
@@ -349,9 +349,9 @@ program ltaem_main
            hip = lop + size(s,1) - 1
 
            do k = 1, nc+ne
-              sol%Q(lot:hit,k) = L(sol%t(lot:hit), tee(lt), qp(lop:hip,k), sol%INVLT)
+              sol%Q(lot:hit,k) = Linv(sol%t(lot:hit), tee(lt), qp(lop:hip,k), sol%INVLT)
               if (sol%deriv) then
-                 sol%dQ(lot:hit,k) = L(sol%t(lot:hit), tee(lt), &
+                 sol%dQ(lot:hit,k) = Linv(sol%t(lot:hit), tee(lt), &
                       & qp(lop:hip,k)*stmp(lop:hip), sol%INVLT)*sol%t(lot:hit)
               end if
            end do
@@ -376,13 +376,13 @@ program ltaem_main
            hip = lop + size(s,1) - 1
 
            ! don't need second dimension of results matrices
-           sol%h(lot:hit,i,1) =     L(sol%t(lot:hit),tee(lt),hp(lop:hip),sol%INVLT)
-           sol%v(lot:hit,1:2,i,1) = L(sol%t(lot:hit),tee(lt),vp(lop:hip,1:2),sol%INVLT)
+           sol%h(lot:hit,i,1) =     Linv(sol%t(lot:hit),tee(lt),hp(lop:hip),sol%INVLT)
+           sol%v(lot:hit,1:2,i,1) = Linv(sol%t(lot:hit),tee(lt),vp(lop:hip,1:2),sol%INVLT)
 
            if (sol%deriv) then
               ! multiply solution by p for derivative
               hp(lop:hip) = hp(lop:hip)*stmp(lop:hip)
-              sol%dh(lot:hit,i,1) = L(sol%t(lot:hit),tee(lt),hp(lop:hip)&
+              sol%dh(lot:hit,i,1) = Linv(sol%t(lot:hit),tee(lt),hp(lop:hip)&
                    &,sol%INVLT)*sol%t(lot:hit)
            end if
         end do
