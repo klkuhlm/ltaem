@@ -18,13 +18,15 @@ The software was primarliy developed in Linux using freely available Fortran com
 
 LT-AEM and LAPACK itself depend on (and the LAPACK source provides) BLAS for lower-level matrix operations.  System blas and laplack libraries should be available with -lblas and -llapack or static libraries for blas and lapack should be linked or copied to the source directory as blas.a and lapack.a, or the Makefile needs to be changed to point to them.
 
-A not-so recent version of gfortran is required (>= 5.0), because of the use of the ieee_arithmetic intrinsic Fortran2003 module.
+A not-ancient version of gfortran is required (>= 5.0), because of the use of the ieee_arithmetic intrinsic Fortran2003 module.
 
 arb (http://arblib.org) is an optional dependency. Specifying ARB=1 as an argument to make will comple wrapper code to use the arbitrary precision arb library for K and I bessel functions, instead of the Amos fortran code. The arb library should work for any argument (very large or small) and will always give double-precision accurate results, but the library is much slower than amos (double precision only). Arb must be a recent version, since the scaled bessel functions aren't in all versions of the library. Arb then requires flint, mpfr, and mpc.
 
-With the two (or optionally three) libraries in place, compilation should work with just the simple "make" command from the source directory.  This copies the compiled executable into the "run" sub directory, where there are many input files (unfortunately of various vintages -- some might not work with the latest version of the code).
+With the two (or optionally three) libraries in place, compilation should work with just the simple "make" command from the source directory.  This copies the compiled executable into the "run" sub directory, where there are many input files.
 
 
 Author Contact Info
 ============================================================ 
-If you need assistance or have questions, contact me (klkuhlm _at_ sandia _dot_ gov) regarding the code. My website includes more reference and publications: http://kris.kuhlmans.net  I may be able to provide you with an executable for your platform, if you have issues compiling it.  If you run into a bug or missing feature, I might be able to accommodate you, but this depends on the amount of work required to fix/implement the feature of concern.
+If you need assistance or have questions, contact me (klkuhlm _at_ sandia _dot_ gov) regarding the code. My website includes more reference and publications: http://kris.kuhlmans.net
+
+I may be able to provide you with an executable for your platform, if you have issues compiling it.  If you run into a bug or missing feature, I might be able to accommodate you, but this depends on the amount of work required to fix/implement the feature of concern.
