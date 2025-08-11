@@ -405,5 +405,7 @@ program ltaem_main
   if (allocated(sol%dQ)) deallocate(sol%dQ)
   if (allocated(sol%dh)) deallocate(sol%dh)
   if (allocated(idxmat)) deallocate(idxmat)
+  if (allocated(bg%mat)) deallocate(bg%mat)
+
 end program ltaem_main
 

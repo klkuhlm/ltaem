@@ -355,9 +355,11 @@ contains
          deallocate(Z)
 
          do i = 1,ne
-           do j = 1,ntot
-             if ((Eeg(i,j) < e(i)%r) .and. (i /= j-nc)) then
-               dom%InclIn(nc+i,j) = .true.
+           do j = 1,ntot ! ellipses, then circles
+             if (i /= j) then
+               if ((Eeg(i,j) < e(i)%r)) then
+                 dom%InclIn(nc+i,j) = .true.
+               end if
              end if
            end do
          end do
