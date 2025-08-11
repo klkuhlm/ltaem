@@ -2,6 +2,7 @@
 # "particle_track"  <<<< this was blowing up and producing gigabytes of output
 
 #EXE="./ltaem"
+export LD_LIBRARY_PATH=/home/klkuhlm/src/gcc/local/lib64
 EXE="valgrind --leak-check=full --show-leak-kinds=all ./ltaem"
 
 for t in  "contour" "hydrographs" ; do

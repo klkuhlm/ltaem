@@ -1718,7 +1718,7 @@ contains
           do j = 1, size(p,dim=1)
              if (p(j)%r(i,1) > 0.0) then
                 ! only write particle if it has non-zero data
-                write (90,'(I0,4(1X'//hfmt//'))')  j,p(j)%r(i,2:5)
+                write (90,'(I0,4(1X,'//hfmt//'))')  j,p(j)%r(i,2:5)
              end if
           end do
           write (90,'(/)')

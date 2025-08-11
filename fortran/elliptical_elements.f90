@@ -611,9 +611,12 @@ contains
     nmax = ceiling(e%N/2.0)
     do concurrent (i = 0:max(MS,N)-1)
       vi(i) = i ! integer vector
+      if (mod(vi(i),2) == 0) then
+        vs = 1.0
+      else
+        vs = -1.0
+      end if
     end do
-    vs = -1.0 ! sign vector
-    where (mod(vi,2) == 0) vs = 1.0
 
     arg(1:MS,1:nmax) = spread(vs(0:MS-1)/real(1-(2*vi(0:MS-1))**2,DP),2,nmax)
     

@@ -70,14 +70,14 @@ SRCS=$(OBJS:.o=.f90) $(MAIN:.o=.f90)
 ########################################################
 
 #### gfortran >= 4.6.1 #################
-CC=gcc
-F90=gfortran
-#CC=/usr/local/stow/gcc-trunk/bin/gcc
-#F90=/usr/local/stow/gcc-trunk/bin/gfortran
+#CC=gcc
+#F90=gfortran
+CC=/home/klkuhlm/src/gcc/local/bin/gcc
+F90=/home/klkuhlm/src/gcc/local/bin/gfortran
 ##OMP=-fopenmp
 ##CPP=-cpp
 ###DFLAGS=-O2 -march=native -fprofile-generate -flto
-DFLAGS=-O0 -Wall -Wextra  -g #-fcheck=all #-ffpe-trap=overflow,underflow  -fanalyzer
+DFLAGS=-Wall -Wextra -Og -g #-fcheck=all #-ffpe-trap=overflow,underflow  -fanalyzer
 ###DFLAGS+=-fdump-rtl-expand 
 ##LINKOPT=-fbacktrace -B/usr/lib/x86_64-linux-gnu  # needed to make dev version of gcc to work?
 LINKOPT=-flto=auto
