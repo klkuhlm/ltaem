@@ -11,10 +11,8 @@ for t in  "contour" "hydrographs" ; do
         1> pumping_well_${t}.screen \
         2> pumping_well_${t}.err 
     if [ -s pumping_well_${t}.err ] ; then
-        echo "**********************************"
-        echo "WARNING: ${t} produced an error"
-        echo "**********************************"
-        cat pumping_well_${t}.err
+        echo "********************************** WARNING: ${t} produced an error **********************************"
+        tail pumping_well_${t}.err
     fi
 done
 
@@ -25,9 +23,7 @@ for t in  "dualporosity" "leaky1" "leaky2" "leaky3" "stepwiseQ" "linearQ"; do
         1> pumping_well_${t}_hydrographs.screen \
         2> pumping_well_${t}_hydrographs.err
     if [ -s pumping_well_${t}_hydrographs.err ] ; then
-        echo "**********************************"
-        echo "WARNING: ${t} produced an error"
-        echo "**********************************"
-        cat pumping_well_${t}_hydrographs.err
+        echo "********************************** WARNING: ${t} produced an error **********************************"
+        tail pumping_well_${t}_hydrographs.err
     fi
 done

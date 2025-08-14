@@ -1,5 +1,5 @@
 !
-! Copyright (c) 2011-2019 Kristopher L. Kuhlman (klkuhlm at sandia dot gov)
+! Copyright (c) 2011-2025 Kristopher L. Kuhlman (klkuhlm at sandia dot gov)
 !
 ! Permission is hereby granted, free of charge, to any person obtaining a copy
 ! of this software and associated documentation files (the "Software"), to deal
@@ -1683,7 +1683,7 @@ contains
           write (20,'(A)')   &
           & '#     time              x                    y                  '//&
           &'velx                 vely '
-          do k = 1,p(i)%numt
+          do k = 1,size(p(i)%r,dim=1)
              write (20,'('//tfmt//',4(1X,'//hfmt//'))') &
                   & p(i)%r(k,1:5)
           end do

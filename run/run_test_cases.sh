@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #EXE="./ltaem"
-EXE="valgrind ./ltaem"
+EXE="valgrind --leak-check=full --show-leak-kinds=all ./ltaem"
 
 cd 01-pumping-well
 echo "now in $(pwd)"
@@ -19,7 +19,11 @@ for d in {01a-,02-,03-,04-,07-,08-,09-,10-,11-,12-}; do
     ln -sf ../ltaem .
     for i in *.in; do
         echo "running ${i}"
-        ${EXE} ${i} > ${i}_screen.out
+        ${EXE} ${i} 1> ${i}_screen.out 2> ${i}_screen.err
+        if [ -s ${i}_screen.err ] ; then
+            echo "********************************** WARNING: ${t} produced an error **********************************"
+            tail ${i}_screen.err
+        fi            
     done
     cd ..
 done
