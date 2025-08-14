@@ -451,7 +451,7 @@ contains
           end if
           deallocate(Bn,Bn0,cmat,smat)
        end if
-    endif
+    end if
 
     if (src%ibnd == 2 .and. (.not. src%storin)) then
        if (nrows > 0) then
