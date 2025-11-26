@@ -1686,7 +1686,7 @@ contains
           write (20,'(A)')   &
           & '#     time              x                    y                  '//&
           &'velx                 vely '
-          do k = 1,size(p(i)%r,dim=1)
+          do k = lbound(p(i)%r,dim=1),ubound(p(i)%r,dim=1)
              write (20,'('//tfmt//',4(1X,'//hfmt//'))') &
                   & p(i)%r(k,1:5)
           end do
