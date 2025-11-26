@@ -50,7 +50,7 @@ contains
     real(DP), dimension(2) :: vInit,vTrap,vAB3,vAB2,vSF
     real(DP), dimension(2) :: fwdEuler,Trap,halfAB,fullAB,Simp,x0
     real(DP) :: error, pt, px, py, dt, length, enddt, px0, py0
-    real(DP), parameter :: SAFETY = 0.9
+    real(DP), parameter :: SAFETY = 0.9_DP
 
     !!complex(DP), dimension(21,2) :: tmp
 
@@ -99,26 +99,26 @@ contains
        ! forward Euler 1/3-step  predictor
        call getsrange(pt,lo,ns,los,his,lt)
        vInit = L(pt,tee(lt), V(x0,s(:,lt),los,his,dom,c,e,bg), sol%INVLT)
-       FwdEuler(1:2) = x0(1:2) + dt/3.0*vInit(1:2)
+       FwdEuler(1:2) = x0(1:2) + dt/3.0_DP*vInit(1:2)
 
        ! trapezoid rule 1/3-step corrector
-       call getsrange(pt + dt/3.0,lo,ns,los,his,lt)
-       vTrap = L(pt+dt/3.0,tee(lt), V(FwdEuler,s(:,lt),los,his,dom,c,e,bg), sol%INVLT)
-       Trap(1:2) = x0(1:2) + dt/6.0*(vInit(1:2) + vTrap(1:2))
+       call getsrange(pt + dt/3.0_DP,lo,ns,los,his,lt)
+       vTrap = L(pt+dt/3.0_DP,tee(lt), V(FwdEuler,s(:,lt),los,his,dom,c,e,bg), sol%INVLT)
+       Trap(1:2) = x0(1:2) + dt/6.0_DP*(vInit(1:2) + vTrap(1:2))
 
        ! Adams-Bashforth 1/2-step predictor
-       vAB3 = L(pt+dt/3.0,tee(lt), V(Trap,s(:,lt),los,his,dom,c,e,bg), sol%INVLT)
-       halfAB(1:2) = x0(1:2) + dt/8.0*(vInit(1:2) + 3*vAB3(1:2))
+       vAB3 = L(pt+dt/3.0_DP,tee(lt), V(Trap,s(:,lt),los,his,dom,c,e,bg), sol%INVLT)
+       halfAB(1:2) = x0(1:2) + dt/8.0_DP*(vInit(1:2) + 3.0_DP*vAB3(1:2))
 
        ! full step Adams-Bashforth predictor
-       call getsrange(pt + dt/2.0,lo,ns,los,his,lt)
-       vAB2 = L(pt+dt/2.0,tee(lt), V(halfAB,s(:,lt),los,his,dom,c,e,bg), sol%INVLT)
-       fullAB(1:2) = x0(1:2) + dt/2.0*(vInit(1:2) - 3*vAB3(1:2) + 4*vAB2(1:2))
+       call getsrange(pt + dt/2.0_DP,lo,ns,los,his,lt)
+       vAB2 = L(pt+dt/2.0_DP,tee(lt), V(halfAB,s(:,lt),los,his,dom,c,e,bg), sol%INVLT)
+       fullAB(1:2) = x0(1:2) + dt/2.0_DP*(vInit(1:2) - 3.0_DP*vAB3(1:2) + 4.0_DP*vAB2(1:2))
 
        ! full step Simpson's rule corrector
        call getsrange(pt + dt,lo,ns,los,his,lt)
        vSF = L(pt+dt,tee(lt), V(halfAB,s(:,lt),los,his,dom,c,e,bg), sol%INVLT)
-       Simp(1:2) = x0(1:2) + dt/6.0*(vInit(1:2) + 4*vAB2(1:2) + vSF(1:2))
+       Simp(1:2) = x0(1:2) + dt/6.0_DP*(vInit(1:2) + 4.0_DP*vAB2(1:2) + vSF(1:2))
 
        ! relative error (biggest of x- or y-direction)
        error = maxval(abs((Simp - fullAB)/Simp))
@@ -161,15 +161,15 @@ contains
           if (partCut .or. length > p%maxL) then
              ! cut time step to minimize distance
              ! integrated in one step
-             dt = dt/3.0
+             dt = dt/3.0_DP
 
           elseif (p%tol >= error) then
              ! enlarge dt to speed up integration when possible
-             dt = SAFETY*dt*(p%tol/error)**2.0D-1
+             dt = SAFETY*dt*(p%tol/error)**0.2_DP
 
           else
              ! reduce dt to increase accuracy when needed
-             dt = SAFETY*dt*(p%tol/error)**2.5D-1
+             dt = SAFETY*dt*(p%tol/error)**0.25_DP
 
           end if
 
@@ -233,12 +233,12 @@ contains
        ! forward Euler 1/2-step  (predictor)
        call getsrange(pt,lo,ns,los,his,lt)
        vInit = L(pt,tee(lt), V(x0,s(:,lt),los,his,dom,c,e,bg), sol%INVLT)
-       FwdEuler(1:2) = x0(1:2) + dt/2.0*vInit(1:2)
+       FwdEuler(1:2) = x0(1:2) + dt/2.0_DP*vInit(1:2)
 
        ! backward Euler 1/2-step (corrector)
-       call getsrange(pt + dt/2.0,lo,ns,los,his,lt)
-       vBkwdEuler = L(pt+dt/2.0,tee(lt), V(FwdEuler,s(:,lt),los,his,dom,c,e,bg), sol%INVLT)
-       BkwdEuler(1:2) = x0(1:2) + dt/2.0*vBkwdEuler(1:2)
+       call getsrange(pt + dt/2.0_DP,lo,ns,los,his,lt)
+       vBkwdEuler = L(pt+dt/2.0_DP,tee(lt), V(FwdEuler,s(:,lt),los,his,dom,c,e,bg), sol%INVLT)
+       BkwdEuler(1:2) = x0(1:2) + dt/2.0_DP*vBkwdEuler(1:2)
 
        ! midpoint rule full-step predictor
        call getsrange(pt + dt,lo,ns,los,his,lt)
@@ -247,7 +247,7 @@ contains
 
        ! Simpson's rule full-step corrector
        vSimp = L(pt+dt,tee(lt), V(Midpt,s(:,lt),los,his,dom,c,e,bg), sol%INVLT)
-       Simp(1:2) = x0(:) + dt/6.0*(vinit(:) + 2*vBkwdEuler(:) + 2*vMidpt(:) + vSimp(:))
+       Simp(1:2) = x0(:) + dt/6.0_DP*(vinit(:) + 2.0_DP*vBkwdEuler(:) + 2.0_DP*vMidpt(:) + vSimp(:))
 
        pt = pt + dt
        px0 = px
@@ -556,7 +556,7 @@ contains
     type(ellipse), dimension(:), intent(in) :: e
     logical, intent(out) :: partEnd, partCut
     complex(DP) :: pz,pz0,z,z0
-    real(DP), parameter :: ANGLE_TOL = atan(1.0_DP)/2.0 ! 45/2 degrees
+    real(DP), parameter :: ANGLE_TOL = atan(1.0_DP)/2.0_DP ! 45/2 degrees
     real(DP) :: length
     integer :: i
     

@@ -76,8 +76,8 @@ contains
     case(4)
        ! "step test": increasing by integer multiples of Q each
        ! integer multiple of par1 time, off at par2
-       mult(1:np) = 1.0/(p - p*exp(-par(1)*p)) * &
-                      & (1.0 - exp(-par(2)*p))/p
+       mult(1:np) = 1.0_DP/(p - p*exp(-par(1)*p)) * &
+                      & (1.0_DP - exp(-par(2)*p))/p
     case(5)
        ! half square wave (only +), period 2*par1
        ! shifted to start at t=par2
@@ -96,8 +96,8 @@ contains
        ! full square wave (only +, then -), period 2*par1
        ! shifted to start at t=par2
        mult(1:np) = exp(-par(2)*p)* &
-            &  (1.0 - exp(-par(1)*p/2.0))/ &
-            & ((1.0 + exp(-par(1)*p/2.0))*p)
+            &  (1.0_DP - exp(-par(1)*p/2.0_DP))/ &
+            & ((1.0_DP + exp(-par(1)*p/2.0_DP))*p)
     case(9)
        ! sine wave shifted to start at t=par2
        mult(1:np) = exp(-par(2)*p)*par(1)/(p**2 + par(1)**2)
@@ -109,7 +109,7 @@ contains
        ! unpack initial times, pumping rates and final time
        ti(1:n) = par(1:n)
        tf = par(n+1)
-       y(0) = 0.0
+       y(0) = 0.0_DP
        y(1:n) = par(n+2:2*n+1)
        dy = y(1:n) - y(0:n-1)
 
@@ -130,9 +130,9 @@ contains
        y(1:n) = par(n+2:2*n+1)
 
        ! compute slope between each pair of points
-       W(0) = 0.0
-       W(n+1) = 0.0
-       y(n+1) = 0.0
+       W(0) = 0.0_DP
+       W(n+1) = 0.0_DP
+       y(n+1) = 0.0_DP
        denom = [ti(2:n),tf] - ti(1:n)
        numer = y(2:n+1) - y(1:n)
        where (abs(denom) < epsilon(abs(numer)))

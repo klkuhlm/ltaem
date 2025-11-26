@@ -118,12 +118,12 @@ contains
 
     allocate(v(0:M),vi(0:M))
     do concurrent (j=0:M)
-      v(j) = cmplx(j,0,DP)
+      v(j) = cmplx(real(j,DP),0.0_DP,DP)
     end do
     where(mod([(j,j=0,M)],2) == 0)
-       vi = cmplx(1,0,DP)
+       vi = cmplx(1.0_DP,0.0_DP,DP)
     elsewhere
-       vi = cmplx(-1,0,DP)
+       vi = cmplx(-1.0_DP,0.0_DP,DP)
     end where
 
     ! A/B 1st dimension: subscript in McLachlan notation,
@@ -139,7 +139,7 @@ contains
          & mat%A(1:M,0:M-1,0:1), mat%B(1:M,0:M-1,0:1))
 
     di = 1 ! dummy integer for lapack
-    dc(1) = (0.0,0.0) ! dummy complex for lapack
+    dc(1) = (0.0_DP,0.0_DP) ! dummy complex for lapack
 
     !$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
     ! even coefficients (a) of even order
@@ -148,9 +148,9 @@ contains
     !$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 
     ! main diagonal/ r counting from 0:m-1 like McLachlan
-    Coeff(:,:) = cmplx(0,0,DP)
+    Coeff(:,:) = cmplx(0.0_DP,0.0_DP,DP)
     do concurrent (i=1:M-1)
-      Coeff(i+1,i+1) = cmplx((2*i)**2, 0, DP)
+      Coeff(i+1,i+1) = cmplx(real((2*i)**2,DP), 0.0_DP, DP)
     end do
 
     ! off diagonals
@@ -159,7 +159,7 @@ contains
     end do
 
     ! special case
-    Coeff(2,1) = 2.0*q
+    Coeff(2,1) = 2.0_DP*q
 
     call ZGEEV(JOBVL='N', JOBVR='V',N=M, A=Coeff, LDA=M, W=mat%mcn(1:m), &
          & VL=dc, LDVL=di, VR=mat%A(1:m,0:m-1,0), LDVR=M, &
@@ -177,11 +177,11 @@ contains
     ! De_{2n+1} in eqn 3.14 of St&Sp
     !$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 
-    Coeff(:,:) = cmplx(0,0,DP)
+    Coeff(:,:) = cmplx(0.0_DP,0.0_DP,DP)
     Coeff(1,1) = 1.0_DP + q
 
     do concurrent (i=1:m-1)
-      Coeff(i+1,i+1) = cmplx((2*i+1)**2, 0, DP)
+      Coeff(i+1,i+1) = cmplx(real((2*i+1)**2,DP), 0.0_DP, DP)
     end do
     do concurrent (i=1:m, j=1:m, j == i+1 .or. j == i-1)
       Coeff(i,j) = q
@@ -195,7 +195,7 @@ contains
          &" calculating even coefficients of odd order"
 
     ! se'_2n+1(psi=0)
-    w = sum(spread((2*v(0:M-1)+1)*vi(0:M-1),2,M)*mat%A(:,:,1),dim=1)
+    w = sum(spread((2.0_DP*v(0:M-1)+1.0_DP)*vi(0:M-1),2,M)*mat%A(:,:,1),dim=1)
     mat%A(:,:,1) = mat%A(:,:,1)/spread(w,1,M)
 
     !$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
@@ -205,10 +205,10 @@ contains
 
     ! this one not shifted by one, since 2n+2 -> 2n
     !! (but starting from one, rather than zero)
-    Coeff(:,:) = cmplx(0,0,DP)
+    Coeff(:,:) = cmplx(0.0_DP,0.0_DP,DP)
 
     do concurrent (i=1:m)
-      Coeff(i,i) = cmplx((2*i)**2, 0, DP)
+      Coeff(i,i) = cmplx(real((2*i)**2,DP), 0.0_DP, DP)
     end do
     do concurrent (i=1:m, j=1:m, j == i+1 .or. j == i-1)
       Coeff(i,j) = q
@@ -222,7 +222,7 @@ contains
          &" calculating odd coefficients of even order"
 
     ! ce_2n+2(psi=0)
-    w = sum(spread((2*v(0:M-1)+2)*vi(0:M-1),2,M)*mat%B(:,:,0),dim=1)
+    w = sum(spread((2.0_DP*v(0:M-1)+2.0_DP)*vi(0:M-1),2,M)*mat%B(:,:,0),dim=1)
     mat%B(:,:,0) = mat%B(:,:,0)/spread(w,1,M)
 
     !$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
@@ -230,11 +230,11 @@ contains
     ! Do_{2n+1} of eqn 3.18 in St&Sp
     !$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 
-    Coeff(:,:) = cmplx(0,0,DP)
+    Coeff(:,:) = cmplx(0.0_DP,0.0_DP,DP)
     Coeff(1,1) = 1.0_DP - q
 
     do concurrent (i=1:m-1)
-      Coeff(i+1,i+1) = cmplx((2*i+1)**2, 0, DP)
+      Coeff(i+1,i+1) = cmplx(real((2*i+1)**2,DP), 0.0_DP, DP)
     end do
     do concurrent (i=1:m, j=1:m, j == i+1 .or. j == i-1)
       Coeff(i,j) = q
@@ -281,13 +281,13 @@ contains
     call angfcnsetup(mf,n,v,vi,EV,OD)
     nje = size(EV)
     njo = size(OD)
-    j = floor(n/2.0)
+    j = floor(n/2.0_DP)
 
     ce(:,EV) = sum(spread(mf%A(:,j(EV),0),2,nz)* &
-         & spread(cos(outer(2*v,PIOV2-z)),3,nje),dim=1)
+         & spread(cos(outer(2.0_DP*v,PIOV2-z)),3,nje),dim=1)
     
     ce(:,OD) = sum(spread(mf%B(:,j(OD),1),2,nz)* &
-         & spread(sin(outer(2*v+1,PIOV2-z)),3,njo),dim=1)
+         & spread(sin(outer(2.0_DP*v+1.0_DP,PIOV2-z)),3,njo),dim=1)
 
   end function ce_vect_nz
 
@@ -313,14 +313,14 @@ contains
     call angfcnsetup(mf,n,v,vi,EV,OD)
     nje = size(EV)
     njo = size(OD)
-    j = floor((n-1)/2.0)
+    j = floor((n-1)/2.0_DP)
     where (n == 0) j = 0
 
     se(:,EV) = sum(spread(mf%B(:,j(EV),0),2,nz)* &
-         & spread(sin(outer(2*v+2,PIOV2-z)),3,nje),dim=1)
+         & spread(sin(outer(2.0_DP*v+2.0_DP,PIOV2-z)),3,nje),dim=1)
 
     se(:,OD) = sum(spread(mf%A(:,j(OD),1),2,nz)* &
-         & spread(cos(outer(2*v+1,PIOV2-z)),3,njo),dim=1)
+         & spread(cos(outer(2.0_DP*v+1.0_DP,PIOV2-z)),3,njo),dim=1)
 
     where (spread(n,1,nz) == 0) se = -huge(1.0)  ! se_0() is invalid
   end function se_vect_nz
@@ -346,13 +346,13 @@ contains
     call angfcnsetup(mf,n,v,vi,EV,OD)
     nje = size(EV)
     njo = size(OD)
-    j = floor(n/2.0)
+    j = floor(n/2.0_DP)
 
     Dce(:,EV) = sum(spread(spread(2*v,2,nje)*mf%A(:,j(EV),0),2,nz)* &
-         & spread(sin(outer(2*v,PIOV2-z)),3,nje),dim=1)
+         & spread(sin(outer(2.0_DP*v,PIOV2-z)),3,nje),dim=1)
 
     Dce(:,OD) = -sum(spread(spread(2*v+1,2,njo)*mf%B(:,j(OD),1),2,nz)* &
-         & spread(cos(outer(2*v+1,PIOV2-z)),3,njo),dim=1)
+         & spread(cos(outer(2.0_DP*v+1.0_DP,PIOV2-z)),3,njo),dim=1)
 
   end function Dce_vect_nz
 
@@ -377,14 +377,14 @@ contains
     call angfcnsetup(mf,n,v,vi,EV,OD)
     nje = size(EV)
     njo = size(OD)
-    j = floor((n-1)/2.0)
+    j = floor((n-1)/2.0_DP)
     where (n == 0) j = 0
 
-    Dse(:,EV) = -sum(spread(spread(2*v+2,2,nje)*mf%B(:,j(EV),0),2,nz)* &
-         & spread(cos(outer(2*v+2,PIOV2-z)),3,nje),dim=1)
+    Dse(:,EV) = -sum(spread(spread(2.0_DP*v+2.0_DP,2,nje)*mf%B(:,j(EV),0),2,nz)* &
+         & spread(cos(outer(2.0_DP*v+2.0_DP,PIOV2-z)),3,nje),dim=1)
 
-    Dse(:,OD) = sum(spread(spread(2*v+1,2,njo)*mf%A(:,j(OD),1),2,nz)* &
-         & spread(sin(outer(2*v+1,PIOV2-z)),3,njo),dim=1)
+    Dse(:,OD) = sum(spread(spread(2.0_DP*v+1.0_DP,2,njo)*mf%A(:,j(OD),1),2,nz)* &
+         & spread(sin(outer(2.0_DP*v+1.0_DP,PIOV2-z)),3,njo),dim=1)
 
     where (spread(n,1,nz) == 0) Dse = -huge(1.0)  ! se_0() is undefined
   end function Dse_vect_nz
@@ -413,7 +413,7 @@ contains
     call radfcnsetup(mf,n,z,sqrtq,v1,v2,v,vi,EV,OD)
     nje = size(EV)
     njo = size(OD)
-    j = floor(n/2.0)
+    j = floor(n/2.0_DP)
     call BesselI_val(v1,M+1,I1(0:M,1:nz))
     call BesselI_val(v2,M+1,I2(0:M,1:nz))
 
@@ -451,7 +451,7 @@ contains
     call radfcnsetup(mf,n,z,sqrtq,v1,v2,v,vi,EV,OD)
     nje = size(EV)
     njo = size(OD)
-    j = floor((n-1)/2.0)
+    j = floor((n-1)/2.0_DP)
     where (n == 0) j = 0
     call BesselI_val(v1,m+2,I1(0:m+1,:))
     call BesselI_val(v2,m+2,I2(0:m+1,:))
@@ -491,7 +491,7 @@ contains
     call radfcnsetup(mf,n,z,sqrtq,v1,v2,v,vi,EV,OD)
     nje = size(EV)
     njo = size(OD)
-    j = floor(real(n,DP)/2.0)
+    j = floor(real(n,DP)/2.0_DP)
     call BesselI_val(v1,m+1,I(0:m,:))
     call BesselK_val(v2,m+1,K(0:m,:))
 
@@ -529,7 +529,7 @@ contains
     call radfcnsetup(mf,n,z,sqrtq,v1,v2,v,vi,EV,OD)
     nje = size(EV)
     njo = size(OD)
-    j = floor((n-1)/2.0)
+    j = floor((n-1)/2.0_DP)
     where(n == 0) j = 0
     call BesselI_val(v1,m+2,I(0:m+1,:))
     call BesselK_val(v2,m+2,K(0:m+1,:))
@@ -571,7 +571,7 @@ contains
     call radderivfcnsetup(mf,n,z,sqrtq,v1,v2,enz,epz,v,vi,EV,OD)
     nje = size(EV)
     njo = size(OD)
-    j = floor(n/2.0)
+    j = floor(n/2.0_DP)
     call BesselI_val_and_deriv(v1,m+1,I1(0:m,:),DI1(0:m,:))
     call BesselI_val_and_deriv(v2,m+1,I2(0:m,:),DI2(0:m,:))
 
@@ -612,7 +612,7 @@ contains
     call radderivfcnsetup(mf,n,z,sqrtq,v1,v2,enz,epz,v,vi,EV,OD)
     nje = size(EV)
     njo = size(OD)
-    j = floor((n-1)/2.0)
+    j = floor((n-1)/2.0_DP)
     where (n == 0) j = 0
     call BesselI_val_and_deriv(v1,m+2,I1(0:m+1,:),DI1(0:m+1,:))
     call BesselI_val_and_deriv(v2,m+2,I2(0:m+1,:),DI2(0:m+1,:))
@@ -658,7 +658,7 @@ contains
     call radderivfcnsetup(mf,n,z,sqrtq,v1,v2,enz,epz,v,vi,EV,OD)
     nje = size(EV)
     njo = size(OD)
-    j = floor(n/2.0)
+    j = floor(n/2.0_DP)
     call BesselI_val_and_deriv(v1,m+1,I(0:m,:),DI(0:m,:))
     call BesselK_val_and_deriv(v2,m+1,K(0:m,:),DK(0:m,:))
 
@@ -700,7 +700,7 @@ contains
     call radderivfcnsetup(mf,n,z,sqrtq,v1,v2,enz,epz,v,vi,EV,OD)
     nje = size(EV)
     njo = size(OD)
-    j = floor((n-1)/2.0)
+    j = floor((n-1)/2.0_DP)
     where (n == 0) j = 0
     call BesselI_val_and_deriv(v1,m+2,I(0:m+1,:),DI(0:m+1,:))
     call BesselK_val_and_deriv(v2,m+2,K(0:m+1,:),DK(0:m+1,:))
@@ -1071,11 +1071,11 @@ contains
     do concurrent (j=0:mf%m-1)
       i(j+1) = j
     end do
-    v = cmplx(i,0,DP)
+    v = cmplx(real(i,DP),0.0_DP,DP)
 
     ! compute the "sign" vector
-    vi = cmplx(1,0,DP)
-    where (mod(i,2) == 1) vi = cmplx(-1,0,DP)
+    vi = cmplx(1.0_DP,0.0_DP,DP)
+    where (mod(i,2) == 1) vi = cmplx(-1.0_DP,0.0_DP,DP)
 
     ! indexing vectors based on even/odd-ness of n
     do concurrent (j=1:size(n))
@@ -1107,11 +1107,11 @@ contains
     do concurrent (j=0:mf%m-1)
       i(j+1) = j
     end do
-    v = cmplx(i,0,DP)
+    v = cmplx(real(i,DP),0.0_DP,DP)
 
     ! compute the "sign" vector
-    vi = cmplx(1,0,DP)
-    where (mod(i,2) == 1) vi = cmplx(-1,0,DP)
+    vi = cmplx(1.0_DP,0.0_DP,DP)
+    where (mod(i,2) == 1) vi = cmplx(-1.0_DP,0.0_DP,DP)
 
     sqrtq = sqrt(mf%q)
     v1 = sqrtq*exp(-z)
@@ -1148,11 +1148,11 @@ contains
     do concurrent (j=0:mf%m-1)
       i(j+1) = j
     end do
-    v = cmplx(i,0,DP)
+    v = cmplx(real(i,DP),0.0_DP,DP)
 
     ! compute the "sign" vector
-    vi = cmplx(1,0,DP)
-    where (mod(i,2) == 1) vi = cmplx(-1,0,DP)
+    vi = cmplx(1.0_DP,0.0_DP,DP)
+    where (mod(i,2) == 1) vi = cmplx(-1.0_DP,0.0_DP,DP)
 
     enz = spread(exp(-z),dim=1,ncopies=mf%m)
     epz = spread(exp( z),dim=1,ncopies=mf%m)
@@ -1235,7 +1235,7 @@ contains
 
     ID(1:n-2,:) = 0.5_DP*(I(0:n-3,:) + I(2:n-1,:)) ! middle
     ID(0,:) = I(1,:) ! low end
-    ID(n-1,:) = I(n-2,:) - cmplx(n-1,0,DP)/arg*I(n-1,:) ! high end
+    ID(n-1,:) = I(n-2,:) - cmplx(real(n-1,DP),0.0_DP,DP)/arg*I(n-1,:) ! high end
 
   end subroutine BesselI_val_and_deriv
 
@@ -1296,7 +1296,7 @@ contains
 
     KD(1:n-2,:) = -0.5_DP*(K(0:n-3,:) + K(2:n-1,:)) ! middle
     KD(0,:) = -K(1,:) ! low end
-    KD(n-1,:) = -(K(n-2,:) + cmplx(n-1,0,DP)/arg*K(n-1,:)) ! high end
+    KD(n-1,:) = -(K(n-2,:) + cmplx(real(n-1,DP),0.0_DP,DP)/arg*K(n-1,:)) ! high end
 
   end subroutine BesselK_val_and_deriv
 

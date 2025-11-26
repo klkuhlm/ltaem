@@ -63,10 +63,10 @@ contains
     real(DP), dimension(size(x),0:n-1) :: c
     integer :: i
 
-    c(:,0) = 1.0
+    c(:,0) = 1.0_DP
     c(:,1) = cos(x)
     do i = 2,N-2
-       c(:,i) = 2.0*c(:,1)*c(:,i-1) - c(:,i-2)
+       c(:,i) = 2.0_DP*c(:,1)*c(:,i-1) - c(:,i-2)
     end do
   end function cos_recurrence
 
@@ -79,10 +79,10 @@ contains
     integer :: i
 
     s(:,1) = sin(x)
-    s(:,2) = sin(2.0*x)
+    s(:,2) = sin(2.0_DP*x)
     c = cos(x)
     do i = 3,N-2
-       s(:,i) = 2.0*c*s(:,i-1) - s(:,i-2)
+       s(:,i) = 2.0_DP*c*s(:,i-1) - s(:,i-2)
     end do
   end function sin_recurrence
 
@@ -153,8 +153,8 @@ contains
     real(DP) :: x,y
     x = real(z)
     y = aimag(z)
-    f = cmplx(tanh(2*x)/(1+cos(2*y)/cosh(2*x)), &
-         & sin(2*y)/(cosh(2*x)+cos(2*y)),DP)
+    f = cmplx(tanh(2.0_DP*x)/(1.0_DP+cos(2.0_DP*y)/cosh(2.0_DP*x)), &
+         & sin(2.0_DP*y)/(cosh(2.0_DP*x)+cos(2.0_DP*y)),DP)
   end function ctanh
 
   elemental function cacosh(z) result(f)
@@ -166,9 +166,9 @@ contains
     ! branch cut is left of +1, along x axis
     ! -pi <= aimag(f) <= +pi
     if(real(z) >= 0.0) then
-       f = log(z + sqrt(z**2 - 1.0))
+       f = log(z + sqrt(z**2 - 1.0_DP))
     else
-       f = -log(z + sqrt(z**2 - 1.0))
+       f = -log(z + sqrt(z**2 - 1.0_DP))
     end if
   end function cacosh
 
@@ -264,7 +264,7 @@ contains
 
     ! semi-major/minor length a:=f*cosh/sinh(psi)
     y = LN2/LNPIOV2
-    P = 4.0_DP*((f*cosh(eta))**y + (f*sinh(eta))**y)**(1.0/y)
+    P = 4.0_DP*((f*cosh(eta))**y + (f*sinh(eta))**y)**(1.0_DP/y)
 
   end function ynot
 
