@@ -757,6 +757,7 @@ contains
     else
        ! no circular elements
        allocate(c(0))
+       write(UECHO,'(A)') '<<<<<<<<<< NO CIRCULAR ELEMENTS >>>>>>>>>>'
     end if
 
     ! elliptical (includes line sources/sinks)
@@ -1097,6 +1098,7 @@ contains
     else
        ! no elliptical elements
        allocate(e(0))
+       write(UECHO,'(A)') '<<<<<<<<<< NO ELLIPTICAL ELEMENTS >>>>>>>>>>'
     end if
 
     ntot = sum(dom%num) ! total number of circular and elliptical elements
@@ -1259,6 +1261,7 @@ contains
     else
        ! no particles
        allocate(p(0))
+       write(UECHO,'(A)') '<<<<<<<<<< NO PARTICLES >>>>>>>>>>'
     end if
     close(UINPUT) ! main input file
     close(UECHO) ! input echo file
