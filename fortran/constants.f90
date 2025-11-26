@@ -26,7 +26,7 @@ module constants
   public
 
   ! NB: there are a pile of constants in cbessel, not used elsewhere.
-  
+
   ! real with range 300 orders of mag, 15 sig figs
   integer, parameter :: DP = selected_real_kind(p=15,r=300)
 
@@ -35,7 +35,7 @@ module constants
 
   ! useful? constants related to pi and ln
   real(DP), parameter :: PI = 4.0_DP*atan(1.0_DP) ! 3.1415926535897931...
-  real(DP), parameter :: TWOPI = 8.0_DP*atan(1.0_DP) 
+  real(DP), parameter :: TWOPI = 8.0_DP*atan(1.0_DP)
   real(DP), parameter :: PIOV2 = 2.0_DP*atan(1.0_DP) ! 1.5707963267948966...
   real(DP), parameter :: PISQ = (4.0_DP*atan(1.0_DP))**2
 
@@ -48,4 +48,3 @@ module constants
   complex(DP), parameter :: EYE = cmplx(0.0_DP,1.0_DP,DP)
 
 end module constants
-

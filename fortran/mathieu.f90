@@ -40,7 +40,7 @@ module mf
   real(DP), parameter, private :: PIOV2 = atan(1.0_DP)*2.0_DP
 
 contains
-  subroutine mathieu_init(q,M,mcn,A,B) 
+  subroutine mathieu_init(q,M,mcn,A,B)
     ! this subroutine computes the eigenvalues given at least a value for the
     ! Mathieu parameter (q), the norm and matrix size (M) are optional
 
@@ -59,7 +59,7 @@ contains
     ! externally visible things
     complex(DP), intent(in) :: q
     integer, intent(in) :: M
-    complex(DP), intent(out), dimension(4*M) :: mcn 
+    complex(DP), intent(out), dimension(4*M) :: mcn
     complex(DP), intent(out), dimension(M,M,2) :: A, B
 
     ! just one matrix of recursion coefficients (used 4 times)
@@ -170,7 +170,7 @@ contains
     do concurrent (i = 1:m)
       Coeff(i,i) = cmplx(real((2*i)**2,DP), 0.0_DP, DP)
     end do
-    
+
     do concurrent (i = 1:m, j = 1:m, j == i+1 .or. j == i-1)
       Coeff(i,j) = q
     end do
@@ -200,7 +200,7 @@ contains
     do concurrent (i = 1:m, j = 1:m, j == i+1 .or. j == i-1)
       Coeff(i,j) = q
     end do
-    
+
     call ZGEEV(JOBVL='N', JOBVR='V', N=M, A=Coeff, LDA=M, W=mcn(3*m+1:4*m),&
          & VL=dc, LDVL=di, VR=B(1:m,1:m,2), LDVR=M,&
          & WORK=work, LWORK=lwork, RWORK=rwork, INFO=info)
@@ -221,7 +221,7 @@ contains
   ! for vector order and argument (retuns an outer-product type result)
   ! ce(q) is called Se(-q) by Blanch, or Qe(q) by Alhargan
   ! functions here use identities in 7.02 of Blanch's AMS#59 publication
-  function ce(n,z,A,B) 
+  function ce(n,z,A,B)
 
     ! external arguments
     integer, dimension(:), intent(in) :: n
@@ -255,7 +255,7 @@ contains
   ! odd angular modified mathieu function (q<0)
   ! for vector order and argument (returns an outer-product type result)
   ! se is called So(-q) by Blanch and Qo(q) by Alhargan
-  function se(n,z,A,B) 
+  function se(n,z,A,B)
     integer, dimension(:), intent(in) :: n
     real(DP), dimension(:), intent(in) :: z
     complex(DP), dimension(:,:,:), intent(in) :: A,B
@@ -275,7 +275,7 @@ contains
     j = floor((n-1)*0.5_DP)
     where (n == 0) j = 0
     j = j+1
-    
+
     se(:,EV) = sum(spread(B(:,j(EV),1),2,nz)* &
          & spread(sin(outer(2.0_DP*v+2.0_DP,PIOV2-z)),3,nje),dim=1)
 
@@ -288,7 +288,7 @@ contains
   !############################################################
   ! derivative of even angular modified mathieu function (q<0)
   ! for vector order and argument (returns an outer-product type result)
-  function Dce(n,z,A,B) 
+  function Dce(n,z,A,B)
     integer, dimension(:), intent(in) :: n
     real(DP), dimension(:), intent(in) :: z
     complex(DP), dimension(:,:,:), intent(in) :: A,B
@@ -318,7 +318,7 @@ contains
   !############################################################
   ! derivative of odd angular modified mathieu function (q<0)
   ! for vector order and argument (returns an outer-product type result)
-  function Dse(n,z,A,B) 
+  function Dse(n,z,A,B)
     integer, dimension(:), intent(in) :: n
     real(DP), dimension(:), intent(in) :: z
     complex(DP), dimension(:,:,:), intent(in) :: A,B
@@ -351,7 +351,7 @@ contains
   !############################################################
   ! even radial first kind modified mathieu functions (q<0)
   ! for vector order and argument
-  function Ie(n,z,q,A,B) 
+  function Ie(n,z,q,A,B)
     integer, dimension(:), intent(in) :: n
     real(DP), dimension(:), intent(in) :: z
     complex(DP), intent(in) :: q
@@ -388,7 +388,7 @@ contains
   !############################################################
   ! odd radial first kind modified mathieu functions (q<0)
   ! for vector order and argument
-  function Io(n,z,q,A,B) 
+  function Io(n,z,q,A,B)
     integer, dimension(:), intent(in) :: n
     real(DP), dimension(:), intent(in) :: z
     complex(DP), intent(in) :: q
@@ -428,7 +428,7 @@ contains
   !############################################################
   ! even radial second kind modified mathieu functions (q<0)
   ! for vector order and argument
-  function Ke(n,z,q,A,B) 
+  function Ke(n,z,q,A,B)
     integer, dimension(:), intent(in) :: n
     real(DP), dimension(:), intent(in) :: z
     complex(DP), intent(in) :: q
@@ -465,7 +465,7 @@ contains
   !############################################################
   ! odd radial second kind modified mathieu functions (q<0)
   ! for vector order and argument
-  function Ko(n,z,q,A,B) 
+  function Ko(n,z,q,A,B)
     integer, dimension(:), intent(in) :: n
     real(DP), dimension(:), intent(in) :: z
     complex(DP), intent(in) :: q
@@ -506,7 +506,7 @@ contains
   !############################################################
   ! derivative of even radial first kind modified mathieu functions (q<0)
   ! for vector order and argument
-  function DIe(n,z,q,A,B) 
+  function DIe(n,z,q,A,B)
     integer, dimension(:), intent(in) :: n
     real(DP), dimension(:), intent(in) :: z
     complex(DP), intent(in) :: q
@@ -547,7 +547,7 @@ contains
   !############################################################
   ! derivative of odd radial first kind modified mathieu functions (q<0)
   ! for vector order and argument
-  function DIo(n,z,q,A,B) 
+  function DIo(n,z,q,A,B)
     integer, dimension(:), intent(in) :: n
     real(DP), dimension(:), intent(in) :: z
     complex(DP), intent(in) :: q
@@ -592,7 +592,7 @@ contains
   !############################################################
   ! derivative of even radial second kind modified mathieu functions (q<0)
   ! for vector order and argument
-  function DKe(n,z,q,A,B) 
+  function DKe(n,z,q,A,B)
     integer, dimension(:), intent(in) :: n
     real(DP), dimension(:), intent(in) :: z
     complex(DP), intent(in) :: q
@@ -633,7 +633,7 @@ contains
   !############################################################
   ! derivative of odd radial second kind modified mathieu functions (q<0)
   ! for vector order and argument
-  function DKo(n,z,q,A,B) 
+  function DKo(n,z,q,A,B)
     integer, dimension(:), intent(in) :: n
     real(DP), dimension(:), intent(in) :: z
     complex(DP), intent(in) :: q
@@ -951,5 +951,4 @@ contains
     KD(n-1,:) = -(K(n-2,:) + real(n-1,DP)/arg*K(n-1,:)) ! high end
 
   end subroutine BesselK_val_and_deriv
-
 end module mf

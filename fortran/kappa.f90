@@ -42,7 +42,7 @@ contains
     complex(DP), dimension(size(p)) :: q
     logical, intent(in), optional :: sq_arg
     logical :: squared
-    
+
     integer :: np, i
     complex(DP), allocatable ::  kap2(:), exp2z(:)
 
@@ -54,7 +54,7 @@ contains
     else
       squared = sq_arg
     end if
-    
+
     np = size(p)
 
     !! standard confined definition
@@ -64,14 +64,14 @@ contains
       !! wave solution (another time derivative)
       q(1:np) = q(:) * p
     end if
-    
+
     !! leaky
     !! ##############################
     if (el%leakFlag /= 0) then
        allocate(kap2(np),exp2z(np))
        kap2(1:np) = sqrt(p(:)*el%aquitardSs/el%aquitardK)
        exp2z(1:np) = exp(-2.0_DP*kap2(:)*el%aquitardb)
-    
+
        select case(el%leakFlag)
        case(1)
           !! case I, no-drawdown condition at top of aquitard
@@ -92,11 +92,11 @@ contains
     !! unconfined
     !! ##############################
     if(el%unconfinedFlag) then
-       ! integrated (0->b dz) Neuman (1972, WRR) solution 
+       ! integrated (0->b dz) Neuman (1972, WRR) solution
        q(1:np) = q + el%Kz*p(:)/(el%K*el%b*(el%Kz/el%Sy + p(:)))
     end if
 
-    !! dual porosity 
+    !! dual porosity
     !! ##############################
     if(el%dualPorosityFlag) then
 
@@ -109,14 +109,14 @@ contains
           omega = el%Ss/(el%Ss + el%matrixSs) ! fraction of total storage in fractures
           beta = (1.0_DP - omega)/omega ! "capacity ratio"
           allocate(a(el%NDiffterms),pdf(el%NDiffterms))
-    
+
           if (el%NDiffTerms > 0) then
              select case(el%multiporosityDiffusion)
              case(1)
                 do concurrent (i=1:el%NDiffterms)
                   ! Warren-Root lambda = kappa/((1-omega)*LD**2)
                   a(i) = real((2*i-1)**2,DP) *PISQ*el%lambda*0.25_DP
-                  pdf(i) = 8.0_DP*beta/(real((2*i-1)**2,DP) *PISQ) 
+                  pdf(i) = 8.0_DP*beta/(real((2*i-1)**2,DP) *PISQ)
                 end do
              case(2)
                 stop 'cylindrical multiporosity matrix diffusion not impelemented yet'
@@ -157,7 +157,7 @@ contains
     if (.not. squared) then
       q = sqrt(q)
     end if
-    
+
   end function kappa_pVect
 
   !! scalar version useful in matching
@@ -169,16 +169,15 @@ contains
     logical, optional, intent(in) :: sq_arg
     complex(DP) :: q
     logical :: squared
-    
+
     if (.not. present(sq_arg)) then
       squared = .false.
     else
       squared = sq_arg
     end if
-    
+
     q = sum(kappa_pVect([p],el,squared))
 
   end function kappa_pscal
 
 end module kappa_mod
-

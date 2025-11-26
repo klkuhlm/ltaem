@@ -99,7 +99,6 @@ contains
           write(*,'(A,I0,A)',advance='no') 'Zom ',i,' :'
           write(*,*) c(i)%Zom
        end if
-       
     end do
 
     ! elliptical element self-geometry
@@ -142,7 +141,7 @@ contains
                 write(*,'(2(I0,1X),A)',advance='no') i,j,':Pgm'
                 write(*,*) c(i)%G(j)%Pgm
              end if
-             
+
              deallocate(Zgm)
              other => null()
           end if
@@ -280,7 +279,7 @@ contains
           ! https://www.mathworks.com/matlabcentral/fileexchange/28318-conics-intersection
           ! C++ implementation
           ! https://bitbucket.org/pierluigi/conicsintersection
-          
+
           ! took care of the easy case (circle-on-circle), but more difficult circle-ellipse,
           ! and ellipse-ellipse cases remain.
 
@@ -292,7 +291,6 @@ contains
           do i = 1, nc
              do j = 1, nc
                 if (i /= j) then
-                   
                    if (Rcg(i,j) > (c(i)%r + c(j)%r)) then
                       ! distance between circles greater than sum of radii
                       cycle
@@ -338,7 +336,7 @@ contains
          if (nc > 0) then
            do i = 1, ne
              do j = 1, nc
-               Z(i,ne + j) = c(j)%z - e(i)%z 
+               Z(i,ne + j) = c(j)%z - e(i)%z
                Eeg(i,ne + j) = real(xy2eR(Z(i,ne + j), e(i)))
              end do
            end do
@@ -405,7 +403,7 @@ contains
        end do
        R(1:nc) = c(1:nc)%r
        ! TODO : double-check that circle/ellipse can be compared validly in this manner
-       R(nc+1:ntot) = e(1:ne)%r  
+       R(nc+1:ntot) = e(1:ne)%r
 
        do concurrent (i = 1:ntot, j = 1:ntot, i /= j .and. dom%InclIn(i,j).and.dom%InclIn(j,i) .and. R(i) < R(j))
           dom%InclIn(i,j) = .false.
@@ -481,7 +479,7 @@ contains
        deallocate(nest,iv)
 
     else
-       ! special case of only one element, no matching 
+       ! special case of only one element, no matching
        ! it is in background by convention
        dom%InclIn(0:1,1) = [.true.,.false.]
        dom%InclUp(1) = 0
@@ -516,4 +514,3 @@ contains
 
   end subroutine ComputeElementHierarchy
 end module  geometry
-

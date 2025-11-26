@@ -285,7 +285,7 @@ contains
 
     ce(:,EV) = sum(spread(mf%A(:,j(EV),0),2,nz)* &
          & spread(cos(outer(2.0_DP*v,PIOV2-z)),3,nje),dim=1)
-    
+
     ce(:,OD) = sum(spread(mf%B(:,j(OD),1),2,nz)* &
          & spread(sin(outer(2.0_DP*v+1.0_DP,PIOV2-z)),3,njo),dim=1)
 
@@ -1318,6 +1318,4 @@ contains
     write(*,fmt) (' B(',j,',1:n,0):', (m%B(j,i,0),i=1,n),j=1,n)
     write(*,fmt) (' B(',j,',1:n,1):', (m%B(j,i,1),i=1,n),j=1,n)
   end subroutine print_mathieu_type
-
 end module mathieu_functions
-

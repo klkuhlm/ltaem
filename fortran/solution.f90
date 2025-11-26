@@ -75,7 +75,7 @@ contains
 
     ! row/col have three entries per row or column
     ! 0 : lower bound of sub-block in A matrix
-    ! 1 : size of sub-block 
+    ! 1 : size of sub-block
     ! 2 : upper bound of sub-block in A matrix
 
     allocate(res(ntot,ntot), row(ntot,0:2), col(ntot,0:2))
@@ -84,7 +84,7 @@ contains
     do i = 1,nc
        ! circle on self
        res(i,i) = circle_match(c(i),p,sol%debug)
-       row(i,1) = size(res(i,i)%RHS,1) 
+       row(i,1) = size(res(i,i)%RHS,1)
        col(i,1) = size(res(i,i)%LHS,2)
 
        if (sol%debug) then
@@ -96,7 +96,7 @@ contains
           print '(A,I0,A)', 'SOL circ-self i: ',i,' LHS'
           nrow = size(res(i,i)%LHS,1)
           ncol = size(res(i,i)%LHS,2)
-          if (ncol > 0) then 
+          if (ncol > 0) then
              write(fmt2(5:7),'(I3.3)') ncol
              write(fmt(8:10),'(I3.3)') ncol
              print fmt2, (j,j=1,ncol)
@@ -129,8 +129,8 @@ contains
                      & ' RHS_size: ',size(res(j,i)%RHS)
 
                 print '(A,2(I0,1X),A)', 'SOL circ-circ i,j: ',i,j,' LHS'
-                nrow = size(res(j,i)%LHS,1) 
-                ncol = size(res(j,i)%LHS,2) 
+                nrow = size(res(j,i)%LHS,1)
+                ncol = size(res(j,i)%LHS,2)
                 if (ncol > 0) then
                    write(fmt2(5:7),'(I3.3)') ncol
                    write(fmt(8:10),'(I3.3)') ncol
@@ -143,7 +143,7 @@ contains
                 end if
 
                 print '(A,2(I0,1X),A)', 'SOL circ-circ i,j: ',i,j,' RHS'
-                nrow = size(res(j,i)%RHS(:)) 
+                nrow = size(res(j,i)%RHS(:))
                 if (nrow > 0) then
                    write(fmt2(5:7),'(I3.3)') nrow
                    write(fmt(8:10),'(I3.3)') nrow
@@ -167,8 +167,8 @@ contains
                   & ' RHS_size:',size(res(jj,i)%RHS)
 
              print '(A,2(I0,1X),A)', 'SOL circ-ellip i,j: ',i,jj,' LHS'
-             nrow = size(res(jj,i)%LHS,1) 
-             ncol = size(res(jj,i)%LHS,2) 
+             nrow = size(res(jj,i)%LHS,1)
+             ncol = size(res(jj,i)%LHS,2)
              if (ncol > 0) then
                 write(fmt2(5:7),'(I3.3)') ncol
                 write(fmt(8:10),'(I3.3)') ncol
@@ -181,7 +181,7 @@ contains
              end if
 
              print '(A,2(I0,1X),A)', 'SOL circ-ellip i,j: ',i,jj,' RHS'
-             nrow = size(res(jj,i)%RHS(:)) 
+             nrow = size(res(jj,i)%RHS(:))
              if (nrow > 0) then
                 write(fmt2(5:7),'(I3.3)') nrow
                 write(fmt(8:10),'(I3.3)') nrow
@@ -211,7 +211,7 @@ contains
           print '(A,I0,A)', 'SOL ellip-self i: ',ii,' LHS'
           nrow = size(res(ii,ii)%LHS,1)
           ncol = size(res(ii,ii)%LHS,2)
-          if (ncol > 0) then 
+          if (ncol > 0) then
              write(fmt2(5:7),'(I3.3)') ncol
              write(fmt(8:10),'(I3.3)') ncol
              write(*,fmt2) (j,j=1,ncol)
@@ -340,7 +340,7 @@ contains
           if (sol%debug) then
              print *, 'copy least-squares results into coeff: circle',i
           end if
-          
+
           c(i)%coeff(idx,:) = b(col(i,0):col(i,2))
        else
           ! a specified-flux point source (known strength, and zero unknowns)
@@ -391,5 +391,4 @@ contains
     deallocate(A,b,row,col)
 
   end subroutine matrix_solution
-
 end module solution_mod

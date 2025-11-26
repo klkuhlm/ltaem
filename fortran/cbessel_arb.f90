@@ -31,7 +31,7 @@ Module Complex_Bessel
   end interface
 contains
 
-  ! use same call signature as amos routines    
+  ! use same call signature as amos routines
   subroutine cbesk(z, fnu, kode, n, cy, nz, ierr)
     COMPLEX (dp), INTENT(IN)   :: z      ! argument
     REAL (dp), INTENT(IN)      :: fnu    ! lowest order requested

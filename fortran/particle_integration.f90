@@ -66,14 +66,14 @@ contains
 
     partEnd = .false.
     write(*,'(A,I0)') '** rkm integration, particle ',p%id
-    
+
     ! Runge-Kutta-Merson 4th-order adaptive integration scheme
     rkm: do
        ! did particle enter a sink in last step?
        if (partEnd) exit rkm
- 
+
        ! will particle pass specified end time during this step?
-       call trackDone(p%forward,pt,dt,p%tf,done,enddt) 
+       call trackDone(p%forward,pt,dt,p%tf,done,enddt)
        if (done) then
          if (p%debug) then
            print *, 'p%forward,pt,dt,p%tf,done,enddt',p%forward,pt,dt,p%tf,done,enddt
@@ -87,13 +87,12 @@ contains
              call getsrange(pt,lo,ns,los,his,lt)
              p%r(count-1,4:5) = L(pt,tee(lt), &
                   & V(x0,s(:,lt),los,his,dom,c,e,bg), sol%INVLT)
-             
              exit rkm
           else
              dt = enddt
           end if
        end if
-       
+
        x0 = [px,py]
 
        ! forward Euler 1/3-step  predictor
@@ -259,7 +258,7 @@ contains
        p%r(i-1,4:5) = vSimp(1:2)
 
        ! partCut not used
-       call sinkCheck(px,py,c,e,px0,py0,sink,partCut) 
+       call sinkCheck(px,py,c,e,px0,py0,sink,partCut)
        if (sink) then
           write(*,'(A,I0,A,ES13.6E2)') 'particle ',p%id,' entered a sink at t=',pt
           exit rk
@@ -269,13 +268,13 @@ contains
     if (.not. sink) then
        write(*,'(A,I0,2(A,ES13.6E2))') &
             & 'particle ',p%id,' reached final time:',pt,'=',p%tf
-    
+
        ! compute velocity at final time
        call getsrange(pt,lo,ns,los,his,lt)
        p%r(numdt,4:5) = L(pt,tee(lt), &
             & V(x0,s(:,lt),los,his,dom,c,e,bg), sol%INVLT)
     end if
-    
+
     p%numt = i-1
   end subroutine rungekutta
 
@@ -338,13 +337,13 @@ contains
        p%r(i-1,4:5) = vel(1:2)
 
        ! partCut not used
-       call sinkCheck(px,py,c,e,px0,py0,sink,partCut) 
+       call sinkCheck(px,py,c,e,px0,py0,sink,partCut)
        if (sink) then
           write(*,'(A,I0,A,ES13.6E2)') 'particle ',p%id,' entered a sink at t=',pt
           exit fe
        end if
     end do fe
-    
+
     if (.not. sink) then
        write(*,'(A,I0,2(A,ES13.6E2))') &
             &'particle',p%id,' reached final time:',pt,'=',p%tf
@@ -353,7 +352,7 @@ contains
        p%r(numdt,4:5) = L(pt,tee(lt),&
             & V([px,py],s(:,lt),los,his,dom,c,e,bg),sol%INVLT)
     end if
-    
+
     p%numt = i - 1
 
   end subroutine fwdEuler
@@ -369,7 +368,7 @@ contains
 
     integer, intent(in) :: lo
     real(DP), intent(in) :: tee(lo:)
-    complex(DP), intent(in) :: s(1:,lo:) 
+    complex(DP), intent(in) :: s(1:,lo:)
     type(particle), intent(inout) :: p
     type(circle),  dimension(:), intent(in) :: c
     type(ellipse), dimension(:), intent(in) :: e
@@ -401,8 +400,8 @@ contains
 
     ! solution at t=ti + dt is a root-finding exercise in x and y
     ! use fwd euler to solve for initial guess where particle will be
-    
-    t(1) = p%ti 
+
+    t(1) = p%ti
     t(2:3) = [t(1)/DTFRAC, t(1)*DTFRAC]
 
     call getsrange(t(1),lo,ns,los,his,lt)
@@ -438,7 +437,7 @@ contains
           print *, 'cancelled with',t,ploc
           stop
        end if
-       
+
        ploc(:,1) = ploc(:,2)
        fpv(:,:,1) = fpv(:,:,2)
        ploc(:,2) = ploc(:,3)
@@ -448,7 +447,7 @@ contains
        r = sqrt(w**2 - 4.0_DP*spread(ploc(:,3),1,ns)*fx3x2x1)
        where (abs(w - r) > abs(w + r))
           r = -r
-       end where 
+       end where
        ploc(:,3) = ploc(:,3) - 2.0_DP*L(t(1),tee(lt),fpv(:,:,3)/(w+r),sol%INVLT) 
        fpv(:,:,3) = V(ploc(:,3),s(:,lt),los,his,dom,c,e,bg)  - &
             & (outer(s(:,lt),ploc(:,3)) - spread(loc(:),1,ns))
@@ -457,7 +456,7 @@ contains
          vel = L(t(1),tee(lt),fpv(:,:,3),sol%INVLT)
 
          ! TODO: need to perform sink check here.
-         
+
           p%r(1,1) = p%dt
           p%r(1,2:3) = p%r(0,2:3) + p%dt*vel(:)
           print *, 'finished in',i,'iterations of',MAXITER
@@ -494,7 +493,7 @@ contains
        ! backwards particle tracking
        if (tp-dt <= te) then
           done = .true.
-          newdt = tp - te   
+          newdt = tp - te
        else
           done = .false.
           newdt = 999.
@@ -559,7 +558,7 @@ contains
     real(DP), parameter :: ANGLE_TOL = atan(1.0_DP)*0.5_DP ! 45/2 degrees
     real(DP) :: length
     integer :: i
-    
+
     partEnd = .false.
     partCut = .false.
     pz = cmplx(px,py,DP)
@@ -597,6 +596,4 @@ contains
 
 999 continue
   end subroutine sinkCheck
-
 end module particle_integrate
-

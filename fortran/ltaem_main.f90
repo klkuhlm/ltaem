@@ -84,7 +84,7 @@ program ltaem_main
   call readInput(sol,dom,bg,c,e,part)
   nc = size(c,dim=1)
   ne = size(e,dim=1)
-  
+
   ! compute element geometry from input
   ! read in element hierarchy data from file
   call DistanceAngleCalcs(c,e,bg,dom,sol)
@@ -129,7 +129,7 @@ program ltaem_main
            if (nt(lt) == 0) then
              cycle logcycles
            end if
-           
+
            ! T=2*max time in this logcycle
            tee(lt) = maxval(sol%t(lo:lo+nt(lt)-1))*TMAX_MULT
            s(:,lt) = pvalues(tee(lt),sol%INVLT)
@@ -172,17 +172,17 @@ program ltaem_main
         end if
      end do
      !$OMP END PARALLEL DO
-     
+
      !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
      ! save coefficient matrices to file (if sol%output < 100)
-     
+
      if (.not. sol%skipdump) then
         call dump_coeff(sol,c,e,nt,s,tee,minlt,maxlt)
         write(stdout,'(A)') '  <coefficents dumped, matching finished>  '
      end if
 
-  else   
-     ! do not re-calculate coefficients  
+  else
+     ! do not re-calculate coefficients
      call read_coeff(sol,bg,c,e,nt,s,tee,minlt,maxlt,fail)
      tnp = sol%totalnP
      if (fail) goto 111
@@ -268,7 +268,7 @@ program ltaem_main
         end do
         !$OMP END PARALLEL DO
      end if
-     
+
      !$OMP PARALLEL DO PRIVATE(calcZ,hp,vp,lot,hit,lop,hip) SHARED(sol)
      do j = 1,sol%nx
         !$ write (*,'(I0,1X)',advance="no") OMP_get_thread_num()
@@ -283,7 +283,7 @@ program ltaem_main
 
            !! invert solutions one log-cycle of t at a time
            do lt = minlt,maxlt-1
-              
+
               if (nt(lt) == 0) then
                  ! empty logcycle
                  cycle
@@ -408,4 +408,3 @@ program ltaem_main
   if (allocated(bg%mat)) deallocate(bg%mat)
 
 end program ltaem_main
-

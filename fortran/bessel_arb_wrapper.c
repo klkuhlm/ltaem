@@ -7,12 +7,12 @@ double _Complex arb_K(double gcc_nu, double _Complex gcc_z, int kode) {
 
   // arb complex types
   acb_t acb_z, acb_res, acb_nu;
-  
+
   // built-in double precision complex
   double _Complex gcc_K;
 
   int DP = 55;
-  
+
   acb_init(acb_res);
   acb_init(acb_nu);
   acb_zero(acb_nu);
@@ -25,7 +25,7 @@ double _Complex arb_K(double gcc_nu, double _Complex gcc_z, int kode) {
   acb_set_d(acb_nu, gcc_nu);
 
   int extra = 30;
-  // compute Bessel function 
+  // compute Bessel function
   if (kode == 1) {
     do {
       // unscaled
@@ -37,13 +37,13 @@ double _Complex arb_K(double gcc_nu, double _Complex gcc_z, int kode) {
       // scaled
       acb_hypgeom_bessel_k_scaled(acb_res, acb_nu, acb_z, DP + extra);
       extra *= 2;
-    } while (acb_rel_accuracy_bits(acb_res) < DP);    
+    } while (acb_rel_accuracy_bits(acb_res) < DP);
   }
-    
+
   //  arb_res -> gcc_K
   __real__(gcc_K) = arf_get_d(arb_midref(acb_realref(acb_res)), ARF_RND_DOWN);
   __imag__(gcc_K) = arf_get_d(arb_midref(acb_imagref(acb_res)), ARF_RND_DOWN);
-  
+
   acb_clear(acb_res);
   acb_clear(acb_nu);
   acb_clear(acb_z);
@@ -61,7 +61,7 @@ double _Complex arb_I(double gcc_nu, double _Complex gcc_z, int kode) {
   double _Complex gcc_I;
 
   int DP = 55;
-  
+
   acb_init(acb_res);
   acb_init(acb_nu);
   acb_zero(acb_nu);
@@ -88,11 +88,11 @@ double _Complex arb_I(double gcc_nu, double _Complex gcc_z, int kode) {
       extra *= 2;
     } while (acb_rel_accuracy_bits(acb_res) < DP);
   }
-    
+
   //  arb_res -> gcc_I
   __real__(gcc_I) = arf_get_d(arb_midref(acb_realref(acb_res)), ARF_RND_DOWN);
   __imag__(gcc_I) = arf_get_d(arb_midref(acb_imagref(acb_res)), ARF_RND_DOWN);
-  
+
   acb_clear(acb_res);
   acb_clear(acb_nu);
   acb_clear(acb_z);
@@ -100,5 +100,3 @@ double _Complex arb_I(double gcc_nu, double _Complex gcc_z, int kode) {
   flint_cleanup();
   return gcc_I;
 }
-
-

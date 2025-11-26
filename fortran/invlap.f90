@@ -70,7 +70,7 @@ contains
 
     ! Re(p) -- this is the de Hoog parameter c
     gamma = lap%alpha - log(lap%tol)/(2.0_DP*tee)
-    
+
     ! initialize Q-D table
     e(0:2*M,0) = CZERO
     q(0,1) = fp(1)/(fp(0)*0.5_DP) ! half first term
@@ -88,7 +88,7 @@ contains
         q(0:max,rq) = q(1:max+1,rq-1) * e(1:max+1,rq-1) / e(0:max,rq-1)
       end if
     end do
-    
+
     ! build up continued fraction coefficients
     d(0) = fp(0)*0.5_DP ! half first term
     do concurrent(r = 1:M)
@@ -100,7 +100,7 @@ contains
     A(-1,1:nt) = CZERO
     A(0,1:nt) = d(0)
     B(-1:0,1:nt) = cmplx(1.0_DP,0.0_DP,DP)
-    
+
     ! base of the power series
     z(1:nt) = exp(EYEPI*t(:)/tee)
 
@@ -114,22 +114,22 @@ contains
     ! "improved remainder" to continued fraction
     brem(1:nt) = (1.0_DP + (d(2*M-1) - d(2*M))*z(:))*0.5_DP
     rem(1:nt) = -brem*(1.0_DP - sqrt(1.0_DP + d(2*M)*z(:)/brem**2))
-    
+
     ! last term of recurrence using new remainder
     A(2*M,:) = A(2*M-1,:) + rem*A(2*M-2,:)
     B(2*M,:) = B(2*M-1,:) + rem*B(2*M-2,:)
-    
+
     ! diagonal Pade approximation
     ! F=A/B represents accelerated trapezoid rule
     ft(1:nt) =  exp(gamma*t(:))/tee * real(A(2*M,:)/B(2*M,:))
-    
+
     do n = 1, 2*M-1
       if (ieee_is_nan(real(fp(n))) .or. ieee_is_nan(aimag(fp(n)))) then
         write(*,*) 'Laplace-space function is NaN', n,fp(n)
       end if
     end do
   end function deHoog_invLap_vect
-  
+
   function deHoog_invLap_scalt(t,tee,fp,lap) result(ft)
     use constants, only : DP
     use type_definitions, only : INVLT

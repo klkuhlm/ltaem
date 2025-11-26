@@ -59,7 +59,7 @@ contains
     do concurrent (j = 0:N-1)
       vi(j) = real(j,DP)
     end do
-    
+
     if (c%ibnd == 0) then
        ! matching
        nrows = 2*M
@@ -108,7 +108,7 @@ contains
     allocate(r%LHS(nrows,ncols), r%RHS(nrows))
     r%LHS = CZERO
     r%RHS = CZERO
-    
+
     cmat(1:M,0:N-1) = cos(outer(c%Pcm(:),vi(0:N-1)))
     smat(1:M,1:N-1) = sin(outer(c%Pcm(:),vi(1:N-1)))
 
@@ -210,7 +210,7 @@ contains
        loN = -777
        hiN = -666
     end if
-    
+
     M = trg%M
     ! target element determines number of rows
     if (trg%ibnd == 0) then
@@ -253,14 +253,14 @@ contains
        print '(A,3(I0,1X),A,4(I0,1X))', 'CIRCLE_MATCH_OTHER (parent,s,t): ',&
             & src%parent%id,s,t,' (nrows,ncols,loM,hiM): ',nrows,ncols,loM,hiM
     end if
-    
+
     allocate(r%LHS(nrows,ncols), r%RHS(nrows))
     r%LHS = CZERO
     r%RHS = CZERO
 
     if (nrows > 0) then
 
-       if (dom%inclBg(s,t) .or. dom%InclIn(s,t) .or. dom%InclIn(t,s)) then  
+       if (dom%inclBg(s,t) .or. dom%InclIn(s,t) .or. dom%InclIn(t,s)) then
 
           allocate(Bn(M,0:N-1),Bn0(0:N-1),cmat(M,0:N-1),smat(M,N-1))
 
@@ -271,7 +271,7 @@ contains
           ! for matching or specified total head target elements
           if (trg%ibnd == 0 .or. trg%ibnd == -1) then
 
-             if (dom%inclBg(s,t) .or. dom%inclIn(t,s)) then   
+             if (dom%inclBg(s,t) .or. dom%inclIn(t,s)) then
                 ! can the target element "see" the outside of the source element?
                 ! use exterior Bessel functions (Kn)
 
@@ -286,7 +286,7 @@ contains
                 if (debug) then
                    print '(A,2(I0,1X))', 'CIRCLE_MATCH_OTHER HEAD OUTSIDE: (loN,hiN): ', loN,hiN
                 end if
-                
+
                 ! head effects on target element
                 r%LHS(1:M,loN:loN+N-1) = Bn(:,0:N-1)/spread(Bn0(0:N-1),1,M)*cmat(:,0:N-1)/src%parent%K ! a_n
                 r%LHS(1:M,loN+N:hiN)   = Bn(:,1:N-1)/spread(Bn0(1:N-1),1,M)*smat(:,1:N-1)/src%parent%K ! b_n
@@ -294,7 +294,7 @@ contains
                 ! head effects due to area source term of inner source on outer target
                 r%RHS(1:M) = r%RHS(1:M) + (timef(p,trg%time,.true.) * trg%areaQ / &
                      &(trg%alpha * kappa(p,trg%element,.true.)))
-                
+
              else
                 ! can target element "see" the inside of the source element?
                 ! i.e., is the source element the parent?
@@ -324,7 +324,6 @@ contains
 
                 ! head effects of parent, if that element has area source term
                 r%RHS(1:M) = r%RHS(1:M) + (timef(p,src%time,.true.) * src%areaQ / (src%alpha * kap**2))
-                
              end if
 
              if (src%ibnd == 2 .and. (dom%inclBg(s,t) .or. dom%inclIn(t,s))) then
@@ -357,7 +356,7 @@ contains
                   & dPot_dX(M,2*N-1), dPot_dY(M,2*N-1))
 
              ! flux effects of source circle on target element
-             if (dom%inclBg(s,t) .or. dom%inclIn(t,s)) then 
+             if (dom%inclBg(s,t) .or. dom%inclIn(t,s)) then
                 ! use exterior Bessel functions (Kn)
 
                 kap = kappa(p,src%parent)
@@ -391,7 +390,7 @@ contains
                    loN = 1
                    hiN = 2*N-1
                 end if
-                
+
                 if (debug) then
                    print '(A,2(I0,1X))', 'CIRCLE_MATCH_OTHER FLUX INSIDE: (loN,hiN): ', loN,hiN
                 end if
@@ -543,7 +542,7 @@ contains
     do concurrent (i = 0:N-1)
       vr(i) = real(i,DP)
     end do
-    
+
     if (inside) then
        if (c%ibnd == 0) then
           n0 = 2*N ! inside of matching circle
@@ -583,11 +582,10 @@ contains
     use time_mod, only : timef
     use type_definitions, only : circle
     use bessel_functions, only : bK, bI, dbk, dbi
-    
     use ieee_arithmetic, only : ieee_is_nan
     integer :: j
     complex(DP) :: tmp
-    
+
     complex(DP), dimension(:), intent(in) :: p
     type(circle), intent(in) :: c
     integer, intent(in) :: lo,hi
@@ -628,7 +626,7 @@ contains
           print *, 'DEBUG3:(Rgp)',Rgp
         end if
       end do
-      
+
       call dBK(Rgp*kap(:),N,BRgp(1:np,0:N-1),dBRgp(1:np,0:N-1))
       dBRgp(1:np,0:N-1) = spread(kap(1:np),2,N)*dBRgp(:,:)
       BR0(1:np,0:N-1) =  bK(c%r*kap(:),N)
@@ -650,4 +648,3 @@ contains
 
   end function circle_deriv
 end module circular_elements
-

@@ -149,7 +149,7 @@ contains
        end if
        deallocate(RMn,dRMn)
     end if
-    
+
     ! setup RHS
     select case(e%ibnd)
     case(-1)
@@ -163,7 +163,7 @@ contains
        ! put specified flux effects on RHS
        r%RHS(1:M) = timef(p,e%time,.false.)*e%bdryQ/ynot(e%r,e%f)
     case(2)
-       continue ! no ellipse "wellbore" storage 
+       continue ! no ellipse "wellbore" storage
     end select
   end function ellipse_match_self
 
@@ -191,8 +191,8 @@ contains
     real(DP) :: K, factor
 
     N = src%N ! number of coefficients in the source elliptical element
-    t = trg%id  
-    s = src%id  
+    t = trg%id
+    s = src%id
     do concurrent (j = 0:N-1)
       vi(j) = j
     end do
@@ -250,7 +250,7 @@ contains
           ! for matching or specified total head target elements
           if (trg%ibnd == 0 .or. trg%ibnd == -1) then
 
-             if (dom%inclBg(s,t) .or. dom%inclin(t,s)) then  
+             if (dom%inclBg(s,t) .or. dom%inclin(t,s)) then
                 ! can the target element "see" the outside of the source element?
                 ! use exterior angular and radial modified Mathieu functions
                 cemat(1:M,0:N-1) = ce(src%parent%mat(idx), vi(0:N-1), src%G(t)%Pgm(:))
@@ -309,7 +309,7 @@ contains
                    ! source well inside target element
                    factor = 1.0_DP
                 end if
-                
+
                 ! >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
                 ! TODO: copied from circular elements -- check/fix
                 ! <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -328,7 +328,7 @@ contains
                   & dPot_dR(M,2*N-1), dPot_dP(M,2*N-1), dPot_dX(M,2*N-1),dPot_dY(M,2*N-1))
 
              ! flux effects of source ellipse on target element
-             if (dom%inclBg(s,t) .or. dom%inclIn(t,s)) then 
+             if (dom%inclBg(s,t) .or. dom%inclIn(t,s)) then
                 ! use exterior angular and radial modified Mathieu functions
                 if (.not. trg%ibnd == 0) then
                    cemat(1:M,0:N-1) = ce(src%parent%mat(idx), vi(0:N-1), src%G(t)%Pgm(:))
@@ -619,7 +619,7 @@ contains
     end do
 
     arg(1:MS,1:nmax) = spread(vs(0:MS-1)/real(1.0_DP-(2.0_DP*vi(0:MS-1))**2,DP),2,nmax)
-    
+
     ! factor of 4 different from Kuhlman & Neuman (J. Eng. Mathematics) paper
     a2n(1:nmax) = timef(p,e%time,.false.)*e%bdryQ/TWOPI* &
             & (-vs(0:N-1:2))*sum(arg*conjg(e%parent%mat(idx)%A(1:MS,0:nmax-1,0)),dim=1)
@@ -627,4 +627,3 @@ contains
   end function line
 
 end module elliptical_elements
-

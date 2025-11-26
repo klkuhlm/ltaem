@@ -52,7 +52,7 @@ contains
     if (bg%debug) then
       print *, 'shirts debug', maxval(e(:)%N+2), kap
     end if
-    
+
     ! initialize background for each value of p
     shirtdim(:) = shirts(maxval(e(:)%N+2), kap)
 
@@ -101,4 +101,3 @@ contains
 
   end function shirts
 end module ellipse_mathieu_init
-

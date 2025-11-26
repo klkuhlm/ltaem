@@ -45,11 +45,11 @@ module utility
   interface cosh
      module procedure ccosh
   end interface cosh
-  
+
   interface acosh
      module procedure cacosh
   end interface acosh
-  
+
   interface tanh
      module procedure ctanh
   end interface tanh
@@ -185,7 +185,7 @@ contains
        v = [lo]
     else
        dx = (hi-lo)/(num-1)
-       do concurrent (i=1:num) 
+       do concurrent (i=1:num)
          v(i) = lo + (i-1)*dx
        end do
     end if
@@ -316,4 +316,3 @@ contains
 
   end subroutine rotate_vel_mat
 end module utility
-

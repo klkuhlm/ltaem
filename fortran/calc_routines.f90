@@ -134,7 +134,7 @@ contains
        ! <<<openmp is having trouble here, sometimes I get invalid memory access errors>>>
        H(1:np) = H(:) - elin%areaQ*elin%Ss*timef(p,elin%time,.true.)/kappa(p,elin,.true.) ! optional 3rd argument -> kappa**2
        H(1:np) = H(:)/elin%K ! convert to head
-       
+
        elin => null()
 
     end if
@@ -142,7 +142,7 @@ contains
 
   function elementFlowrate(el,p,lo,hi,dom,c,e,bg) result(qp)
     ! compute total flowrate in/out of an element, by integrating radial
-    ! flux along its boundary.  Useful for determining flowrate into a 
+    ! flux along its boundary.  Useful for determining flowrate into a
     ! specified head element, or checking specified flux bc.
 
     use type_definitions, only : matching, element, domain, circle, ellipse
@@ -170,18 +170,18 @@ contains
     if (M < MINLOCS) then
        M = MINLOCS
     end if
-    
+
     allocate(calclocs(M),projangles(M))
     do concurrent (i=1:M)
       projangles(i) = (-PI + TWOPI/M*(i-1))
     end do
     !! TODO: more generally, you might want the ability to bump this inside the element perimeter too...
     safeR = el%r + epsilon(el%r) ! bump calc locations just outside perimeter of element
-    
+
     if (el%id <= dom%num(1)) then
        ! circles
        calclocs(1:M) = el%z + safeR*exp(EYE*projangles(:))
-    else 
+    else
        ! ellipses
        calclocs(1:M) = el%z + el%f*cosh(cmplx(safeR,projangles,DP))*exp(EYE*el%theta)
     end if
@@ -205,7 +205,7 @@ contains
        ! Q = r* \int_0^{2 pi} q_r d theta (assume unit thickness)
        ! trapezoid rule around circle (first & last points same)
        qp(1:np) = el%r*TWOPI/M*sum(rflux(1:np,1:M),dim=2)
-       
+
     else
        ! ellipse
        ! v_eta = f*(sinh(eta)*cos(psi)*v_x + cosh(eta)*sin(psi)*v_y)
@@ -396,7 +396,7 @@ contains
 
     use ieee_arithmetic, only : ieee_is_nan
     integer :: i
-    
+
     complex(DP), intent(in) :: Z
     type(circle),  dimension(:), intent(in) :: c
     type(ellipse), dimension(:), intent(in) :: e
@@ -410,12 +410,12 @@ contains
     real(DP) :: minr
 
     integer :: nc, ne, ntot, j, count, idx
-    
+
     nc = dom%num(1)
     ne = dom%num(2)
     ntot = nc+ne
 
-    ! TODO: this should handle geometry more generally like 
+    ! TODO: this should handle geometry more generally like
     ! in the element_geometry.f90 ComputeElementHierarchy() subroutine
     ! or at least use the results of that here.
 
@@ -433,7 +433,7 @@ contains
         stop 666
       end if
     end do
-    
+
     Rgp(1:nc) = real(Zgp(1:nc))   ! r
     Pgp(1:nc) = aimag(Zgp(1:nc)) ! theta
     do j = 1,nc
@@ -473,7 +473,7 @@ contains
           ! TODO: check this is valid with mixed circles/ellipses
           minr = huge(1.0_DP)
           do j = 1,ntot
-             idx = inout(j) 
+             idx = inout(j)
              if (idx > 0) then
                 if (rvec(idx) < minr) then
                    minr = rvec(idx)

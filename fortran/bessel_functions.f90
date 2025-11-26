@@ -60,7 +60,7 @@ contains
     if (any(abs(z)*0.5_DP < spacing(0.0_DP))) then
       print *, 'AGH! ZERO BESSELK input',size(z)
     end if
-    
+
     do j = 1,size(z,dim=1)
        call cbesk(z=z(j), fnu=0.0_DP, kode=1, n=num, cy=tmp(0:num-1), nz=numzero, ierr=ierr)
        ! either 0 or 3 are acceptable return codes
@@ -136,7 +136,7 @@ contains
     if (n >= 2) then
        I(1:nz,0:n-1) = Itmp(1:nz,0:n-1)
        ! since I(0) is finite, wrote this to not use 1/z form
-       ! but it does require computing I of one higher order 
+       ! but it does require computing I of one higher order
        ID(1:nz,n-1) = 0.5_DP*(I(1:nz,n-2) + Itmp(1:nz,n)) ! high end
        if (n >= 3) then
           ID(1:nz,1:n-2) = 0.5_DP*(I(1:nz,0:n-3) + I(1:nz,2:n-1)) ! middle
@@ -195,4 +195,3 @@ contains
   end subroutine besKd_zscal
 
 end module bessel_functions
-

@@ -61,19 +61,19 @@ module type_definitions
          & '[+/- square wave; tpar(1)=period/4, on @ tpar(2)]      ',&
          & '[piecewise-constant rate]                              ',&
          & '[piecewise-linear rate]                                ']
-    
+
     character(39), dimension(0:3) :: leakFlag = &
          & ['(no leakage)                           ',&
          &  '(no-drawdown condition beyond aquitard)',&
          &  '(no-flow condition beyond aquitard)    ',&
          &  '(infinitely thick aquitard)            ']
-    
+
     character(24), dimension(-1:2) :: ibnd = [&
          & '(specified total head)  ',&
          & '(matching)              ',&
          & '(specified total flux)  ',&
          & '(specified element flux)']
-    
+
     character(34), dimension(7) :: output = [&
          & '(gnuplot contour map)             ',&
          & '(matlab contour map)              ',&
@@ -82,14 +82,14 @@ module type_definitions
          & '(gnuplot time series w/o velocity)',&
          & '(gnuplot pathlines)               ',&
          & '(gnuplot streakline)              ']
-    
+
     character(39), dimension(4) :: particle = [&
          & 'Runge-Kutta-Merson (4th order adaptive)',&
          & 'Runge-Kutta  (4th order)               ',&
          & 'Analytical   (root-finding)            ',&
          & 'Forward Euler  (1st order)             ']
   end type explain_type
-  
+
   type :: time
      ! all elements inherit the time behavior from this type
 
@@ -124,10 +124,10 @@ module type_definitions
   type, extends(time) :: element
 
     logical :: debug
-    logical :: wave   ! solve wave problem (2nd time deriv)?     
-    
+    logical :: wave   ! solve wave problem (2nd time deriv)?
+
      ! global id for the current element
-     integer :: id 
+     integer :: id
 
      ! porosity, constant area source term
      ! main aquifer hydraulic conductivity and Ss for element
@@ -177,7 +177,7 @@ module type_definitions
      ! structure for storing intermediate results
      complex(DP), allocatable :: LHS(:,:), RHS(:)
   end type match_result
-  
+
   type, extends(element) :: matching
      ! number of FS terms, number of matching points on circles/ellipses
      ! for lines/wells can be one (e.g., borehole storage) or zero (known Q)
@@ -237,7 +237,7 @@ module type_definitions
      ! number of Fourier series terms
      integer :: M
   end type INVLT
-  
+
   ! things relating to the numerical solution, independent from flow elements
   type, extends(INVLT) :: solution
 
@@ -305,12 +305,12 @@ module type_definitions
      real(DP),    allocatable :: h(:,:,:), v(:,:,:,:), dh(:,:,:), Q(:,:), dQ(:,:)
 
   end type solution
-  
+
   ! particle related parameters (one for each particle)
   !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   type :: particle
      logical :: debug
-    
+
      ! is particle tracked backwards or forwards?
      logical :: forward
 
@@ -323,7 +323,7 @@ module type_definitions
      ! 3 = Analytical        (root-finding method)
      ! 4 = Fwd Euler          (1st order)
      integer :: int, id
-     
+
      ! error tolerance, minimum stepsize, and max step length for rkm
      real(DP) :: tol, mindt, maxL
 
@@ -377,6 +377,4 @@ contains
        write(*,*) '* nothing to print * row:',row,'col:',col
     end if
   end subroutine print_match_result
-
 end module type_definitions
-

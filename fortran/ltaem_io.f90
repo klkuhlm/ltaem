@@ -49,7 +49,7 @@ contains
     type(explain_type) :: explain
     character(4) :: chint
     character(20), dimension(3) :: fmt
-    character(1024) :: buf 
+    character(1024) :: buf
     character(lenFN+5) :: echofname
     character(lenFN) :: circleFname, ellipseFname, particleFname
     integer :: ierr, j, ntot, nC, nE, ln, sln,s1,s2,slen, idx
@@ -60,7 +60,6 @@ contains
     integer, parameter :: UINPUT = 15, UECHO = 16, UCIRC = 22, UELIP = 33, UPAR = 44 
 
     ln = 0
-    
     open(unit=UINPUT, file=s%infname, status='old', action='read', iostat=ierr)
     if (ierr /= 0) then
        write(stderr,'(2A)') 'ERROR READINPUT: error opening input file ',trim(s%infname)
@@ -68,7 +67,7 @@ contains
     end if
 
     ! search for '.' in filename from the end of the string
-    idx = index(s%infName,'.',back=.true.)  
+    idx = index(s%infName,'.',back=.true.)
     if (idx > 0) then
        s%echofname = s%infname(1:idx-1)//'.echo'
        s%qfname = s%infname(1:idx-1)//'.Q'
@@ -100,7 +99,7 @@ contains
     if (ierr /= 0) then
       s%debug = .false.
     end if
-    
+
     if ((.not. s%particle) .and. (.not. s%contour)) then
        s%timeseries = .true.
     else
@@ -141,13 +140,13 @@ contains
        write(stderr,*) 'ERROR: values (line ',ln,') iff s%particle==.True., '&
             &//'s%output should be in {20,21}: ',s%output,s%particle
        stop 2030
-    end if    
+    end if
 
     if (s%Qcalc .and. s%particle) then
        write(stdout,*) 'WARNING: resetting Qcalc to false for particle tracking'
        s%Qcalc = .false.
     end if
-    
+
     ! read output filename
     read(UINPUT,*,iostat=ierr) s%outFname; ln=ln+1
     if (ierr /= 0) then
@@ -160,11 +159,11 @@ contains
     if (idx > 0) then
        s%elemHfName = s%outFname(1:idx-1)//'.elem'
        s%geomfName  = s%outFname(1:idx-1)//'.geom'
-    else       
-       s%elemHfName = trim(s%outFname)//'.elem' 
+    else
+       s%elemHfName = trim(s%outFname)//'.elem'
        s%geomfName  = trim(s%outFname)//'.geom'
     end if
-    
+
     read(UINPUT,*,iostat=ierr) bg%por, bg%k, bg%ss; ln=ln+1
     if (ierr /= 0) then
        write(stderr,*) 'ERROR: line',ln,'(basic background properties: por, k, ss) of',s%infname
@@ -176,13 +175,13 @@ contains
       ! optional
       bg%wave = .false.
     end if
-    
+
     if (any([bg%por,bg%k,bg%ss] <= 0.0_DP)) then
        write(stderr,*) 'ERROR: value (line ',ln,') bg%por, bg%k, bg%ss '&
             & // 'must all be > 0.0: ',[bg%por,bg%k,bg%ss]
        stop 205
     end if
-    
+
     read(UINPUT,*,iostat=ierr) bg%leakFlag, bg%aquitardK, bg%aquitardSs, bg%aquitardb; ln=ln+1
     if (ierr /= 0 .and. bg%leakFlag /= 0) then
        write(stderr,*) 'ERROR: line ',ln,' (leaky aquitard props:' &
@@ -226,7 +225,7 @@ contains
             & // 'lambda, multiporosityDiffusion, kappa, NDiffTerms) of',s%infname
        stop 2072
     end if
-    
+
     if (any([bg%matrixSs,bg%lambda,bg%kappa] <= 0.0_DP) .and. bg%dualPorosityFlag) then
        write(stderr,*) 'ERROR: value (line',ln,') matrix specific storage (bg%matrixSs), ' &
             & // 'matrix/fracture connection factor (bg%lambda), and matrix/fracture k ratio (bg%kappa) ' &
@@ -246,7 +245,7 @@ contains
             &'must be 0 (off) or {1,2,3}:' ,bg%multiporosityDiffusion
        stop 20722
     end if
-    
+
     ! echo input to file
     write(UECHO,'(A)') '=============== OVERALL OPTIONS ==============='
     write(UECHO,'(L1,1X,A)') s%calc, '  ||  re-calculate coefficients?'
@@ -292,7 +291,7 @@ contains
        write(stderr,*) 'ERROR: line',ln, '(number solution locations: nx,ny,nt) of',s%infname
        stop 2073
     end if
-    
+
     if (any([s%nx,s%ny] < 0) .or. s%nt < 1) then
        write(stderr,*) 'ERROR: value (line',ln,') number x,y observation locations '&
             &//'(s%nx,s%ny) must be >0  and number times must be >1', [s%nx,s%ny,s%nt]
@@ -316,7 +315,7 @@ contains
           write(stderr,*) 'ERROR: line ',ln,' (location names) of',s%infname
           stop 2081
        end if
-       
+
        s1 = 1
        slen = len_trim(buf) ! don't include trailing blanks
        do j = 1,s%nx
@@ -325,7 +324,7 @@ contains
           if (s2 == 0) then
              ! no "|" separator character found
              if (j == 1 .and. slen > 1) then
-                ! first name no separator 
+                ! first name no separator
                 s%obsname(1) = trim(buf)
                 s1 = slen
              elseif(j == s%nx .and. s1 > 1) then
@@ -358,7 +357,7 @@ contains
        ! compute vector if first chars are 'linvec' or 'logvec'
        s%x(:) = computeVector(UINPUT,s%nx,ln)
     end if
-    
+
     read(UINPUT,*,iostat=ierr) tmp; ln=ln+1
     if (ierr == 0)  then
        backspace(UINPUT)
@@ -400,7 +399,7 @@ contains
          stop 2086
       end if
     end if
-    
+
     if (.not. s%particle) then
        fmt(1) = '(    (ES12.5,1X),A) '
        write(UECHO,'(A)') '=============== CALCULATION LOCATIONS/TIMES ==============='
@@ -448,7 +447,7 @@ contains
       write(stderr,*) 'ERROR: line ',ln,' (circles: number, circle input file name) of',s%infname
       stop 2091
     end if
-    
+
     nc = dom%num(1)
     if (nc > 0) then
        sln = 1
@@ -487,8 +486,8 @@ contains
 
        read(UCIRC,*,iostat=ierr) c(1:nc)%CalcIn; sln=sln+1
        if (ierr /= 0) c(1:nc)%CalcIn = read_logical(UCIRC,sln,'circle  ')
-       
-       read(UCIRC,*,iostat=ierr) c(1:nc)%StorIn; sln=sln+1 
+
+       read(UCIRC,*,iostat=ierr) c(1:nc)%StorIn; sln=sln+1
        if (ierr /= 0) c(1:nc)%StorIn = read_logical(UCIRC,sln,'circle  ')
 
        read(UCIRC,*,iostat=ierr) c(1:nc)%wave; sln=sln+1
@@ -503,7 +502,7 @@ contains
              c(1:nc)%wave = c(1)%wave
            end if
        end if
-       
+
        read(UCIRC,*,iostat=ierr) c(1:nc)%r; sln=sln+1
        if (ierr /= 0) c(1:nc)%r = read_real(UCIRC,sln,'circle  ')
        if (any(c%r <= 0.0_DP)) then
@@ -553,7 +552,7 @@ contains
           write(stderr,*) 'ERROR: value (line',sln,' leaky flag) (c%leakFlag) circle '//&
                &'input; input must be in {0,1,2,3}'
           stop 2170
-       end if       
+       end if
 
        read(UCIRC,*,iostat=ierr) c(1:nc)%aquitardK; sln=sln+1
        if (ierr /= 0) c(1:nc)%aquitardK = read_real(UCIRC,sln,'circle  ')
@@ -641,7 +640,7 @@ contains
                & 'matrix/fracture hydraulic conductivity ratio (c%kappa) must be non-negative', c%kappa
           stop 2233
        end if
-       
+
        read(UCIRC,*,iostat=ierr) c(1:nc)%NDiffTerms; sln=sln+1
        if (ierr /= 0) c(1:nc)%NDiffTerms = read_int(UCIRC,sln,'circle  ')
        if (any(c%NDiffTerms < 0 .and. c%dualPorosityFlag)) then
@@ -658,11 +657,11 @@ contains
           stop 224
        end if
 
-       read(UCIRC,*,iostat=ierr) c(1:nc)%areaQ; sln=sln+1 
+       read(UCIRC,*,iostat=ierr) c(1:nc)%areaQ; sln=sln+1
        if (ierr /= 0) c(1:nc)%areaQ = read_real(UCIRC,sln,'circle  ')
        ! source term can be positive, negative or zero (no need for check)
-       
-       read(UCIRC,*,iostat=ierr) c(1:nc)%bdryQ; sln=sln+1 
+
+       read(UCIRC,*,iostat=ierr) c(1:nc)%bdryQ; sln=sln+1
        if (ierr /= 0) c(1:nc)%bdryQ = read_real(UCIRC,sln,'circle  ')
        ! source term can be positive, negative or zero (no need for check)
 
@@ -712,7 +711,7 @@ contains
        write(UECHO,fmt(3)) c(:)%dskin,           '  ||   circle boundary dimensionless skin factor'
        write(UECHO,fmt(3)) c(:)%areaQ,          '  ||   circle area rch rate'
        write(UECHO,fmt(3)) c(:)%bdryQ,          '  ||   circle boundary rch rate or head'
-       
+
        ! area source behavior
        do j = 1,size(c,dim=1)
           read(UCIRC,*,iostat=ierr) c(j)%AreaTime; sln=sln+1
@@ -799,10 +798,10 @@ contains
        read(UELIP,*,iostat=ierr) e(1:ne)%MS; sln=sln+1 ! bg%ms read above
        ! these are computed now (this value is now used as an alternate minimum),
        ! so checking this here doesn't mean as much as it once did.
-       if (ierr /= 0) e(1:ne)%MS = read_int(UELIP,sln,'ellipse ')      
+       if (ierr /= 0) e(1:ne)%MS = read_int(UELIP,sln,'ellipse ')
 
        read(UELIP,*,iostat=ierr) e(1:ne)%ibnd; sln=sln+1
-       if (ierr /= 0) e(1:ne)%ibnd = read_int(UELIP,sln,'ellipse ')      
+       if (ierr /= 0) e(1:ne)%ibnd = read_int(UELIP,sln,'ellipse ')
        if (any(e%ibnd < -1 .or. e%ibnd > 2)) then
           write(stderr,*) 'ERROR: value (line ',sln,' ellipse input) boundary type (e%ibnd) '//&
                      &'must be in {-1,0,1,2} ',e%ibnd
@@ -810,7 +809,7 @@ contains
        end if
 
        read(UELIP,*,iostat=ierr) e(1:ne)%calcIn; sln=sln+1
-       if (ierr /= 0) e(1:ne)%calcIn = read_logical(UELIP,sln,'ellipse ')      
+       if (ierr /= 0) e(1:ne)%calcIn = read_logical(UELIP,sln,'ellipse ')
 
        read(UELIP,*,iostat=ierr) e(1:ne)%storIn; sln=sln+1
        if (ierr /= 0) e(1:ne)%storIn = read_logical(UELIP,sln,'ellipse ')
@@ -830,7 +829,7 @@ contains
 
 
        read(UELIP,*,iostat=ierr) e(1:ne)%r; sln=sln+1   ! eta
-       if (ierr /= 0) e(1:ne)%r = read_real(UELIP,sln,'ellipse ')      
+       if (ierr /= 0) e(1:ne)%r = read_real(UELIP,sln,'ellipse ')
        if (any(e%r < 0.0_DP)) then
           write(stderr,*) 'ERROR: value (line ',sln,' ellipse input) elliptical radius '//&
                      &'(e%r) must be >= 0.0 ',e%r
@@ -843,12 +842,12 @@ contains
        end where
 
        read(UELIP,*,iostat=ierr) e(1:ne)%x; sln=sln+1
-       if (ierr /= 0) e(1:ne)%x = read_real(UELIP,sln,'ellipse ')       
+       if (ierr /= 0) e(1:ne)%x = read_real(UELIP,sln,'ellipse ')
 
        read(UELIP,*,iostat=ierr) e(1:ne)%y; sln=sln+1
        if (ierr /= 0) e(1:ne)%x = read_real(UELIP,sln,'ellipse ')
-       
-       ! NOTE: shift is computed from range of calc locations       
+
+       ! NOTE: shift is computed from range of calc locations
        e(1:ne)%x = e%x - s%xshift
        e(1:ne)%y = e%y - s%yshift
        e(1:ne)%z = cmplx(e%x, e%y, DP)
@@ -899,13 +898,13 @@ contains
           stop 235
        end if
 
-       read(UELIP,*,iostat=ierr) e(1:ne)%leakFlag; sln=sln+1 
+       read(UELIP,*,iostat=ierr) e(1:ne)%leakFlag; sln=sln+1
        if (ierr /= 0) e(1:ne)%leakFlag = read_int(UELIP,sln,'ellipse ')
        if (any(e%leakFlag < 0) .or. any(e%leakFlag > 3)) then
           write(stderr,*) 'ERROR: value (line ',sln,' ellipse input) leak flag (e%leakFlag) '&
                &//'must be in {0,1,2,3}'
           stop 2350
-       end if       
+       end if
 
        read(UELIP,*,iostat=ierr) e(1:ne)%aquitardK; sln=sln+1
        if (ierr /= 0) e(1:ne)%aquitardK = read_real(UELIP,sln,'ellipse ')
@@ -996,7 +995,7 @@ contains
        end if
 
        read(UELIP,*,iostat=ierr) e(1:ne)%NDiffTerms; sln=sln+1
-       if (ierr /= 0) e(1:ne)%NDiffTerms = read_int(UELIP,sln,'ellipse ')       
+       if (ierr /= 0) e(1:ne)%NDiffTerms = read_int(UELIP,sln,'ellipse ')
        if (any(e%NDiffTerms < 0 .and. e%dualPorosityFlag)) then
           write(stderr,*) 'ERROR: value (line',sln,' ellipse input) '//&
                & 'number terms in leaky diffusion series (e%nDiffTerms) must be >=0', e%NDiffTerms
@@ -1012,10 +1011,10 @@ contains
        end if
 
        read(UELIP,*,iostat=ierr) e(1:ne)%areaQ; sln=sln+1
-       if (ierr /= 0) e(1:ne)%areaQ = read_real(UELIP,sln,'ellipse ') 
+       if (ierr /= 0) e(1:ne)%areaQ = read_real(UELIP,sln,'ellipse ')
 
        read(UELIP,*,iostat=ierr) e(1:ne)%bdryQ; sln=sln+1
-       if (ierr /= 0) e(1:ne)%bdryQ = read_real(UELIP,sln,'ellipse ') 
+       if (ierr /= 0) e(1:ne)%bdryQ = read_real(UELIP,sln,'ellipse ')
 
        where (e(:)%ibnd == -1 .or. e(:)%ibnd == 0 .or. e(:)%ibnd == +1)
           e(:)%match = .true.
@@ -1087,7 +1086,7 @@ contains
        end do
 
        close(UELIP) ! ellipse input file
-       
+
        ! TODO: handle free-water storage for ellipses?
        if(any(e%storin)) then
           write(stdout,*) 'WARNING: wellbore (free-water) storage not handled for ellipses yet'
@@ -1106,12 +1105,12 @@ contains
       stop 'READINPUT: Need at least one circular (including well) or'//&
            &'elliptical (including line) element.'
     end if
-    
+
     ! compute secondary parameters
     bg%alpha = bg%K/bg%Ss
     c(:)%alpha = c%K/c%Ss
     e(:)%alpha = e%K/e%Ss
-    
+
     bg%T = bg%K*bg%b
     c(:)%T = c%K*c%b
     e(:)%T = e%K*e%b
@@ -1158,7 +1157,7 @@ contains
        end if
        allocate(p(s%nPart))
 
-       read(UPAR,*,iostat=ierr) p(:)%forward; sln=sln+1 
+       read(UPAR,*,iostat=ierr) p(:)%forward; sln=sln+1
        if (ierr /= 0) p(:)%forward = read_logical(UPAR,sln,'particle')
 
        read(UPAR,*,iostat=ierr) p(:)%int; sln=sln+1
@@ -1177,7 +1176,7 @@ contains
           stop 244
        end if
 
-       read(UPAR,*,iostat=ierr) p(:)%maxL; sln=sln+1  
+       read(UPAR,*,iostat=ierr) p(:)%maxL; sln=sln+1
        if (ierr /= 0) p(:)%maxL = read_real(UPAR,sln,'particle')
        if (any(p%maxL <= 0.0_DP .and. p%int == 1)) then
           write(stderr,*) 'ERROR: value (line ',sln,' particle input) max RKM '//&
@@ -1278,10 +1277,10 @@ contains
       e%debug = .false.
       p%debug = .false.
     end if
-    
+
   end subroutine readInput
 
-  subroutine read_time_behaviors(UIN,UECH,el,j,ln,tp,area) 
+  subroutine read_time_behaviors(UIN,UECH,el,j,ln,tp,area)
     use type_definitions, only : time, explain_type
     use, intrinsic :: iso_fortran_env, only : stderr => error_unit
     integer, intent(in) :: UIN, UECH, ln, j
@@ -1295,7 +1294,7 @@ contains
     integer :: ierr, tsize
 
     lfmt = '(I0,1X,    (ES12.5,1X),A,    (ES12.5,1X),A,I0)'
-    
+
     if             (area .and. el%AreaTime < -100 .or. &
          & ((.not. area) .and. el%BdryTime < -100)) then
        lincon = 'linear'
@@ -1318,7 +1317,7 @@ contains
                 &'  ||  Area time behavior '//trim(explain%time(el%areaTime))//&
                 &', par1, par2 for '//tp,j
         else
-           ! piecewise-constant/linear time behavior           
+           ! piecewise-constant/linear time behavior
            tsize = mod(abs(el%AreaTime),100) ! handle both piecewise constant (-100:-1) and piecewise linear (-infinity:-101)
            allocate(el%ATPar(2*tsize+1))
            read(UIN,*,iostat=ierr) el%AreaTime,el%ATPar(:)
@@ -1367,7 +1366,7 @@ contains
   !******************************************************
   function computeVector(unit,n,line) result(v)
     use, intrinsic :: iso_fortran_env, only : stderr => error_unit
-        
+
     use constants, only : DP
     integer, intent(in) :: unit, n, line
     real(DP), dimension(n) :: v
@@ -1387,7 +1386,7 @@ contains
     if ((vec(4:6) /= 'vec' .and. vec(4:6) /= 'VEC') &
          & .or. ierr /= 0) then
        write(stderr,*) 'ERROR: line ',line,' input '//&
-            &'({LIN,LOG}VEC min max) input' 
+            &'({LIN,LOG}VEC min max) input'
        stop 7770
     else
        backspace(unit)
@@ -1418,7 +1417,7 @@ contains
     end if
 
   end function computeVector
-  
+
   !******************************************************
   subroutine writeResults(s,p)
 
@@ -1446,7 +1445,7 @@ contains
           p(i)%r(:,3) = p(i)%r(:,3) + s%yshift
        end do
     end if
-    
+
     select case (s%output)
     case (1)
        ! ** Gnuplot contour map friendly output **
@@ -1592,7 +1591,7 @@ contains
              do k = 1, s%nt
                 write (20,'(1X,'//tfmt//',4(1X,'//hfmt//'))') &
                      & s%t(k),s%h(k,i,1),s%v(k,1:2,i,1),s%dh(k,i,1)
-             end do             
+             end do
           else
              do k = 1, s%nt
                 write (20,'(1X,'//tfmt//',3(1X,'//hfmt//'))') &
@@ -1713,7 +1712,7 @@ contains
 
        ! max number of times for all particles
        nt = maxval(p(:)%numt,dim=1)
-       
+
        do i = 1, nt, s%streakSkip
           ! use maxval to ensure a non-zero time is reported
           write (90,'(A,'//tfmt//')') '# time:', maxval(p(i)%r(:,1))
@@ -1744,7 +1743,7 @@ contains
     if (s%Qcalc) then
        open(unit=91, file=s%qfname, status='replace', action='write')
        write(91,'(A)') '# LT-AEM element total flowrates  -*-auto-revert-*-'
-       
+
        do j = 1,size(s%Q,dim=2)
           write(91,'(A,I0)') '# element ',j
           if (s%deriv) then
@@ -1753,7 +1752,7 @@ contains
           else
              write(91,'(A)') '#     tD      '//'          Q_D          '
           end if
-          
+
           if (s%deriv) then
              do i = 1,s%nt
                 write(91,'('//tfmt//',2(1X,'//hfmt//'))') s%t(i),s%Q(i,j),s%dQ(i,j)
@@ -1823,9 +1822,8 @@ contains
        write(40,'(A)') '# EOF'
        close(40)
     end if
-
   end subroutine writeGeometry
-  
+
   function read_int(unit,num,str) result(ival)
     use, intrinsic :: iso_fortran_env, only : stderr => error_unit
     integer, intent(in) :: unit, num
@@ -1867,7 +1865,7 @@ contains
        stop 7773
     end if
   end function read_logical
-  
+
   subroutine dump_coeff(sol,c,e,nt,s,tee,minlt,maxlt)
     use type_definitions, only : solution, circle, ellipse
     use constants, only : DP
@@ -1939,7 +1937,7 @@ contains
     end if
 
     read(77,*) !! TODO check inputs are same?
-    read(77,*) minlt,maxlt,nc,ne 
+    read(77,*) minlt,maxlt,nc,ne
     allocate(s(2*sol%m+1,minlt:maxlt-1), nt(minlt:maxlt-1), tee(minlt:maxlt-1))
     read(77,*) nt(:)
     read(77,*) s(:,:)
@@ -1978,7 +1976,4 @@ contains
 
      write(stdout,'(A)') 'matching results successfully re-read from file'
    end subroutine read_coeff
-   
-
 end module file_ops
-
