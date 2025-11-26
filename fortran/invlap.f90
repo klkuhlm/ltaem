@@ -45,7 +45,7 @@ contains
   !! (no error checking done in this regard)
   !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   function deHoog_invLap_vect(t,tee,fp,lap) result(ft)
-    use constants, only : DP, PI
+    use constants, only : DP, PI, CZERO
     use type_definitions, only : INVLT
     use ieee_arithmetic, only : ieee_is_nan
 
@@ -69,11 +69,11 @@ contains
     nt = size(t)
 
     ! Re(p) -- this is the de Hoog parameter c
-    gamma = lap%alpha - log(lap%tol)/(2.0*tee)
+    gamma = lap%alpha - log(lap%tol)/(2.0_DP*tee)
     
     ! initialize Q-D table
-    e(0:2*M,0) = cmplx(0.0,0.0,DP)
-    q(0,1) = fp(1)/(fp(0)/2.0) ! half first term
+    e(0:2*M,0) = CZERO
+    q(0,1) = fp(1)/(fp(0)*0.5_DP) ! half first term
     q(1:2*M-1,1) = fp(2:2*M)/fp(1:2*M-1)
 
     ! rhombus rule for filling in triangular Q-D table
@@ -90,16 +90,16 @@ contains
     end do
     
     ! build up continued fraction coefficients
-    d(0) = fp(0)/2.0 ! half first term
+    d(0) = fp(0)*0.5_DP ! half first term
     do concurrent(r = 1:M)
       d(2*r-1) = -q(0,r) ! even terms
       d(2*r)   = -e(0,r) ! odd terms
     end do
 
     ! seed A and B vectors for recurrence
-    A(-1,1:nt) = cmplx(0,0,DP)
+    A(-1,1:nt) = CZERO
     A(0,1:nt) = d(0)
-    B(-1:0,1:nt) = cmplx(1,0,DP)
+    B(-1:0,1:nt) = cmplx(1.0_DP,0.0_DP,DP)
     
     ! base of the power series
     z(1:nt) = exp(EYEPI*t(:)/tee)
@@ -112,8 +112,8 @@ contains
     end do
 
     ! "improved remainder" to continued fraction
-    brem(1:nt) = (1.0 + (d(2*M-1) - d(2*M))*z(:))/2.0
-    rem(1:nt) = -brem*(1.0 - sqrt(1.0 + d(2*M)*z(:)/brem**2))
+    brem(1:nt) = (1.0_DP + (d(2*M-1) - d(2*M))*z(:))*0.5_DP
+    rem(1:nt) = -brem*(1.0_DP - sqrt(1.0_DP + d(2*M)*z(:)/brem**2))
     
     ! last term of recurrence using new remainder
     A(2*M,:) = A(2*M-1,:) + rem*A(2*M-2,:)
@@ -178,7 +178,7 @@ contains
     integer :: i
 
     do concurrent (i = 0:2*lap%M)
-      p(i+1) = cmplx(lap%alpha - log(lap%tol)/(2.0*tee), PI*i/tee, DP)
+      p(i+1) = cmplx(lap%alpha - log(lap%tol)/(2.0_DP*tee), PI*i/tee, DP)
     end do
   end function deHoog_pvalues
 end module inverse_Laplace_Transform

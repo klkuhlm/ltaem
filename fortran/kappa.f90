@@ -70,17 +70,17 @@ contains
     if (el%leakFlag /= 0) then
        allocate(kap2(np),exp2z(np))
        kap2(1:np) = sqrt(p(:)*el%aquitardSs/el%aquitardK)
-       exp2z(1:np) = exp(-2.0*kap2(:)*el%aquitardb)
+       exp2z(1:np) = exp(-2.0_DP*kap2(:)*el%aquitardb)
     
        select case(el%leakFlag)
        case(1)
           !! case I, no-drawdown condition at top of aquitard
           q(1:np) = q + kap2(:)*el%aquitardK/(el%b*el%K)*&
-               & (1.0 + exp2z(:))/(1.0 - exp2z(:))
+               & (1.0_DP + exp2z(:))/(1.0_DP - exp2z(:))
        case(2)
           !! case II, no-flow condition at top of aquitard
           q(1:np) = q + kap2(:)*el%aquitardK/(el%b*el%K)*&
-               & (1.0 - exp2z(:))/(1.0 + exp2z(:))
+               & (1.0_DP - exp2z(:))/(1.0_DP + exp2z(:))
        case(3)
           !! aquitard thickness -> infinity
           q(1:np) = q + kap2(:)*el%aquitardK/(el%b*el%K)
@@ -103,11 +103,11 @@ contains
        if (el%multiporosityDiffusion == 0) then
           ! solution adapted from Dougherty and Babu (1984, WRR)
           q(1:np) = q + &
-               & (1.0 - el%lambda/(el%matrixSs*p(:) + el%lambda))*el%lambda/el%K
+               & (1.0_DP - el%lambda/(el%matrixSs*p(:) + el%lambda))*el%lambda/el%K
        else
           ! multiporosity diffusion
           omega = el%Ss/(el%Ss + el%matrixSs) ! fraction of total storage in fractures
-          beta = (1-omega)/omega ! "capacity ratio"
+          beta = (1.0_DP - omega)/omega ! "capacity ratio"
           allocate(a(el%NDiffterms),pdf(el%NDiffterms))
     
           if (el%NDiffTerms > 0) then
@@ -115,22 +115,22 @@ contains
              case(1)
                 do concurrent (i=1:el%NDiffterms)
                   ! Warren-Root lambda = kappa/((1-omega)*LD**2)
-                  a(i) = (2*i-1)**2 *PISQ*el%lambda/4.0
-                  pdf(i) = 8*beta/((2*i-1)**2 *PISQ) 
+                  a(i) = real((2*i-1)**2,DP) *PISQ*el%lambda*0.25_DP
+                  pdf(i) = 8.0_DP*beta/(real((2*i-1)**2,DP) *PISQ) 
                 end do
              case(2)
                 stop 'cylindrical multiporosity matrix diffusion not impelemented yet'
              case(3)
                 do concurrent (i=1:el%NDiffterms)
-                  a(i) = i**2 *PISQ*el%lambda
-                  pdf(i) = 6*beta/(i**2 *PISQ)
+                  a(i) = real(i**2,DP) *PISQ*el%lambda
+                  pdf(i) = 6.0_DP*beta/(real(i**2,DP) *PISQ)
                 end do
              case default
                 stop 'invalid multiporosity matrix diffusion index'
              end select
 
              ! TODO: this is not an additive term (FIX?)
-             q = p*omega*(1 + sum(spread(el%lambda*pdf*a,2,np)/ &
+             q = p*omega*(1.0_DP + sum(spread(el%lambda*pdf*a,2,np)/ &
                   & (spread(p,1,el%NDiffterms) + spread(a,2,np)),dim=1))
 
           elseif (el%NDiffTerms == 0) then
@@ -138,13 +138,13 @@ contains
              ! activated for case where Nterms == 0
              select case(el%multiporosityDiffusion)
              case(1)
-                q = p*(omega + sqrt(el%lambda*(1-omega)/(3*p))*&
-                     & tanh(sqrt(3*(1-omega)*p/el%lambda)))
+                q = p*(omega + sqrt(el%lambda*(1.0_DP-omega)/(3.0_DP*p))*&
+                     & tanh(sqrt(3.0_DP*(1.0_DP-omega)*p/el%lambda)))
              case(2)
                 stop 'cylindrical multiporosity matrix diffusion not impelemented yet'
              case(3)
-                q = p*(omega + (sqrt(15*(1-omega*p)/el%lambda)/ &
-                     & tanh(sqrt(15*(1-omega*p)/el%lambda)) - 1)/(5*p))
+                q = p*(omega + (sqrt(15.0_DP*(1.0_DP-omega*p)/el%lambda)/ &
+                     & tanh(sqrt(15.0_DP*(1.0_DP-omega*p)/el%lambda)) - 1.0_DP)/(5.0_DP*p))
              case default
                 stop 'invalid multiporosity matrix diffusion index'
              end select

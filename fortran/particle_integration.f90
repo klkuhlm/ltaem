@@ -111,9 +111,9 @@ contains
        halfAB(1:2) = x0(1:2) + dt/8.0_DP*(vInit(1:2) + 3.0_DP*vAB3(1:2))
 
        ! full step Adams-Bashforth predictor
-       call getsrange(pt + dt/2.0_DP,lo,ns,los,his,lt)
-       vAB2 = L(pt+dt/2.0_DP,tee(lt), V(halfAB,s(:,lt),los,his,dom,c,e,bg), sol%INVLT)
-       fullAB(1:2) = x0(1:2) + dt/2.0_DP*(vInit(1:2) - 3.0_DP*vAB3(1:2) + 4.0_DP*vAB2(1:2))
+       call getsrange(pt + dt*0.5_DP,lo,ns,los,his,lt)
+       vAB2 = L(pt+dt*0.5_DP,tee(lt), V(halfAB,s(:,lt),los,his,dom,c,e,bg), sol%INVLT)
+       fullAB(1:2) = x0(1:2) + dt*0.5_DP*(vInit(1:2) - 3.0_DP*vAB3(1:2) + 4.0_DP*vAB2(1:2))
 
        ! full step Simpson's rule corrector
        call getsrange(pt + dt,lo,ns,los,his,lt)
@@ -233,12 +233,12 @@ contains
        ! forward Euler 1/2-step  (predictor)
        call getsrange(pt,lo,ns,los,his,lt)
        vInit = L(pt,tee(lt), V(x0,s(:,lt),los,his,dom,c,e,bg), sol%INVLT)
-       FwdEuler(1:2) = x0(1:2) + dt/2.0_DP*vInit(1:2)
+       FwdEuler(1:2) = x0(1:2) + dt*0.5_DP*vInit(1:2)
 
        ! backward Euler 1/2-step (corrector)
-       call getsrange(pt + dt/2.0_DP,lo,ns,los,his,lt)
-       vBkwdEuler = L(pt+dt/2.0_DP,tee(lt), V(FwdEuler,s(:,lt),los,his,dom,c,e,bg), sol%INVLT)
-       BkwdEuler(1:2) = x0(1:2) + dt/2.0_DP*vBkwdEuler(1:2)
+       call getsrange(pt + dt*0.5_DP,lo,ns,los,his,lt)
+       vBkwdEuler = L(pt+dt*0.5_DP,tee(lt), V(FwdEuler,s(:,lt),los,his,dom,c,e,bg), sol%INVLT)
+       BkwdEuler(1:2) = x0(1:2) + dt*0.5_DP*vBkwdEuler(1:2)
 
        ! midpoint rule full-step predictor
        call getsrange(pt + dt,lo,ns,los,his,lt)
@@ -384,7 +384,7 @@ contains
     ! f(x) and f(y) for root-finding
     complex(DP), dimension(size(s,1),2,3) :: fpv
     complex(DP), dimension(size(s,1),2) :: vv, fx3x2, fx3x1, fx2x1, fx3x2x1, w, r
-    real(DP), parameter :: DTFRAC = 1.1, ITERTOL = 1.0E-3
+    real(DP), parameter :: DTFRAC = 1.1_DP, ITERTOL = 1.0D-3
     integer, parameter :: MAXITER = 100
 
     ns = size(s,dim=1)
@@ -433,8 +433,8 @@ contains
        w = fx3x2 + fx3x1 - fx2x1
        fx3x2x1 = (fx2x1-fx3x2)/spread(ploc(:,1)-ploc(:,3),1,ns)
 
-       if (any(abs(w) < epsilon(0.0) .and. &
-             & abs(fx3x2x1) < epsilon(0.0))) then
+       if (any(abs(w) < epsilon(0.0_DP) .and. &
+             & abs(fx3x2x1) < epsilon(0.0_DP))) then
           print *, 'cancelled with',t,ploc
           stop
        end if
@@ -445,11 +445,11 @@ contains
        fpv(:,:,2) = fpv(:,:,3)
 
        ! denominator should be as large as possible => choose sign
-       r = sqrt(w**2 - 4.0*spread(ploc(:,3),1,ns)*fx3x2x1)
+       r = sqrt(w**2 - 4.0_DP*spread(ploc(:,3),1,ns)*fx3x2x1)
        where (abs(w - r) > abs(w + r))
           r = -r
        end where 
-       ploc(:,3) = ploc(:,3) - 2.0*L(t(1),tee(lt),fpv(:,:,3)/(w+r),sol%INVLT) 
+       ploc(:,3) = ploc(:,3) - 2.0_DP*L(t(1),tee(lt),fpv(:,:,3)/(w+r),sol%INVLT) 
        fpv(:,:,3) = V(ploc(:,3),s(:,lt),los,his,dom,c,e,bg)  - &
             & (outer(s(:,lt),ploc(:,3)) - spread(loc(:),1,ns))
        if (all(abs(ploc(:,3) - ploc(:,2)) < ITERTOL)) then
@@ -556,7 +556,7 @@ contains
     type(ellipse), dimension(:), intent(in) :: e
     logical, intent(out) :: partEnd, partCut
     complex(DP) :: pz,pz0,z,z0
-    real(DP), parameter :: ANGLE_TOL = atan(1.0_DP)/2.0_DP ! 45/2 degrees
+    real(DP), parameter :: ANGLE_TOL = atan(1.0_DP)*0.5_DP ! 45/2 degrees
     real(DP) :: length
     integer :: i
     

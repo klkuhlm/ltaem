@@ -35,7 +35,7 @@ module circular_elements
 
 contains
   function circle_match_self(c,p,debug) result(r)
-    use constants, only : DP, PI
+    use constants, only : DP, PI, TWOPI, CZERO
     use kappa_mod, only : kappa
     use time_mod, only : timef
     use utility, only : outer
@@ -106,8 +106,8 @@ contains
     end if
 
     allocate(r%LHS(nrows,ncols), r%RHS(nrows))
-    r%LHS = cmplx(0,0,DP)
-    r%RHS = cmplx(0,0,DP)
+    r%LHS = CZERO
+    r%RHS = CZERO
     
     cmat(1:M,0:N-1) = cos(outer(c%Pcm(:),vi(0:N-1)))
     smat(1:M,1:N-1) = sin(outer(c%Pcm(:),vi(1:N-1)))
@@ -156,11 +156,11 @@ contains
       ! TODO : handle area source in background
       ! optional 3rd kappa argument -> kappa**2
       r%RHS(1:M) = r%RHS(1:M) - (timef(p,c%time,.true.) * c%areaQ / (c%alpha * kappa(p,c%element,.true.))) 
-      !r%RHS(M+1:2*M) = 0.0 ! constant area source has no flux effects
+      !r%RHS(M+1:2*M) = 0.0_DP ! constant area source has no flux effects
     case(1)
        ! put specified flux effects on RHS
        ! TODO : check addition of aquifer thickness to denominator
-       r%RHS(1:M) = r%RHS(1:M) + timef(p,c%time,.false.)*c%bdryQ/(2.0*PI*c%r*c%b)
+       r%RHS(1:M) = r%RHS(1:M) + timef(p,c%time,.false.)*c%bdryQ/(TWOPI*c%r*c%b)
     case(2)
        if (c%StorIn) then
           ! effects of wellbore storage and skin on finite-radius well
@@ -174,7 +174,7 @@ contains
   end function circle_match_self
 
   function circle_match_other(src,trg,dom,p,debug) result(r)
-    use constants, only : DP
+    use constants, only : DP, CZERO
     use kappa_mod, only : kappa
     use time_mod, only : timef
     use utility, only : outer, rotate_vel_mat
@@ -255,8 +255,8 @@ contains
     end if
     
     allocate(r%LHS(nrows,ncols), r%RHS(nrows))
-    r%LHS = cmplx(0,0,DP)
-    r%RHS = cmplx(0,0,DP)
+    r%LHS = CZERO
+    r%RHS = CZERO
 
     if (nrows > 0) then
 
@@ -332,7 +332,7 @@ contains
 
                    ! wellbore storage and skin from finite-radius well
                    r%LHS(1:M,1) = storwell(src,p)*r%LHS(1:M,1)
-                   r%RHS(1:M) = 0.0
+                   r%RHS(1:M) = 0.0_DP
                 else
                    ! save head effects of well onto RHS
                    if (dom%inclBg(s,t)) then
@@ -346,7 +346,7 @@ contains
                    ! specified flux (finite-radius well no storage)
                    ! save head effects of well onto RHS
                    r%RHS(1:M) = r%RHS(1:M) + factor*well(src,p)*r%LHS(1:M,1)
-                   r%LHS(1:M,1) = 0.0 ! LHS matrix re-allocated to zero size below
+                   r%LHS(1:M,1) = 0.0_DP ! LHS matrix re-allocated to zero size below
                 end if
              end if
           end if
@@ -404,10 +404,10 @@ contains
              if (trg%ibnd == 2 .and. dom%inclBg(s,t)) then
                 ! wellbore storage and skin from finite-radius well
                 dPot_dR(1:M,1) = storwell(src,p)*dPot_dR(:,1)
-                dPot_dP(1:M,1:2*N-1) = 0.0 ! wells have angular symmetry
+                dPot_dP(1:M,1:2*N-1) = 0.0_DP ! wells have angular symmetry
              else
                 ! derivative wrt angle of source element for more general circular elements
-                dPot_dP(1:M,1) = 0.0
+                dPot_dP(1:M,1) = 0.0_DP
                 dPot_dP(1:M,2:N) =      -Bn(:,1:N-1)*spread(vi(1:N-1)/Bn0(1:N-1),1,M)*smat(:,1:N-1)
                 dPot_dP(1:M,N+1:2*N-1) = Bn(:,1:N-1)*spread(vi(1:N-1)/Bn0(1:N-1),1,M)*cmat(:,1:N-1)
              end if
@@ -431,7 +431,7 @@ contains
                    r%LHS(1:M,loN:hiN) = -(trg%r*p/trg%parent%T)*r%LHS(1:M,loN:hiN)
 
                    ! radial flux effects of element
-                   r%LHS(1:M,loN:hiN) = (r%LHS + (2.0 + trg%r**2*trg%dskin*p/trg%parent%T)* &
+                   r%LHS(1:M,loN:hiN) = (r%LHS + (2.0_DP + trg%r**2*trg%dskin*p/trg%parent%T)* &
                         & (dPot_dX*spread(cos(trg%Pcm),2,2*N-1) + &
                         &  dPot_dY*spread(sin(trg%Pcm),2,2*N-1)))
                 else
@@ -482,7 +482,7 @@ contains
 
   function well(c,p) result(a0)
     ! this function returns the a_0 coefficient for a simple "well"
-    use constants, only : DP, PI
+    use constants, only : DP, TWOPI
     use kappa_mod, only : kappa
     use time_mod, only : timef
     use type_definitions, only : circle
@@ -495,13 +495,13 @@ contains
     kap = kappa(p,c%parent)
     Kn(0:1) = bK(kap*c%r,2)
     ! TODO: should this have a factor of "b" (formation thickness) in the denominator?
-    a0 = Kn(0)*timef(p,c%time,.false.)*c%bdryQ/(2.0*PI*c%r*Kn(1)*kap)
+    a0 = Kn(0)*timef(p,c%time,.false.)*c%bdryQ/(TWOPI*c%r*Kn(1)*kap)
   end function well
 
   function storwell(c,p) result(a0)
     ! this function returns the a_0 coefficient for a
     ! well with wellbore storage and skin
-    use constants, only : DP, PI
+    use constants, only : DP, TWOPI
     use kappa_mod, only : kappa
     use type_definitions, only : circle
     use bessel_functions, only : bK
@@ -515,8 +515,8 @@ contains
     Kn(0:1) = bK(kap*c%r,2)
     ! TODO : should this have a factor of "b" in the denominator?
     ! TODO : off by a factor of 1/kappa?
-    a0 = -Kn(0)*((2.0 + c%r**2*c%dskin*p/c%parent%T)/(2.0*PI*c%r) + &
-               & (Kn(0)*c%r*p)/(2.0*PI*c%r*kap*Kn(1)*c%parent%T))
+    a0 = -Kn(0)*((2.0_DP + c%r**2*c%dskin*p/c%parent%T)/(TWOPI*c%r) + &
+               & (Kn(0)*c%r*p)/(TWOPI*c%r*kap*Kn(1)*c%parent%T))
   end function storwell
 
   function circle_calc(p,c,lo,hi,Rgp,Pgp,inside) result(H)
@@ -568,7 +568,7 @@ contains
     ! if outside >> a_n is 1:N, b_n is N+1:2N-1
 
     aa(1:np,0:N-1) = c%coeff(lo:hi,n0:n0+N-1) ! a_n or c_n
-    bb(1:np,0) = 0.0 ! make odd/even conformable
+    bb(1:np,0) = 0.0_DP ! make odd/even conformable
     bb(1:np,1:N-1) = c%coeff(lo:hi,n0+N:n0+2*N-2) ! b_n or d_n
 
     H(1:np) = sum(BRgp(1:np,0:N-1)/BR0(1:np,0:N-1)* &
@@ -635,7 +635,7 @@ contains
     end if
 
     aa(1:np,0:N-1) = c%coeff(lo:hi,n0:n0+N-1)
-    bb(1:np,0) = 0.0 ! make odd/even conformable
+    bb(1:np,0) = 0.0_DP ! make odd/even conformable
     bb(1:np,1:N-1) = c%coeff(lo:hi,n0+N:n0+2*N-2)
 
     ! dPot_dR

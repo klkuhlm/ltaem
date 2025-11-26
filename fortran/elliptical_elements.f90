@@ -128,10 +128,10 @@ contains
        ! radial functions last dimension is even/odd
        RMn(0:N-1,0) =   Ke(e%parent%mat(i), vi(0:N-1), e%r) ! even fn
        RMn(1:N-1,1) =   Ko(e%parent%mat(i), vi(1:N-1), e%r) ! odd fn
-       RMn(0,1) = 0.0
+       RMn(0,1) = 0.0_DP
        dRMn(0:N-1,0) = dKe(e%parent%mat(i), vi(0:N-1), e%r) ! even deriv
        dRMn(1:N-1,1) = dKo(e%parent%mat(i), vi(1:N-1), e%r) ! odd deriv
-       dRMn(0,1) = 0.0
+       dRMn(0,1) = 0.0_DP
 
        r%LHS(loM:hiM,1:N) =       spread(dRMn(0:N-1,0)/RMn(0:N-1,0),1,M)*cemat(:,0:N-1,0) ! a_n flux
        r%LHS(loM:hiM,N+1:2*N-1) = spread(dRMn(1:N-1,1)/RMn(1:N-1,1),1,M)*semat(:,1:N-1,0) ! b_n flu
@@ -139,10 +139,10 @@ contains
        if (e%ibnd == 0 .or. (e%ibnd == 1 .and. e%calcin)) then
           RMn(0:N-1,0) =   Ie(e%mat(i), vi(0:N-1), e%r)
           RMn(1:N-1,1) =   Io(e%mat(i), vi(1:N-1), e%r)
-          RMn(0,1) = 0.0
+          RMn(0,1) = 0.0_DP
           dRMn(0:N-1,0) = dIe(e%mat(i), vi(0:N-1), e%r)
           dRMn(1:N-1,1) = dIo(e%mat(i), vi(1:N-1), e%r)
-          dRMn(0,1) = 0.0
+          dRMn(0,1) = 0.0_DP
 
           r%LHS(loM:hiM,2*N:3*N-1) = -spread(dRMn(0:N-1,0)/RMn(0:N-1,0), 1,M)*cemat(:,0:N-1,1) ! c_n flux
           r%LHS(loM:hiM,3*N:4*N-2) = -spread(dRMn(1:N-1,1)/RMn(1:N-1,1), 1,M)*semat(:,1:N-1,1) ! d_n flux
@@ -168,7 +168,7 @@ contains
   end function ellipse_match_self
 
   function ellipse_match_other(src,trg,dom,p,idx,debug) result(r)
-    use constants, only : DP
+    use constants, only : DP, CZERO
     use type_definitions, only : ellipse, element, domain, matching, match_result
     use mathieu_functions, only : ce, se, dce, dse, Ke, Ko, dKe, dKo, Ie, Io, dIe, dIo
     use utility, only : rotate_vel_mat
@@ -237,8 +237,8 @@ contains
     end if
 
     allocate(r%LHS(nrows,ncols), r%RHS(nrows))
-    r%LHS = cmplx(0,0,DP)
-    r%RHS = cmplx(0,0,DP)
+    r%LHS = CZERO
+    r%RHS = CZERO
 
     if (nrows > 0) then ! is target matching?
 
@@ -257,10 +257,10 @@ contains
                 semat(1:M,1:N-1) = se(src%parent%mat(idx), vi(1:N-1), src%G(t)%Pgm(:))
                 RMn(1:M,0:N-1,0) = Ke(src%parent%mat(idx), vi(0:N-1), src%G(t)%Rgm(:))
                 RMn(1:M,1:N-1,1) = Ko(src%parent%mat(idx), vi(1:N-1), src%G(t)%Rgm(:))
-                RMn(1:M,0,1) = 0.0
+                RMn(1:M,0,1) = 0.0_DP
                 RMn0(0:N-1,0) = Ke(src%parent%mat(idx), vi(0:N-1), src%r)
                 RMn0(1:N-1,1) = Ko(src%parent%mat(idx), vi(1:N-1), src%r)
-                RMn0(0,1) = 0.0
+                RMn0(0,1) = 0.0_DP
                 ! odd functions not needed for line source, but computed anyway (?)
                 K = src%parent%K
 
@@ -279,10 +279,10 @@ contains
                 semat(1:M,1:N-1) = se(src%mat(idx), vi(1:N-1), src%G(t)%Pgm(:))
                 RMn(1:M,0:N-1,0) = Ie(src%mat(idx), vi(0:N-1), src%G(t)%Rgm(:))
                 RMn(1:M,1:N-1,1) = Io(src%mat(idx), vi(1:N-1), src%G(t)%Rgm(:))
-                RMn(1:M,0,1) = 0.0
+                RMn(1:M,0,1) = 0.0_DP
                 RMn0(0:N-1,0) = Ie(src%mat(idx), vi(0:N-1), src%r)
                 RMn0(1:N-1,1) = Io(src%mat(idx), vi(1:N-1), src%r)
-                RMn0(0,1) = 0.0
+                RMn0(0,1) = 0.0_DP
                 K = src%K
 
                 if (src%ibnd == 0) then
@@ -317,7 +317,7 @@ contains
                 ! specified flux (finite-radius well no storage)
                 ! save head effects of well onto RHS
                 r%RHS(1:M) = factor*line(src,p,idx)*r%LHS(1:M,1)
-                r%LHS(1:M,1) = 0.0 ! LHS matrix re-allocated to zero size below
+                r%LHS(1:M,1) = 0.0_DP ! LHS matrix re-allocated to zero size below
              end if
 
           end if
@@ -333,12 +333,12 @@ contains
                 if (.not. trg%ibnd == 0) then
                    cemat(1:M,0:N-1) = ce(src%parent%mat(idx), vi(0:N-1), src%G(t)%Pgm(:))
                    RMn(1:M,0:N-1,0) = Ke(src%parent%mat(idx), vi(0:N-1), src%G(t)%Rgm(:))
-                   RMn0(0:N-1,0) = Ke(src%parent%mat(idx), vi(0:N-1), src%r)
+                   RMn0(0:N-1,0)    = Ke(src%parent%mat(idx), vi(0:N-1), src%r)
                    semat(1:M,1:N-1) = se(src%parent%mat(idx), vi(1:N-1), src%G(t)%Pgm(:))
                    RMn(1:M,1:N-1,1) = Ko(src%parent%mat(idx), vi(1:N-1), src%G(t)%Rgm(:))
-                   RMn(1:M,0,1) = 0.0
+                   RMn(1:M,0,1) = 0.0_DP
                    RMn0(1:N-1,1) = Ko(src%parent%mat(idx), vi(1:N-1), src%r)
-                   RMn0(0,1) = 0.0
+                   RMn0(0,1) = 0.0_DP
                    K = src%parent%K
                 else
                    K = -999  ! compiler complained this might be used uninitialized
@@ -347,7 +347,7 @@ contains
                 dRMn(1:M,0:N-1,0) = dKe(src%parent%mat(idx), vi(0:N-1), src%G(t)%Rgm(:))
                 dsemat(1:M,1:N-1) = dse(src%parent%mat(idx), vi(1:N-1), src%G(t)%Pgm(:))
                 dRMn(1:M,1:N-1,1) = dKo(src%parent%mat(idx), vi(1:N-1), src%G(t)%Rgm(:))
-                dRMn(1:M,0,1) = 0.0
+                dRMn(1:M,0,1) = 0.0_DP
 
                 loN = 1
                 hiN = 2*N-1
@@ -359,16 +359,16 @@ contains
                    semat(1:M,1:N-1) = se(src%mat(idx), vi(1:N-1), src%G(t)%Pgm(:))
                    RMn(1:M,0:N-1,0) = Ie(src%mat(idx), vi(0:N-1), src%G(t)%Rgm(:))
                    RMn(1:M,1:N-1,1) = Io(src%mat(idx), vi(1:N-1), src%G(t)%Rgm(:))
-                   RMn(1:M,0,1) = 0.0
+                   RMn(1:M,0,1) = 0.0_DP
                    RMn0(0:N-1,0) = -Ie(src%mat(idx), vi(0:N-1), src%r) ! apply in/out-side sign here
                    RMn0(1:N-1,1) = -Io(src%mat(idx), vi(1:N-1), src%r)
-                   RMn0(0,1) = 0.0
+                   RMn0(0,1) = 0.0_DP
                 end if
                 dcemat(1:M,0:N-1) = dce(src%mat(idx), vi(0:N-1), src%G(t)%Pgm(:))
                 dsemat(1:M,1:N-1) = dse(src%mat(idx), vi(1:N-1), src%G(t)%Pgm(:))
                 dRMn(1:M,0:N-1,0) = dIe(src%mat(idx), vi(0:N-1), src%G(t)%Rgm(:))
                 dRMn(1:M,1:N-1,1) = dIo(src%mat(idx), vi(1:N-1), src%G(t)%Rgm(:))
-                dRMn(1:M,0,1) = 0.0
+                dRMn(1:M,0,1) = 0.0_DP
                 K = src%K
 
                 if (src%ibnd == 0) then
@@ -395,7 +395,7 @@ contains
              allocate(hsq(size(src%G(t)%Rgm),2*N-1))
 
              ! squared metric factor -- less a common f
-             hsq = spread(src%f/2.0*(cosh(2.0*src%G(t)%Rgm) - cos(2.0*src%G(t)%Pgm)),2,2*N-1)
+             hsq = spread(src%f*0.5_DP*(cosh(2.0_DP*src%G(t)%Rgm) - cos(2.0_DP*src%G(t)%Pgm)),2,2*N-1)
              dPot_dX = (dPot_dR*spread(sinh(src%G(t)%Rgm)*cos(src%G(t)%Pgm),2,2*N-1) - &
                       & dPot_dP*spread(cosh(src%G(t)%Rgm)*sin(src%G(t)%Pgm),2,2*N-1))/hsq
              dPot_dY = (dPot_dR*spread(cosh(src%G(t)%Rgm)*sin(src%G(t)%Pgm),2,2*N-1) + &
@@ -418,7 +418,7 @@ contains
                    r%LHS(1:M,loN:hiN) = -(trg%r*p/trg%parent%T)*r%LHS(:,loN:hiN)
 
                    ! radial flux effects of element
-                   r%LHS(1:M,loN:hiN) = r%LHS + (2.0 + trg%r**2*trg%dskin*p/trg%parent%T)* &
+                   r%LHS(1:M,loN:hiN) = r%LHS + (2.0_DP + trg%r**2*trg%dskin*p/trg%parent%T)* &
                         & (dPot_dX*spread(cos(trg%Pcm),2,2*N-1) + &
                         &  dPot_dY*spread(sin(trg%Pcm),2,2*N-1))
                 else
@@ -583,10 +583,10 @@ contains
 
     aa(1:np,0:N-1) = e%coeff(lo:hi,n0:n0+N-1)
     bb(1:np,1:N-1) = e%coeff(lo:hi,n0+N:n0+2*N-2)
-    dH(1:np,1) = sum(dRMRgp(1:np,0:N-1,0)/RMR0(1:np,0:N-1,0)*aa(1:np,0:N-1)*AM(1:np,0:N-1,0), 2) + &
-               & sum(dRMRgp(1:np,1:N-1,1)/RMR0(1:np,1:N-1,1)*bb(1:np,1:N-1)*AM(1:np,1:N-1,1), 2)
-    dH(1:np,2) = sum(RMRgp(1:np,0:N-1,0)/RMR0(1:np,0:N-1,0)*aa(1:np,0:N-1)*dAM(1:np,0:N-1,0), 2) + &
-               & sum(RMRgp(1:np,1:N-1,1)/RMR0(1:np,1:N-1,1)*bb(1:np,1:N-1)*dAM(1:np,1:N-1,1), 2)
+    dH(1:np,1) = sum(dRMRgp(1:np,0:N-1,0)/RMR0(1:np,0:N-1,0)*aa(1:np,0:N-1) *AM(1:np,0:N-1,0), 2) + &
+               & sum(dRMRgp(1:np,1:N-1,1)/RMR0(1:np,1:N-1,1)*bb(1:np,1:N-1) *AM(1:np,1:N-1,1), 2)
+    dH(1:np,2) = sum(RMRgp(1:np,0:N-1,0) /RMR0(1:np,0:N-1,0)*aa(1:np,0:N-1)*dAM(1:np,0:N-1,0), 2) + &
+               & sum(RMRgp(1:np,1:N-1,1) /RMR0(1:np,1:N-1,1)*bb(1:np,1:N-1)*dAM(1:np,1:N-1,1), 2)
 
   end function ellipse_deriv
 
@@ -600,25 +600,25 @@ contains
     type(ellipse), intent(in) :: e
     complex(DP), intent(in) :: p
     integer, intent(in) :: idx
-    complex(DP), dimension(ceiling(e%N/2.0)) :: a2n ! only even coefficients of even order
+    complex(DP), dimension(ceiling(e%N*0.5_DP)) :: a2n ! only even coefficients of even order
     real(DP), dimension(0:max(e%ms-1,e%N)) :: vs
-    real(DP), dimension(1:e%ms,ceiling(e%N/2.0)) :: arg
+    real(DP), dimension(1:e%ms,ceiling(e%N*0.5_DP)) :: arg
     integer, dimension(0:max(e%ms-1,e%N)) :: vi
     integer :: i, N, MS, nmax
 
     N = e%N
     MS = e%ms
-    nmax = ceiling(e%N/2.0)
+    nmax = ceiling(e%N*0.5_DP)
     do concurrent (i = 0:max(MS,N)-1)
       vi(i) = i ! integer vector
       if (mod(vi(i),2) == 0) then
-        vs = 1.0
+        vs = 1.0_DP
       else
-        vs = -1.0
+        vs = -1.0_DP
       end if
     end do
 
-    arg(1:MS,1:nmax) = spread(vs(0:MS-1)/real(1-(2*vi(0:MS-1))**2,DP),2,nmax)
+    arg(1:MS,1:nmax) = spread(vs(0:MS-1)/real(1.0_DP-(2.0_DP*vi(0:MS-1))**2,DP),2,nmax)
     
     ! factor of 4 different from Kuhlman & Neuman (J. Eng. Mathematics) paper
     a2n(1:nmax) = timef(p,e%time,.false.)*e%bdryQ/TWOPI* &

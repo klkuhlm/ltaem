@@ -67,7 +67,7 @@ program ltaem_main
   logical :: fail
 
   ! constants?
-  real(DP), parameter :: MOST_LOGT = 0.999, TMAX_MULT = 2.0_DP  
+  real(DP), parameter :: MOST_LOGT = 0.999_DP, TMAX_MULT = 2.0_DP
 
   intrinsic :: get_command_argument
   call get_command_argument(1,sol%inFName)
@@ -103,7 +103,7 @@ program ltaem_main
         nt(minlt:maxlt) = 1
 
         do concurrent (lt = minlt:maxlt)
-          tee(lt) = min(10.0**(lt + MOST_LOGT), maxval(part(:)%tf))*TMAX_MULT
+          tee(lt) = min(10.0_DP**(lt + MOST_LOGT), maxval(part(:)%tf))*TMAX_MULT
           s(:,lt) = pvalues(tee(lt),sol%INVLT)
         end do
 
@@ -200,7 +200,7 @@ program ltaem_main
      do i = 1,sol%nPart
         ! initialize particles
         allocate(part(i)%r(0:parnumdt(i),5))
-        part(i)%r(:,:) = 0.0
+        part(i)%r(:,:) = 0.0_DP
         part(i)%id = i
      end do
 

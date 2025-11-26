@@ -281,7 +281,7 @@ contains
     call angfcnsetup(mf,n,v,vi,EV,OD)
     nje = size(EV)
     njo = size(OD)
-    j = floor(n/2.0_DP)
+    j = floor(n*0.5_DP)
 
     ce(:,EV) = sum(spread(mf%A(:,j(EV),0),2,nz)* &
          & spread(cos(outer(2.0_DP*v,PIOV2-z)),3,nje),dim=1)
@@ -313,7 +313,7 @@ contains
     call angfcnsetup(mf,n,v,vi,EV,OD)
     nje = size(EV)
     njo = size(OD)
-    j = floor((n-1)/2.0_DP)
+    j = floor((n-1)*0.5_DP)
     where (n == 0) j = 0
 
     se(:,EV) = sum(spread(mf%B(:,j(EV),0),2,nz)* &
@@ -322,7 +322,7 @@ contains
     se(:,OD) = sum(spread(mf%A(:,j(OD),1),2,nz)* &
          & spread(cos(outer(2.0_DP*v+1.0_DP,PIOV2-z)),3,njo),dim=1)
 
-    where (spread(n,1,nz) == 0) se = -huge(1.0)  ! se_0() is invalid
+    where (spread(n,1,nz) == 0) se = -huge(1.0_DP)  ! se_0() is invalid
   end function se_vect_nz
 
   !############################################################
@@ -346,12 +346,12 @@ contains
     call angfcnsetup(mf,n,v,vi,EV,OD)
     nje = size(EV)
     njo = size(OD)
-    j = floor(n/2.0_DP)
+    j = floor(n*0.5_DP)
 
-    Dce(:,EV) = sum(spread(spread(2*v,2,nje)*mf%A(:,j(EV),0),2,nz)* &
+    Dce(:,EV) = sum(spread(spread(2.0_DP*v,2,nje)*mf%A(:,j(EV),0),2,nz)* &
          & spread(sin(outer(2.0_DP*v,PIOV2-z)),3,nje),dim=1)
 
-    Dce(:,OD) = -sum(spread(spread(2*v+1,2,njo)*mf%B(:,j(OD),1),2,nz)* &
+    Dce(:,OD) = -sum(spread(spread(2.0_DP*v+1.0_DP,2,njo)*mf%B(:,j(OD),1),2,nz)* &
          & spread(cos(outer(2.0_DP*v+1.0_DP,PIOV2-z)),3,njo),dim=1)
 
   end function Dce_vect_nz
@@ -377,7 +377,7 @@ contains
     call angfcnsetup(mf,n,v,vi,EV,OD)
     nje = size(EV)
     njo = size(OD)
-    j = floor((n-1)/2.0_DP)
+    j = floor((n-1)*0.5_DP)
     where (n == 0) j = 0
 
     Dse(:,EV) = -sum(spread(spread(2.0_DP*v+2.0_DP,2,nje)*mf%B(:,j(EV),0),2,nz)* &
@@ -386,7 +386,7 @@ contains
     Dse(:,OD) = sum(spread(spread(2.0_DP*v+1.0_DP,2,njo)*mf%A(:,j(OD),1),2,nz)* &
          & spread(sin(outer(2.0_DP*v+1.0_DP,PIOV2-z)),3,njo),dim=1)
 
-    where (spread(n,1,nz) == 0) Dse = -huge(1.0)  ! se_0() is undefined
+    where (spread(n,1,nz) == 0) Dse = -huge(1.0_DP)  ! se_0() is undefined
   end function Dse_vect_nz
 
   !############################################################
@@ -413,7 +413,7 @@ contains
     call radfcnsetup(mf,n,z,sqrtq,v1,v2,v,vi,EV,OD)
     nje = size(EV)
     njo = size(OD)
-    j = floor(n/2.0_DP)
+    j = floor(n*0.5_DP)
     call BesselI_val(v1,M+1,I1(0:M,1:nz))
     call BesselI_val(v2,M+1,I2(0:M,1:nz))
 
@@ -451,7 +451,7 @@ contains
     call radfcnsetup(mf,n,z,sqrtq,v1,v2,v,vi,EV,OD)
     nje = size(EV)
     njo = size(OD)
-    j = floor((n-1)/2.0_DP)
+    j = floor((n-1)*0.5_DP)
     where (n == 0) j = 0
     call BesselI_val(v1,m+2,I1(0:m+1,:))
     call BesselI_val(v2,m+2,I2(0:m+1,:))
@@ -491,7 +491,7 @@ contains
     call radfcnsetup(mf,n,z,sqrtq,v1,v2,v,vi,EV,OD)
     nje = size(EV)
     njo = size(OD)
-    j = floor(real(n,DP)/2.0_DP)
+    j = floor(real(n,DP)*0.5_DP)
     call BesselI_val(v1,m+1,I(0:m,:))
     call BesselK_val(v2,m+1,K(0:m,:))
 
@@ -529,7 +529,7 @@ contains
     call radfcnsetup(mf,n,z,sqrtq,v1,v2,v,vi,EV,OD)
     nje = size(EV)
     njo = size(OD)
-    j = floor((n-1)/2.0_DP)
+    j = floor((n-1)*0.5_DP)
     where(n == 0) j = 0
     call BesselI_val(v1,m+2,I(0:m+1,:))
     call BesselK_val(v2,m+2,K(0:m+1,:))
@@ -543,7 +543,7 @@ contains
          & spread(mf%A(1,j(OD),1),1,nz)
 
     Ko = Ko*spread(exp(abs(real(v1)) - v2),2,size(n))
-    where (spread(n,1,nz) == 0) Ko = -huge(1.0)  ! Ko_0() is invalid
+    where (spread(n,1,nz) == 0) Ko = -huge(1.0_DP)  ! Ko_0() is invalid
   end function Ko_vect_nz
 
   !############################################################
@@ -571,7 +571,7 @@ contains
     call radderivfcnsetup(mf,n,z,sqrtq,v1,v2,enz,epz,v,vi,EV,OD)
     nje = size(EV)
     njo = size(OD)
-    j = floor(n/2.0_DP)
+    j = floor(n*0.5_DP)
     call BesselI_val_and_deriv(v1,m+1,I1(0:m,:),DI1(0:m,:))
     call BesselI_val_and_deriv(v2,m+1,I2(0:m,:),DI2(0:m,:))
 
@@ -612,7 +612,7 @@ contains
     call radderivfcnsetup(mf,n,z,sqrtq,v1,v2,enz,epz,v,vi,EV,OD)
     nje = size(EV)
     njo = size(OD)
-    j = floor((n-1)/2.0_DP)
+    j = floor((n-1)*0.5_DP)
     where (n == 0) j = 0
     call BesselI_val_and_deriv(v1,m+2,I1(0:m+1,:),DI1(0:m+1,:))
     call BesselI_val_and_deriv(v2,m+2,I2(0:m+1,:),DI2(0:m+1,:))
@@ -628,7 +628,7 @@ contains
          & spread(mf%A(1,j(OD),1),1,nz)
 
     DIo = DIo*spread(exp(abs(real(v1)) + abs(real(v2))),2,size(n))
-    where (spread(n,1,nz) == 0) DIo = -huge(1.0)  ! DIo_0() is invalid
+    where (spread(n,1,nz) == 0) DIo = -huge(1.0_DP)  ! DIo_0() is invalid
   end function DIo_vect_nz
 
   !############################################################
@@ -658,7 +658,7 @@ contains
     call radderivfcnsetup(mf,n,z,sqrtq,v1,v2,enz,epz,v,vi,EV,OD)
     nje = size(EV)
     njo = size(OD)
-    j = floor(n/2.0_DP)
+    j = floor(n*0.5_DP)
     call BesselI_val_and_deriv(v1,m+1,I(0:m,:),DI(0:m,:))
     call BesselK_val_and_deriv(v2,m+1,K(0:m,:),DK(0:m,:))
 
@@ -700,7 +700,7 @@ contains
     call radderivfcnsetup(mf,n,z,sqrtq,v1,v2,enz,epz,v,vi,EV,OD)
     nje = size(EV)
     njo = size(OD)
-    j = floor((n-1)/2.0_DP)
+    j = floor((n-1)*0.5_DP)
     where (n == 0) j = 0
     call BesselI_val_and_deriv(v1,m+2,I(0:m+1,:),DI(0:m+1,:))
     call BesselK_val_and_deriv(v2,m+2,K(0:m+1,:),DK(0:m+1,:))
@@ -716,7 +716,7 @@ contains
          & spread(mf%A(1,j(OD),1),1,nz)
 
     DKo = DKo*spread(exp(abs(real(v1)) - v2),2,size(n))
-    where (spread(n,1,nz) == 0) DKo = -huge(1.0)  ! DKo_0() is invalid
+    where (spread(n,1,nz) == 0) DKo = -huge(1.0_DP) ! DKo_0() is invalid
   end function DKo_vect_nz
 
   ! &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&

@@ -99,7 +99,7 @@ contains
     allocate(coeff(M,M), rwork(33*M), work(lwork), w(M))
 
     di = 1 ! dummy integer for lapack
-    dc(1) = cmplx(0,0,DP) ! dummy complex for lapack
+    dc(1) = cmplx(0.0_DP,0.0_DP,DP) ! dummy complex for lapack
 
     !$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
     ! even coefficients (a) of even order
@@ -108,9 +108,9 @@ contains
     !$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 
     ! main diagonal/ r counting from 0:m-1 like McLachlan
-    Coeff(:,:) = 0.0
+    Coeff(:,:) = 0.0_DP
     do concurrent(i = 1:M-1)
-      Coeff(i+1,i+1) = cmplx((2*i)**2, 0, DP)
+      Coeff(i+1,i+1) = cmplx(real((2*i)**2,DP), 0.0_DP, DP)
     end do
 
     ! off diagonals
@@ -119,7 +119,7 @@ contains
     end do
 
     ! special case
-    Coeff(2,1) = 2.0*q
+    Coeff(2,1) = 2.0_DP*q
 
     call ZGEEV(JOBVL='N', JOBVR='V',N=M, A=Coeff, LDA=M, W=mcn(1:m), &
          & VL=dc, LDVL=di, VR=A(1:m,1:m,1), LDVR=M, &
@@ -137,11 +137,11 @@ contains
     ! De_{2n+1} in eqn 3.14 of St&Sp
     !$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 
-    Coeff(:,:) = 0.0
+    Coeff(:,:) = 0.0_DP
     Coeff(1,1) = 1.0_DP + q
 
     do concurrent (i = 1:m-1)
-      Coeff(i+1,i+1) = cmplx((2*i+1)**2, 0, DP)
+      Coeff(i+1,i+1) = cmplx(real((2*i+1)**2,DP), 0.0_DP, DP)
     end do
     do concurrent (i = 1:m, j = 1:m, j == i+1 .or. j == i-1)
       Coeff(i,j) = q
@@ -165,10 +165,10 @@ contains
 
     ! this one not shifted by one, since 2n+2 -> 2n
     !! (but starting from one, rather than zero)
-    Coeff(:,:) = 0.0
+    Coeff(:,:) = 0.0_DP
 
     do concurrent (i = 1:m)
-      Coeff(i,i) = cmplx((2*i)**2, 0, DP)
+      Coeff(i,i) = cmplx(real((2*i)**2,DP), 0.0_DP, DP)
     end do
     
     do concurrent (i = 1:m, j = 1:m, j == i+1 .or. j == i-1)
@@ -191,11 +191,11 @@ contains
     ! Do_{2n+1} of eqn 3.18 in St&Sp
     !$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 
-    Coeff(:,:) = 0.0
+    Coeff(:,:) = 0.0_DP
     Coeff(1,1) = 1.0_DP - q
 
     do concurrent (i = 1:m-1)
-      Coeff(i+1,i+1) = cmplx((2*i+1)**2, 0, DP)
+      Coeff(i+1,i+1) = cmplx(real((2*i+1)**2,DP), 0.0_DP, DP)
     end do
     do concurrent (i = 1:m, j = 1:m, j == i+1 .or. j == i-1)
       Coeff(i,j) = q
@@ -241,13 +241,13 @@ contains
     call angfcnsetup(M,n,v,vi,EV,OD)
     nje = size(EV)
     njo = size(OD)
-    j = floor(n/2.0)+1
+    j = floor(n*0.5_DP)+1
 
     ce(:,EV) = sum(spread(A(:,j(EV),1),2,nz)* &
-         & spread(cos(outer(2*v,PIOV2-z)),3,nje),dim=1)
+         & spread(cos(outer(2.0_DP*v,PIOV2-z)),3,nje),dim=1)
 
     ce(:,OD) = sum(spread(B(:,j(OD),2),2,nz)* &
-         & spread(sin(outer(2*v+1,PIOV2-z)),3,njo),dim=1)
+         & spread(sin(outer(2.0_DP*v+1.0_DP,PIOV2-z)),3,njo),dim=1)
 
   end function ce
 
@@ -272,17 +272,17 @@ contains
     call angfcnsetup(M,n,v,vi,EV,OD)
     nje = size(EV)
     njo = size(OD)
-    j = floor((n-1)/2.0)
+    j = floor((n-1)*0.5_DP)
     where (n == 0) j = 0
     j = j+1
     
     se(:,EV) = sum(spread(B(:,j(EV),1),2,nz)* &
-         & spread(sin(outer(2*v+2,PIOV2-z)),3,nje),dim=1)
+         & spread(sin(outer(2.0_DP*v+2.0_DP,PIOV2-z)),3,nje),dim=1)
 
     se(:,OD) = sum(spread(A(:,j(OD),2),2,nz)* &
-         & spread(cos(outer(2*v+1,PIOV2-z)),3,njo),dim=1)
+         & spread(cos(outer(2.0_DP*v+1.0_DP,PIOV2-z)),3,njo),dim=1)
 
-    where (spread(n,1,nz) == 0) se = -huge(1.0)  ! se_0() is invalid
+    where (spread(n,1,nz) == 0) se = -huge(1.0_DP)  ! se_0() is invalid
   end function se
 
   !############################################################
@@ -305,13 +305,13 @@ contains
     call angfcnsetup(M,n,v,vi,EV,OD)
     nje = size(EV)
     njo = size(OD)
-    j = floor(n/2.0)+1
+    j = floor(n*0.5_DP)+1
 
-    Dce(:,EV) = sum(spread(spread(2*v,2,nje)*A(:,j(EV),1),2,nz)* &
-         & spread(sin(outer(2*v,PIOV2-z)),3,nje),dim=1)
+    Dce(:,EV) = sum(spread(spread(2.0_DP*v,2,nje)*A(:,j(EV),1),2,nz)* &
+         & spread(sin(outer(2.0_DP*v,PIOV2-z)),3,nje),dim=1)
 
-    Dce(:,OD) = -sum(spread(spread(2*v+1,2,njo)*B(:,j(OD),2),2,nz)* &
-         & spread(cos(outer(2*v+1,PIOV2-z)),3,njo),dim=1)
+    Dce(:,OD) = -sum(spread(spread(2.0_DP*v+1.0_DP,2,njo)*B(:,j(OD),2),2,nz)* &
+         & spread(cos(outer(2.0_DP*v+1.0_DP,PIOV2-z)),3,njo),dim=1)
 
   end function Dce
 
@@ -335,17 +335,17 @@ contains
     call angfcnsetup(M,n,v,vi,EV,OD)
     nje = size(EV)
     njo = size(OD)
-    j = floor((n-1)/2.0)
+    j = floor((n-1)*0.5_DP)
     where (n == 0) j = 0
     j = j+1
 
-    Dse(:,EV) = -sum(spread(spread(2*v+2,2,nje)*B(:,j(EV),1),2,nz)* &
+    Dse(:,EV) = -sum(spread(spread(2.0_DP*v+2.0_DP,2,nje)*B(:,j(EV),1),2,nz)* &
          & spread(cos(outer(2*v+2,PIOV2-z)),3,nje),dim=1)
 
-    Dse(:,OD) = sum(spread(spread(2*v+1,2,njo)*A(:,j(OD),2),2,nz)* &
+    Dse(:,OD) = sum(spread(spread(2.0_DP*v+1.0_DP,2,njo)*A(:,j(OD),2),2,nz)* &
          & spread(sin(outer(2*v+1,PIOV2-z)),3,njo),dim=1)
 
-    where (spread(n,1,nz) == 0) Dse = -huge(1.0)  ! se_0() is undefined
+    where (spread(n,1,nz) == 0) Dse = -huge(1.0_DP)  ! se_0() is undefined
   end function Dse
 
   !############################################################
@@ -371,7 +371,7 @@ contains
     call radfcnsetup(M,q,n,z,v1,v2,v,vi,EV,OD)
     nje = size(EV)
     njo = size(OD)
-    j = floor(n/2.0)+1
+    j = floor(n*0.5_DP)+1
     call BesselI_val(v1,M+1,I1(0:M,1:nz))
     call BesselI_val(v2,M+1,I2(0:M,1:nz))
 
@@ -408,7 +408,7 @@ contains
     call radfcnsetup(M,q,n,z,v1,v2,v,vi,EV,OD)
     nje = size(EV)
     njo = size(OD)
-    j = floor((n-1)/2.0)
+    j = floor((n-1)*0.5_DP)
     where (n == 0) j = 0
     j = j+1
     call BesselI_val(v1,m+2,I1(0:m+1,:))
@@ -448,7 +448,7 @@ contains
     call radfcnsetup(M,q,n,z,v1,v2,v,vi,EV,OD)
     nje = size(EV)
     njo = size(OD)
-    j = floor(real(n,DP)/2.0)+1
+    j = floor(real(n,DP)*0.5_DP)+1
     call BesselI_val(v1,m+1,I(0:m,:))
     call BesselK_val(v2,m+1,K(0:m,:))
 
@@ -485,7 +485,7 @@ contains
     call radfcnsetup(M,q,n,z,v1,v2,v,vi,EV,OD)
     nje = size(EV)
     njo = size(OD)
-    j = floor((n-1)/2.0)
+    j = floor((n-1)*0.5_DP)
     where(n == 0) j = 0
     j = j+1
     call BesselI_val(v1,m+2,I(0:m+1,:))
@@ -500,7 +500,7 @@ contains
          & spread(A(1,j(OD),2),1,nz)
 
     Ko = Ko*spread(exp(abs(real(v1)) - v2),2,size(n))
-    where (spread(n,1,nz) == 0) Ko = -huge(1.0)  ! Ko_0() is invalid
+    where (spread(n,1,nz) == 0) Ko = -huge(1.0_DP)  ! Ko_0() is invalid
   end function Ko
 
   !############################################################
@@ -528,7 +528,7 @@ contains
     call radderivfcnsetup(M,q,n,z,sqrtq,v1,v2,enz,epz,v,vi,EV,OD)
     nje = size(EV)
     njo = size(OD)
-    j = floor(n/2.0)+1
+    j = floor(n*0.5_DP)+1
     call BesselI_val_and_deriv(v1,m+1,I1(0:m,:),DI1(0:m,:))
     call BesselI_val_and_deriv(v2,m+1,I2(0:m,:),DI2(0:m,:))
 
@@ -569,7 +569,7 @@ contains
     call radderivfcnsetup(M,q,n,z,sqrtq,v1,v2,enz,epz,v,vi,EV,OD)
     nje = size(EV)
     njo = size(OD)
-    j = floor((n-1)/2.0)
+    j = floor((n-1)*0.5_DP)
     where (n == 0) j = 0
     j = j+1
     call BesselI_val_and_deriv(v1,m+2,I1(0:m+1,:),DI1(0:m+1,:))
@@ -586,7 +586,7 @@ contains
          & spread(A(1,j(OD),2),1,nz)
 
     DIo = DIo*spread(exp(abs(real(v1)) + abs(real(v2))),2,size(n))
-    where (spread(n,1,nz) == 0) DIo = -huge(1.0)  ! DIo_0() is invalid
+    where (spread(n,1,nz) == 0) DIo = -huge(1.0_DP)  ! DIo_0() is invalid
   end function DIo
 
   !############################################################
@@ -614,7 +614,7 @@ contains
     call radderivfcnsetup(M,q,n,z,sqrtq,v1,v2,enz,epz,v,vi,EV,OD)
     nje = size(EV)
     njo = size(OD)
-    j = floor(n/2.0)+1
+    j = floor(n*0.5_DP)+1
     call BesselI_val_and_deriv(v1,m+1,I(0:m,:),DI(0:m,:))
     call BesselK_val_and_deriv(v2,m+1,K(0:m,:),DK(0:m,:))
 
@@ -655,7 +655,7 @@ contains
     call radderivfcnsetup(M,q,n,z,sqrtq,v1,v2,enz,epz,v,vi,EV,OD)
     nje = size(EV)
     njo = size(OD)
-    j = floor((n-1)/2.0)
+    j = floor((n-1)*0.5_DP)
     where (n == 0) j = 0
     j = j+1
     call BesselI_val_and_deriv(v1,m+2,I(0:m+1,:),DI(0:m+1,:))
@@ -672,15 +672,15 @@ contains
          & spread(A(1,j(OD),2),1,nz)
 
     DKo = DKo*spread(exp(abs(real(v1)) - v2),2,size(n))
-    where (spread(n,1,nz) == 0) DKo = -huge(1.0)  ! DKo_0() is invalid
+    where (spread(n,1,nz) == 0) DKo = -huge(1.0_DP)  ! DKo_0() is invalid
   end function DKo
 
   ! &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
   ! &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
   ! &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-  ! some utility routines
+  ! utility routines
 
-  ! possibly disable this checking subroutine for extra speed??
+  ! possibly disable this checking subroutine for speedup??
   subroutine check_order(n)
     integer, dimension(:), intent(in) :: n
     integer :: nn
@@ -722,11 +722,11 @@ contains
     do concurrent (j = 0:M-1)
       i(j+1) = j
     end do
-    v = cmplx(i,0,DP)
+    v = cmplx(real(i,DP),0.0_DP,DP)
 
     ! compute the "sign" vector
-    vi = cmplx(1,0,DP)
-    where (mod(i,2) == 1) vi = cmplx(-1,0,DP)
+    vi = cmplx(1.0_DP,0.0_DP,DP)
+    where (mod(i,2) == 1) vi = cmplx(-1.0_DP,0.0_DP,DP)
 
     ! indexing vectors based on even/odd-ness of n
     do concurrent (j = 1:size(n))
@@ -757,11 +757,11 @@ contains
     do concurrent (j = 0:M-1)
       i(j+1) = j
     end do
-    v = cmplx(i,0,DP)
+    v = cmplx(real(i,DP),0.0_DP,DP)
 
     ! compute the "sign" vector
-    vi = cmplx(1,0,DP)
-    where (mod(i,2) == 1) vi = cmplx(-1,0,DP)
+    vi = cmplx(1.0_DP,0.0_DP,DP)
+    where (mod(i,2) == 1) vi = cmplx(-1.0_DP,0.0_DP,DP)
 
     v1 = sqrt(q)*exp(-z)
     v2 = sqrt(q)*exp( z)
@@ -797,11 +797,11 @@ contains
     do concurrent (j = 0:M-1)
       i(j+1) = j
     end do
-    v = cmplx(i,0,DP)
+    v = cmplx(real(i,DP),0.0_DP,DP)
 
     ! compute the "sign" vector
-    vi = cmplx(1,0,DP)
-    where (mod(i,2) == 1) vi = cmplx(-1,0,DP)
+    vi = cmplx(1.0_DP,0.0_DP,DP)
+    where (mod(i,2) == 1) vi = cmplx(-1.0_DP,0.0_DP,DP)
 
     enz = spread(exp(-z),dim=1,ncopies=M)
     epz = spread(exp( z),dim=1,ncopies=M)

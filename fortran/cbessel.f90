@@ -21,7 +21,7 @@ Module Complex_Bessel
   real(DP), parameter, private :: PI =  4.0_DP*atan(1.0_DP)   !! PI = 3.14159265358979324
   real(DP), parameter, private :: THPI = 6.0_DP*atan(1.0_DP)  !! 3*PI/2 = 4.71238898038469
   real(DP), parameter, private :: RTPI = 1.0_DP/(8.0_DP*atan(1.0_DP))  !! 1/(2*PI) = 0.159154943091895
-  real(DP), parameter, private :: RTHPI = sqrt(8.0_DP*atan(1.0_DP))/2.0_DP !! sqrt(2*pi)/2 = 1.25331413731550
+  real(DP), parameter, private :: RTHPI = sqrt(8.0_DP*atan(1.0_DP))*0.5_DP !! sqrt(2*pi)/2 = 1.25331413731550
   real(DP), parameter, private :: SPI = 3.0_DP/(2.0_DP*atan(1.0_DP))  ! 6/pi = 1.90985931710274 
   complex(DP), parameter, private :: CONE =  (1.0_DP,0.0_DP),  CTWO = (2.0_DP,0.0_DP)
   complex(DP), parameter, private :: CZERO = (0.0_DP,0.0_DP),  CI =   (0.0_DP,1.0_DP)
@@ -587,7 +587,7 @@ CONTAINS
              nn = n - nz
              IF (nn == 0) RETURN
              rtol = 1.0_dp / tol
-             ascle = TINY(0.0_dp) * rtol * 1.0E+3
+             ascle = TINY(0.0_dp) * rtol * 1.0D+3
              DO  i = 1, nn
                 !       CY(I) = CY(I)*CSGN
                 zn = cy(i)
@@ -840,7 +840,7 @@ CONTAINS
              nl = n - nz
              IF (nl == 0) RETURN
              rtol = 1.0_dp / tol
-             ascle = TINY(0.0_dp) * rtol * 1.0E+3
+             ascle = TINY(0.0_dp) * rtol * 1.0D+3
              DO  i = 1, nl
                 !       CY(I)=CY(I)*CSGN
                 zn = cy(i)
@@ -1071,7 +1071,7 @@ CONTAINS
           !     OVERFLOW TEST ON THE LAST MEMBER OF THE SEQUENCE
           !-----------------------------------------------------------------------
           !     UFL = EXP(-ELIM)
-          ufl = TINY(0.0_dp) * 1.0E+3
+          ufl = TINY(0.0_dp) * 1.0D+3
           IF (az >= ufl) THEN
              IF (fnu <= fnul) THEN
                 IF (fn > 1.0_dp) THEN
@@ -1359,7 +1359,7 @@ CONTAINS
           cspn = ex * ey * cspn
           nz = 0
           rtol = 1.0_dp / tol
-          ascle = TINY(0.0_dp) * rtol * 1.0E+3
+          ascle = TINY(0.0_dp) * rtol * 1.0D+3
           DO  i = 1, n
              !----------------------------------------------------------------------
              !       CY(I) = CSGN*CY(I)-CSPN*CWRK(I): PRODUCTS ARE COMPUTED IN
@@ -1710,7 +1710,7 @@ CONTAINS
     ai = s1 / sfac
     RETURN
 
-30  aa = 1.0E+3 * TINY(0.0_dp)
+30  aa = 1.0D+3 * TINY(0.0_dp)
     s1 = CMPLX(0.0_dp, 0.0_dp, KIND=dp)
     IF (id /= 1) THEN
        IF (az > aa) s1 = c2 * z
@@ -2144,7 +2144,7 @@ CONTAINS
        !-----------------------------------------------------------------------
        tstr = REAL(zr, KIND=dp)
        tsti = AIMAG(zr)
-       test = TINY(0.0_dp) * 1.0E+3
+       test = TINY(0.0_dp) * 1.0D+3
        ac = fnu * test
        IF (ABS(tstr) <= ac .AND. ABS(tsti) <= ac) THEN
           ac = 2.0_dp * ABS(LOG(test)) + fnu
@@ -2318,7 +2318,7 @@ CONTAINS
           nuf = nn
           RETURN
 
-30        ascle = 1.0E+3 * TINY(0.0_dp) / tol
+30        ascle = 1.0D+3 * TINY(0.0_dp) / tol
           cz = cz + LOG(phi)
           IF (iform /= 1) THEN
              cz = cz - 0.25_dp * LOG(arg) - aic
@@ -2361,7 +2361,7 @@ CONTAINS
        IF (nn == 0) RETURN
        GO TO 50
 
-70     ascle = 1.0E+3 * TINY(0.0_dp) / tol
+70     ascle = 1.0D+3 * TINY(0.0_dp) / tol
        cz = cz + LOG(phi)
        IF (iform /= 1) THEN
           cz = cz - 0.25_dp * LOG(arg) - aic
@@ -2432,7 +2432,7 @@ CONTAINS
        !     IS ON SCALE.
        !-----------------------------------------------------------------------
        acw = ABS(cw(2))
-       ascle = 1.0E+3 * TINY(0.0_dp) / tol
+       ascle = 1.0D+3 * TINY(0.0_dp) / tol
        cscl = CMPLX(1.0_dp, 0.0_dp, KIND=dp)
        IF (acw <= ascle) THEN
           cscl = CMPLX(1.0_dp/tol, 0.0_dp, KIND=dp)
@@ -2495,7 +2495,7 @@ CONTAINS
 
     intrinsic :: log_gamma
 
-    scle = 1.0E+3 * TINY(0.0_dp) / tol
+    scle = 1.0D+3 * TINY(0.0_dp) / tol
     nz = 0
     az = ABS(z)
     x = REAL(z, KIND=dp)
@@ -2921,7 +2921,7 @@ CONTAINS
     !-----------------------------------------------------------------------
     tstr = REAL(z, KIND=dp)
     tsti = AIMAG(z)
-    test = TINY(0.0_dp) * 1.0E+3
+    test = TINY(0.0_dp) * 1.0D+3
     ac = fnu * test
     IF (ABS(tstr) <= ac .AND. ABS(tsti) <= ac) THEN
        ac = 2.0_dp * ABS(LOG(test)) + fnu
@@ -3532,7 +3532,7 @@ CONTAINS
     csr(1) = crsc
     csr(2) = cone
     csr(3) = cscl
-    bry(1) = 1.0E+3 * TINY(0.0_dp) / tol
+    bry(1) = 1.0D+3 * TINY(0.0_dp) / tol
     bry(2) = 1.0_dp / bry(1)
     bry(3) = HUGE(0.0_dp)
     x = REAL(z, KIND=dp)
@@ -3901,7 +3901,7 @@ CONTAINS
     csr(1) = crsc
     csr(2) = cone
     csr(3) = cscl
-    bry(1) = 1.0E+3 * TINY(0.0_dp) / tol
+    bry(1) = 1.0D+3 * TINY(0.0_dp) / tol
     bry(2) = 1.0_dp / bry(1)
     bry(3) = HUGE(0.0_dp)
     x = REAL(z, KIND=dp)
@@ -4312,7 +4312,7 @@ CONTAINS
        !----------------------------------------------------------------------
        !     SCALE BACKWARD RECURRENCE, BRY(3) IS DEFINED BUT NEVER USED
        !----------------------------------------------------------------------
-       bry(1) = 1.0E+3 * TINY(0.0_dp) / tol
+       bry(1) = 1.0D+3 * TINY(0.0_dp) / tol
        bry(2) = 1.0_dp / bry(1)
        bry(3) = bry(2)
        iflag = 2
@@ -4475,7 +4475,7 @@ CONTAINS
     csr(1) = crsc
     csr(2) = cone
     csr(3) = cscl
-    bry(1) = 1.0E+3 * TINY(0.0_dp) / tol
+    bry(1) = 1.0D+3 * TINY(0.0_dp) / tol
     !-----------------------------------------------------------------------
     !     CHECK FOR UNDERFLOW AND OVERFLOW ON FIRST MEMBER
     !-----------------------------------------------------------------------
@@ -4663,7 +4663,7 @@ CONTAINS
     csr(1) = crsc
     csr(2) = cone
     csr(3) = cscl
-    bry(1) = 1.0E+3 * TINY(0.0_dp) / tol
+    bry(1) = 1.0D+3 * TINY(0.0_dp) / tol
     yy = AIMAG(z)
     !-----------------------------------------------------------------------
     !     ZN IS IN THE RIGHT HALF PLANE AFTER ROTATION BY CI OR -CI
@@ -5083,7 +5083,7 @@ CONTAINS
     csr(1) = crsc
     csr(2) = cone
     csr(3) = cscl
-    bry(1) = 1.0E+3 * TINY(0.0_dp) / tol
+    bry(1) = 1.0D+3 * TINY(0.0_dp) / tol
     bry(2) = 1.0_dp / bry(1)
     bry(3) = HUGE(0.0_dp)
     nz = 0
@@ -5680,7 +5680,7 @@ CONTAINS
           iuf = 0
           c1 = s1
           c2 = y(1)
-          ascle = 1.0E+3 * TINY(0.0_dp) / tol
+          ascle = 1.0D+3 * TINY(0.0_dp) / tol
           IF (kode /= 1) THEN
              CALL cs1s2(zn, c1, c2, nw, ascle, alim, iuf)
              nz = nz + nw
@@ -6017,7 +6017,7 @@ CONTAINS
        c2 = y(1)
        IF (kode /= 1) THEN
           iuf = 0
-          ascle = 1.0E+3 * TINY(0.0_dp) / tol
+          ascle = 1.0D+3 * TINY(0.0_dp) / tol
           CALL cs1s2(zn, c1, c2, nw, ascle, alim, iuf)
           nz = nz + nw
        END IF

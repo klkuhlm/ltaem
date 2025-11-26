@@ -96,8 +96,8 @@ contains
        ! full square wave (only +, then -), period 2*par1
        ! shifted to start at t=par2
        mult(1:np) = exp(-par(2)*p)* &
-            &  (1.0_DP - exp(-par(1)*p/2.0_DP))/ &
-            & ((1.0_DP + exp(-par(1)*p/2.0_DP))*p)
+            &  (1.0_DP - exp(-par(1)*p*0.5_DP))/ &
+            & ((1.0_DP + exp(-par(1)*p*0.5_DP))*p)
     case(9)
        ! sine wave shifted to start at t=par2
        mult(1:np) = exp(-par(2)*p)*par(1)/(p**2 + par(1)**2)

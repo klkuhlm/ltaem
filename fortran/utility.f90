@@ -165,7 +165,7 @@ contains
     ! compared ~10^-15 against acosh() in Matlab
     ! branch cut is left of +1, along x axis
     ! -pi <= aimag(f) <= +pi
-    if(real(z) >= 0.0) then
+    if(real(z) >= 0.0_DP) then
        f = log(z + sqrt(z**2 - 1.0_DP))
     else
        f = -log(z + sqrt(z**2 - 1.0_DP))

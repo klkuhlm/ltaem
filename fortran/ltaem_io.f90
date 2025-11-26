@@ -177,7 +177,7 @@ contains
       bg%wave = .false.
     end if
     
-    if (any([bg%por,bg%k,bg%ss] <= 0.0)) then
+    if (any([bg%por,bg%k,bg%ss] <= 0.0_DP)) then
        write(stderr,*) 'ERROR: value (line ',ln,') bg%por, bg%k, bg%ss '&
             & // 'must all be > 0.0: ',[bg%por,bg%k,bg%ss]
        stop 205
@@ -193,7 +193,7 @@ contains
        write(stderr,*) 'ERROR: value (line ',ln,') leak flag (bg%leakFlag) must be in {0,1,2,3}'
        stop 2051
     end if
-    if (any([bg%aquitardK,bg%aquitardSs,bg%aquitardb] <= 0.0) .and. bg%leakFlag > 0) then
+    if (any([bg%aquitardK,bg%aquitardSs,bg%aquitardb] <= 0.0_DP) .and. bg%leakFlag > 0) then
        write(stderr,*) 'ERROR: value (line ',ln,') bg%aquitardK, bg%aquitardSs, bg%aquitardb' &
             & // 'must all be > 0.0: ',[bg%aquitardK,bg%aquitardSs,bg%aquitardb]
        stop 206
@@ -205,7 +205,7 @@ contains
        stop 2060
     end if
 
-    if (any([bg%kz,bg%b] <= 0.0) .and. bg%unconfinedFlag) then
+    if (any([bg%kz,bg%b] <= 0.0_DP) .and. bg%unconfinedFlag) then
        write(stderr,*) 'ERROR: value (line',ln,&
             & ') vertical K (bg%kz), thickness (bg%b) must be > 0.0: ', &
             & [bg%kz,bg%b]
@@ -213,7 +213,7 @@ contains
     end if
 
     ! Sy can be zero
-    if (bg%Sy < 0.0 .and. bg%unconfinedFlag) then
+    if (bg%Sy < 0.0_DP .and. bg%unconfinedFlag) then
        write(stderr,*) 'ERROR: value (line',ln,&
             &') specific yield (bg%Sy) must be non-negative:',bg%Sy
        stop 2071
@@ -227,7 +227,7 @@ contains
        stop 2072
     end if
     
-    if (any([bg%matrixSs,bg%lambda,bg%kappa] <= 0.0) .and. bg%dualPorosityFlag) then
+    if (any([bg%matrixSs,bg%lambda,bg%kappa] <= 0.0_DP) .and. bg%dualPorosityFlag) then
        write(stderr,*) 'ERROR: value (line',ln,') matrix specific storage (bg%matrixSs), ' &
             & // 'matrix/fracture connection factor (bg%lambda), and matrix/fracture k ratio (bg%kappa) ' &
             & // ' must be > 0.0:',&
@@ -373,8 +373,8 @@ contains
     ! shift x & y values to origin (useful when x and y are UTM coordinates)
     ! NOTE: shift is computed based on range of calculation locations,
     ! but there could also be a circle/ellipse element that is very big or very far away.
-    s%xshift = (maxval(s%x) + minval(s%x))/2.0
-    s%yshift = (maxval(s%y) + minval(s%y))/2.0
+    s%xshift = (maxval(s%x) + minval(s%x))*0.5_DP
+    s%yshift = (maxval(s%y) + minval(s%y))*0.5_DP
     s%x(:) = s%x(:) - s%xshift
     s%y(:) = s%y(:) - s%yshift
 
@@ -389,13 +389,13 @@ contains
        s%t(:) = computeVector(UINPUT,s%nt,ln)
     end if
 
-    if (any(s%t <= 0.0)) then
+    if (any(s%t <= 0.0_DP)) then
        write(stderr,*) 'ERROR: value (line ',ln,') requires t>0',s%t
        stop 2085
     end if
 
     if (s%nt >= 2) then
-      if (any((s%t(2:s%nt) - s%t(1:s%nt-1)) <= 0.0)) then
+      if (any((s%t(2:s%nt) - s%t(1:s%nt-1)) <= 0.0_DP)) then
          write(stderr,*) 'ERROR: value (line ',ln,') requires monotonically increasing times',s%t
          stop 2086
       end if
@@ -436,7 +436,7 @@ contains
        s%tol = epsilon(s%tol)
        write(stdout,'(A,ES12.5)') 'WARNING: increased deHoog INVLAP solution tolerance to ',s%tol
     end if
-    if (s%alpha <= 0.0) then
+    if (s%alpha <= 0.0_DP) then
        write(stdout,'(A,ES12.5)') 'WARNING: deHoog alpha typically > 0 ',s%alpha
     end if
     write(UECHO,'(A)') '=============== INVERSE LAPLACE TRANSFORM PARAMETERS ==============='
@@ -506,7 +506,7 @@ contains
        
        read(UCIRC,*,iostat=ierr) c(1:nc)%r; sln=sln+1
        if (ierr /= 0) c(1:nc)%r = read_real(UCIRC,sln,'circle  ')
-       if (any(c%r <= 0.0)) then
+       if (any(c%r <= 0.0_DP)) then
           write(stderr,*) 'ERROR: value (line',sln,' cirlce input) circle radius (c%r) '//&
                & 'must be > 0.0 ',c%r
           stop 214
@@ -525,7 +525,7 @@ contains
 
        read(UCIRC,*,iostat=ierr) c(1:nc)%k; sln=sln+1
        if (ierr /= 0) c(1:nc)%k = read_real(UCIRC,sln,'circle  ')
-       if (any(c%k <= 0.0)) then
+       if (any(c%k <= 0.0_DP)) then
           write(stderr,*) 'ERROR: value (line ',sln,' circle input) hydraulic conductivity '//&
                &'(c%K) must be > 0.0 ',c%k
           stop 215
@@ -533,7 +533,7 @@ contains
 
        read(UCIRC,*,iostat=ierr) c(1:nc)%Ss; sln=sln+1
        if (ierr /= 0) c(1:nc)%Ss = read_real(UCIRC,sln,'circle  ')
-       if (any(c%ss <= 0.0)) then
+       if (any(c%ss <= 0.0_DP)) then
           write(stderr,*) 'ERROR: value (line',sln,' circle input) specific storage (c%Ss) '//&
                &'must be > 0.0 ',c%Ss
           stop 216
@@ -541,7 +541,7 @@ contains
 
        read(UCIRC,*,iostat=ierr) c(1:nc)%por; sln=sln+1
        if (ierr /= 0) c(1:nc)%por = read_real(UCIRC,sln,'circle  ')
-       if (any(c%por <= 0.0)) then
+       if (any(c%por <= 0.0_DP)) then
           write(stderr,*) 'ERROR: value (line',sln,' circle input) porosity (c%por) '//&
                &'must be > 0.0 ',c%por
           stop 217
@@ -557,7 +557,7 @@ contains
 
        read(UCIRC,*,iostat=ierr) c(1:nc)%aquitardK; sln=sln+1
        if (ierr /= 0) c(1:nc)%aquitardK = read_real(UCIRC,sln,'circle  ')
-       if (any(c%aquitardK <= 0.0 .and. c%leakFlag > 0)) then
+       if (any(c%aquitardK <= 0.0_DP .and. c%leakFlag > 0)) then
           write(stderr,*) 'ERROR: value (line',sln,' circle input) aquitard vertical K '//&
                &'(c%aquitardK) must be > 0.0 ',c%aquitardk
           stop 218
@@ -565,7 +565,7 @@ contains
 
        read(UCIRC,*,iostat=ierr) c(1:nc)%aquitardSs; sln=sln+1
        if (ierr /= 0) c(1:nc)%aquitardSs = read_real(UCIRC,sln,'circle  ')
-       if (any(c%aquitardSS <= 0.0 .and. c%leakFlag > 0)) then
+       if (any(c%aquitardSS <= 0.0_DP .and. c%leakFlag > 0)) then
           write(stderr,*) 'ERROR: value (line',sln,' circle input) aquitard specific storage '//&
                &'(c%aquitardSs) must be > 0.0 ',c%aquitardSs
           stop 219
@@ -573,7 +573,7 @@ contains
 
        read(UCIRC,*,iostat=ierr) c(1:nc)%aquitardb; sln=sln+1
        if (ierr /= 0) c(1:nc)%aquitardb = read_real(UCIRC,sln,'circle  ')
-       if (any(c%aquitardB <= 0.0 .and. c%leakFlag > 0)) then
+       if (any(c%aquitardB <= 0.0_DP .and. c%leakFlag > 0)) then
           write(stderr,*) 'ERROR: value (line ',sln,' circle input) aquitard thickness '//&
                &'(c%aquitardB) must be > 0.0 ',c%aquitardB
           stop 220
@@ -584,7 +584,7 @@ contains
 
        read(UCIRC,*,iostat=ierr) c(1:nc)%Sy; sln=sln+1
        if (ierr /= 0) c(1:nc)%Sy = read_real(UCIRC,sln,'circle  ')
-       if (any(c%sy <= 0.0 .and. c%unconfinedFlag)) then
+       if (any(c%sy <= 0.0_DP .and. c%unconfinedFlag)) then
           write(stderr,*) 'ERROR: value (line',sln,' circle input) specific yield (c%Sy) '//&
                &'must be > 0.0 ',c%sy
           stop 221
@@ -592,7 +592,7 @@ contains
 
        read(UCIRC,*,iostat=ierr) c(1:nc)%Kz; sln=sln+1
        if (ierr /= 0) c(1:nc)%Kz = read_real(UCIRC,sln,'circle  ')
-       if (any(c%kz <= 0.0 .and. c%unconfinedFlag)) then
+       if (any(c%kz <= 0.0_DP .and. c%unconfinedFlag)) then
           write(stderr,*) 'ERROR: value (line',sln,' circle input) aquifer vertical K '//&
                &'(c%Kz) must be > 0.0 ',c%kz
           stop 222
@@ -600,7 +600,7 @@ contains
 
        read(UCIRC,*,iostat=ierr) c(1:nc)%b; sln=sln+1
        if (ierr /= 0) c(1:nc)%b = read_real(UCIRC,sln,'circle  ')
-       if (any(c%b <= 0.0 .and. c%unconfinedFlag)) then
+       if (any(c%b <= 0.0_DP .and. c%unconfinedFlag)) then
           write(stderr,*) 'ERROR: value (line',sln,' circle input) aquifer thickness '//&
                &'(c%B) must be > 0.0 ',c%b
           stop 223
@@ -611,7 +611,7 @@ contains
 
        read(UCIRC,*,iostat=ierr) c(1:nc)%matrixSs; sln=sln+1
        if (ierr /= 0) c(1:nc)%matrixSs = read_real(UCIRC,sln,'circle  ')
-       if (any(c%matrixSs <= 0.0 .and. c%dualPorosityFlag)) then
+       if (any(c%matrixSs <= 0.0_DP .and. c%dualPorosityFlag)) then
           write(stderr,*) 'ERROR: value (line',sln,' circle input) matrix specific storage '//&
                &'(c%matrixSs) must be > 0.0', c%matrixSs
           stop 2230
@@ -619,7 +619,7 @@ contains
 
        read(UCIRC,*,iostat=ierr) c(1:nc)%lambda; sln=sln+1
        if (ierr /= 0) c(1:nc)%lambda = read_real(UCIRC,sln,'circle  ')
-       if (any(c%lambda < 0.0 .and. c%dualPorosityFlag)) then
+       if (any(c%lambda < 0.0_DP .and. c%dualPorosityFlag)) then
           write(stderr,*) 'ERROR: value (line',sln,' circle input) '//&
                & 'matrix/fracture connection (c%lambda) must be non-negative', c%lambda
           stop 2231
@@ -636,7 +636,7 @@ contains
 
        read(UCIRC,*,iostat=ierr) c(1:nc)%kappa; sln=sln+1
        if (ierr /= 0) c(1:nc)%kappa = read_real(UCIRC,sln,'circle  ')
-       if (any(c%kappa < 0.0 .and. c%dualPorosityFlag)) then
+       if (any(c%kappa < 0.0_DP .and. c%dualPorosityFlag)) then
           write(stderr,*) 'ERROR: value (line',sln,' circle input) '//&
                & 'matrix/fracture hydraulic conductivity ratio (c%kappa) must be non-negative', c%kappa
           stop 2233
@@ -652,7 +652,7 @@ contains
 
        read(UCIRC,*,iostat=ierr) c(1:nc)%dskin; sln=sln+1
        if (ierr /= 0) c(1:nc)%dskin = read_real(UCIRC,sln,'circle  ')
-       if (any(c%dskin <= 0.0)) then
+       if (any(c%dskin <= 0.0_DP)) then
           write(stderr,*) 'ERROR: value (line',sln,' circle input) dimensionless skin '//&
                &'parameter (c%Dskin) must be > 0.0 ',c%dskin
           stop 224
@@ -830,13 +830,13 @@ contains
 
        read(UELIP,*,iostat=ierr) e(1:ne)%r; sln=sln+1   ! eta
        if (ierr /= 0) e(1:ne)%r = read_real(UELIP,sln,'ellipse ')      
-       if (any(e%r < 0.0)) then
+       if (any(e%r < 0.0_DP)) then
           write(stderr,*) 'ERROR: value (line ',sln,' ellipse input) elliptical radius '//&
                      &'(e%r) must be >= 0.0 ',e%r
           stop 230
        end if
 
-       where (e%r <= 0.0 .and. e%calcIn)
+       where (e%r <= 0.0_DP .and. e%calcIn)
           ! can't calculate inside something of zero radius
           e%calcIn = .false.
        end where
@@ -854,7 +854,7 @@ contains
 
        read(UELIP,*,iostat=ierr) e(1:ne)%f; sln=sln+1
        if (ierr /= 0) e(1:ne)%f = read_real(UELIP,sln,'ellipse ')
-       if (any(e%f <= 0.0)) then
+       if (any(e%f <= 0.0_DP)) then
           write(stderr,*) 'ERROR: value (line ',sln,' ellipse input) elliptical semi-focal '//&
                      &'length (e%f) must be > 0.0 ',e%f
           stop 231
@@ -876,7 +876,7 @@ contains
 
        read(UELIP,*,iostat=ierr) e(1:ne)%k; sln=sln+1
        if (ierr /= 0) e(1:ne)%k = read_real(UELIP,sln,'ellipse ')
-       if (any(e%k <= 0.0)) then
+       if (any(e%k <= 0.0_DP)) then
           write(stderr,*) 'ERROR: value (line ',sln,' ellipse input) hydraulic conductivity '//&
                      &'(e%k) must be > 0.0 ',e%k
           stop 233
@@ -884,7 +884,7 @@ contains
 
        read(UELIP,*,iostat=ierr) e(1:ne)%Ss; sln=sln+1
        if (ierr /= 0) e(1:ne)%Ss = read_real(UELIP,sln,'ellipse ')
-       if (any(e%Ss <= 0.0)) then
+       if (any(e%Ss <= 0.0_DP)) then
           write(stderr,*) 'ERROR: value (line ',sln,' ellipse input) specific storage '//&
                      &'(e%Ss) must be > 0.0 ',e%Ss
           stop 234
@@ -892,7 +892,7 @@ contains
 
        read(UELIP,*,iostat=ierr) e(1:ne)%por; sln=sln+1
        if (ierr /= 0) e(1:ne)%por = read_real(UELIP,sln,'ellipse ')
-       if (any(e%por <= 0.0)) then
+       if (any(e%por <= 0.0_DP)) then
           write(stderr,*) 'ERROR: value (line ',sln,' ellipse input) porosity (e%por) '//&
                      &'must be > 0.0 ',e%por
           stop 235
@@ -908,7 +908,7 @@ contains
 
        read(UELIP,*,iostat=ierr) e(1:ne)%aquitardK; sln=sln+1
        if (ierr /= 0) e(1:ne)%aquitardK = read_real(UELIP,sln,'ellipse ')
-       if (any(e%aquitardK <= 0.0 .and. e%leakFlag > 0)) then
+       if (any(e%aquitardK <= 0.0_DP .and. e%leakFlag > 0)) then
           write(stderr,*) 'ERROR: value (line',sln,' ellipse input) aquitard vertical K '//&
                      &'(e%aquitardK) must be > 0.0 ',e%aquitardK
           stop 236
@@ -916,7 +916,7 @@ contains
 
        read(UELIP,*,iostat=ierr) e(1:ne)%aquitardSs; sln=sln+1
        if (ierr /= 0) e(1:ne)%aquitardSs = read_real(UELIP,sln,'ellipse ')
-       if (any(e%aquitardSs <= 0.0 .and. e%leakFlag > 0)) then
+       if (any(e%aquitardSs <= 0.0_DP .and. e%leakFlag > 0)) then
           write(stderr,*) 'ERROR: value (line',sln,' ellipse input) aquitard specific '//&
                      &'storage (e%aquitardSs) must be > 0.0 ',e%aquitardSs
           stop 237
@@ -924,7 +924,7 @@ contains
 
        read(UELIP,*,iostat=ierr) e(1:ne)%aquitardb; sln=sln+1
        if (ierr /= 0) e(1:ne)%aquitardb = read_real(UELIP,sln,'ellipse ')
-       if (any(e%aquitardb <= 0.0 .and. e%leakFlag > 0)) then
+       if (any(e%aquitardb <= 0.0_DP .and. e%leakFlag > 0)) then
           write(stderr,*) 'ERROR: value (line ',sln,' ellipse input) aquitard thickness '//&
                      &'(e%aquitardB) must be > 0.0 ',e%aquitardb
           stop 238
@@ -935,7 +935,7 @@ contains
 
        read(UELIP,*,iostat=ierr) e(1:ne)%Sy; sln=sln+1
        if (ierr /= 0) e(1:ne)%Sy = read_real(UELIP,sln,'ellipse ')
-       if (any(e%Sy <= 0.0 .and. e%unconfinedFlag)) then
+       if (any(e%Sy <= 0.0_DP .and. e%unconfinedFlag)) then
           write(stderr,*) 'ERROR: value (line ',sln,' ellipse input) specific storage '//&
                      &'(e%Sy) must be > 0.0 ',e%Sy
           stop 239
@@ -943,7 +943,7 @@ contains
 
        read(UELIP,*,iostat=ierr) e(1:ne)%Kz; sln=sln+1
        if (ierr /= 0) e(1:ne)%Kz = read_real(UELIP,sln,'ellipse ')
-       if (any(e%Kz <= 0.0 .and. e%unconfinedFlag)) then
+       if (any(e%Kz <= 0.0_DP .and. e%unconfinedFlag)) then
           write(stderr,*) 'ERROR: value (line ',sln,' ellipse input) aquifer vertical K '//&
                      &'(e%Kz) must be > 0.0 ',e%Kz
           stop 240
@@ -951,7 +951,7 @@ contains
 
        read(UELIP,*,iostat=ierr) e(1:ne)%b; sln=sln+1
        if (ierr /= 0) e(1:ne)%b = read_real(UELIP,sln,'ellipse ')
-       if (any(e%b <= 0.0 .and. e%unconfinedFlag)) then
+       if (any(e%b <= 0.0_DP .and. e%unconfinedFlag)) then
           write(stderr,*) 'ERROR: value (line ',sln,' ellipse input) aquifer thickness '//&
                      &'(e%b) must be > 0.0 ',e%b
           stop 241
@@ -962,7 +962,7 @@ contains
 
        read(UELIP,*,iostat=ierr) e(1:ne)%matrixSs; sln=sln+1
        if (ierr /= 0) e(1:ne)%matrixSs = read_real(UELIP,sln,'ellipse ')
-       if (any(e%matrixSs <= 0.0 .and. e%dualPorosityFlag)) then
+       if (any(e%matrixSs <= 0.0_DP .and. e%dualPorosityFlag)) then
           write(stderr,*) 'ERROR: value (line ',sln,' ellipse input) matrix specific '//&
                      &'storage (e%matrixSs) must be > 0.0', e%matrixSs
           stop 2411
@@ -970,7 +970,7 @@ contains
 
        read(UELIP,*,iostat=ierr) e(1:ne)%lambda; sln=sln+1
        if (ierr /= 0) e(1:ne)%lambda = read_real(UELIP,sln,'ellipse ')
-       if (any(e%lambda < 0.0 .and. e%dualPorosityFlag)) then
+       if (any(e%lambda < 0.0_DP .and. e%dualPorosityFlag)) then
           write(stderr,*) 'ERROR: value (line ',sln,' ellipse input) matrix/fracture '//&
                      &'connection (e%lambda)'//&
                &' must be non-negative', e%lambda
@@ -988,7 +988,7 @@ contains
 
        read(UELIP,*,iostat=ierr) e(1:ne)%kappa; sln=sln+1
        if (ierr /= 0) e(1:ne)%kappa = read_real(UELIP,sln,'ellipse ')
-       if (any(e%kappa < 0.0 .and. e%dualPorosityFlag)) then
+       if (any(e%kappa < 0.0_DP .and. e%dualPorosityFlag)) then
          write(stderr,*) 'ERROR: value (line',sln,' ellipse input) '//&
               & 'matrix/fracture hydraulic conductivity ratio (e%kappa) must be non-negative', e%kappa
          stop 2413
@@ -1004,7 +1004,7 @@ contains
 
        read(UELIP,*,iostat=ierr) e(1:ne)%dskin; sln=sln+1
        if (ierr /= 0) e(1:ne)%dskin = read_real(UELIP,sln,'ellipse ')
-       if (any(e%dskin <= 0.0)) then
+       if (any(e%dskin <= 0.0_DP)) then
           write(stderr,*) 'ERROR: value (line ',sln,' ellipse input) dimensionless '//&
                      &'skin (e%dskin) must be > 0.0 ',e%dskin
           stop 242
@@ -1169,7 +1169,7 @@ contains
 
        read(UPAR,*,iostat=ierr) p(:)%tol; sln=sln+1
        if (ierr /= 0) p(:)%tol = read_real(UPAR,sln,'particle')
-       if (any(p%tol <= 0.0 .and. p%int == 1)) then
+       if (any(p%tol <= 0.0_DP .and. p%int == 1)) then
           write(stderr,*) 'ERROR: value (line',sln,'particle input) RKM error '//&
                      &'tolerance (p%tol) must be > 0.0 ',p%tol
           stop 244
@@ -1177,7 +1177,7 @@ contains
 
        read(UPAR,*,iostat=ierr) p(:)%maxL; sln=sln+1  
        if (ierr /= 0) p(:)%maxL = read_real(UPAR,sln,'particle')
-       if (any(p%maxL <= 0.0 .and. p%int == 1)) then
+       if (any(p%maxL <= 0.0_DP .and. p%int == 1)) then
           write(stderr,*) 'ERROR: value (line ',sln,' particle input) max RKM '//&
                      &'step length (p%maxL) must be > 0.0 ',p%maxL
           stop 245
@@ -1185,7 +1185,7 @@ contains
 
        read(UPAR,*,iostat=ierr) p(:)%mindt; sln=sln+1
        if (ierr /= 0) p(:)%mindt = read_real(UPAR,sln,'particle')
-       if (any(p%mindt <= 0.0 .and. p%int == 1)) then
+       if (any(p%mindt <= 0.0_DP .and. p%int == 1)) then
           write(stderr,*) 'ERROR: value (line ',sln,' particle input) min RKM '//&
                      &'time step (p%mindt) must be > 0.0 ',p%mindt
           stop 246
@@ -1193,7 +1193,7 @@ contains
 
        read(UPAR,*,iostat=ierr) p(:)%dt; sln=sln+1
        if (ierr /= 0) p(:)%dt = read_real(UPAR,sln,'particle')
-       if (any(p%dt <= 0.0)) then
+       if (any(p%dt <= 0.0_DP)) then
           write(stderr,*) 'ERROR: value (line ',sln,' particle input) initial '//&
                      &'time step (p%dt) must be > 0.0 ',p%dt
           stop 247
@@ -1210,7 +1210,7 @@ contains
 
        read(UPAR,*,iostat=ierr) p(:)%ti; sln=sln+1
        if (ierr /= 0) p(:)%ti = read_real(UPAR,sln,'particle')
-       if (any(p%ti <= 0.0)) then
+       if (any(p%ti <= 0.0_DP)) then
           write(stderr,*) 'ERROR: value (line ',sln,' particle input) start '//&
                      &'time (p%ti) must be > 0.0 ',p%ti
           stop 248
@@ -1218,7 +1218,7 @@ contains
 
        read(UPAR,*,iostat=ierr) p(:)%tf; sln=sln+1
        if (ierr /= 0) p(:)%tf = read_real(UPAR,sln,'particle')
-       if (any(p%tf <= 0.0)) then
+       if (any(p%tf <= 0.0_DP)) then
           write(stderr,*) 'ERROR: value (line ',sln,' particle input) end '//&
                      &'time (p%tf) must be > 0.0 ',p%tf
           stop 249
@@ -1395,7 +1395,7 @@ contains
           stop 7771
        else
           if (n == 1 ) then
-             v = (maxv+minv)/2.0 ! average of min/max
+             v = (maxv+minv)*0.5_DP ! average of min/max
           else
              delta = (maxv-minv)/real(n-1,DP)
              v = minv + real([(i,i=0,n-1)],DP)*delta
@@ -1419,6 +1419,7 @@ contains
   !******************************************************
   subroutine writeResults(s,p)
 
+    use constants, only : DP
     use type_definitions, only : solution, particle, explain_type
     use, intrinsic :: iso_fortran_env, only : stdout => output_unit, stderr => error_unit
 
@@ -1716,7 +1717,7 @@ contains
           write (90,'(A)') '#  particle       x            y&
                &           velx         vely'
           do j = 1, size(p,dim=1)
-             if (p(j)%r(i,1) > 0.0) then
+             if (p(j)%r(i,1) > 0.0_DP) then
                 ! only write particle if it has non-zero data
                 write (90,'(I0,4(1X,'//hfmt//'))')  j,p(j)%r(i,2:5)
              end if

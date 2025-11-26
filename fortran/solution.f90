@@ -32,7 +32,7 @@ module solution_mod
 
 contains
   subroutine matrix_solution(c,e,dom,sol,p,idx)
-    use constants, only : DP
+    use constants, only : DP, CZERO
     use type_definitions, only : circle, solution, ellipse, domain, match_result
     use circular_elements, only : circle_match, well
     use elliptical_elements, only : ellipse_match, line
@@ -266,7 +266,7 @@ contains
     end if
 
     allocate(A(bigM,bigN), b(bigM))
-    b = cmplx(0,0,DP)
+    b = CZERO
 
     if (any(c%match) .or. any(e%match)) then
        allocate(work(33*bigN))
@@ -384,7 +384,7 @@ contains
           end if
 
           ! get coefficients from line routine (only even-order, even coeff used)
-          e(i)%coeff(idx,:) = 0.0
+          e(i)%coeff(idx,:) = 0.0_DP
           e(i)%coeff(idx,1:e(i)%N:2) = line(e(i),p,idx) ! a_(2n)
        end if
     end do

@@ -299,8 +299,8 @@ contains
                    elseif (Rcg(i,j) < abs(c(i)%r - c(j)%r)) then
                       ! one circle completely contained within the other
                       cycle
-                   elseif ((Rcg(i,j) < spacing(0.0)/2.0) .and. &
-                        & (abs(c(i)%r - c(j)%r) < spacing(0.0)/2.0)) then
+                   elseif ((Rcg(i,j) < spacing(0.0_DP)*0.5_DP) .and. &
+                        & (abs(c(i)%r - c(j)%r) < spacing(0.0_DP)*0.5_DP)) then
                       write(stderr,*) 'ERROR: COINCIDENT CIRCLES: ',i,j
                       stop 400
                    else
@@ -315,7 +315,7 @@ contains
           ! check circle-on-ellipse intersection
           do i = 1, nc
              do j = 1, ne
-                if (any(abs(c(i)%G(nc+j)%Rgm(:) - c(i)%r) <= 0.0) .or. &
+                if (any(abs(c(i)%G(nc+j)%Rgm(:) - c(i)%r) <= 0.0_DP) .or. &
                      & (any(c(i)%G(nc+j)%Rgm(:) < c(i)%r) .and. &
                      &  any(c(i)%G(nc+j)%Rgm(:) > c(i)%r))) then
                    print *, c(i)%r,'::',c(i)%G(nc+j)%Rgm(:)
@@ -368,7 +368,7 @@ contains
          ! check ellipse-on-circle intersection
           do i = 1, ne
              do j = 1, nc
-                if (any(abs(e(i)%G(j)%Rgm(:) - e(i)%r) <= 0.0) .or. &
+                if (any(abs(e(i)%G(j)%Rgm(:) - e(i)%r) <= 0.0_DP) .or. &
                      & (any(e(i)%G(j)%Rgm(:) < e(i)%r) .and. &
                      &  any(e(i)%G(j)%Rgm(:) > e(i)%r))) then
                    print *, e(i)%r,'::',e(i)%G(j)%Rgm(:)
@@ -382,7 +382,7 @@ contains
           do i = 1, ne
              do j = 1, ne
                 if (i /= j) then
-                   if (any(abs(e(i)%G(nc+j)%Rgm(:) - e(i)%r) <= 0.0) .or. &
+                   if (any(abs(e(i)%G(nc+j)%Rgm(:) - e(i)%r) <= 0.0_DP) .or. &
                         & (any(e(i)%G(nc+j)%Rgm(:) < e(i)%r) .and. &
                         &  any(e(i)%G(nc+j)%Rgm(:) > e(i)%r))) then
                       print *, e(i)%r,'::',e(i)%G(nc+j)%Rgm(:)

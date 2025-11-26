@@ -57,7 +57,7 @@ contains
     complex(DP), dimension(0:num-1) :: tmp
     integer :: numzero, ierr, j
 
-    if (any(abs(z)/2.0_DP < spacing(0.0_DP))) then
+    if (any(abs(z)*0.5_DP < spacing(0.0_DP))) then
       print *, 'AGH! ZERO BESSELK input',size(z)
     end if
     
@@ -80,7 +80,7 @@ contains
     complex(DP), intent(in) :: z
     integer, intent(in) :: num
     complex(DP), dimension(0:num-1) :: K
-    if (abs(z)/2.0_DP < spacing(0.0_DP)) print *, 'AGH! ZERO BESSELK input',z
+    if (abs(z)*0.5_DP < spacing(0.0_DP)) print *, 'AGH! ZERO BESSELK input',z
     K = sum( besk_vectz([z],num), dim=1)
   end function besk_zscal
 

@@ -44,7 +44,7 @@ contains
   !##################################################
   function headCalcZ(Z,p,lo,hi,dom,c,e,bg) result(H)
     use type_definitions, only : element, domain, circle, ellipse
-    use constants, only : DP
+    use constants, only : DP, CZERO
     use circular_elements, only : circle_calc
     use elliptical_elements, only : ellipse_calc
     use kappa_mod, only : kappa
@@ -73,7 +73,7 @@ contains
     ! determine which inclusion this point is in, and related geometry
     call CalcLocation(Z,c,e,dom,Rgp,Pgp,in)
 
-    H(:) = cmplx(0,0,DP)
+    H(:) = CZERO
 
     ! TODO there should be a way to combine the two branches of this
     ! if statement into a more general single branch.
@@ -214,7 +214,7 @@ contains
 
        ! Q = f* \int_0^{2 pi} \sqrt{cosh^2 eta - cos^2 psi} q_eta d psi
        qp(:) = el%f*TWOPI/M*sum(rflux(1:np,1:M)*&
-            & sqrt((cosh(2*safeR) - spread(cos(2*projangles),1,np))/2),dim=2)
+            & sqrt((cosh(2.0_DP*safeR) - spread(cos(2.0_DP*projangles),1,np))*0.5_DP),dim=2)
 
     end if
   end function elementFlowrate
@@ -223,7 +223,7 @@ contains
   function velCalcZ(Z,p,lo,hi,dom,c,e,bg) result(v)
 
     use type_definitions, only : element, domain, circle, ellipse
-    use constants, only : DP
+    use constants, only : DP, CZERO
     use circular_elements, only : circle_deriv
     use elliptical_elements, only : ellipse_deriv
     use kappa_mod, only : kappa
@@ -239,7 +239,7 @@ contains
     type(element), intent(in) :: bg
     complex(DP), dimension(size(p,1),2) :: v, dH
 
-    real(DP), parameter :: SMALL = 1.0E-8
+    real(DP), parameter :: SMALL = 1.0D-8
     real(DP) :: hsq
     real(DP), dimension(sum(dom%num)) :: Rgp, Pgp
     type(element), pointer :: elin => null()
@@ -258,10 +258,10 @@ contains
     ! eliminate divide by zero or infinite BF errors when calculation point
     ! is exactly at the center of an element
     where(abs(Rgp) < SMALL)
-       Rgp = Rgp + 2*SMALL
+       Rgp = Rgp + 2.0_DP*SMALL
     end where
 
-    v(1:np,1:2) = cmplx(0,0,DP)
+    v(1:np,1:2) = CZERO
 
     ! TODO
     ! there should be a way to combine the two branches of this
@@ -286,7 +286,7 @@ contains
              dH(1:np,1:2) = ellipse_deriv(p,e(j-nc),lo,hi,Rgp(j),Pgp(j),.false.)
              dH(1:np,1:2) = rotate_vel(dH(:,1:2),e(j-nc)%theta)
 
-             hsq = e(j-nc)%f/2.0*(cosh(2*Rgp(j)) - cos(2*Pgp(j)))
+             hsq = e(j-nc)%f*0.5_DP*(cosh(2.0_DP*Rgp(j)) - cos(2.0_DP*Pgp(j)))
              v(1:np,1) = v(:,1) + (sinh(Rgp(j))*cos(Pgp(j))*dH(:,1) - &
                                 &  cosh(Rgp(j))*sin(Pgp(j))*dH(:,2))/hsq
              v(1:np,2) = v(:,2) + (cosh(Rgp(j))*sin(Pgp(j))*dH(:,1) + &
@@ -310,7 +310,7 @@ contains
              dH(1:np,1:2) = ellipse_deriv(p,e(in-nc),lo,hi,Rgp(in),Pgp(in),.true.)
              dH(1:np,1:2) = rotate_vel(dH(:,1:2),e(in-nc)%theta)
 
-             hsq = e(in-nc)%f/2.0*(cosh(2*Rgp(in)) - cos(2*Pgp(in)))
+             hsq = e(in-nc)%f*0.5_DP*(cosh(2.0_DP*Rgp(in)) - cos(2.0_DP*Pgp(in)))
              v(1:np,1) = v(:,1) + (sinh(Rgp(in))*cos(Pgp(in))*dH(:,1) - &
                                 &  cosh(Rgp(in))*sin(Pgp(in))*dH(:,2))/hsq
              v(1:np,2) = v(:,2) + (cosh(Rgp(in))*sin(Pgp(in))*dH(:,1) + &
@@ -333,7 +333,7 @@ contains
              dH(1:np,1:2) = ellipse_deriv(p,e(oth-nc),lo,hi,Rgp(oth),Pgp(oth),.false.)
              dH(1:np,1:2) = rotate_vel(dH(:,1:2),e(oth-nc)%theta)
 
-             hsq = e(oth-nc)%f/2.0*(cosh(2*Rgp(oth)) - cos(2*Pgp(oth)))
+             hsq = e(oth-nc)%f*0.5_DP*(cosh(2.0_DP*Rgp(oth)) - cos(2.0_DP*Pgp(oth)))
              v(1:np,1) = v(:,1) + (sinh(Rgp(oth))*cos(Pgp(oth))*dH(:,1) - &
                                  & cosh(Rgp(oth))*sin(Pgp(oth))*dH(:,2))/hsq
              v(1:np,2) = v(:,2) + (cosh(Rgp(oth))*sin(Pgp(oth))*dH(:,1) + &
@@ -429,7 +429,7 @@ contains
       if (ieee_is_nan(real(Zgp(i))) .or. ieee_is_nan(aimag(Zgp(i)))) then
         print *, 'GEOMETRY FAILURE at location Z=',Z
         print *, 'Zgp:',Zgp
-        call abort()
+        !call abort()
         stop 666
       end if
     end do
@@ -439,7 +439,7 @@ contains
     do j = 1,nc
        if (Rgp(j) < c(j)%r) then    ! inside (not including on boundary)
           count = count+1
-          inout(count) = j  
+          inout(count) = j
        end if
     end do
 
@@ -471,7 +471,7 @@ contains
 
           ! pick smallest-radius nested element as immediate parent
           ! TODO: check this is valid with mixed circles/ellipses
-          minr = huge(1.0)
+          minr = huge(1.0_DP)
           do j = 1,ntot
              idx = inout(j) 
              if (idx > 0) then
