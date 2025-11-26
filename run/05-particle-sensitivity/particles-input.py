@@ -3,7 +3,7 @@ import numpy as np
 
 nx, ny = (15, 15)
 
-delta = 1.0e-5
+DELTA = 1.0e-5
 
 xv = np.linspace(-0.15, 1.15, nx)
 yv = np.linspace(-0.15, 1.15, ny)
@@ -19,7 +19,7 @@ val = np.empty((ny, nx, 2))
 for i in range(ny):
     for j in range(nx):
 
-        for k, (dx, dy) in enumerate(zip([0.0, delta, 0.0], [0.0, 0.0, delta])):
+        for k, (dx, dy) in enumerate(zip([0.0, DELTA, 0.0], [0.0, 0.0, DELTA])):
 
             with open("particles.pin", "w", encoding="ascii") as fh:
                 fh.write(
@@ -52,12 +52,12 @@ F        :: beginning inside an element?
                 print(f"{i:2d} {j:2d} {xv[j]:.4f} {yv[i]:.4f}")
             elif k == 1:
                 # x shift
-                r[i, j, 0, 0] = (p[-1, 1] - base[0]) / delta
-                r[i, j, 1, 0] = (p[-1, 2] - base[1]) / delta
+                r[i, j, 0, 0] = (p[-1, 1] - base[0]) / DELTA
+                r[i, j, 1, 0] = (p[-1, 2] - base[1]) / DELTA
             else:
                 # y shift
-                r[i, j, 0, 1] = (p[-1, 1] - base[0]) / delta
-                r[i, j, 1, 1] = (p[-1, 2] - base[1]) / delta
+                r[i, j, 0, 1] = (p[-1, 1] - base[0]) / DELTA
+                r[i, j, 1, 1] = (p[-1, 2] - base[1]) / DELTA
                 # compute Cauchy-Green strain tensor
                 C[i, j, :, :] = np.dot(np.transpose(r[i, j, :, :]), r[i, j, :, :])
                 val[i, j, :], vec[i, j, :, :] = np.linalg.eig(C[i, j, :, :])

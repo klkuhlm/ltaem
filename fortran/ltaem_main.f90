@@ -366,6 +366,7 @@ program ltaem_main
 
         calcZ = cmplx(sol%x(i),sol%y(i),DP)
         hp(1:tnP) =    headCalc(calcZ,stmp,1,tnP,dom,c,e,bg)
+
         vp(1:tnP,1:2) = velCalc(calcZ,stmp,1,tnP,dom,c,e,bg)
 
         do lt = minlt,maxlt-1
