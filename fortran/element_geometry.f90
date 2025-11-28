@@ -44,12 +44,14 @@ contains
     type(ellipse), target, intent(inout), dimension(:) :: e
     type(element), target, intent(inout) :: bg
     type(solution), intent(in) :: sol
-    type(matching), pointer :: other => null()
+    type(matching), pointer :: other
 
     integer :: i, j, ne, nc, ntot, par, M
     complex(DP), allocatable :: Zgm(:)
     real(DP) :: dth
 
+    nullify(other)
+    
     nc = dom%num(1)
     ne = dom%num(2)
     ntot = sum(dom%num)
