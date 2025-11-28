@@ -51,7 +51,6 @@ contains
     real(DP) :: dth
 
     nullify(other)
-    
     nc = dom%num(1)
     ne = dom%num(2)
     ntot = sum(dom%num)

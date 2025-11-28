@@ -60,9 +60,8 @@ contains
     complex(DP), dimension(size(p,1)) :: H
 
     real(DP), dimension(sum(dom%num)) :: Rgp, Pgp
-    integer :: ein
     integer :: nc, ne, ntot, np, j
-    integer :: in, oth
+    integer :: in, oth, ein
 
     call check_np(p,lo,hi)
     nc = dom%num(1)

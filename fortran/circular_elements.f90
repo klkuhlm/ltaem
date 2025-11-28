@@ -156,7 +156,7 @@ contains
       ! TODO : handle area source in background
       ! optional 3rd kappa argument -> kappa**2
       r%RHS(1:M) = r%RHS(1:M) - (timef(p,c%time,.true.) * c%areaQ / (c%alpha * kappa(p,c%element,.true.))) 
-      !r%RHS(M+1:2*M) = 0.0_DP ! constant area source has no flux effects
+      r%RHS(M+1:2*M) = 0.0_DP ! constant area source has no flux effects
     case(1)
        ! put specified flux effects on RHS
        ! TODO : check addition of aquifer thickness to denominator
