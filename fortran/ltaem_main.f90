@@ -161,7 +161,7 @@ program ltaem_main
      !$ write(stdout,'(A)',advance="no") 'thr'
      write(stdout,'(A)') ' logt  idx            p'
 
-     !$OMP PARALLEL DO PRIVATE(lt,j)
+     !$OMP PARALLEL DO PRIVATE(lt,j) SHARED(c,e,dom,sol) 
      do lt = minlt,maxlt-1
         if (nt(lt) > 0) then
            do j = 1,2*sol%m+1
@@ -204,7 +204,7 @@ program ltaem_main
         part(i)%id = i
      end do
 
-     !$OMP PARALLEL DO SHARED(part,sol)
+     !$OMP PARALLEL DO PRIVATE(j) SHARED(part,sol)
      do j = 1, sol%nPart
 
         select case (part(j)%int)
@@ -250,7 +250,7 @@ program ltaem_main
         end do
         write(stdout,'(/)')
 
-        !$OMP PARALLEL DO PRIVATE(lt,lot,hit,lop,hip,k) shared(sol,qp)
+        !$OMP PARALLEL DO PRIVATE(lt,lot,hit,lop,hip,k) SHARED(sol,qp)
         do lt = minlt,maxlt-1
            lot = 1 + sum(nt(minlt:lt-1))
            hit = sum(nt(minlt:lt))
@@ -269,7 +269,7 @@ program ltaem_main
         !$OMP END PARALLEL DO
      end if
 
-     !$OMP PARALLEL DO PRIVATE(calcZ,hp,vp,lot,hit,lop,hip) SHARED(sol)
+     !$OMP PARALLEL DO PRIVATE(j,i,lt,calcZ,hp,vp,lot,hit,lop,hip) SHARED(sol)
      do j = 1,sol%nx
         !$ write (*,'(I0,1X)',advance="no") OMP_get_thread_num()
         write (*,'(A,ES13.5)') 'x: ',sol%x(j)
@@ -340,7 +340,7 @@ program ltaem_main
         end do
         write(stdout,'(/)')
 
-        !$OMP PARALLEL DO PRIVATE(lt,lot,hit,lop,hip,k) shared(sol,qp)
+        !$OMP PARALLEL DO PRIVATE(lt,lot,hit,lop,hip,k) SHARED(sol,qp)
         do lt = minlt,maxlt-1
            lot = 1 + sum(nt(minlt:lt-1))
            hit = sum(nt(minlt:lt))
@@ -359,7 +359,7 @@ program ltaem_main
         !$OMP END PARALLEL DO
      end if
 
-     !$OMP PARALLEL DO PRIVATE(calcZ,hp,vp,lot,hit,lop,hip) SHARED(sol)
+     !$OMP PARALLEL DO PRIVATE(i,lt,calcZ,hp,vp,lot,hit,lop,hip) SHARED(sol)
      do i = 1,sol%nx
         write(stdout,'(A,2(3X,ES14.7E1))') trim(sol%obsname(i)),sol%xshift+sol%x(i),&
              & sol%yshift+sol%y(i)

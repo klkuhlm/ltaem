@@ -75,10 +75,10 @@ F90=gfortran
 #CC=/home/klkuhlm/src/gcc/local/bin/gcc
 #F90=/home/klkuhlm/src/gcc/local/bin/gfortran
 #F90=lfortran
-##OMP=-fopenmp
+OMP=-fopenmp
 ##CPP=-cpp
 ###DFLAGS=-O2 -march=native -fprofile-generate -flto
-DFLAGS=-Wall -Wextra -Og -g -fcheck=all #-ffpe-trap=overflow,underflow  -fanalyzer
+DFLAGS=-Wall -Wextra -Og -g #-fcheck=all #-ffpe-trap=overflow,underflow  -fanalyzer
 ###DFLAGS+=-fdump-rtl-expand 
 ##LINKOPT=-fbacktrace -B/usr/lib/x86_64-linux-gnu  # needed to make dev version of gcc to work?
 LINKOPT=-flto=auto
@@ -87,7 +87,9 @@ PFLAGS=-O3 -march=native -flto=auto
 #PFLAGS=-Og -g -fcheck=all
 #################################
 
-#PFLAGS+=$(OMP)
+# openmp issues (random segfaults when re-running program repeatedly)
+PFLAGS+=$(OMP)
+DFLAGS+=$(OMP)
 
 # switch between performance or debugging flags
 # based on whethere the environment variable PERF is defined

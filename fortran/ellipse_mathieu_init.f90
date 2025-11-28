@@ -60,7 +60,7 @@ contains
     ! either bail out if too large, or potentially use an
     ! asymptotic expansion (needs investigation)
 
-    !$OMP PARALLEL DO PRIVATE(i)
+    !$OMP PARALLEL DO PRIVATE(i) SHARED(bg)
     do i = 1, tnp
        bg%mat(i) = mathieu_init(kap(i), MM=max(bg%ms,shirtdim(i)))
     end do
@@ -74,7 +74,7 @@ contains
           kap = kappa(p,e(j)%element)
           shirtdim(:) = shirts(e(j)%N+2, kap)
 
-          !$OMP PARALLEL DO PRIVATE(i)
+          !$OMP PARALLEL DO PRIVATE(i) SHARED(e)
           do i = 1, tnp
              e(j)%mat(i) = mathieu_init(kap(i), MM=max(e(j)%MS,shirtdim(i)))
           end do
