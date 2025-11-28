@@ -87,7 +87,7 @@ PFLAGS=-O3 -march=native -flto=auto
 #PFLAGS=-Og -g -fcheck=all
 #################################
 
-# openmp issues (random segfaults when re-running program repeatedly)
+# may need to set OMP_NUM_THREADS to something fewer than number of cores
 PFLAGS+=$(OMP)
 DFLAGS+=$(OMP)
 
