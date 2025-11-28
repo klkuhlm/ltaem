@@ -60,7 +60,7 @@ contains
     complex(DP), dimension(size(p,1)) :: H
 
     real(DP), dimension(sum(dom%num)) :: Rgp, Pgp
-    type(element), pointer :: elin => null()
+    integer :: ein
     integer :: nc, ne, ntot, np, j
     integer :: in, oth
 
@@ -125,18 +125,15 @@ contains
        end do
 
        if (in <= nc) then
-          elin => c(in)%element     ! circle
+          ! circle
+          H(1:np) = H(:) - c(in)%areaQ*c(in)%Ss*timef(p,c(in)%time,.true.)/kappa(p,c(in)%element,.true.)
+          H(1:np) = H(:)/c(in)%K ! convert to head
        else
-          elin => e(in-nc)%element  ! ellipse
+          ! ellipse
+          ein = in-nc
+          H(1:np) = H(:) - e(ein)%areaQ*e(ein)%Ss*timef(p,e(ein)%time,.true.)/kappa(p,e(ein)%element,.true.)
+          H(1:np) = H(:)/e(in-nc)%K ! convert to head
        end if
-
-       ! apply potential source term on inside of element
-       ! <<<openmp is having trouble here, sometimes I get invalid memory access errors>>>
-       H(1:np) = H(:) - elin%areaQ*elin%Ss*timef(p,elin%time,.true.)/kappa(p,elin,.true.) ! optional 3rd argument -> kappa**2
-       H(1:np) = H(:)/elin%K ! convert to head
-
-       elin => null()
-
     end if
   end function headCalcZ
 
@@ -242,8 +239,7 @@ contains
     real(DP), parameter :: SMALL = 1.0D-8
     real(DP) :: hsq
     real(DP), dimension(sum(dom%num)) :: Rgp, Pgp
-    type(element), pointer :: elin => null()
-    integer :: in, oth
+    integer :: in, oth, elin
     integer :: np, nc, ne, ntot, j
 
     call check_np(p,lo,hi)
@@ -341,17 +337,15 @@ contains
           end if
        end do
 
-       if (in <= nc) then
-          elin => c(in)%element     ! circle
-       else
-          elin => e(in-nc)%element  ! ellipse
-       end if
-
        ! area source has no flux effects, since it is a constant WRT space
-       v(1:np,1:2) = -v(1:np,1:2)/elin%por ! gradient points uphill
-
-       elin => null()
-
+       if (in <= nc) then
+          ! circle
+          v(1:np,1:2) = -v(1:np,1:2)/c(in)%por ! gradient points uphill
+       else
+          ! ellipse
+          elin = in-nc
+          v(1:np,1:2) = -v(1:np,1:2)/c(elin)%por
+       end if
     end if
   end function velCalcZ
 
