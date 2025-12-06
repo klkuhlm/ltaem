@@ -1576,7 +1576,7 @@ contains
        ! column of calculation times
        open(unit=UOUT, file=s%outfname(1:idx-1)//'_t.dat', status='replace', &
             & action='write')
-       write (UOUT,'('//tfmt//')') (s%t(j), j=1,s%nt)
+       write (UOUT,'('//hfmt//')') (s%t(j), j=1,s%nt)
        close(UOUT)
 
        write(stdout,'(/A)') '*********************************************************'
