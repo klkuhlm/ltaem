@@ -1317,8 +1317,9 @@ contains
                 &'  ||  Area time behavior '//trim(explain%time(el%areaTime))//&
                 &', par1, par2 for '//tp,j
         else
-           ! piecewise-constant/linear time behavior
-           tsize = mod(abs(el%AreaTime),100) ! handle both piecewise constant (-100:-1) and piecewise linear (-infinity:-101)
+          ! piecewise-constant/linear time behavior
+          ! both PW-constant (-100:-1) and PW-linear (-infinity:-101)
+           tsize = mod(abs(el%AreaTime),100)
            allocate(el%ATPar(2*tsize+1))
            read(UIN,*,iostat=ierr) el%AreaTime,el%ATPar(:)
            if (ierr /= 0) then
@@ -1397,9 +1398,9 @@ contains
           stop 7771
        else
           if (n == 1 ) then
-             v = (maxv+minv)*0.5_DP ! average of min/max
+             v = (maxv + minv)*0.5_DP ! average of min/max
           else
-             delta = (maxv-minv)/real(n-1,DP)
+             delta = (maxv - minv)/real(n-1,DP)
              v = minv + real([(i,i=0,n-1)],DP)*delta
           end if
 
@@ -1431,6 +1432,7 @@ contains
     type(explain_type) :: explain
     character(4), dimension(2) :: chint
     integer :: i, j, k, nt
+    integer, parameter :: UOUT = 20
 
     ! adjust the formats of time, location, and results here
     character(6), parameter :: tfmt = 'ES13.5', xfmt = 'ES12.4'
@@ -1452,42 +1454,43 @@ contains
        ! print results as x,y,{h,v,dh} "triplets" with the
        ! times separated by double blank lines
 
-       open(unit=20, file=s%outfname, status='replace', action='write')
-       write(20,'(A)') '# 1 LT-AEM contour map output     -*-auto-revert-*-'
-       write(20,'(A,I0)') '# t: ', s%nt
-       write(20,'(A,I0)') '# x: ', s%nx
-       write(20,'(A,I0)') '# y: ', s%ny
-       write(20,'(A,I0)') '# locations: ', s%nx*s%ny
+       open(unit=UOUT, file=s%outfname, status='replace', action='write')
+       write(UOUT,'(A)') '# 1 LT-AEM contour map output     -*-auto-revert-*-'
+       write(UOUT,'(A,I0)') '# t: ', s%nt
+       write(UOUT,'(A,I0)') '# x: ', s%nx
+       write(UOUT,'(A,I0)') '# y: ', s%ny
+       write(UOUT,'(A,I0)') '# locations: ', s%nx*s%ny
 
        do i = 1, s%nt
-          write(20,'(A,'//tfmt//')') '# t= ',s%t(i)
-          write(20,'(A)',advance='no')   &
+          write(UOUT,'(A,'//tfmt//')') '# t= ',s%t(i)
+          write(UOUT,'(A)',advance='no')   &
           & '#      X           Y               head'//&
           & '                velx                  vely'
           if (s%deriv) then
-             write(20,'(A)') '                d(head)/d(log(t))'
+             write(UOUT,'(A)') '                d(head)/d(log(t))'
           else
-             write(20,'(A)') ''
+             write(UOUT,'(A)') ''
           end if
           if (s%deriv) then
              do j = 1, s%ny
                 do k = 1, s%nx
-                   write(20,'(2('//xfmt//',1X),4('//hfmt//',1X))') &
-                        & s%x(k), s%y(j), s%h(i,k,j), s%v(i,1:2,k,j), s%dh(i,k,j)
+                   write(UOUT,'(2('//xfmt//',1X),4('//hfmt//',1X))') &
+                        & s%x(k), s%y(j), s%h(i,k,j), &
+                        &s%v(i,1:2,k,j), s%dh(i,k,j)
                 end do
              end do
           else
              do j = 1, s%ny
                 do k = 1, s%nx
-                   write(20,'(2('//xfmt//',1X),3('//hfmt//',1X))') &
+                   write(UOUT,'(2('//xfmt//',1X),3('//hfmt//',1X))') &
                         & s%x(k), s%y(j), s%h(i,k,j), s%v(i,1:2,k,j)
                 end do
              end do
           end if
-          write(20,'(/)')
+          write(UOUT,'(/)')
        end do
-       write(20,'(A)') '# EOF'
-       close(20)
+       write(UOUT,'(A)') '# EOF'
+       close(UOUT)
 
        write(stdout,'(/A)') '**************************************************'
        write(stdout,'(2A)') ' Gnuplot contour output => ', trim(s%outfname)
@@ -1502,65 +1505,69 @@ contains
        ! function meshgrid()
 
        ! x-matrix has same row repeated numy times
-       open(unit=20, file=trim(s%outfname)//'_x.dat', status='replace', &
+       open(unit=UOUT, file=trim(s%outfname)//'_x.dat', status='replace', &
             & action='write')
        write(chint(1),'(i4.4)') s%nx
        do i = 1, s%ny
-          write (20,'('//chint(1)//'(1x,'//hfmt//'))') (s%x(j), j=1,s%nx)
+          write (UOUT,'('//chint(1)//'(1x,'//hfmt//'))') (s%x(j), j=1,s%nx)
        end do
-       close(20)
+       close(UOUT)
 
        ! y-matrix has same column repeated numx times
-       open(unit=20, file=trim(s%outfname)//'_y.dat', status='replace', &
+       open(unit=UOUT, file=trim(s%outfname)//'_y.dat', status='replace', &
             & action='write')
        do i = 1, s%ny
-          write (20,'('//chint(1)//'(1x,'//hfmt//'))') (s%y(i), j=1,s%nx)
+          write (UOUT,'('//chint(1)//'(1x,'//hfmt//'))') (s%y(i), j=1,s%nx)
        end do
-       close(20)
+       close(UOUT)
 
        do k = 1, s%nt
           write(chint(2),'(i4.4)') k
 
           ! head-matrix
-          open(unit=20, file=trim(s%outfname)//'_head_'//chint(2)//'.dat', &
+          open(unit=UOUT, file=trim(s%outfname)//'_head_'//chint(2)//'.dat', &
                & status='replace', action='write')
           do i = 1, s%ny
-             write (20,'('//chint(1)//'(1x,'//hfmt//'))') (s%h(k,j,i), j=1,s%nx)
+             write (UOUT,'('//chint(1)//'(1x,'//hfmt//'))') &
+                  &(s%h(k,j,i), j=1,s%nx)
           end do
-          close(20)
+          close(UOUT)
 
           ! log-t derivative matrix
           if (s%deriv) then
-             open(unit=20, file=trim(s%outfname)//'_dhead_'//chint(2)//'.dat', &
+             open(unit=UOUT, file=trim(s%outfname)//'_dhead_'//chint(2)//'.dat', &
                   & status='replace', action='write')
              do i = 1, s%ny
-                write (20,'('//chint(1)//'(1x,'//hfmt//'))') (s%dh(k,j,i), j=1,s%nx)
+                write (UOUT,'('//chint(1)//'(1x,'//hfmt//'))') &
+                     &(s%dh(k,j,i), j=1,s%nx)
              end do
-             close(20)
+             close(UOUT)
           end if
 
           ! velx-matrix
-          open(unit=20, file=trim(s%outfname)//'_velx_'//chint(2)//'.dat', &
+          open(unit=UOUT, file=trim(s%outfname)//'_velx_'//chint(2)//'.dat', &
                & status='replace', action='write')
           do i = 1, s%ny
-             write (20,'('//chint(1)//'(1x,'//hfmt//'))') (s%v(k,1,j,i), j=1,s%nx)
+             write (UOUT,'('//chint(1)//'(1x,'//hfmt//'))') &
+                  &(s%v(k,1,j,i), j=1,s%nx)
           end do
-          close(20)
+          close(UOUT)
 
           ! vely-matrix
-          open(unit=20, file=trim(s%outfname)//'_vely_'//chint(2)//'.dat', &
+          open(unit=UOUT, file=trim(s%outfname)//'_vely_'//chint(2)//'.dat', &
                & status='replace', action='write')
           do i = 1, s%ny
-             write (20,'('//chint(1)//'(1x,'//hfmt//'))') (s%v(k,2,j,i), j=1,s%nx)
+             write (UOUT,'('//chint(1)//'(1x,'//hfmt//'))') &
+                  &(s%v(k,2,j,i), j=1,s%nx)
           end do
-          close(20)
+          close(UOUT)
        end do
 
        ! column of calculation times
-       open(unit=20, file=trim(s%outfname)//'_t.dat', status='replace', &
+       open(unit=UOUT, file=trim(s%outfname)//'_t.dat', status='replace', &
             & action='write')
-       write (20,'('//tfmt//')') (s%t(j), j=1,s%nt)
-       close(20)
+       write (UOUT,'('//tfmt//')') (s%t(j), j=1,s%nt)
+       close(UOUT)
 
        write(stdout,'(/A)') '*********************************************************'
        write(stdout,'(3A)') 'table output => ', trim(s%outfname), &
@@ -1573,35 +1580,35 @@ contains
        ! ** Gnuplot-friendly time series output **
        ! column of time values at a location through time
        ! locations separated by blank lines
-       open(unit=20, file=s%outfname, status='replace', action='write')
-       write (20,'(A)') '# 10 LT-AEM time series output   -*-auto-revert-*-'
-       write (20,'(A,2(I0,A))') '# ',s%nx,' locations ',s%nt,' times'
+       open(unit=UOUT, file=s%outfname, status='replace', action='write')
+       write (UOUT,'(A)') '# 10 LT-AEM time series output   -*-auto-revert-*-'
+       write (UOUT,'(A,2(I0,A))') '# ',s%nx,' locations ',s%nt,' times'
        do i = 1, s%nx
-          write (20,'(2(A,'//xfmt//'),3X,A)') '# location: x=',s%x(i),' y=',&
+          write (UOUT,'(2(A,'//xfmt//'),3X,A)') '# location: x=',s%x(i),' y=',&
                & s%y(i),trim(s%obsname(i))
-          write (20,'(A)',advance='no')  '#     time              head'//&
+          write (UOUT,'(A)',advance='no')  '#     time              head'//&
                & '                  velx                vely'
           if (s%deriv) then
-             write(20,'(A)') '                 deriv'
+             write(UOUT,'(A)') '                 deriv'
           else
-             write(20,'(A)') ''
+             write(UOUT,'(A)') ''
           end if
 
           if (s%deriv) then
              do k = 1, s%nt
-                write (20,'(1X,'//tfmt//',4(1X,'//hfmt//'))') &
+                write (UOUT,'(1X,'//tfmt//',4(1X,'//hfmt//'))') &
                      & s%t(k),s%h(k,i,1),s%v(k,1:2,i,1),s%dh(k,i,1)
              end do
           else
              do k = 1, s%nt
-                write (20,'(1X,'//tfmt//',3(1X,'//hfmt//'))') &
+                write (UOUT,'(1X,'//tfmt//',3(1X,'//hfmt//'))') &
                      & s%t(k),s%h(k,i,1),s%v(k,1:2,i,1)
              end do
           end if
-          write (20,'(/)')
+          write (UOUT,'(/)')
        end do
-       write(20,*) '# EOF'
-       close(20)
+       write(UOUT,*) '# EOF'
+       close(UOUT)
 
        write(stdout,'(/A)') '*****************************************************'
        write(stdout,'(2A)') 'Gnuplot timeseries output => ', trim(s%outfname)
@@ -1613,32 +1620,32 @@ contains
        ! ** Gnuplot-friendly time series output **
        ! column of time values at a location through time
        ! locations separated by blank lines (no velocity)
-       open(unit=20, file=s%outfname, status='replace', action='write')
-       write (20,'(A)') '# 11 LT-AEM time series output    -*-auto-revert-*-'
-       write (20,'(A,2(I0,A))') '# ',s%nx,' locations ',s%nt,' times'
+       open(unit=UOUT, file=s%outfname, status='replace', action='write')
+       write (UOUT,'(A)') '# 11 LT-AEM time series output    -*-auto-revert-*-'
+       write (UOUT,'(A,2(I0,A))') '# ',s%nx,' locations ',s%nt,' times'
        do j = 1, s%nx
-          write (20,'(2(A,'//xfmt//'),3X,A)') '# location: x=',s%x(j),' y=',&
+          write (UOUT,'(2(A,'//xfmt//'),3X,A)') '# location: x=',s%x(j),' y=',&
                &s%y(j),trim(s%obsname(j))
           if (s%deriv) then
-             write (20,'(A)')   '#     time              head             deriv'
+             write (UOUT,'(A)')   '#     time              head             deriv'
           else
-             write (20,'(A)')   '#     time              head'
+             write (UOUT,'(A)')   '#     time              head'
           end if
           if (s%deriv) then
              do k = 1, s%nt
-                write (20,'(1X,'//tfmt//',3(1X,'//hfmt//'))') &
+                write (UOUT,'(1X,'//tfmt//',3(1X,'//hfmt//'))') &
                      & s%t(k),s%h(k,j,1),s%dh(k,j,1)
              end do
           else
              do k = 1, s%nt
-                write (20,'(1X,'//tfmt//',2(1X,'//hfmt//'))') &
+                write (UOUT,'(1X,'//tfmt//',2(1X,'//hfmt//'))') &
                      & s%t(k),s%h(k,j,1)
              end do
           end if
-          write (20,'(/)')
+          write (UOUT,'(/)')
        end do
-       write(20,*) '# EOF'
-       close(20)
+       write(UOUT,*) '# EOF'
+       close(UOUT)
 
        write(stdout,'(/A)') '*****************************************************'
        write(stdout,'(2A)') 'Gnuplot timeseries output (no v) => ', trim(s%outfname)
@@ -1653,19 +1660,20 @@ contains
 
        do i = 1, s%nx
           write(chint(1),'(I4.4)') i
-          open(unit=20, file=trim(s%outfname)//'_'//chint(1), status='replace', &
-               &action='write')
+          open(unit=UOUT, file=trim(s%outfname)//'_'//chint(1), &
+               &status='replace', action='write')
           if (s%deriv) then
              do k = 1, s%nt
-                write (20,'('//tfmt//',2(1X,'//hfmt//'))') s%t(k),s%h(k,i,1),s%dh(k,i,1)
+                write (UOUT,'('//tfmt//',2(1X,'//hfmt//'))') &
+                     &s%t(k),s%h(k,i,1),s%dh(k,i,1)
              end do
           else
              do k = 1, s%nt
-                write (20,'('//tfmt//',1X,'//hfmt//')') s%t(k),s%h(k,i,1)
+                write (UOUT,'('//tfmt//',1X,'//hfmt//')') s%t(k),s%h(k,i,1)
              end do
           end if
-          write(20,'(/)')
-          close(20)
+          write(UOUT,'(/)')
+          close(UOUT)
        end do
 
        write(stdout,'(/A)') '*****************************************************'
@@ -1678,22 +1686,23 @@ contains
        ! ** pathline Gnuplot-style output **
        ! columns of time values for starting locations
        ! particles separated by blank lines
-       open(unit=20, file=s%outfname, status='replace', action='write')
-       write (20,'(A)') '# 20 LT-AEM particle tracking output  -*-auto-revert-*-'
-       write (20,'(A,I0,A)') '# ',size(p,dim=1),' particles'
+       open(unit=UOUT, file=s%outfname, status='replace', action='write')
+       write (UOUT,'(A)') '# UOUT LT-AEM particle tracking output  -*-auto-revert-*-'
+       write (UOUT,'(A,I0,A)') '# ',size(p,dim=1),' particles'
        do i = 1, size(p,dim=1)
-          write (20,'(A,I0,A)') '# particle ',i,' '//trim(explain%particle(p(i)%int))
-          write (20,'(A)')   &
+          write (UOUT,'(A,I0,A)') '# particle ',i,&
+               &' '//trim(explain%particle(p(i)%int))
+          write (UOUT,'(A)')   &
           & '#     time              x                    y                  '//&
           &'velx                 vely '
           do k = lbound(p(i)%r,dim=1),ubound(p(i)%r,dim=1)
-             write (20,'('//tfmt//',4(1X,'//hfmt//'))') &
+             write (UOUT,'('//tfmt//',4(1X,'//hfmt//'))') &
                   & p(i)%r(k,1:5)
           end do
-          write (20,'(/)')
+          write (UOUT,'(/)')
        end do
-       write(20,'(A)') '# EOF'
-       close(20)
+       write(UOUT,'(A)') '# EOF'
+       close(UOUT)
 
        write(stdout,'(/A)') '*****************************************************'
        write(stdout,'(2A)') 'particle tracking output => ', trim(s%outfname)
@@ -1706,66 +1715,66 @@ contains
        ! this requires constant time steps (can't use adaptive integration)
        ! each block is a requested time, each row a particle
 
-       open(unit=90, file=s%outfname, status='replace', action='write')
-       write (90,'(A)') '# 21 LT-AEM particle tracking streakfile output   -*-auto-revert-*-'
-       write (20,'(A,I0,A)') '# ',size(p,dim=1),' particles'
+       open(unit=UOUT, file=s%outfname, status='replace', action='write')
+       write (UOUT,'(A)') '# 21 LT-AEM particle tracking streakfile output   -*-auto-revert-*-'
+       write (UOUT,'(A,I0,A)') '# ',size(p,dim=1),' particles'
 
        ! max number of times for all particles
        nt = maxval(p(:)%numt,dim=1)
 
        do i = 1, nt, s%streakSkip
           ! use maxval to ensure a non-zero time is reported
-          write (90,'(A,'//tfmt//')') '# time:', maxval(p(i)%r(:,1))
-          write (90,'(A)') '#  particle       x            y&
+          write (UOUT,'(A,'//tfmt//')') '# time:', maxval(p(i)%r(:,1))
+          write (UOUT,'(A)') '#  particle       x            y&
                &           velx         vely'
           do j = 1, size(p,dim=1)
              if (p(j)%r(i,1) > 0.0_DP) then
                 ! only write particle if it has non-zero data
-                write (90,'(I0,4(1X,'//hfmt//'))')  j,p(j)%r(i,2:5)
+                write (UOUT,'(I0,4(1X,'//hfmt//'))')  j,p(j)%r(i,2:5)
              end if
           end do
-          write (90,'(/)')
+          write (UOUT,'(/)')
        end do
-       write(90,'(A)') '# EOF'
-       close(90)
+       write(UOUT,'(A)') '# EOF'
+       close(UOUT)
 
        write(stdout,'(/A)') '*****************************************************'
        write(stdout,'(2A)') 'particle tracking streakfile => ', trim(s%outfname)
        write(stdout,'(A)')  '*****************************************************'
 
     case default
-       write(stderr,'(A,I0)')  'invalid output code ',s%output
+       write(stderr,'(A,I0)')  'invalid output code specified:',s%output
        stop 300
     end select
 
     ! write total flowrate through each element to separate file
     ! each element includes a timeseries of flowrate
     if (s%Qcalc) then
-       open(unit=91, file=s%qfname, status='replace', action='write')
-       write(91,'(A)') '# LT-AEM element total flowrates  -*-auto-revert-*-'
+       open(unit=UOUT, file=s%qfname, status='replace', action='write')
+       write(UOUT,'(A)') '# LT-AEM element total flowrates  -*-auto-revert-*-'
 
        do j = 1,size(s%Q,dim=2)
-          write(91,'(A,I0)') '# element ',j
+          write(UOUT,'(A,I0)') '# element ',j
           if (s%deriv) then
-             write(91,'(A)') '#     tD      '//'          Q_D          '&
+             write(UOUT,'(A)') '#     tD      '//'          Q_D          '&
                   & //'   d(Q_D)/d(log(t))'
           else
-             write(91,'(A)') '#     tD      '//'          Q_D          '
+             write(UOUT,'(A)') '#     tD      '//'          Q_D          '
           end if
 
           if (s%deriv) then
              do i = 1,s%nt
-                write(91,'('//tfmt//',2(1X,'//hfmt//'))') s%t(i),s%Q(i,j),s%dQ(i,j)
+                write(UOUT,'('//tfmt//',2(1X,'//hfmt//'))') s%t(i),s%Q(i,j),s%dQ(i,j)
              end do
           else
              do i = 1,s%nt
-                write(91,'('//tfmt//',1X,'//hfmt//')') s%t(i),s%Q(i,j)
+                write(UOUT,'('//tfmt//',1X,'//hfmt//')') s%t(i),s%Q(i,j)
              end do
           end if
-          write(91,'(/)')
+          write(UOUT,'(/)')
        end do
-       write(91,'(A)') '# EOF'
-       close(91)
+       write(UOUT,'(A)') '# EOF'
+       close(UOUT)
        write(stdout,'(A)') '%% wrote element flowrates: '//trim(s%qfname)
     end if
 
@@ -1783,6 +1792,7 @@ contains
     integer :: nc, ne, i, j, ierr
     complex(DP) :: origin
     character(14) :: fmt
+    integer, parameter :: UOUT = 40
 
     ! remove shift originally applied to coordinates
     origin = cmplx(s%xshift,s%yshift,DP)
@@ -1792,35 +1802,35 @@ contains
     fmt = '(3(ES13.5,1X))'
 
     ! write matching points to file
-    open(unit=40, file=s%geomfName, status='replace', action='write', iostat=ierr)
+    open(unit=UOUT, file=s%geomfName, status='replace', action='write', iostat=ierr)
     if (ierr /= 0) then
        ! non-fatal error
        write(stdout,'(2A)') 'WARNING: writeGeometry error opening output file for writing &
             &element matching locations ',s%geomfName
     else
-       write(40,'(A)') '# points along circumference circular '//&
+       write(UOUT,'(A)') '# points along circumference circular '//&
             &'and elliptical elements  -*-auto-revert-*-'
        do i = 1,nc
-          write(40,'(2(A,I0),A)') '# circular element ',i,' = ',c(i)%M,' points'
-          write(40,fmt)  (origin + c(i)%Zom(j), c(i)%Pcm(j), j=1,c(i)%M)
+          write(UOUT,'(2(A,I0),A)') '# circular element ',i,' = ',c(i)%M,' points'
+          write(UOUT,fmt)  (origin + c(i)%Zom(j), c(i)%Pcm(j), j=1,c(i)%M)
           if (c(i)%M > 1) then
              ! joins circle back up with beginning for plotting
-             write(40,fmt)  origin + c(i)%Zom(1), c(i)%Pcm(1)
+             write(UOUT,fmt)  origin + c(i)%Zom(1), c(i)%Pcm(1)
           end if
-          write(40,'(/)')
+          write(UOUT,'(/)')
        end do
 
        do i = 1,ne
-          write(40,'(2(A,I0),A)') '# elliptical element ',i,' = ',e(i)%M,' points'
-          write(40,fmt)  (origin + e(i)%Zom(j), e(i)%Pcm(j), j=1,e(i)%M)
+          write(UOUT,'(2(A,I0),A)') '# elliptical element ',i,' = ',e(i)%M,' points'
+          write(UOUT,fmt)  (origin + e(i)%Zom(j), e(i)%Pcm(j), j=1,e(i)%M)
           if (e(i)%M > 1) then
              ! joins ellipse back up with beginning for plotting
-             write(40,fmt)  origin + e(i)%Zom(1), e(i)%Pcm(1)
+             write(UOUT,fmt)  origin + e(i)%Zom(1), e(i)%Pcm(1)
           end if
-          write(40,'(/)')
+          write(UOUT,'(/)')
        end do
-       write(40,'(A)') '# EOF'
-       close(40)
+       write(UOUT,'(A)') '# EOF'
+       close(UOUT)
     end if
   end subroutine writeGeometry
 
@@ -1879,29 +1889,30 @@ contains
     real(DP), intent(in), dimension(:) :: tee
     integer, intent(in) :: minlt,maxlt
 
+    integer, parameter :: UDMP = 77
     integer :: ierr,i,nc,ne
     nc = size(c)
     ne = size(e)
 
-    open(unit=77, file=sol%coefffname, status='replace', action='write', iostat=ierr)
+    open(unit=UDMP, file=sol%coefffname, status='replace', action='write', iostat=ierr)
     if (ierr /= 0) then
        write(stdout,*) 'WARNING: error opening intermediate save file ',&
             & trim(sol%coefffname), ' continuing without saving results'
     else
-       write(77,'(A)') sol%echofName ! file with all the input parameters
-       write(77,'(4(I0,1X))') minlt,maxlt,nc,ne
-       write(77,*) nt(:)
-       write(77,*) s(:,:)
-       write(77,*) tee(:)
+       write(UDMP,'(A)') sol%echofName ! file with all the input parameters
+       write(UDMP,'(4(I0,1X))') minlt,maxlt,nc,ne
+       write(UDMP,*) nt(:)
+       write(UDMP,*) s(:,:)
+       write(UDMP,*) tee(:)
        do i = 1,nc
-          write(77,'(A,3(I0,1X))') 'CIRCLE ',i,shape(c(i)%coeff)
-          write(77,*) c(i)%coeff(:,:)
+          write(UDMP,'(A,3(I0,1X))') 'CIRCLE ',i,shape(c(i)%coeff)
+          write(UDMP,*) c(i)%coeff(:,:)
        end do
        do i = 1,ne
-          write(77,'(A,3(I0,1X))') 'ELLIPS ',i,shape(e(i)%coeff)
-          write(77,*) e(i)%coeff(:,:)
+          write(UDMP,'(A,3(I0,1X))') 'ELLIPS ',i,shape(e(i)%coeff)
+          write(UDMP,*) e(i)%coeff(:,:)
        end do
-       close(77)
+       close(UDMP)
     end if
   end subroutine dump_coeff
 
@@ -1921,28 +1932,29 @@ contains
     integer, intent(out) :: minlt,maxlt
     logical, intent(out) :: fail
 
+    integer, paraeter :: UDMP = 77
     character(6) :: elType  ! element type {CIRCLE,ELLIPS}
     integer :: ierr,i,j,nc,ne,crow,ccol
     nc = size(c)
     ne = size(e)
     fail = .false.
-    
-    open(unit=77, file=sol%coefffname, status='old', action='read', iostat=ierr)
+
+    open(unit=UDMP, file=sol%coefffname, status='old', action='read', iostat=ierr)
     if (ierr /= 0) then
        ! go back and recalculate if no restart file
        write(stderr,'(A)') 'ERROR: cannot opening restart file, recalculating...'
        fail = .true.
     end if
 
-    read(77,*) !! TODO check inputs are same?
-    read(77,*) minlt,maxlt,nc,ne
+    read(UDMP,*) !! TODO check inputs are same?
+    read(UDMP,*) minlt,maxlt,nc,ne
     allocate(s(2*sol%m+1,minlt:maxlt-1), nt(minlt:maxlt-1), tee(minlt:maxlt-1))
-    read(77,*) nt(:)
-    read(77,*) s(:,:)
+    read(UDMP,*) nt(:)
+    read(UDMP,*) s(:,:)
     sol%totalnP = product(shape(s))
-    read(77,*) tee(:)
+    read(UDMP,*) tee(:)
     do i = 1,nc
-        read(77,*) elType,j,crow,ccol
+        read(UDMP,*) elType,j,crow,ccol
         if (elType == 'CIRCLE' .and. i == j) then
            allocate(c(i)%coeff(crow,ccol))
         else
@@ -1950,10 +1962,10 @@ contains
                 &'results, recalculating...'
            fail = .true.
         end if
-        read(77,*) c(i)%coeff(:,:)
+        read(UDMP,*) c(i)%coeff(:,:)
      end do
      do i = 1,ne
-        read(77,*) elType,j,crow,ccol
+        read(UDMP,*) elType,j,crow,ccol
         if (elType == 'ELLIPS' .and. i == j) then
            allocate(e(i)%coeff(crow,ccol))
         else
@@ -1961,7 +1973,7 @@ contains
                 &'results, recalculating...'
            fail = .true.
         end if
-        read(77,*) e(i)%coeff(:,:)
+        read(UDMP,*) e(i)%coeff(:,:)
      end do
 
      ! re-initialize Mathieu function matrices
