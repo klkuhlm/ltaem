@@ -1932,7 +1932,7 @@ contains
     integer, intent(out) :: minlt,maxlt
     logical, intent(out) :: fail
 
-    integer, paraeter :: UDMP = 77
+    integer, parameter :: UDMP = 77
     character(6) :: elType  ! element type {CIRCLE,ELLIPS}
     integer :: ierr,i,j,nc,ne,crow,ccol
     nc = size(c)
