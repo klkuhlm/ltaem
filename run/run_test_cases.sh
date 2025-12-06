@@ -28,10 +28,10 @@ for d in {01a-,02-,03-,04-,06-,07-,08-,09-,10-,11-,12-}; do
     cd ..
 done
 
-cd 05-particle-sensitivity
-echo "now in $(pwd)"
-ln -sf ../ltaem .
-python particles-input.py > python_particle_input_screen.out
-python plot-results.py > python_plot_results_screen.out
-cd ..
+#cd 05-particle-sensitivity
+#echo "now in $(pwd)"
+#ln -sf ../ltaem .
+#python particles-input.py > python_particle_input_screen.out
+#python plot-results.py > python_plot_results_screen.out
+#cd ..
 

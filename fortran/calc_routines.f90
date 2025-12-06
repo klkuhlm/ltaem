@@ -238,7 +238,7 @@ contains
     real(DP), parameter :: SMALL = 1.0D-8
     real(DP) :: hsq
     real(DP), dimension(sum(dom%num)) :: Rgp, Pgp
-    integer :: in, oth, elin
+    integer :: in, oth
     integer :: np, nc, ne, ntot, j
 
     call check_np(p,lo,hi)
@@ -342,8 +342,7 @@ contains
           v(1:np,1:2) = -v(1:np,1:2)/c(in)%por ! gradient points uphill
        else
           ! ellipse
-          elin = in-nc
-          v(1:np,1:2) = -v(1:np,1:2)/c(elin)%por
+          v(1:np,1:2) = -v(1:np,1:2)/e(in-nc)%por
        end if
     end if
   end function velCalcZ
