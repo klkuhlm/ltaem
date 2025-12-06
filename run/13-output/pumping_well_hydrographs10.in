@@ -1,0 +1,17 @@
+T  F  F  T  T 10 F :: calc?, prtcl?, contour?, log(t)_deriv?, Qcalc?, output_flag
+pumping_well_hydrographs10.dat 
+1.0D0   2.0D-2   1.0D-5     ::  por, k, Ss
+0   1.0D0   1.0D-4   1.0D0  :: LEAKY: leakFlag, K2, Ss2, b2
+False 1.5D-1  2.0D0  1.0  :: UNCONFINED: unconfinedFlag?, Sy, Kz, b
+False  1.0D-5  2.0D0  1  1.0D-5  1  :: MultiPORO  Flag?, matrixSs, lambda, diffusion idx, Dm, NDiffTerms
+8  8  100  :: nx, ny, nt
+NW LOC|NE LOC|SE LOC|SW LOC|W LOC|N LOC|E LOC|S LOC
+-1.25  1.25  1.25 -1.25 -1.25  0.0   1.25  0.0    ::    x 
+ 1.25  1.25 -1.25 -1.25  0.0   1.25  0.0  -1.25   ::    y 
+LOGVEC -4.0 1.0 :: t 
+1.0D-16  1.0D-15  20  :: alpha, tolerance, M
+1  pumping_well_circles.cin     :: number of circular elements, circle data file
+0  20 not_used    :: number of elliptical elements, ellipse data file
+not_used   ::  particle data file
+
+     

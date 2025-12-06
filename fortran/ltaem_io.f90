@@ -1430,8 +1430,9 @@ contains
     type(particle), dimension(:), intent(inout) :: p
 
     type(explain_type) :: explain
-    character(4), dimension(2) :: chint
-    integer :: i, j, k, nt
+    character(5), dimension(2) :: chint
+    character(6) :: intfmt
+    integer :: i, j, k, nt, idx
     integer, parameter :: UOUT = 20
 
     ! adjust the formats of time, location, and results here
@@ -1505,27 +1506,36 @@ contains
        ! function meshgrid()
 
        ! x-matrix has same row repeated numy times
-       open(unit=UOUT, file=trim(s%outfname)//'_x.dat', status='replace', &
+       idx = index(s%outfname,'.',back=.true.)
+       if (idx <= 0) then
+         ! ensure filename has prefix
+         s%outfname = trim(s%outfname) // '.tmp' 
+         idx = index(s%outfname,'.',back=.true.)
+       end if
+       open(unit=UOUT, file=s%outfname(1:idx-1)//'_x.dat', status='replace', &
             & action='write')
        write(chint(1),'(i4.4)') s%nx
        do i = 1, s%ny
-          write (UOUT,'('//chint(1)//'(1x,'//hfmt//'))') (s%x(j), j=1,s%nx)
+          write (UOUT,'('//trim(chint(1))//'(1x,'//hfmt//'))') (s%x(j), j=1,s%nx)
        end do
        close(UOUT)
 
        ! y-matrix has same column repeated numx times
-       open(unit=UOUT, file=trim(s%outfname)//'_y.dat', status='replace', &
+       open(unit=UOUT, file=s%outfname(1:idx-1)//'_y.dat', status='replace', &
             & action='write')
        do i = 1, s%ny
-          write (UOUT,'('//chint(1)//'(1x,'//hfmt//'))') (s%y(i), j=1,s%nx)
+          write (UOUT,'('//trim(chint(1))//'(1x,'//hfmt//'))') (s%y(i), j=1,s%nx)
        end do
        close(UOUT)
 
+       intfmt = '(iX.X)'
+       write(intfmt(3:3),'(I0)') ceiling(log10(real(s%nt,DP)))
+       write(intfmt(5:5),'(I0)') ceiling(log10(real(s%nt,DP)))
        do k = 1, s%nt
-          write(chint(2),'(i4.4)') k
+          write(chint(2),intfmt) k
 
           ! head-matrix
-          open(unit=UOUT, file=trim(s%outfname)//'_head_'//chint(2)//'.dat', &
+          open(unit=UOUT, file=s%outfname(1:idx-1)//'_head_'//trim(chint(2))//'.dat', &
                & status='replace', action='write')
           do i = 1, s%ny
              write (UOUT,'('//chint(1)//'(1x,'//hfmt//'))') &
@@ -1535,7 +1545,7 @@ contains
 
           ! log-t derivative matrix
           if (s%deriv) then
-             open(unit=UOUT, file=trim(s%outfname)//'_dhead_'//chint(2)//'.dat', &
+             open(unit=UOUT, file=s%outfname(1:idx-1)//'_dhead_'//trim(chint(2))//'.dat', &
                   & status='replace', action='write')
              do i = 1, s%ny
                 write (UOUT,'('//chint(1)//'(1x,'//hfmt//'))') &
@@ -1545,7 +1555,7 @@ contains
           end if
 
           ! velx-matrix
-          open(unit=UOUT, file=trim(s%outfname)//'_velx_'//chint(2)//'.dat', &
+          open(unit=UOUT, file=s%outfname(1:idx-1)//'_velx_'//trim(chint(2))//'.dat', &
                & status='replace', action='write')
           do i = 1, s%ny
              write (UOUT,'('//chint(1)//'(1x,'//hfmt//'))') &
@@ -1554,7 +1564,7 @@ contains
           close(UOUT)
 
           ! vely-matrix
-          open(unit=UOUT, file=trim(s%outfname)//'_vely_'//chint(2)//'.dat', &
+          open(unit=UOUT, file=s%outfname(1:idx-1)//'_vely_'//trim(chint(2))//'.dat', &
                & status='replace', action='write')
           do i = 1, s%ny
              write (UOUT,'('//chint(1)//'(1x,'//hfmt//'))') &
@@ -1564,14 +1574,14 @@ contains
        end do
 
        ! column of calculation times
-       open(unit=UOUT, file=trim(s%outfname)//'_t.dat', status='replace', &
+       open(unit=UOUT, file=s%outfname(1:idx-1)//'_t.dat', status='replace', &
             & action='write')
        write (UOUT,'('//tfmt//')') (s%t(j), j=1,s%nt)
        close(UOUT)
 
        write(stdout,'(/A)') '*********************************************************'
-       write(stdout,'(3A)') 'table output => ', trim(s%outfname), &
-              & '{x,y,t,{d,}head{1-n},velx{1-n},vely{1-n}}.dat'
+       write(stdout,'(3A)') 'table output => ', s%outfname(1:idx-1), &
+              & '_{x,y,t,{d,}head{1-n},velx{1-n},vely{1-n}}.dat'
        write(stdout,'(A)') '**********************************************************'
 
        !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
