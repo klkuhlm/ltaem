@@ -1733,14 +1733,12 @@ contains
        nt = maxval(p(:)%numt,dim=1)
 
        do i = 1, nt, s%streakSkip
-          ! use maxval to ensure a non-zero time is reported
-          write (UOUT,'(A,'//tfmt//')') '# time:', maxval(p(i)%r(:,1))
-          write (UOUT,'(A)') '#  particle       x            y&
-               &           velx         vely'
-          do j = 1, size(p,dim=1)
-             if (p(j)%r(i,1) > 0.0_DP) then
-                ! only write particle if it has non-zero data
-                write (UOUT,'(I0,4(1X,'//hfmt//'))')  j,p(j)%r(i,2:5)
+         ! all particles need to use same constnt time steps and starting time
+         write (UOUT,'(A,'//tfmt//')') '# time:', p(1)%r(i,1)
+         do j = 1, size(p,dim=1)
+            if (p(j)%r(i,1) > 0.0_DP) then
+              ! only write particle if it has non-zero data
+              write (UOUT,'(I0,4(1X,'//hfmt//'))')  j,p(j)%r(i,2:5)
              end if
           end do
           write (UOUT,'(/)')
