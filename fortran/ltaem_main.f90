@@ -52,7 +52,7 @@ program ltaem_main
   type(particle), allocatable :: part(:)
 
   integer :: i, j, k
-  integer :: tnp                              ! total # p (product of dimensions)
+  integer :: tnP                              ! total # p (product of dimensions)
   integer :: nc, ne                           ! #circles, #ellipses
   integer :: lt, minlt, maxlt                 ! indexes related to log10 time
   integer :: lot, hit, lop, hip, lo           ! local hi and lo indices for log cycles
@@ -62,11 +62,10 @@ program ltaem_main
   real(DP), allocatable :: logt(:), tee(:)    ! log10 time, deHoog T
   complex(DP), allocatable :: s(:,:), stmp(:) ! Laplace parameter (different shapes)
   complex(DP) :: calcZ                        ! calculation point
-  complex(DP), allocatable :: hp(:), vp(:,:)  ! Laplace-space head and velocity vectors
-  complex(DP), allocatable :: qp(:,:) ! Laplace-space flowrate into/out of element
+  complex(DP), allocatable :: hp(:), vp(:,:)  ! L-space head and velocity vectors
+  complex(DP), allocatable :: qp(:,:)         ! L-space flowrate into/out of element
   logical :: fail
 
-  ! constants?
   real(DP), parameter :: MOST_LOGT = 0.999_DP, TMAX_MULT = 2.0_DP
 
   intrinsic :: get_command_argument
@@ -139,7 +138,7 @@ program ltaem_main
      end if
 
      sol%totalnP = size(s) ! total number of Laplace parameters across all times
-     tnp = sol%totalnP
+     tnP = sol%totalnP
 
      ! calculate coefficients for each value of Laplace parameter
      ! ** common between particle tracking and contours/time-series plots **
@@ -152,7 +151,7 @@ program ltaem_main
 
      ! create an index the same shape as s (which has non-standard lower bound on dim 2)
      allocate(idxmat(size(s,dim=1),lbound(s,dim=2):ubound(s,dim=2)))
-     idxmat = reshape([(j,j=1,tnp)],shape(s))
+     idxmat = reshape([(j,j=1,tnP)],shape(s))
 
      ! when in parallel, call once to initialize the results matrices in solution.f90
      !$ call matrix_solution(c,e,dom,sol,s(1,minlt),idxmat(1,minlt))
@@ -161,7 +160,7 @@ program ltaem_main
      !$ write(stdout,'(A)',advance="no") 'thr'
      write(stdout,'(A)') ' logt  idx            p'
 
-     !$OMP PARALLEL DO PRIVATE(lt,j) SHARED(c,e,dom,sol) 
+     !$OMP PARALLEL DO PRIVATE(lt,j) SHARED(s,c,e,dom,sol,idxmat) 
      do lt = minlt,maxlt-1
         if (nt(lt) > 0) then
            do j = 1,2*sol%m+1
@@ -184,8 +183,11 @@ program ltaem_main
   else
      ! do not re-calculate coefficients
      call read_coeff(sol,bg,c,e,nt,s,tee,minlt,maxlt,fail)
-     tnp = sol%totalnP
-     if (fail) goto 111
+     tnP = sol%totalnP
+     if (fail) then
+       sol%calc = .true.
+       goto 111
+     end if
   end if
 
   !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -204,9 +206,8 @@ program ltaem_main
         part(i)%id = i
      end do
 
-     !$OMP PARALLEL DO PRIVATE(j) SHARED(part,sol)
+     !$OMP PARALLEL DO PRIVATE(j) SHARED(s,tee,c,e,bg,sol,dom,part)
      do j = 1, sol%nPart
-
         select case (part(j)%int)
         case (1)
            call rungeKuttaMerson(s,tee,c,e,bg,sol,dom,part(j),lbound(tee,dim=1))
@@ -217,7 +218,6 @@ program ltaem_main
         case (4)
            call fwdEuler(s,tee,c,e,bg,sol,dom,part(j),lbound(tee,dim=1))
         end select
-
      end do
      !$OMP END PARALLEL DO
 
@@ -250,7 +250,7 @@ program ltaem_main
         end do
         write(stdout,'(/)')
 
-        !$OMP PARALLEL DO PRIVATE(lt,lot,hit,lop,hip,k) SHARED(sol,qp)
+        !$OMP PARALLEL DO PRIVATE(lt,lot,hit,lop,hip,k) SHARED(sol,tee,stmp,qp)
         do lt = minlt,maxlt-1
            lot = 1 + sum(nt(minlt:lt-1))
            hit = sum(nt(minlt:lt))
@@ -269,7 +269,7 @@ program ltaem_main
         !$OMP END PARALLEL DO
      end if
 
-     !$OMP PARALLEL DO PRIVATE(j,i,lt,calcZ,hp,vp,lot,hit,lop,hip) SHARED(sol)
+     !$OMP PARALLEL DO PRIVATE(j,i,lt,calcZ,hp,vp,lot,hit,lop,hip) SHARED(sol,stmp,tnP,dom,c,e,bg)
      do j = 1,sol%nx
         !$ write (*,'(I0,1X)',advance="no") OMP_get_thread_num()
         write (*,'(A,ES13.5)') 'x: ',sol%x(j)
@@ -340,7 +340,7 @@ program ltaem_main
         end do
         write(stdout,'(/)')
 
-        !$OMP PARALLEL DO PRIVATE(lt,lot,hit,lop,hip,k) SHARED(sol,qp)
+        !$OMP PARALLEL DO PRIVATE(lt,lot,hit,lop,hip,k) SHARED(sol,tee,stmp,qp)
         do lt = minlt,maxlt-1
            lot = 1 + sum(nt(minlt:lt-1))
            hit = sum(nt(minlt:lt))
@@ -359,7 +359,7 @@ program ltaem_main
         !$OMP END PARALLEL DO
      end if
 
-     !$OMP PARALLEL DO PRIVATE(i,lt,calcZ,hp,vp,lot,hit,lop,hip) SHARED(sol)
+     !$OMP PARALLEL DO PRIVATE(i,lt,calcZ,hp,vp,lot,hit,lop,hip) SHARED(sol,stmp,tnP,dom,c,e,bg)
      do i = 1,sol%nx
         write(stdout,'(A,2(3X,ES14.7E1))') trim(sol%obsname(i)),sol%xshift+sol%x(i),&
              & sol%yshift+sol%y(i)
@@ -370,6 +370,12 @@ program ltaem_main
         vp(1:tnP,1:2) = velCalc(calcZ,stmp,1,tnP,dom,c,e,bg)
 
         do lt = minlt,maxlt-1
+          
+           if (nt(lt) == 0) then
+             ! empty logcycle
+             cycle
+           end if
+           
            lot = 1 + sum(nt(minlt:lt-1))
            hit = sum(nt(minlt:lt))
 
@@ -377,14 +383,14 @@ program ltaem_main
            hip = lop + size(s,1) - 1
 
            ! don't need second dimension of results matrices
-           sol%h(lot:hit,i,1) =     Linv(sol%t(lot:hit),tee(lt),hp(lop:hip),sol%INVLT)
-           sol%v(lot:hit,1:2,i,1) = Linv(sol%t(lot:hit),tee(lt),vp(lop:hip,1:2),sol%INVLT)
+           sol%h(lot:hit,i,1) =     Linv(sol%t(lot:hit), tee(lt), hp(lop:hip), sol%INVLT)
+           sol%v(lot:hit,1:2,i,1) = Linv(sol%t(lot:hit), tee(lt), vp(lop:hip,1:2), sol%INVLT)
 
            if (sol%deriv) then
               ! multiply solution by p for derivative
               hp(lop:hip) = hp(lop:hip)*stmp(lop:hip)
-              sol%dh(lot:hit,i,1) = Linv(sol%t(lot:hit),tee(lt),hp(lop:hip)&
-                   &,sol%INVLT)*sol%t(lot:hit)
+              sol%dh(lot:hit,i,1) = Linv(sol%t(lot:hit), tee(lt), hp(lop:hip), &
+                   & sol%INVLT)*sol%t(lot:hit)
            end if
         end do
      end do

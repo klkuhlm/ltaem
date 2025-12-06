@@ -1925,15 +1925,13 @@ contains
     integer :: ierr,i,j,nc,ne,crow,ccol
     nc = size(c)
     ne = size(e)
-
+    fail = .false.
+    
     open(unit=77, file=sol%coefffname, status='old', action='read', iostat=ierr)
     if (ierr /= 0) then
        ! go back and recalculate if no restart file
        write(stderr,'(A)') 'ERROR: cannot opening restart file, recalculating...'
-       sol%calc = .true.
        fail = .true.
-    else
-       fail = .false.
     end if
 
     read(77,*) !! TODO check inputs are same?
@@ -1950,7 +1948,6 @@ contains
         else
            write(stderr,'(A)') 'ERROR reading in CIRCLE matching '//&
                 &'results, recalculating...'
-           sol%calc = .true.
            fail = .true.
         end if
         read(77,*) c(i)%coeff(:,:)
@@ -1962,7 +1959,6 @@ contains
         else
            write(stderr,'(A)') 'ERROR reading in ELLIPS matching '//&
                 &'results, recalculating...'
-           sol%calc = .true.
            fail = .true.
         end if
         read(77,*) e(i)%coeff(:,:)

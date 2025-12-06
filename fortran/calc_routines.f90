@@ -131,7 +131,7 @@ contains
           ! ellipse
           ein = in-nc
           H(1:np) = H(:) - e(ein)%areaQ*e(ein)%Ss*timef(p,e(ein)%time,.true.)/kappa(p,e(ein)%element,.true.)
-          H(1:np) = H(:)/e(in-nc)%K ! convert to head
+          H(1:np) = H(:)/e(ein)%K ! convert to head
        end if
     end if
   end function headCalcZ
@@ -156,11 +156,12 @@ contains
 
     complex(DP), allocatable :: flux(:,:,:), rflux(:,:), calclocs(:)
     real(DP), allocatable :: projangles(:)
-    real(DP) :: safeR
+    real(DP) :: safeR, MM
     integer :: M, np, i
     integer, parameter :: MINLOCS = 18
 
     M = el%M
+    MM = 1.0_DP/real(M,DP)
     np = size(p,1)
 
     if (M < MINLOCS) then
@@ -169,7 +170,7 @@ contains
 
     allocate(calclocs(M),projangles(M))
     do concurrent (i=1:M)
-      projangles(i) = (-PI + TWOPI/M*(i-1))
+      projangles(i) = -PI + TWOPI*MM*real(i-1,DP)
     end do
     !! TODO: more generally, you might want the ability to bump this inside the element perimeter too...
     safeR = el%r + epsilon(el%r) ! bump calc locations just outside perimeter of element
@@ -200,7 +201,7 @@ contains
 
        ! Q = r* \int_0^{2 pi} q_r d theta (assume unit thickness)
        ! trapezoid rule around circle (first & last points same)
-       qp(1:np) = el%r*TWOPI/M*sum(rflux(1:np,1:M),dim=2)
+       qp(1:np) = el%r*TWOPI*MM*sum(rflux(1:np,1:M),dim=2)
 
     else
        ! ellipse
@@ -209,7 +210,7 @@ contains
                        & (cosh(el%r)*spread(sin(projangles),1,np)*flux(1:np,2,1:M)))
 
        ! Q = f* \int_0^{2 pi} \sqrt{cosh^2 eta - cos^2 psi} q_eta d psi
-       qp(:) = el%f*TWOPI/M*sum(rflux(1:np,1:M)*&
+       qp(:) = el%f*TWOPI*MM*sum(rflux(1:np,1:M)*&
             & sqrt((cosh(2.0_DP*safeR) - spread(cos(2.0_DP*projangles),1,np))*0.5_DP),dim=2)
 
     end if
@@ -454,12 +455,8 @@ contains
           inside = inout(1)
        case (2:) ! inside multiple elements
 
-          do j = 1,nc
-             rvec(j) = c(j)%r
-          end do
-          do j = 1,ne
-             rvec(nc+j) = e(j)%r
-          end do
+         rvec(1:nc) = c(1:nc)%r
+         rvec(nc+1:nc+ne) = e(nc+1:nc+ne)%r
 
           ! pick smallest-radius nested element as immediate parent
           ! TODO: check this is valid with mixed circles/ellipses
