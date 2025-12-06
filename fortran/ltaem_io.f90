@@ -1733,7 +1733,7 @@ contains
        nt = maxval(p(:)%numt,dim=1)
 
        do i = 1, nt, s%streakSkip
-         ! all particles need to use same constnt time steps and starting time
+         ! all particles need to use same constant time steps and same starting times
          write (UOUT,'(A,'//tfmt//')') '# time:', p(1)%r(i,1)
          do j = 1, size(p,dim=1)
             if (p(j)%r(i,1) > 0.0_DP) then
