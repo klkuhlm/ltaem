@@ -91,7 +91,7 @@ contains
 
     !! unconfined
     !! ##############################
-    if(el%unconfinedFlag) then
+    if(el%unconfFlag) then
        ! integrated (0->b dz) Neuman (1972, WRR) solution
        q(1:np) = q + el%Kz*p(:)/(el%K*el%b*(el%Kz/el%Sy + p(:)))
     end if

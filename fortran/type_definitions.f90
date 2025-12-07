@@ -142,7 +142,7 @@ module type_definitions
      real(DP) :: aquitardK, aquitardSs, aquitardb
 
      ! unconfined-related (flag, specific yield, and vertical K)
-     logical ::  unconfinedFlag
+     logical ::  unconfFlag
      real(DP) :: Sy, Kz
 
      ! dual-porosity related (flag, matrix storativity, matrix/fracture exchange param)
