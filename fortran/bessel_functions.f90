@@ -58,15 +58,16 @@ contains
     integer :: numzero, ierr, j
 
     if (any(abs(z)*0.5_DP < spacing(0.0_DP))) then
-      print *, 'AGH! ZERO BESSELK input',size(z)
+      print *, 'ZERO BESSELK input',size(z)
     end if
 
     do j = 1,size(z,dim=1)
-       call cbesk(z=z(j), fnu=0.0_DP, kode=1, n=num, cy=tmp(0:num-1), nz=numzero, ierr=ierr)
+       call cbesk(z=z(j), fnu=0.0_DP, kode=1, n=num, &
+            & cy=tmp(0:num-1), nz=numzero, ierr=ierr)
        ! either 0 or 3 are acceptable return codes
        if (.not.(ierr == 0 .or. ierr == 3)) then
-          write(stderr,*) 'CBESK_VECTZ error (numzero=',numzero,', ierr=',ierr,', j=',j,&
-               & ', num=',num,') z(j)=',z(j)
+          write(stderr,*) 'CBESK_VECTZ error (numzero=',numzero, &
+               & ', ierr=',ierr,', j=',j,', num=',num,') z(j)=',z(j)
           !!call abort() ! to dump for checking backtrace in gdb
           stop 222
         end if
@@ -80,7 +81,7 @@ contains
     complex(DP), intent(in) :: z
     integer, intent(in) :: num
     complex(DP), dimension(0:num-1) :: K
-    if (abs(z)*0.5_DP < spacing(0.0_DP)) print *, 'AGH! ZERO BESSELK input',z
+    if (abs(z)*0.5_DP < spacing(0.0_DP)) print *, 'ZERO BESSELK input',z
     K = sum( besk_vectz([z],num), dim=1)
   end function besk_zscal
 
@@ -96,11 +97,12 @@ contains
     integer :: numzero, ierr, j
 
     do j = 1,size(z,dim=1)
-       call cbesi(z=z(j), fnu=0.0_DP, kode=1, n=num, cy=tmp(0:num-1), nz=numzero, ierr=ierr)
+       call cbesi(z=z(j), fnu=0.0_DP, kode=1, n=num, &
+            & cy=tmp(0:num-1), nz=numzero, ierr=ierr)
        ! either 0 or 3 are acceptable return codes
        if (.not.(ierr == 0 .or. ierr == 3)) then
-          write(stderr,*) 'CBESI_VECTZ error (numzero=',numzero,', ierr=',ierr,&
-               &', j=',j, ', num=',num,') z(j)=',z(j)
+          write(stderr,*) 'CBESI_VECTZ error (numzero=',numzero, &
+               & ', ierr=',ierr,', j=',j, ', num=',num,') z(j)=',z(j)
           !!call abort()
           stop 223
        end if
