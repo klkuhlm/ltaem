@@ -245,19 +245,19 @@ contains
        stop 2071
     end if
 
-    read(UINPUT,*,iostat=ierr, iomsg=msg) bg%dualPorosityFlag, &
-         & bg%matrixSs, bg%lambda, bg%multiporosityDiffusion, &
+    read(UINPUT,*,iostat=ierr, iomsg=msg) bg%dualPFlag, &
+         & bg%matrixSs, bg%lambda, bg%multiPDiff, &
          & bg%kappa, bg%NDiffTerms; ln=ln+1
-    if (ierr /= 0 .and. bg%dualPorosityFlag) then
-       write(stderr,*) 'ERROR: line',ln,'(dual porosity: dualPorosityFlag, ' &
-            & //'matrixSs, lambda, multiporosityDiffusion, kappa, ' &
+    if (ierr /= 0 .and. bg%dualPFlag) then
+       write(stderr,*) 'ERROR: line',ln,'(dual porosity: dualPFlag, ' &
+            & //'matrixSs, lambda, multiPDiff, kappa, ' &
             & //'NDiffTerms) of',s%infname
        write(stderr,'(A)') trim(msg)
        stop 2072
     end if
 
     if (any([bg%matrixSs,bg%lambda,bg%kappa] <= 0.0_DP) .and. &
-         & bg%dualPorosityFlag) then
+         & bg%dualPFlag) then
        write(stderr,*) 'ERROR: value (line',ln,') matrix specific ' &
             & //'storage (bg%matrixSs), matrix/fracture connection ' &
             & //'factor (bg%lambda), and matrix/fracture k ratio (bg%kappa) ' &
@@ -272,10 +272,10 @@ contains
        stop 20722
     end if
 
-    if (bg%multiporosityDiffusion < 0 .or. bg%multiporosityDiffusion > 3) then
+    if (bg%multiPDiff < 0 .or. bg%multiPDiff > 3) then
        write(stderr,*) 'ERROR: value (line',ln,') matrix multiporosity ' &
             & //'diffusion order must be 0 (off) or {1,2,3}:' , &
-            & bg%multiporosityDiffusion
+            & bg%multiPDiff
        stop 20722
     end if
 
@@ -313,14 +313,14 @@ contains
          & '  ||   UNCONFINED aquifer properties : unconfined?, specific ' &
          & //'yield, vertical hydraulic conductivity, thickness'
 
-    if (bg%dualPorosityFlag) then
+    if (bg%dualPFlag) then
        explain_txt = '(dual porosity aquifer ON)'
     else
        explain_txt = '(dual porosity aquifer OFF)'
     end if
     write(UECHO,'(L1,1X,A,1X,2(ES12.5,1X),I0,1X,ES12.5,1X,I0,A)') &
-         & bg%dualPorosityFlag, trim(explain_txt), &
-         & bg%matrixSs, bg%lambda, bg%multiporosityDiffusion, bg%kappa, &
+         & bg%dualPFlag, trim(explain_txt), &
+         & bg%matrixSs, bg%lambda, bg%multiPDiff, bg%kappa, &
          & bg%NDiffTerms, '  ||   DUAL POROSITY aquifer properties : ' &
          & //'dual porosity?, matrix specific storage, matrix/fracture ' &
          & //'lambda, multiporosity diffusion index, matrix/fracture K ' &
@@ -678,12 +678,12 @@ contains
           stop 223
        end if
 
-       read(UCIRC,*,iostat=ierr) c(1:nc)%dualPorosityFlag; sln=sln+1
-       if (ierr /= 0) c(1:nc)%dualPorosityFlag = read_logical(UCIRC,sln,'circle')
+       read(UCIRC,*,iostat=ierr) c(1:nc)%dualPFlag; sln=sln+1
+       if (ierr /= 0) c(1:nc)%dualPFlag = read_logical(UCIRC,sln,'circle')
 
        read(UCIRC,*,iostat=ierr) c(1:nc)%matrixSs; sln=sln+1
        if (ierr /= 0) c(1:nc)%matrixSs = read_real(UCIRC,sln,'circle')
-       if (any(c%matrixSs <= 0.0_DP .and. c%dualPorosityFlag)) then
+       if (any(c%matrixSs <= 0.0_DP .and. c%dualPFlag)) then
           write(stderr,*) 'ERROR: value (line',sln,' circle input) matrix specific storage '//&
                &'(c%matrixSs) must be > 0.0', c%matrixSs
           stop 2230
@@ -691,24 +691,24 @@ contains
 
        read(UCIRC,*,iostat=ierr) c(1:nc)%lambda; sln=sln+1
        if (ierr /= 0) c(1:nc)%lambda = read_real(UCIRC,sln,'circle')
-       if (any(c%lambda < 0.0_DP .and. c%dualPorosityFlag)) then
+       if (any(c%lambda < 0.0_DP .and. c%dualPFlag)) then
           write(stderr,*) 'ERROR: value (line',sln,' circle input) '//&
                & 'matrix/fracture connection (c%lambda) must be non-negative', c%lambda
           stop 2231
        end if
 
-       read(UCIRC,*,iostat=ierr) c(1:nc)%multiporosityDiffusion; sln=sln+1
-       if (ierr /= 0) c(1:nc)%multiporosityDiffusion = read_int(UCIRC,sln,'circle')
-       if (any((c%multiporosityDiffusion < 0 .or. c%multiporosityDiffusion > 3) &
-            & .and. c%dualPorosityFlag)) then
+       read(UCIRC,*,iostat=ierr) c(1:nc)%multiPDiff; sln=sln+1
+       if (ierr /= 0) c(1:nc)%multiPDiff = read_int(UCIRC,sln,'circle')
+       if (any((c%multiPDiff < 0 .or. c%multiPDiff > 3) &
+            & .and. c%dualPFlag)) then
           write(stderr,*) 'ERROR: value (line',sln,' circle input) '//&
-               & 'multiporosity diffusion index must be {0,1,2,3}', c%multiporosityDiffusion
+               & 'multiporosity diffusion index must be {0,1,2,3}', c%multiPDiff
           stop 2232
        end if
 
        read(UCIRC,*,iostat=ierr) c(1:nc)%kappa; sln=sln+1
        if (ierr /= 0) c(1:nc)%kappa = read_real(UCIRC,sln,'circle')
-       if (any(c%kappa < 0.0_DP .and. c%dualPorosityFlag)) then
+       if (any(c%kappa < 0.0_DP .and. c%dualPFlag)) then
           write(stderr,*) 'ERROR: value (line',sln,' circle input) '//&
                & 'matrix/fracture hydraulic conductivity ratio (c%kappa) must be non-negative', c%kappa
           stop 2233
@@ -716,7 +716,7 @@ contains
 
        read(UCIRC,*,iostat=ierr) c(1:nc)%NDiffTerms; sln=sln+1
        if (ierr /= 0) c(1:nc)%NDiffTerms = read_int(UCIRC,sln,'circle')
-       if (any(c%NDiffTerms < 0 .and. c%dualPorosityFlag)) then
+       if (any(c%NDiffTerms < 0 .and. c%dualPFlag)) then
           write(stderr,*) 'ERROR: value (line',sln,' circle input) '//&
                & 'number terms in leaky diffusion series (c%nDiffTerms) must be >=0', c%NDiffTerms
           stop 2234
@@ -775,10 +775,10 @@ contains
        write(UECHO,fmt(3)) c(:)%Sy,             '  ||   circle aquifer specific yield'
        write(UECHO,fmt(3)) c(:)%Kz,             '  ||   circle aquifer vertical K'
        write(UECHO,fmt(3)) c(:)%b,              '  ||   circle aquifer thickness'
-       write(UECHO,fmt(2)) c(:)%dualPorosityFlag,'  ||   circle dual porosity flag'
+       write(UECHO,fmt(2)) c(:)%dualPFlag,'  ||   circle dual porosity flag'
        write(UECHO,fmt(3)) c(:)%matrixSs,        '  ||   circle matrix Ss'
        write(UECHO,fmt(3)) c(:)%lambda,          '  ||   circle matrix/fracture connection lambda'
-       write(UECHO,fmt(1)) c(:)%multiporosityDiffusion,  '  ||   circle multiporosity diffusion index'
+       write(UECHO,fmt(1)) c(:)%multiPDiff,  '  ||   circle multiporosity diffusion index'
        write(UECHO,fmt(3)) c(:)%kappa,          '  ||   circle matrix/fracture k ratio'
        write(UECHO,fmt(1)) c(:)%NDiffTerms,          '  ||   circle matrix diffusion series number terms'
        write(UECHO,fmt(3)) c(:)%dskin,           '  ||   circle boundary dimensionless skin factor'
@@ -1034,12 +1034,12 @@ contains
           stop 241
        end if
 
-       read(UELIP,*,iostat=ierr) e(1:ne)%dualPorosityFlag; sln=sln+1
-       if (ierr /= 0) e(1:ne)%dualPorosityFlag = read_logical(UELIP,sln,'ellipse')
+       read(UELIP,*,iostat=ierr) e(1:ne)%dualPFlag; sln=sln+1
+       if (ierr /= 0) e(1:ne)%dualPFlag = read_logical(UELIP,sln,'ellipse')
 
        read(UELIP,*,iostat=ierr) e(1:ne)%matrixSs; sln=sln+1
        if (ierr /= 0) e(1:ne)%matrixSs = read_real(UELIP,sln,'ellipse')
-       if (any(e%matrixSs <= 0.0_DP .and. e%dualPorosityFlag)) then
+       if (any(e%matrixSs <= 0.0_DP .and. e%dualPFlag)) then
           write(stderr,*) 'ERROR: value (line ',sln,' ellipse input) matrix specific '//&
                      &'storage (e%matrixSs) must be > 0.0', e%matrixSs
           stop 2411
@@ -1047,25 +1047,25 @@ contains
 
        read(UELIP,*,iostat=ierr) e(1:ne)%lambda; sln=sln+1
        if (ierr /= 0) e(1:ne)%lambda = read_real(UELIP,sln,'ellipse')
-       if (any(e%lambda < 0.0_DP .and. e%dualPorosityFlag)) then
+       if (any(e%lambda < 0.0_DP .and. e%dualPFlag)) then
           write(stderr,*) 'ERROR: value (line ',sln,' ellipse input) matrix/fracture '//&
                      &'connection (e%lambda)'//&
                &' must be non-negative', e%lambda
           stop 2412
        end if
 
-       read(UELIP,*,iostat=ierr) e(1:ne)%multiporosityDiffusion; sln=sln+1
-       if (ierr /= 0) e(1:ne)%multiporosityDiffusion = read_int(UELIP,sln,'ellipse')
-       if (any((e%multiporosityDiffusion < 0 .or. e%multiporosityDiffusion > 3) &
-            & .and. e%dualPorosityFlag)) then
+       read(UELIP,*,iostat=ierr) e(1:ne)%multiPDiff; sln=sln+1
+       if (ierr /= 0) e(1:ne)%multiPDiff = read_int(UELIP,sln,'ellipse')
+       if (any((e%multiPDiff < 0 .or. e%multiPDiff > 3) &
+            & .and. e%dualPFlag)) then
           write(stderr,*) 'ERROR: value (line ',sln,' ellipse input) '//&
-               &'multiporosity diffusion index must be {0,1,2,3}', e%multiporosityDiffusion
+               &'multiporosity diffusion index must be {0,1,2,3}', e%multiPDiff
           stop 2412
        end if
 
        read(UELIP,*,iostat=ierr) e(1:ne)%kappa; sln=sln+1
        if (ierr /= 0) e(1:ne)%kappa = read_real(UELIP,sln,'ellipse')
-       if (any(e%kappa < 0.0_DP .and. e%dualPorosityFlag)) then
+       if (any(e%kappa < 0.0_DP .and. e%dualPFlag)) then
          write(stderr,*) 'ERROR: value (line',sln,' ellipse input) '//&
               & 'matrix/fracture hydraulic conductivity ratio (e%kappa) must be non-negative', e%kappa
          stop 2413
@@ -1073,7 +1073,7 @@ contains
 
        read(UELIP,*,iostat=ierr) e(1:ne)%NDiffTerms; sln=sln+1
        if (ierr /= 0) e(1:ne)%NDiffTerms = read_int(UELIP,sln,'ellipse')
-       if (any(e%NDiffTerms < 0 .and. e%dualPorosityFlag)) then
+       if (any(e%NDiffTerms < 0 .and. e%dualPFlag)) then
           write(stderr,*) 'ERROR: value (line',sln,' ellipse input) '//&
                & 'number terms in leaky diffusion series (e%nDiffTerms) must be >=0', e%NDiffTerms
           stop 2234
@@ -1133,10 +1133,10 @@ contains
        write(UECHO,fmt(3)) e(:)%Sy,             '  ||   ellipse aquifer specific yield'
        write(UECHO,fmt(3)) e(:)%Kz,             '  ||   ellipse aquifer vertical K'
        write(UECHO,fmt(3)) e(:)%b,              '  ||   ellipse aquifer thickness'
-       write(UECHO,fmt(2)) e(:)%dualPorosityFlag,'  ||     ellipse dual porosity flag'
+       write(UECHO,fmt(2)) e(:)%dualPFlag,'  ||     ellipse dual porosity flag'
        write(UECHO,fmt(3)) e(:)%matrixSs,        '  ||     ellipse matrix Ss'
        write(UECHO,fmt(3)) e(:)%lambda,          '  ||     ellipse matrix/fracture connection lambda'
-       write(UECHO,fmt(1)) e(:)%multiporosityDiffusion,  '  ||   ellipse multiporosity diffusion index'
+       write(UECHO,fmt(1)) e(:)%multiPDiff,  '  ||   ellipse multiporosity diffusion index'
        write(UECHO,fmt(3)) e(:)%kappa,          '  ||   ellipse matrix/fracture k ratio'
        write(UECHO,fmt(1)) e(:)%NDiffTerms,          '  ||   ellipse matrix diffusion series number terms'
        write(UECHO,fmt(3)) e(:)%dskin,           '  ||   ellipse boundary dimensionless skin factor'

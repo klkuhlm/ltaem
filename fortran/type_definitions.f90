@@ -146,8 +146,8 @@ module type_definitions
      real(DP) :: Sy, Kz
 
      ! dual-porosity related (flag, matrix storativity, matrix/fracture exchange param)
-     logical :: dualPorosityFlag
-     integer :: multiporosityDiffusion ! 1=slab, 2=cylinder, 3=spherical
+     logical :: dualPFlag
+     integer :: multiPDiff ! 1=slab, 2=cylinder, 3=spherical
      real(DP) :: matrixSs, lambda, kappa
      integer :: NDiffterms
 

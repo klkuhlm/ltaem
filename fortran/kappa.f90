@@ -98,9 +98,9 @@ contains
 
     !! dual porosity
     !! ##############################
-    if(el%dualPorosityFlag) then
+    if(el%dualPFlag) then
 
-       if (el%multiporosityDiffusion == 0) then
+       if (el%multiPDiff == 0) then
           ! solution adapted from Dougherty and Babu (1984, WRR)
           q(1:np) = q + &
                & (1.0_DP - el%lambda/(el%matrixSs*p(:) + el%lambda))*el%lambda/el%K
@@ -111,7 +111,7 @@ contains
           allocate(a(el%NDiffterms),pdf(el%NDiffterms))
 
           if (el%NDiffTerms > 0) then
-             select case(el%multiporosityDiffusion)
+             select case(el%multiPDiff)
              case(1)
                 do concurrent (i=1:el%NDiffterms)
                   ! Warren-Root lambda = kappa/((1-omega)*LD**2)
@@ -136,7 +136,7 @@ contains
           elseif (el%NDiffTerms == 0) then
              ! analytical solutions for diffusion into matrix
              ! activated for case where Nterms == 0
-             select case(el%multiporosityDiffusion)
+             select case(el%multiPDiff)
              case(1)
                 q = p*(omega + sqrt(el%lambda*(1.0_DP-omega)/(3.0_DP*p))*&
                      & tanh(sqrt(3.0_DP*(1.0_DP-omega)*p/el%lambda)))
