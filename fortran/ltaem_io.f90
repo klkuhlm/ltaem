@@ -137,16 +137,16 @@ contains
     end if
     if ((s%output >= 10  .and. s%contour) .or. &
          & (s%output < 10 .and. .not. s%contour)) then
-       write(stderr,*) 'ERROR: values (line ',ln,') '&
-            & //'s%output should be in {1,2} '&
+       write(stderr,*) 'ERROR: values (line ',ln,') ' &
+            & //'s%output should be in {1,2} ' &
             & //'when contour output is selected: ',s%output,s%contour
        stop 2010
     end if
 
     if (((s%output < 10 .or. s%output >= 20) .and. s%timeseries) .or. &
          & (s%output >= 10 .and. s%output < 20 .and. .not. s%timeseries)) then
-       write(stderr,*) 'ERROR: values (line ',ln,') '&
-            & //'s%output should be in {10,11,12}'&
+       write(stderr,*) 'ERROR: values (line ',ln,') ' &
+            & //'s%output should be in {10,11,12}' &
             & //' when timeseries output is selected: ',s%output,s%timeseries
        stop 2020
     end if
@@ -348,7 +348,7 @@ contains
        stop 2081
     end if
     if (s%timeseries .and. s%nx /= s%ny) then
-       write(stdout,*) 'WARNING: for time series output nx==ny.  '&
+       write(stdout,*) 'WARNING: for time series output nx==ny.  ' &
             & //'nx=',s%nx,' ny=',s%ny
        write(stdout,*) '* RESETTING NY TO NX * and continuing'
        s%ny = s%nx
@@ -709,7 +709,7 @@ contains
        read(UCIRC,*,iostat=ierr) c(1:nc)%kappa; sln=sln+1
        if (ierr /= 0) c(1:nc)%kappa = read_real(UCIRC,sln,'circle')
        if (any(c%kappa < 0.0_DP .and. c%dualPFlag)) then
-          write(stderr,*) 'ERROR: value (line',sln,' circle input) '&
+          write(stderr,*) 'ERROR: value (line',sln,' circle input) ' &
                & //'matrix/fracture hydraulic conductivity ratio (c%kappa) ' &
                & //'must be >= 0', c%kappa
           stop 2233
@@ -1579,13 +1579,10 @@ contains
 
        do i = 1, s%nt
           write(UOUT,'(A,'//tfmt//')') '# t= ',s%t(i)
-          write(UOUT,'(A)',advance='no')   &
-          & '#      X           Y               head'//&
-          & '                velx                  vely'
           if (s%deriv) then
-             write(UOUT,'(A)') '                d(head)/d(log(t))'
+             write(UOUT,'(A,3X,6(A,16X))') '#','x','y','hD','vx','vy','dh/dlnt'
           else
-             write(UOUT,'(A)') ''
+             write(UOUT,'(A,3X,5(A,16X))') '#','x','y','hD','velx','vely'
           end if
           if (s%deriv) then
              do j = 1, s%ny
@@ -1712,10 +1709,9 @@ contains
           write (UOUT,'(2(A,'//xfmt//'),3X,A)') '# location: x=',s%x(i),' y=', &
                & s%y(i),trim(s%obsname(i))
           if (s%deriv) then
-             write (UOUT,'(A,5X,A,4(14X,A))') '#','time','head','velx', &
-                  & 'vely','deriv'
+             write (UOUT,'(A,6X,A,4(20X,A))') '#','tD','hD','vx','vy','dhD/dlnt'
           else
-             write (UOUT,'(A,5X,A,3(14X,A))') '#','time','head','velx','vely'
+             write (UOUT,'(A,6X,A,3(20X,A))') '#','tD','hD','vx','vy'
           end if
 
           if (s%deriv) then
@@ -1751,9 +1747,9 @@ contains
           write (UOUT,'(2(A,'//xfmt//'),3X,A)') '# location: x=',s%x(j),' y=',&
                &s%y(j),trim(s%obsname(j))
           if (s%deriv) then
-             write (UOUT,'(A,5X,A,14X,A,14X,A)')   '#','time','head','deriv'
+             write (UOUT,'(A,5X,A,2(20X,A))') '#','tD','hD','dhD/dlnt'
           else
-             write (UOUT,'(A,5X,A,14X,A)')   '#','time','head'
+             write (UOUT,'(A,5X,A,20X,A)') '#','tD','hD'
           end if
           if (s%deriv) then
              do k = 1, s%nt
@@ -1816,7 +1812,7 @@ contains
        do i = 1, size(p,dim=1)
           write (UOUT,'(A,I0,A)') '# particle ',i,&
                &' '//trim(explain%particle(p(i)%int))
-          write (UOUT,'(A,5X,4(14X,A))') '#','time','x','y','velx','vely'
+          write (UOUT,'(A,5X,A,5(20X,A))') '#','t','x','y','velx','vely'
           do k = lbound(p(i)%r,dim=1),ubound(p(i)%r,dim=1)
              write (UOUT,'('//tfmt//',4(1X,'//hfmt//'))') &
                   & p(i)%r(k,1:5)
@@ -1877,10 +1873,9 @@ contains
        do j = 1,size(s%Q,dim=2)
           write(UOUT,'(A,I0)') '# element ',j
           if (s%deriv) then
-             write(UOUT,'(A)') '#     tD      '//'          Q_D          '&
-                  & //'   d(Q_D)/d(log(t))'
+             write(UOUT,'(A,5X,A,2(16X,A))') '#','tD','QD','dQD/dlnt'
           else
-             write(UOUT,'(A)') '#     tD      '//'          Q_D          '
+             write(UOUT,'(A,5X,A,16X,A)') '#','tD','QD'
           end if
 
           if (s%deriv) then
