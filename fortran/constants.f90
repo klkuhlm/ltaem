@@ -32,6 +32,7 @@ module constants
 
   ! length of filenames
   integer, parameter :: lenFN = 128
+  integer, parameter :: lenMSG = 512
 
   ! useful? constants related to pi and ln
   real(DP), parameter :: PI = 4.0_DP*atan(1.0_DP) ! 3.1415926535897931...

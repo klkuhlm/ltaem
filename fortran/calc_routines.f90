@@ -306,7 +306,7 @@ contains
              dH(1:np,1:2) = ellipse_deriv(p,e(in-nc),lo,hi,Rgp(in),Pgp(in),.true.)
              dH(1:np,1:2) = rotate_vel(dH(:,1:2),e(in-nc)%theta)
 
-             hsq = e(in-nc)%f*0.5_DP*(cosh(2.0_DP*Rgp(in)) - cos(2.0_DP*Pgp(in)))
+             hsq = 0.5_DP*e(in-nc)%f*(cosh(2.0_DP*Rgp(in)) - cos(2.0_DP*Pgp(in)))
              v(1:np,1) = v(:,1) + (sinh(Rgp(in))*cos(Pgp(in))*dH(:,1) - &
                                 &  cosh(Rgp(in))*sin(Pgp(in))*dH(:,2))/hsq
              v(1:np,2) = v(:,2) + (cosh(Rgp(in))*sin(Pgp(in))*dH(:,1) + &
@@ -329,7 +329,7 @@ contains
              dH(1:np,1:2) = ellipse_deriv(p,e(oth-nc),lo,hi,Rgp(oth),Pgp(oth),.false.)
              dH(1:np,1:2) = rotate_vel(dH(:,1:2),e(oth-nc)%theta)
 
-             hsq = e(oth-nc)%f*0.5_DP*(cosh(2.0_DP*Rgp(oth)) - cos(2.0_DP*Pgp(oth)))
+             hsq = 0.5_DP*e(oth-nc)%f*(cosh(2.0_DP*Rgp(oth)) - cos(2.0_DP*Pgp(oth)))
              v(1:np,1) = v(:,1) + (sinh(Rgp(oth))*cos(Pgp(oth))*dH(:,1) - &
                                  & cosh(Rgp(oth))*sin(Pgp(oth))*dH(:,2))/hsq
              v(1:np,2) = v(:,2) + (cosh(Rgp(oth))*sin(Pgp(oth))*dH(:,1) + &

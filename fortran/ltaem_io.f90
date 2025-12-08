@@ -35,7 +35,7 @@ contains
   ! data structures used to store data.
   subroutine readInput(s,dom,bg,c,e,p)
 
-    use constants, only : DP, lenFN, PI
+    use constants, only : DP, lenFN, lenMSG, PI
     use type_definitions, only : solution, particle, domain, element, &
          & circle, ellipse, explain_type
     use, intrinsic :: iso_fortran_env, only : stdout => output_unit, &
@@ -51,7 +51,7 @@ contains
     type(explain_type) :: explain
     character(4) :: chint
     character(20), dimension(3) :: fmt
-    character(1024) :: buf, msg
+    character(lenMSG) :: buf, msg
     character(lenFN+5) :: echofname
     character(lenFN) :: circleFname, ellipseFname, particleFname
     integer :: ierr, j, ntot, nC, nE, ln, sln,s1,s2,slen, idx
@@ -1386,6 +1386,7 @@ contains
   end subroutine readInput
 
   subroutine time_behavior(UIN,UECH,el,j,ln,tp,area)
+    use constants, only : lenMSG
     use type_definitions, only : time, explain_type
     use, intrinsic :: iso_fortran_env, only : stderr => error_unit
     integer, intent(in) :: UIN, UECH, ln, j
@@ -1396,7 +1397,7 @@ contains
     type(explain_type) :: explain
     character(46) :: lfmt
     character(8) :: lincon
-    character(512) :: msg
+    character(lenMSG) :: msg
     integer :: ierr, tsize
 
     lfmt = '(I0,1X,    (ES15.8,1X),A,    (ES15.8,1X),A,I0)'
@@ -1479,13 +1480,13 @@ contains
   function computeVector(unit,n,line) result(v)
     use, intrinsic :: iso_fortran_env, only : stderr => error_unit
 
-    use constants, only : DP
+    use constants, only : DP, lenMSG
     integer, intent(in) :: unit, n, line
     real(DP), dimension(n) :: v
     integer :: ierr,i
     real(DP) :: minv,maxv,delta
     character(6) :: vec
-    character(512) :: msg
+    character(lenMSG) :: msg
 
     ! assume file is positioned at beginning of line
     ! if 'linvec','LINVEC','logvec', or 'LOGVEC' are the first
@@ -1730,7 +1731,7 @@ contains
        write(UOUT,*) '# EOF'
        close(UOUT)
 
-       write(stdout,'(A)') '************************************************'
+       write(stdout,'(/A)') '************************************************'
        write(stdout,'(2A)') 'Gnuplot timeseries output => ', trim(s%outfname)
        write(stdout,'(A)')  '************************************************'
 
@@ -1767,7 +1768,7 @@ contains
        write(UOUT,*) '# EOF'
        close(UOUT)
 
-       write(stdout,'(A)')  '*************************************************'
+       write(stdout,'(/A)')  '*************************************************'
        write(stdout,'(2A)') 'Gnuplot time output (no v) => ', trim(s%outfname)
        write(stdout,'(A)')  '*************************************************'
 
@@ -1953,11 +1954,12 @@ contains
   end subroutine writeGeometry
 
   function read_int(unit,num,str) result(ival)
+    use constants, only : lenMSG
     use, intrinsic :: iso_fortran_env, only : stderr => error_unit
     integer, intent(in) :: unit, num
     integer :: ival, ierr
     character(*) :: str
-    character(512) :: msg
+    character(lenMSG) :: msg
     backspace(unit)
     read(unit,*,iostat=ierr, iomsg=msg) ival
     if (ierr /= 0) then
@@ -1968,13 +1970,13 @@ contains
   end function read_int
 
   function read_real(unit,num,str) result(fval)
-    use constants, only : DP
+    use constants, only : DP, lenMSG
     use, intrinsic :: iso_fortran_env, only : stderr => error_unit
     integer, intent(in) :: unit, num
     real(DP) :: fval
     integer :: ierr
     character(*) :: str
-    character(512) :: msg
+    character(lenMSG) :: msg
     backspace(unit)
     read(unit,*,iostat=ierr, iomsg=msg) fval
     if (ierr /= 0) then
@@ -1985,12 +1987,13 @@ contains
   end function read_real
 
   function read_logical(unit,num,str) result(lval)
+    use constants, only : lenMSG
     use, intrinsic :: iso_fortran_env, only : stderr => error_unit
     integer, intent(in) :: unit, num
     logical :: lval
     integer :: ierr
     character(*) :: str
-    character(512) :: msg
+    character(lenMSG) :: msg
     backspace(unit)
     read(unit,*,iostat=ierr, iomsg=msg) lval
     if (ierr /= 0) then
@@ -2002,10 +2005,9 @@ contains
 
   subroutine dump_coeff(sol,c,e,nt,s,tee,minlt,maxlt)
     use type_definitions, only : solution, circle, ellipse
-    use constants, only : DP
+    use constants, only : DP, lenMSG
     use, intrinsic :: iso_fortran_env, only : stdout => output_unit, &
          & stderr => error_unit
-
     type(circle), intent(in), dimension(:) :: c
     type(ellipse), intent(in), dimension(:) :: e
     type(solution), intent(in) :: sol
@@ -2015,7 +2017,7 @@ contains
     integer, intent(in) :: minlt,maxlt
 
     integer, parameter :: UDMP = 77
-    character(512) :: msg
+    character(lenMSG) :: msg
     integer :: ierr,i,nc,ne
     nc = size(c)
     ne = size(e)
@@ -2046,7 +2048,7 @@ contains
 
   subroutine read_coeff(sol,bg,c,e,nt,s,tee,minlt,maxlt,fail)
     use type_definitions, only : solution, circle, ellipse, element
-    use constants, only : DP
+    use constants, only : DP, lenMSG
     use ellipse_mathieu_init, only : ellipse_init
     use, intrinsic :: iso_fortran_env, only : stdout => output_unit, &
          & stderr => error_unit
@@ -2063,7 +2065,7 @@ contains
 
     integer, parameter :: UDMP = 77
     character(6) :: elType  ! element type {CIRCLE,ELLIPS}
-    character(512) :: msg
+    character(lenMSG) :: msg
     integer :: ierr,i,j,nc,ne,crow,ccol
     nc = size(c)
     ne = size(e)

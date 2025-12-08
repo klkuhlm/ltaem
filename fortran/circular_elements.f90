@@ -64,7 +64,7 @@ contains
        ! matching
        nrows = 2*M
        ncols = 4*N-2
-       ! loM:hiM is index range for flux matching portion, beyond head-matching part
+       ! loM:hiM is index range for flux matching portion, beyond head-matching
        loM = M+1
        hiM = 2*M
     elseif (c%ibnd == 2) then
@@ -132,16 +132,22 @@ contains
        call dBK(kap*c%r,N,Bn(0:N-1),dBn(0:N-1))
        dBn(0:N-1) = kap*dBn(0:N-1)
 
-       r%LHS(loM:hiM,1:N) =       spread(dBn(0:N-1)/Bn(0:N-1),1,M)*cmat(:,0:N-1) ! a_n flux
-       r%LHS(loM:hiM,N+1:2*N-1) = spread(dBn(1:N-1)/Bn(1:N-1),1,M)*smat(:,1:N-1) ! b_n flux
+       ! a_n flux
+       r%LHS(loM:hiM,1:N) =       spread(dBn(0:N-1)/Bn(0:N-1),1,M)*cmat(:,0:N-1)
+       ! b_n flux
+       r%LHS(loM:hiM,N+1:2*N-1) = spread(dBn(1:N-1)/Bn(1:N-1),1,M)*smat(:,1:N-1)
 
        if (c%ibnd == 0 .or. (c%ibnd == 1 .and. c%calcin)) then
           kap = kappa(p,c%element)
           call dBI(kap*c%r,N,Bn(0:N-1),dBn(0:N-1))
           dBn(0:N-1) = kap*dBn(0:N-1)
 
-          r%LHS(loM:hiM,2*N:3*N-1) = -spread(dBn(0:N-1)/Bn(0:N-1),1,M)*cmat(:,0:N-1) ! c_n flux
-          r%LHS(loM:hiM,3*N:4*N-2) = -spread(dBn(1:N-1)/Bn(1:N-1),1,M)*smat(:,1:N-1) ! d_n flux
+          ! c_n flux
+          r%LHS(loM:hiM,2*N:3*N-1) = -spread(dBn(0:N-1)/Bn(0:N-1),1,M) * &
+               & cmat(:,0:N-1)
+          ! d_n flux
+          r%LHS(loM:hiM,3*N:4*N-2) = -spread(dBn(1:N-1)/Bn(1:N-1),1,M) * &
+               & smat(:,1:N-1)
        end if
        deallocate(Bn,dBn)
     end if
@@ -155,20 +161,24 @@ contains
       ! put constant area source term effects (from inside the element) on RHS
       ! TODO : handle area source in background
       ! optional 3rd kappa argument -> kappa**2
-      r%RHS(1:M) = r%RHS(1:M) - (timef(p,c%time,.true.) * c%areaQ / (c%alpha * kappa(p,c%element,.true.))) 
+      r%RHS(1:M) = r%RHS(1:M) - (timef(p,c%time,.true.) * c%areaQ / &
+           & (c%alpha * kappa(p,c%element,.true.)))
       r%RHS(M+1:2*M) = 0.0_DP ! constant area source has no flux effects
     case(1)
        ! put specified flux effects on RHS
        ! TODO : check addition of aquifer thickness to denominator
-       r%RHS(1:M) = r%RHS(1:M) + timef(p,c%time,.false.)*c%bdryQ/(TWOPI*c%r*c%b)
+       r%RHS(1:M) = r%RHS(1:M) + timef(p,c%time,.false.) * c%bdryQ / &
+            & (TWOPI * c%r * c%b)
     case(2)
        if (c%StorIn) then
           ! effects of wellbore storage and skin on finite-radius well
           ! effects of other elements on this one show up in off-diagonals
           r%LHS(1:M,1) = storwell(c,p)*r%LHS(1:M,1)
-          r%RHS(1:M) = r%RHS(1:M) + timef(p,c%time,.false.)*c%bdryQ/(PI*c%r*c%parent%T)
+          r%RHS(1:M) = r%RHS(1:M) + timef(p,c%time,.false.) * c%bdryQ / &
+               & (PI * c%r * c%parent%T)
        else
-          continue ! no wellbore storage; nothing to do, since matrix is zero-sized
+          ! no wellbore storage; nothing to do; matrix is zero-sized
+          continue
        end if
     end select
   end function circle_match_self
@@ -194,7 +204,8 @@ contains
     real(DP), allocatable :: cmat(:,:), smat(:,:)
     real(DP), dimension(0:src%N-1) :: vi
     complex(DP), allocatable :: Bn(:,:), dBn(:,:), Bn0(:)
-    complex(DP), allocatable :: dPot_dR(:,:), dPot_dP(:,:), dPot_dX(:,:), dPot_dY(:,:)
+    complex(DP), allocatable :: dPot_dR(:,:), dPot_dP(:,:)
+    complex(DP), allocatable :: dPot_dX(:,:), dPot_dY(:,:)
     complex(DP) :: kap
 
     N = src%N ! number of coefficients in the source circular element
@@ -272,7 +283,7 @@ contains
           if (trg%ibnd == 0 .or. trg%ibnd == -1) then
 
              if (dom%inclBg(s,t) .or. dom%inclIn(t,s)) then
-                ! can the target element "see" the outside of the source element?
+                ! can the target "see" the outside of the source?
                 ! use exterior Bessel functions (Kn)
 
                 kap = kappa(p,src%parent)
@@ -284,16 +295,21 @@ contains
                 hiN = 2*N-1
 
                 if (debug) then
-                   print '(A,2(I0,1X))', 'CIRCLE_MATCH_OTHER HEAD OUTSIDE: (loN,hiN): ', loN,hiN
+                   print '(A,2(I0,1X))', 'CIRCLE_MATCH_OTHER HEAD OUTSIDE: ' &
+                        & //'(loN,hiN): ', loN,hiN
                 end if
 
                 ! head effects on target element
-                r%LHS(1:M,loN:loN+N-1) = Bn(:,0:N-1)/spread(Bn0(0:N-1),1,M)*cmat(:,0:N-1)/src%parent%K ! a_n
-                r%LHS(1:M,loN+N:hiN)   = Bn(:,1:N-1)/spread(Bn0(1:N-1),1,M)*smat(:,1:N-1)/src%parent%K ! b_n
+                ! a_n
+                r%LHS(1:M,loN:loN+N-1) = Bn(:,0:N-1) / &
+                     & spread(Bn0(0:N-1),1,M) * cmat(:,0:N-1) / src%parent%K
+                ! b_n
+                r%LHS(1:M,loN+N:hiN)   = Bn(:,1:N-1) / &
+                     & spread(Bn0(1:N-1),1,M) * smat(:,1:N-1) / src%parent%K
 
-                ! head effects due to area source term of inner source on outer target
-                r%RHS(1:M) = r%RHS(1:M) + (timef(p,trg%time,.true.) * trg%areaQ / &
-                     &(trg%alpha * kappa(p,trg%element,.true.)))
+                ! head effects due to area source of inner src on outer trg
+                r%RHS(1:M) = r%RHS(1:M) + (timef(p,trg%time,.true.) * &
+                     & trg%areaQ / (trg%alpha * kappa(p,trg%element,.true.)))
 
              else
                 ! can target element "see" the inside of the source element?
@@ -309,24 +325,31 @@ contains
                    loN = 2*N
                    hiN = 4*N-2
                 else
-                   ! is source inside of specified head/flux element? (no other previous part)
+                   ! is source inside specified head/flux element? (no previous)
                    loN = 1
                    hiN = 2*N-1
                 end if
 
                 if (debug) then
-                   print '(A,2(I0,1X))', 'CIRCLE_MATCH_OTHER HEAD INSIDE: (loN,hiN): ', loN,hiN
+                   print '(A,2(I0,1X))', 'CIRCLE_MATCH_OTHER HEAD INSIDE: ' &
+                        & //'(loN,hiN): ', loN,hiN
                 end if
 
                 ! head effects on other element
-                r%LHS(1:M,loN:loN+N-1) = -Bn(:,0:N-1)/spread(Bn0(0:N-1),1,M)*cmat(:,0:N-1)/src%K ! c_n
-                r%LHS(1:M,loN+N:hiN)   = -Bn(:,1:N-1)/spread(Bn0(1:N-1),1,M)*smat(:,1:N-1)/src%K ! d_n
+                ! c_n
+                r%LHS(1:M,loN:loN+N-1) = -Bn(:,0:N-1) / &
+                     & spread(Bn0(0:N-1),1,M) * cmat(:,0:N-1) / src%K
+                ! d_n
+                r%LHS(1:M,loN+N:hiN)   = -Bn(:,1:N-1) / &
+                     & spread(Bn0(1:N-1),1,M) * smat(:,1:N-1) / src%K
 
                 ! head effects of parent, if that element has area source term
-                r%RHS(1:M) = r%RHS(1:M) + (timef(p,src%time,.true.) * src%areaQ / (src%alpha * kap**2))
+                r%RHS(1:M) = r%RHS(1:M) + (timef(p,src%time,.true.) * &
+                     & src%areaQ / (src%alpha * kap**2))
              end if
 
-             if (src%ibnd == 2 .and. (dom%inclBg(s,t) .or. dom%inclIn(t,s))) then
+             if (src%ibnd == 2 .and. &
+                  & (dom%inclBg(s,t) .or. dom%inclIn(t,s))) then
                 if (src%StorIn) then
 
                    ! wellbore storage and skin from finite-radius well
@@ -345,13 +368,14 @@ contains
                    ! specified flux (finite-radius well no storage)
                    ! save head effects of well onto RHS
                    r%RHS(1:M) = r%RHS(1:M) + factor*well(src,p)*r%LHS(1:M,1)
-                   r%LHS(1:M,1) = 0.0_DP ! LHS matrix re-allocated to zero size below
+                   r%LHS(1:M,1) = 0.0_DP ! LHS re-allocated to zero size below
                 end if
              end if
           end if
 
-          ! for matching, specified total flux, or well with wellbore storage target element
-          if (trg%ibnd == 0 .or. trg%ibnd == +1 .or. (trg%ibnd == +2 .and. trg%storIn)) then
+          ! matching, specified total flux, or well with wellbore storage target
+          if (trg%ibnd == 0 .or. trg%ibnd == +1 .or. &
+               & (trg%ibnd == +2 .and. trg%storIn)) then
              allocate(dBn(M,0:N-1), dPot_dR(M,2*N-1), dPot_dP(M,2*N-1), &
                   & dPot_dX(M,2*N-1), dPot_dY(M,2*N-1))
 
@@ -370,7 +394,8 @@ contains
                 hiN = 2*N-1
 
                 if (debug) then
-                   print '(A,2(I0,1X))', 'CIRCLE_MATCH_OTHER FLUX OUTSIDE: (loN,hiN): ', loN,hiN
+                   print '(A,2(I0,1X))', 'CIRCLE_MATCH_OTHER FLUX OUTSIDE:' &
+                        & //' (loN,hiN): ', loN,hiN
                 end if
 
              else
@@ -392,30 +417,37 @@ contains
                 end if
 
                 if (debug) then
-                   print '(A,2(I0,1X))', 'CIRCLE_MATCH_OTHER FLUX INSIDE: (loN,hiN): ', loN,hiN
+                   print '(A,2(I0,1X))', 'CIRCLE_MATCH_OTHER FLUX INSIDE: ' &
+                        & //'(loN,hiN): ', loN,hiN
                 end if
              end if
 
              ! derivative wrt radius of source element
-             dPot_dR(1:M,1:N) =       dBn(:,0:N-1)/spread(Bn0(0:N-1),1,M)*cmat(:,0:N-1)
-             dPot_dR(1:M,N+1:2*N-1) = dBn(:,1:N-1)/spread(Bn0(1:N-1),1,M)*smat(:,1:N-1)
+             dPot_dR(1:M,1:N) =       dBn(:,0:N-1) / &
+                  & spread(Bn0(0:N-1),1,M) * cmat(:,0:N-1)
+             dPot_dR(1:M,N+1:2*N-1) = dBn(:,1:N-1) / &
+                  & spread(Bn0(1:N-1),1,M) * smat(:,1:N-1)
 
              if (trg%ibnd == 2 .and. dom%inclBg(s,t)) then
                 ! wellbore storage and skin from finite-radius well
                 dPot_dR(1:M,1) = storwell(src,p)*dPot_dR(:,1)
                 dPot_dP(1:M,1:2*N-1) = 0.0_DP ! wells have angular symmetry
              else
-                ! derivative wrt angle of source element for more general circular elements
+                ! derivative wrt angle of source for more general circles
                 dPot_dP(1:M,1) = 0.0_DP
-                dPot_dP(1:M,2:N) =      -Bn(:,1:N-1)*spread(vi(1:N-1)/Bn0(1:N-1),1,M)*smat(:,1:N-1)
-                dPot_dP(1:M,N+1:2*N-1) = Bn(:,1:N-1)*spread(vi(1:N-1)/Bn0(1:N-1),1,M)*cmat(:,1:N-1)
+                dPot_dP(1:M,2:N) =      -Bn(:,1:N-1) * &
+                     & spread(vi(1:N-1) / Bn0(1:N-1),1,M) * smat(:,1:N-1)
+                dPot_dP(1:M,N+1:2*N-1) = Bn(:,1:N-1) * &
+                     & spread(vi(1:N-1) / Bn0(1:N-1),1,M) * cmat(:,1:N-1)
              end if
 
              ! project these from cylindrical onto Cartesian coordinates
-             dPot_dX(1:M,1:2*N-1) = dPot_dR*spread(cos(src%G(t)%Pgm),2,2*N-1) - &
-                                  & dPot_dP*spread(sin(src%G(t)%Pgm)/src%G(t)%Rgm,2,2*N-1)
-             dPot_dY(1:M,1:2*N-1) = dPot_dR*spread(sin(src%G(t)%Pgm),2,2*N-1) + &
-                                  & dPot_dP*spread(cos(src%G(t)%Pgm)/src%G(t)%Rgm,2,2*N-1)
+             dPot_dX(1:M,1:2*N-1) = dPot_dR * &
+                  & spread(cos(src%G(t)%Pgm),2,2*N-1) - dPot_dP * &
+                  & spread(sin(src%G(t)%Pgm) / src%G(t)%Rgm,2,2*N-1)
+             dPot_dY(1:M,1:2*N-1) = dPot_dR * &
+                  & spread(sin(src%G(t)%Pgm),2,2*N-1) + dPot_dP * &
+                  & spread(cos(src%G(t)%Pgm) / src%G(t)%Rgm,2,2*N-1)
 
              ! project from Cartesian to "radial" coordinate of target element
              if (trg%id <= dom%num(1)) then
@@ -423,28 +455,35 @@ contains
                 if (trg%ibnd == 2) then
                    ! other element is a well with wellbore storage (Type III BC)
                    ! need head effects too
-                   r%LHS(1:M,loN:loN+N-1) = Bn(:,0:N-1)/spread(Bn0(0:N-1),1,M)*cmat/K
-                   r%LHS(1:M,loN+N:hiN) =   Bn(:,1:N-1)/spread(Bn0(1:N-1),1,M)*smat(:,1:N-1)/K
+                   r%LHS(1:M,loN:loN+N-1) = Bn(:,0:N-1) / &
+                        & spread(Bn0(0:N-1),1,M) * cmat / K
+                   r%LHS(1:M,loN+N:hiN) =   Bn(:,1:N-1) / &
+                        & spread(Bn0(1:N-1),1,M) * smat(:,1:N-1) / K
 
                    ! head effects of element
-                   r%LHS(1:M,loN:hiN) = -(trg%r*p/trg%parent%T)*r%LHS(1:M,loN:hiN)
+                   r%LHS(1:M,loN:hiN) = -(trg%r * p / trg%parent%T) * &
+                        & r%LHS(1:M,loN:hiN)
 
                    ! radial flux effects of element
-                   r%LHS(1:M,loN:hiN) = (r%LHS + (2.0_DP + trg%r**2*trg%dskin*p/trg%parent%T)* &
+                   r%LHS(1:M,loN:hiN) = (r%LHS + &
+                        & (2.0_DP + trg%r**2 * trg%dskin * p / trg%parent%T) * &
                         & (dPot_dX*spread(cos(trg%Pcm),2,2*N-1) + &
                         &  dPot_dY*spread(sin(trg%Pcm),2,2*N-1)))
                 else
-                   ! other element is a 'normal' circular element without wellbore storage
-                   r%LHS(loM:hiM,loN:hiN) = dPot_dX*spread(cos(trg%Pcm),2,2*N-1) + &
-                                          & dPot_dY*spread(sin(trg%Pcm),2,2*N-1)
+                   ! other element is 'normal' circule without wellbore storage
+                   r%LHS(loM:hiM,loN:hiN) = &
+                        & dPot_dX * spread(cos(trg%Pcm),2,2*N-1) + &
+                        & dPot_dY * spread(sin(trg%Pcm),2,2*N-1)
                 end if
              else
                 ! rotate to allow for arbitrary oriented ellipse
                 call rotate_vel_mat(dPot_dX,dPot_dY,-trg%theta)
 
                 ! other element is an ellipse
-                r%LHS(loM:hiM,loN:hiN) = dPot_dX*spread(trg%f*sinh(trg%r)*cos(trg%Pcm(:)),2,2*N-1) + &
-                                       & dPot_dY*spread(trg%f*cosh(trg%r)*sin(trg%Pcm(:)),2,2*N-1)
+                r%LHS(loM:hiM,loN:hiN) = dPot_dX * &
+                     & spread(trg%f * sinh(trg%r) * cos(trg%Pcm(:)),2,2*N-1) + &
+                     & dPot_dY * &
+                     & spread(trg%f * cosh(trg%r) * sin(trg%Pcm(:)),2,2*N-1)
              end if
              deallocate(dBn, dPot_dR, dPot_dP, dPot_dX, dPot_dY)
           end if
@@ -493,8 +532,8 @@ contains
 
     kap = kappa(p,c%parent)
     Kn(0:1) = bK(kap*c%r,2)
-    ! TODO: should this have a factor of "b" (formation thickness) in the denominator?
-    a0 = Kn(0)*timef(p,c%time,.false.)*c%bdryQ/(TWOPI*c%r*Kn(1)*kap)
+    ! TODO: should this have a factor "b" (thickness) in denominator?
+    a0 = Kn(0) * timef(p,c%time,.false.) * c%bdryQ / (TWOPI * c%r * Kn(1) * kap)
   end function well
 
   function storwell(c,p) result(a0)
@@ -512,10 +551,11 @@ contains
 
     kap = kappa(p,c%parent)
     Kn(0:1) = bK(kap*c%r,2)
-    ! TODO : should this have a factor of "b" in the denominator?
+    ! TODO : should this have a factor "b" in denominator?
     ! TODO : off by a factor of 1/kappa?
-    a0 = -Kn(0)*((2.0_DP + c%r**2*c%dskin*p/c%parent%T)/(TWOPI*c%r) + &
-               & (Kn(0)*c%r*p)/(TWOPI*c%r*kap*Kn(1)*c%parent%T))
+    a0 = -Kn(0)*((2.0_DP + c%r**2 * c%dskin * p / c%parent%T) / &
+         & (TWOPI * c%r) + (Kn(0) * c%r * p) / &
+         & (TWOPI * c%r * kap * Kn(1) * c%parent%T))
   end function storwell
 
   function circle_calc(p,c,lo,hi,Rgp,Pgp,inside) result(H)
