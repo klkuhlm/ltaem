@@ -34,7 +34,8 @@ contains
   ! initializes / calculates geometry
   subroutine DistanceAngleCalcs(c,e,bg,dom,sol)
     use constants, only: DP, PI, TWOPI
-    use type_definitions, only : domain, circle, ellipse, element, solution, matching
+    use type_definitions, only : domain, circle, ellipse, &
+         & element, solution, matching
     use file_ops, only : writeGeometry
     use geomConv, only : xy2cA, xy2eA, c2xyR, e2xyR, xy2eR
     use, intrinsic :: iso_fortran_env, only : stderr => error_unit
@@ -65,9 +66,9 @@ contains
     do i = 1,nc
        M = c(i)%M
        allocate(c(i)%Pcm(M))
-       dth = TWOPI/M
+       dth = TWOPI/real(M,DP)
        do concurrent(j = 1:M)
-          c(i)%Pcm(j) = -PI + dth*(j-1)
+          c(i)%Pcm(j) = -PI + dth*real(j-1,DP)
        end do
 
        c(i)%id = i ! global ID
@@ -75,9 +76,9 @@ contains
     do i = 1,ne
        M = e(i)%M
        allocate(e(i)%Pcm(M))
-       dth = TWOPI/M
+       dth = TWOPI/real(M,DP)
        do concurrent (j = 1:M)
-          e(i)%Pcm(j) = -PI + dth*(j-1)
+          e(i)%Pcm(j) = -PI + dth*real(j-1,DP)
        end do
 
        e(i)%id = i+nc ! global ID
@@ -116,9 +117,9 @@ contains
        end if
     end do
 
-    ! compute radial distances and angles to points on the circumference of other elements
-    ! from this element (cross-geometry), in terms of the current circle's or ellipse's
-    ! coordinate system.
+    ! compute radial distances and angles to points on the circumference
+    ! of other elements from this element (cross-geometry), in terms of the
+    ! current circle's or ellipse's coordinate system.
     do i = 1,nc
        ! this element a circle
        do j = 1,ntot
@@ -215,7 +216,7 @@ contains
 
   !##################################################
   subroutine ComputeElementHierarchy(dom,sol,c,e)
-    use constants, only : DP
+    use constants, only : DP, lenMSG
     use type_definitions, only : domain, solution, circle, ellipse
     use geomConv, only : xy2eR
     use, intrinsic :: iso_fortran_env, only : stderr => error_unit
@@ -230,6 +231,8 @@ contains
     complex(DP), allocatable :: Z(:,:)
     integer, allocatable :: iv(:), nest(:), val(:)
     integer :: i, j, n, parent
+    integer, parameter :: UELEM = 57
+    character(lenMSG) :: msg
     character(4) :: chint
 
     nc = dom%num(1)
@@ -243,8 +246,9 @@ contains
        dom%InclBg = .false. !! dom%InclBg(1:ntot,1:ntot) logical
 
        ! ## step 1 ####################
-       ! determine what circular element each circular + elliptical element falls inside
-       ! possibly multiple elements, if multiply nested.  Determine if elements intersect.
+       ! determine what circular element each circular + elliptical
+       ! element falls inside possibly multiple elements, if multiply
+       ! nested.  Determine if elements intersect.
 
        ! check centers of elements (rows = circles, columns = all elements)
        if (nc > 0) then
@@ -273,16 +277,17 @@ contains
             end do
           end do
 
-          ! TODO: steps 1 and 2 should be done by solving the equations for the circles/ellipses
-          ! but it is easier to do it with a discrete representation of the boundaries 
+          ! TODO: steps 1 and 2 should be done by solving the
+          ! equations for the circles/ellipses but it is easier to do
+          ! it with a discrete representation of the boundaries
 
-          ! this implements it in matlab (circle-circle, circle-ellipse, and ellipse-ellipse)
+          ! matlab implementation (c-c, c-e, and e-e)
           ! https://www.mathworks.com/matlabcentral/fileexchange/28318-conics-intersection
           ! C++ implementation
           ! https://bitbucket.org/pierluigi/conicsintersection
 
-          ! took care of the easy case (circle-on-circle), but more difficult circle-ellipse,
-          ! and ellipse-ellipse cases remain.
+          ! took care of the easy case (circle-on-circle), but more
+          ! difficult circle-ellipse, and ellipse-ellipse cases remain.
 
           ! two cases where one element center is inside another
           !  1) elements intersect (2 pts) or touch (1 point) = BAD
@@ -304,7 +309,7 @@ contains
                       stop 400
                    else
                       write(stderr,*) 'ERROR: INTERSECTING CIRCLES: ',i,j
-                      stop 4000
+                      stop 401
                    end if
 
                 end if
@@ -319,14 +324,15 @@ contains
                      &  any(c(i)%G(nc+j)%Rgm(:) > c(i)%r))) then
                    print *, c(i)%r,'::',c(i)%G(nc+j)%Rgm(:)
                    write(stderr,*) 'ERROR: INTERSECTING CIRCLE & ELLIPSE: ',i,j
-                   stop 401
+                   stop 402
                 end if
              end do
           end do
        end if
 
        ! ## step 2 ####################
-       ! determine what elliptical element each circular + elliptical element falls inside ...
+       ! determine which elliptical element each circular and elliptical
+       ! element falls inside
 
        ! check centers of elements (rows = ellipses, columns = all elements)
        ! elipses come first in columns, _then_ circles
@@ -372,7 +378,7 @@ contains
                      &  any(e(i)%G(j)%Rgm(:) > e(i)%r))) then
                    print *, e(i)%r,'::',e(i)%G(j)%Rgm(:)
                    write(stderr,*) 'ERROR: INTERSECTING ELLIPSE & CIRCLE: ',i,j
-                   stop 402
+                   stop 403
                 end if
              end do
           end do
@@ -386,7 +392,7 @@ contains
                         &  any(e(i)%G(nc+j)%Rgm(:) > e(i)%r))) then
                       print *, e(i)%r,'::',e(i)%G(nc+j)%Rgm(:)
                       write(stderr,*) 'ERROR: INTERSECTING ELLIPSES: ',i,j
-                      stop 403
+                      stop 404
                    end if
                 end if
              end do
@@ -403,10 +409,11 @@ contains
          iv(i) = i
        end do
        R(1:nc) = c(1:nc)%r
-       ! TODO : double-check that circle/ellipse can be compared validly in this manner
+       ! TODO : double-check that circle/ellipse can be compared in this manner
        R(nc+1:ntot) = e(1:ne)%r
 
-       do concurrent (i = 1:ntot, j = 1:ntot, i /= j .and. dom%InclIn(i,j).and.dom%InclIn(j,i) .and. R(i) < R(j))
+       do concurrent (i = 1:ntot, j = 1:ntot, i /= j .and. &
+            & dom%InclIn(i,j).and.dom%InclIn(j,i) .and. R(i) < R(j))
           dom%InclIn(i,j) = .false.
         end do
 
@@ -415,13 +422,13 @@ contains
        ! number of True values in each column
        nest(1:ntot) = count(dom%InclIn(1:ntot,1:ntot),dim=1)
 
-       ! ## 3.2 if a column has no T entries, it is in background (level 1 of tree)
+       ! ## 3.2 if a column has no T, it is in background (level 1)
        where (nest(1:ntot) == 0)
           dom%InclIn(0,1:ntot) = .true.
           dom%InclUp(1:ntot) = 0
        end where
 
-       ! ## 3.3 if a column has one T entry, it is inside a background element (level 2 of tree)
+       ! ## 3.3 if a column has one T, it is in a background element (level 2)
        if (any(nest == 1)) then
           do i = 1,ntot
              if (nest(i) == 1) then
@@ -488,30 +495,32 @@ contains
     end if
 
     ! echo results of hierarchy calculations to file
-    open(unit=57, file=sol%elemhfname, status='replace', action='write', iostat=ierr)
+    open(unit=UELEM, file=sol%elemhfname, status='replace', &
+         & action='write', iostat=ierr, iomsg=msg)
     if (ierr /= 0) then
        ! non-fatal error
-       write(stderr,'(A)') 'ElementHierarcy: ERROR opening file '//trim(sol%elemHfName)// &
-            &'.echo for writing element hierarchy'
+       write(stderr,*) 'ElementHierarcy: ERROR opening file ' &
+            & //trim(sol%elemHfName)//'.echo for writing element hierarchy'
+       write(stderr,*) trim(msg)
     else
        ! add a file variable to set Emacs to auto-revert mode
-       write(57,'(A)') '-*-auto-revert-*-'
+       write(UELEM,'(A)') '-*-auto-revert-*-'
 
        write(chint,'(I4.4)') ntot
        do i = 0,ntot
-          write(57,'('//chint//'(L1,1X),2(A,I0),A)')  &
+          write(UELEM,'('//chint//'(L1,1X),2(A,I0),A)')  &
                & dom%InclIn(i,1:ntot),'InclIn(',i,',1:',ntot,')'
        end do
 
-       write(57,'('//chint//'(I0,1X),A,I0,A)') &
+       write(UELEM,'('//chint//'(I0,1X),A,I0,A)') &
             & dom%InclUp(1:ntot),'InclUp(1:',ntot,')'
 
        do i = 1,ntot
-          write(57,'('//chint//'(L1,1X),2(A,I0),A)') &
+          write(UELEM,'('//chint//'(L1,1X),2(A,I0),A)') &
                & dom%InclBg(i,1:ntot), 'InclBg(',i,',1:',ntot,')'
        end do
     end if
-    close(57)
+    close(UELEM)
 
   end subroutine ComputeElementHierarchy
 end module  geometry
