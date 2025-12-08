@@ -25,9 +25,9 @@ module mathieu_functions
   use type_definitions, only : mathieu
   implicit none
 
-  private  !! only interfaces, mathieu_init, and debugging routine are publicly callable
-  public :: mathieu, ce, Dce, se, Dse, Ke, Ko, DKe, DKo, Ie, Io, DIe, DIo, mathieu_init
-  public :: print_mathieu_type
+  private  !! only interfaces, mathieu_init, and debugging routine are public
+  public :: mathieu, ce, Dce, se, Dse, Ke, Ko, DKe, DKo, Ie, Io, DIe, DIo
+  public :: print_mathieu_type, mathieu_init
 
   interface ce   ! even first kind angular MF
      module procedure ce_scalar_nz, ce_scalar_n, ce_scalar_z, ce_vect_nz
@@ -70,8 +70,9 @@ contains
     ! this subroutine computes the eigenvalues given at least a value for the
     ! Mathieu parameter (q), the norm and matrix size (M) are optional
 
-    use constants, only : DP
+    use constants, only : DP, CZERO
     use utility, only : diag
+    use, intrinsic :: iso_fortran_env, only : stderr => error_unit
 
     interface ! LAPACK 3.2.1 eigenvalue/eigenfunction routine
        subroutine ZGEEV(JOBVL,JOBVR,N,A,LDA,W,VL,LDVL,VR,LDVR,WORK, &
@@ -111,26 +112,26 @@ contains
     else
        ! assuming this will be computed more intelligenly elsewhere
        ! e.g., using Shirts' 1993 rational approximation
-       print *, 'MATHIEU_INIT WARNING: infinite matrix size not specified, using M=16'
+       write(stderr,'(/A/)') 'WARNING: No Mathieu matrix size, using M=16'
        mat%M = 16
     end if
     M = mat%M
 
     allocate(v(0:M),vi(0:M))
     do concurrent (j=0:M)
-      v(j) = cmplx(real(j,DP),0.0_DP,DP)
+      v(j) = cmplx(real(j,DP), 0.0_DP, DP)
     end do
     where(mod([(j,j=0,M)],2) == 0)
-       vi = cmplx(1.0_DP,0.0_DP,DP)
+       vi = cmplx(1.0_DP, 0.0_DP, DP)
     elsewhere
-       vi = cmplx(-1.0_DP,0.0_DP,DP)
+       vi = cmplx(-1.0_DP, 0.0_DP, DP)
     end where
 
     ! A/B 1st dimension: subscript in McLachlan notation,
     ! i.e., the position in the infinite sum
 
     ! A/B 2nd dimension: superscript in McLachlan notation,
-    ! i.e., the n in the order 2n+1 of the Mathieu function which it is associated with
+    ! i.e., the n in the order 2n+1 of the same Mathieu function
 
     ! A/B 3rd dimension: 0(even) or 1(odd) cases of the second dimension
 
@@ -139,7 +140,7 @@ contains
          & mat%A(1:M,0:M-1,0:1), mat%B(1:M,0:M-1,0:1))
 
     di = 1 ! dummy integer for lapack
-    dc(1) = (0.0_DP,0.0_DP) ! dummy complex for lapack
+    dc(1) = CZERO ! dummy complex for lapack
 
     !$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
     ! even coefficients (a) of even order
@@ -148,9 +149,9 @@ contains
     !$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 
     ! main diagonal/ r counting from 0:m-1 like McLachlan
-    Coeff(:,:) = cmplx(0.0_DP,0.0_DP,DP)
+    Coeff(:,:) = CZERO
     do concurrent (i=1:M-1)
-      Coeff(i+1,i+1) = cmplx(real((2*i)**2,DP), 0.0_DP, DP)
+      Coeff(i+1,i+1) = cmplx(real((2*i)**2, DP), 0.0_DP, DP)
     end do
 
     ! off diagonals
@@ -159,29 +160,29 @@ contains
     end do
 
     ! special case
-    Coeff(2,1) = 2.0_DP*q
+    Coeff(2,1) = 2.0_DP * q
 
-    call ZGEEV(JOBVL='N', JOBVR='V',N=M, A=Coeff, LDA=M, W=mat%mcn(1:m), &
+    call ZGEEV(JOBVL='N', JOBVR='V', N=M, A=Coeff, LDA=M, W=mat%mcn(1:m), &
          & VL=dc, LDVL=di, VR=mat%A(1:m,0:m-1,0), LDVR=M, &
          & WORK=work, LWORK=lwork, RWORK=rwork, INFO=info)
 
-    if (info /= 0) write (*,'(A,I0,A)') 'ZGEEV ERROR ',info, &
-         & ' calculating even coefficients of even order'
+    if (info /= 0) write (stderr,'(A,I0,A)') 'ZGEEV ERROR: ',info, &
+         & ' calculating even Mathieu coefficients of even order'
 
     ! Morse norm  ce_2n(psi=0)
-    w = sum(spread(vi(1:M),2,M)*mat%A(:,:,0),dim=1)
-    mat%A(:,:,0) = mat%A(:,:,0)/spread(w,1,M)
+    w = sum(spread(vi(1:M),2,M) * mat%A(:,:,0),dim=1)
+    mat%A(:,:,0) = mat%A(:,:,0) / spread(w,1,M)
 
     !$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
     ! even coefficients (a) of odd order
     ! De_{2n+1} in eqn 3.14 of St&Sp
     !$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 
-    Coeff(:,:) = cmplx(0.0_DP,0.0_DP,DP)
+    Coeff(:,:) = CZERO
     Coeff(1,1) = 1.0_DP + q
 
     do concurrent (i=1:m-1)
-      Coeff(i+1,i+1) = cmplx(real((2*i+1)**2,DP), 0.0_DP, DP)
+      Coeff(i+1,i+1) = cmplx(real((2*i+1)**2, DP), 0.0_DP, DP)
     end do
     do concurrent (i=1:m, j=1:m, j == i+1 .or. j == i-1)
       Coeff(i,j) = q
@@ -191,12 +192,13 @@ contains
          & VL=dc, LDVL=di, VR=mat%A(1:m,0:m-1,1), LDVR=M, &
          & WORK=work, LWORK=lwork, RWORK=rwork, INFO=info)
 
-    if (info /= 0) write(*,'(A,I0,A)') 'ZGEEV ERROR ',info, &
-         & ' calculating even coefficients of odd order'
+    if (info /= 0) write(stderr,'(A,I0,A)') 'ZGEEV ERROR: ',info, &
+         & ' calculating even Mathieu coefficients of odd order'
 
     ! se'_2n+1(psi=0)
-    w = sum(spread((2.0_DP*v(0:M-1)+1.0_DP)*vi(0:M-1),2,M)*mat%A(:,:,1),dim=1)
-    mat%A(:,:,1) = mat%A(:,:,1)/spread(w,1,M)
+    w = sum(spread((2.0_DP * v(0:M-1) + 1.0_DP) * vi(0:M-1),2,M) * &
+         & mat%A(:,:,1),dim=1)
+    mat%A(:,:,1) = mat%A(:,:,1) / spread(w,1,M)
 
     !$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
     ! odd coefficients (b) of even order
@@ -205,10 +207,10 @@ contains
 
     ! this one not shifted by one, since 2n+2 -> 2n
     !! (but starting from one, rather than zero)
-    Coeff(:,:) = cmplx(0.0_DP,0.0_DP,DP)
+    Coeff(:,:) = CZERO
 
     do concurrent (i=1:m)
-      Coeff(i,i) = cmplx(real((2*i)**2,DP), 0.0_DP, DP)
+      Coeff(i,i) = cmplx(real((2*i)**2, DP), 0.0_DP, DP)
     end do
     do concurrent (i=1:m, j=1:m, j == i+1 .or. j == i-1)
       Coeff(i,j) = q
@@ -218,23 +220,24 @@ contains
          & VL=dc, LDVL=di, VR=mat%B(1:m,0:m-1,0),LDVR=M,&
          & WORK=work, LWORK=lwork, RWORK=rwork, INFO=info)
 
-    if (info /= 0) write (*,'(A,I0,A)') 'ZGEEV ERROR ',info, &
-         & ' calculating odd coefficients of even order'
+    if (info /= 0) write (stderr,'(A,I0,A)') 'ZGEEV ERROR: ',info, &
+         & ' calculating odd Mathieu coefficients of even order'
 
     ! ce_2n+2(psi=0)
-    w = sum(spread((2.0_DP*v(0:M-1)+2.0_DP)*vi(0:M-1),2,M)*mat%B(:,:,0),dim=1)
-    mat%B(:,:,0) = mat%B(:,:,0)/spread(w,1,M)
+    w = sum(spread((2.0_DP * v(0:M-1) + 2.0_DP) * vi(0:M-1),2,M) * &
+         & mat%B(:,:,0),dim=1)
+    mat%B(:,:,0) = mat%B(:,:,0) / spread(w,1,M)
 
     !$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
     ! odd coefficients (b) of odd order
     ! Do_{2n+1} of eqn 3.18 in St&Sp
     !$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 
-    Coeff(:,:) = cmplx(0.0_DP,0.0_DP,DP)
+    Coeff(:,:) = CZERO
     Coeff(1,1) = 1.0_DP - q
 
     do concurrent (i=1:m-1)
-      Coeff(i+1,i+1) = cmplx(real((2*i+1)**2,DP), 0.0_DP, DP)
+      Coeff(i+1,i+1) = cmplx(real((2*i+1)**2, DP), 0.0_DP, DP)
     end do
     do concurrent (i=1:m, j=1:m, j == i+1 .or. j == i-1)
       Coeff(i,j) = q
@@ -244,14 +247,14 @@ contains
          & VL=dc, LDVL=di, VR=mat%B(1:m,0:m-1,1), LDVR=M,&
          & WORK=work, LWORK=lwork, RWORK=rwork, INFO=info)
 
-    if (info /= 0) write (*,'(A,I0,A)') 'ZGEEV ERROR ',info, &
-         & ' calculating odd coefficients of odd order'
+    if (info /= 0) write (stderr,'(A,I0,A)') 'ZGEEV ERROR: ',info, &
+         & ' calculating odd MAthieu coefficients of odd order'
 
     ! ce_2n+1(psi=0)
-    w = sum(mat%B(:,:,1)*spread(vi(0:M-1),2,M),dim=1)
-    mat%B(:,:,1) = mat%B(:,:,1)/spread(w,1,m)
+    w = sum(mat%B(:,:,1) * spread(vi(0:M-1),2,M),dim=1)
+    mat%B(:,:,1) = mat%B(:,:,1) / spread(w,1,m)
 
-    deallocate(coeff,rwork,w,work)
+    deallocate(Coeff,rwork,w,work)
 
   end function mathieu_init
 
@@ -281,13 +284,13 @@ contains
     call angfcnsetup(mf,n,v,vi,EV,OD)
     nje = size(EV)
     njo = size(OD)
-    j = floor(n*0.5_DP)
+    j = floor(0.5_DP * n)
 
-    ce(:,EV) = sum(spread(mf%A(:,j(EV),0),2,nz)* &
-         & spread(cos(outer(2.0_DP*v,PIOV2-z)),3,nje),dim=1)
+    ce(:,EV) = sum( spread(mf%A(:,j(EV),0),2,nz) * &
+         & spread(cos(outer(2.0_DP*v, PIOV2 - z)),3,nje), dim=1)
 
-    ce(:,OD) = sum(spread(mf%B(:,j(OD),1),2,nz)* &
-         & spread(sin(outer(2.0_DP*v+1.0_DP,PIOV2-z)),3,njo),dim=1)
+    ce(:,OD) = sum( spread(mf%B(:,j(OD),1),2,nz) * &
+         & spread(sin(outer(2.0_DP*v + 1.0_DP, PIOV2 - z)),3,njo), dim=1)
 
   end function ce_vect_nz
 
@@ -313,14 +316,14 @@ contains
     call angfcnsetup(mf,n,v,vi,EV,OD)
     nje = size(EV)
     njo = size(OD)
-    j = floor((n-1)*0.5_DP)
+    j = floor(0.5_DP * (n-1))
     where (n == 0) j = 0
 
-    se(:,EV) = sum(spread(mf%B(:,j(EV),0),2,nz)* &
-         & spread(sin(outer(2.0_DP*v+2.0_DP,PIOV2-z)),3,nje),dim=1)
+    se(:,EV) = sum( spread(mf%B(:,j(EV),0),2,nz) * &
+         & spread(sin(outer(2.0_DP*v + 2.0_DP, PIOV2 - z)),3,nje), dim=1)
 
-    se(:,OD) = sum(spread(mf%A(:,j(OD),1),2,nz)* &
-         & spread(cos(outer(2.0_DP*v+1.0_DP,PIOV2-z)),3,njo),dim=1)
+    se(:,OD) = sum( spread(mf%A(:,j(OD),1),2,nz) * &
+         & spread(cos(outer(2.0_DP*v + 1.0_DP, PIOV2 - z)),3,njo), dim=1)
 
     where (spread(n,1,nz) == 0) se = -huge(1.0_DP)  ! se_0() is invalid
   end function se_vect_nz
@@ -346,13 +349,15 @@ contains
     call angfcnsetup(mf,n,v,vi,EV,OD)
     nje = size(EV)
     njo = size(OD)
-    j = floor(n*0.5_DP)
+    j = floor(0.5_DP * n)
 
-    Dce(:,EV) = sum(spread(spread(2.0_DP*v,2,nje)*mf%A(:,j(EV),0),2,nz)* &
-         & spread(sin(outer(2.0_DP*v,PIOV2-z)),3,nje),dim=1)
+    Dce(:,EV) = sum( spread(spread(2.0_DP*v,2,nje) * &
+         & mf%A(:,j(EV),0),2,nz) * &
+         & spread(sin(outer(2.0_DP*v, PIOV2 - z)),3,nje), dim=1)
 
-    Dce(:,OD) = -sum(spread(spread(2.0_DP*v+1.0_DP,2,njo)*mf%B(:,j(OD),1),2,nz)* &
-         & spread(cos(outer(2.0_DP*v+1.0_DP,PIOV2-z)),3,njo),dim=1)
+    Dce(:,OD) = -sum( spread(spread(2.0_DP*v + 1.0_DP,2,njo) * &
+         & mf%B(:,j(OD),1),2,nz) * &
+         & spread(cos(outer(2.0_DP*v + 1.0_DP, PIOV2 - z)),3,njo), dim=1)
 
   end function Dce_vect_nz
 
@@ -377,14 +382,16 @@ contains
     call angfcnsetup(mf,n,v,vi,EV,OD)
     nje = size(EV)
     njo = size(OD)
-    j = floor((n-1)*0.5_DP)
+    j = floor(0.5_DP * (n-1))
     where (n == 0) j = 0
 
-    Dse(:,EV) = -sum(spread(spread(2.0_DP*v+2.0_DP,2,nje)*mf%B(:,j(EV),0),2,nz)* &
-         & spread(cos(outer(2.0_DP*v+2.0_DP,PIOV2-z)),3,nje),dim=1)
+    Dse(:,EV) = -sum( spread(spread(2.0_DP*v + 2.0_DP,2,nje) * &
+         & mf%B(:,j(EV),0),2,nz) * &
+         & spread(cos(outer(2.0_DP*v + 2.0_DP, PIOV2 - z)),3,nje), dim=1)
 
-    Dse(:,OD) = sum(spread(spread(2.0_DP*v+1.0_DP,2,njo)*mf%A(:,j(OD),1),2,nz)* &
-         & spread(sin(outer(2.0_DP*v+1.0_DP,PIOV2-z)),3,njo),dim=1)
+    Dse(:,OD) = sum( spread(spread(2.0_DP*v + 1.0_DP,2,njo) * &
+         & mf%A(:,j(OD),1),2,nz) * &
+         & spread(sin(outer(2.0_DP*v + 1.0_DP, PIOV2 - z)),3,njo), dim=1)
 
     where (spread(n,1,nz) == 0) Dse = -huge(1.0_DP)  ! se_0() is undefined
   end function Dse_vect_nz
@@ -413,16 +420,17 @@ contains
     call radfcnsetup(mf,n,z,sqrtq,v1,v2,v,vi,EV,OD)
     nje = size(EV)
     njo = size(OD)
-    j = floor(n*0.5_DP)
-    call BesselI_val(v1,M+1,I1(0:M,1:nz))
-    call BesselI_val(v2,M+1,I2(0:M,1:nz))
+    j = floor(0.5_DP * n)
+    call BesselI_val(v1, M+1, I1(0:M,1:nz))
+    call BesselI_val(v2, M+1, I2(0:M,1:nz))
 
-    Ie(:,EV) = sum(spread(spread(vi,2,nje)*mf%A(:,j(EV),0),2,nz)* &
-         & spread(I1(0:m-1,:)*I2(0:m-1,:),3,nje),dim=1)/spread(mf%A(1,j(EV),0),1,nz)
+    Ie(:,EV) = sum( spread(spread(vi,2,nje) * mf%A(:,j(EV),0),2,nz) * &
+         & spread(I1(0:m-1,:) * I2(0:m-1,:),3,nje),dim=1) / &
+         & spread(mf%A(1,j(EV),0),1,nz)
 
-    Ie(:,OD) = sum(spread(spread(vi,2,njo)*mf%B(:,j(OD),1),2,nz)* &
-         & spread(I1(0:m-1,:)*I2(1:m,:) + I1(1:m,:)*I2(0:m-1,:),3,njo),dim=1)/ &
-         & spread(mf%B(1,j(OD),1),1,nz)
+    Ie(:,OD) = sum( spread(spread(vi,2,njo) * mf%B(:,j(OD),1),2,nz) * &
+         & spread(I1(0:m-1,:) * I2(1:m,:) + I1(1:m,:) * I2(0:m-1,:),3,njo), &
+         & dim=1) / spread(mf%B(1,j(OD),1),1,nz)
 
     Ie = Ie*spread(exp(abs(real(v1)) + abs(real(v2))),2,size(n))
   end function Ie_vect_nz
@@ -451,20 +459,20 @@ contains
     call radfcnsetup(mf,n,z,sqrtq,v1,v2,v,vi,EV,OD)
     nje = size(EV)
     njo = size(OD)
-    j = floor((n-1)*0.5_DP)
+    j = floor(0.5_DP * (n-1))
     where (n == 0) j = 0
     call BesselI_val(v1,m+2,I1(0:m+1,:))
     call BesselI_val(v2,m+2,I2(0:m+1,:))
 
-    Io(:,EV) = sum(spread(spread(vi,2,nje)*mf%B(:,j(EV),0),2,nz)* &
-         & spread(I1(0:m-1,:)*I2(2:m+1,:) - I1(2:m+1,:)*I2(0:m-1,:),3,nje),dim=1)/ &
-         & spread(mf%B(1,j(EV),0),1,nz)
+    Io(:,EV) = sum( spread(spread(vi,2,nje) * mf%B(:,j(EV),0),2,nz) * &
+         & spread(I1(0:m-1,:) * I2(2:m+1,:) - I1(2:m+1,:) * I2(0:m-1,:),3,nje),&
+         & dim=1) / spread(mf%B(1,j(EV),0),1,nz)
 
-    Io(:,OD) = sum(spread(spread(vi,2,njo)*mf%A(:,j(OD),1),2,nz)* &
-         & spread(I1(0:m-1,:)*I2(1:m,:) - I1(1:m,:)*I2(0:m-1,:),3,njo),dim=1)/ &
-         & spread(mf%A(1,j(OD),1),1,nz)
+    Io(:,OD) = sum( spread(spread(vi,2,njo) * mf%A(:,j(OD),1),2,nz) * &
+         & spread(I1(0:m-1,:) * I2(1:m,:) - I1(1:m,:) * I2(0:m-1,:),3,njo), &
+         & dim=1) / spread(mf%A(1,j(OD),1),1,nz)
 
-    Io = Io*spread(exp(abs(real(v1)) + abs(real(v2))),2,size(n))
+    Io = Io * spread(exp(abs(real(v1)) + abs(real(v2))),2,size(n))
    end function Io_vect_nz
 
   !############################################################
@@ -491,16 +499,17 @@ contains
     call radfcnsetup(mf,n,z,sqrtq,v1,v2,v,vi,EV,OD)
     nje = size(EV)
     njo = size(OD)
-    j = floor(real(n,DP)*0.5_DP)
+    j = floor(0.5_DP * n)
     call BesselI_val(v1,m+1,I(0:m,:))
     call BesselK_val(v2,m+1,K(0:m,:))
 
-    Ke(:,EV) = sum(spread(mf%A(:,j(EV),0),2,nz)* &
-         & spread(I(0:m-1,:)*K(0:m-1,:),3,nje),dim=1)/spread(mf%A(1,j(EV),0),1,nz)
+    Ke(:,EV) = sum( spread(mf%A(:,j(EV),0),2,nz) * &
+         & spread(I(0:m-1,:) * K(0:m-1,:),3,nje),dim=1) / &
+         & spread(mf%A(1,j(EV),0),1,nz)
 
-    Ke(:,OD) = sum(spread(mf%B(:,j(OD),1),2,nz)* &
-         & spread(I(0:m-1,:)*K(1:m,:) - I(1:m,:)*K(0:m-1,:),3,njo),dim=1)/ &
-         & spread(mf%B(1,j(OD),1),1,nz)
+    Ke(:,OD) = sum( spread(mf%B(:,j(OD),1),2,nz) * &
+         & spread(I(0:m-1,:) * K(1:m,:) - I(1:m,:) * K(0:m-1,:),3,njo), &
+         & dim=1) / spread(mf%B(1,j(OD),1),1,nz)
 
     Ke = Ke*spread(exp(abs(real(v1)) - v2),2,size(n))
   end function Ke_vect_nz
@@ -529,18 +538,18 @@ contains
     call radfcnsetup(mf,n,z,sqrtq,v1,v2,v,vi,EV,OD)
     nje = size(EV)
     njo = size(OD)
-    j = floor((n-1)*0.5_DP)
+    j = floor(0.5_DP * (n-1))
     where(n == 0) j = 0
     call BesselI_val(v1,m+2,I(0:m+1,:))
     call BesselK_val(v2,m+2,K(0:m+1,:))
 
-    Ko(:,EV) = sum(spread(mf%B(:,j(EV),0),2,nz)* &
-         & spread(I(0:m-1,:)*K(2:m+1,:) - I(2:m+1,:)*K(0:m-1,:),3,nje),dim=1)/ &
-         & spread(mf%B(1,j(EV),0),1,nz)
+    Ko(:,EV) = sum( spread(mf%B(:,j(EV),0),2,nz) * &
+         & spread(I(0:m-1,:) * K(2:m+1,:) - I(2:m+1,:) * K(0:m-1,:),3,nje), &
+         & dim=1) / spread(mf%B(1,j(EV),0),1,nz)
 
-    Ko(:,OD) = sum(spread(mf%A(:,j(OD),1),2,nz)* &
-         & spread(I(0:m-1,:)*K(1:m,:) + I(1:m,:)*K(0:m-1,:),3,njo),dim=1)/ &
-         & spread(mf%A(1,j(OD),1),1,nz)
+    Ko(:,OD) = sum( spread(mf%A(:,j(OD),1),2,nz) * &
+         & spread(I(0:m-1,:) * K(1:m,:) + I(1:m,:) * K(0:m-1,:),3,njo), &
+         & dim=1) / spread(mf%A(1,j(OD),1),1,nz)
 
     Ko = Ko*spread(exp(abs(real(v1)) - v2),2,size(n))
     where (spread(n,1,nz) == 0) Ko = -huge(1.0_DP)  ! Ko_0() is invalid
@@ -575,13 +584,16 @@ contains
     call BesselI_val_and_deriv(v1,m+1,I1(0:m,:),DI1(0:m,:))
     call BesselI_val_and_deriv(v2,m+1,I2(0:m,:),DI2(0:m,:))
 
-    DIe(:,EV) = sqrtq*sum(spread(spread(vi,2,nje)*mf%A(:,j(EV),0),2,nz)* &
-         & spread(epz*I1(0:m-1,:)*DI2(0:m-1,:) - enz*DI1(0:m-1,:)*I2(0:m-1,:),3,nje),dim=1)/ &
+    DIe(:,EV) = sqrtq * sum( spread(spread(vi,2,nje) * mf%A(:,j(EV),0),2,nz) * &
+         & spread(epz * I1(0:m-1,:) * DI2(0:m-1,:) - &
+         & enz * DI1(0:m-1,:) * I2(0:m-1,:),3,nje), dim=1) / &
          & spread(mf%A(1,j(EV),0),1,nz)
 
-    DIe(:,OD) = sqrtq*sum(spread(spread(vi,2,njo)*mf%B(:,j(OD),1),2,nz)* &
-         & spread(epz*I1(0:m-1,:)*DI2(1:m,:) - enz*DI1(0:m-1,:)*I2(1:m,:) + &
-         &        epz*I1(1:m,:)*DI2(0:m-1,:) - enz*DI1(1:m,:)*I2(0:m-1,:),3,njo),dim=1)/&
+    DIe(:,OD) = sqrtq * sum( spread(spread(vi,2,njo) * mf%B(:,j(OD),1),2,nz) * &
+         & spread(epz * I1(0:m-1,:) * DI2(1:m,:) - &
+         & enz * DI1(0:m-1,:) * I2(1:m,:) + &
+         & epz * I1(1:m,:) * DI2(0:m-1,:) - &
+         & enz * DI1(1:m,:) * I2(0:m-1,:),3,njo), dim=1) / &
          & spread(mf%B(1,j(OD),1),1,nz)
 
     DIe = DIe*spread(exp(abs(real(v1)) + abs(real(v2))),2,size(n))
@@ -612,19 +624,23 @@ contains
     call radderivfcnsetup(mf,n,z,sqrtq,v1,v2,enz,epz,v,vi,EV,OD)
     nje = size(EV)
     njo = size(OD)
-    j = floor((n-1)*0.5_DP)
+    j = floor(0.5_DP * (n-1))
     where (n == 0) j = 0
     call BesselI_val_and_deriv(v1,m+2,I1(0:m+1,:),DI1(0:m+1,:))
     call BesselI_val_and_deriv(v2,m+2,I2(0:m+1,:),DI2(0:m+1,:))
 
-    DIo(:,EV) = sqrtq*sum(spread(spread(vi,2,nje)*mf%B(:,j(EV),0),2,nz)* &
-         & spread(epz*I1(0:m-1,:)*DI2(2:m+1,:) - enz*DI1(0:m-1,:)*I2(2:m+1,:) - &
-         &        epz*I1(2:m+1,:)*DI2(0:m-1,:) - enz*DI1(2:m+1,:)*I2(0:m-1,:),3,nje),dim=1)/&
+    DIo(:,EV) = sqrtq * sum( spread(spread(vi,2,nje) * mf%B(:,j(EV),0),2,nz) * &
+         & spread(epz * I1(0:m-1,:) * DI2(2:m+1,:) - &
+         & enz * DI1(0:m-1,:) * I2(2:m+1,:) - &
+         & epz * I1(2:m+1,:) * DI2(0:m-1,:) - &
+         & enz * DI1(2:m+1,:) * I2(0:m-1,:),3,nje), dim=1) / &
          & spread(mf%B(1,j(EV),0),1,nz)
 
-    DIo(:,OD) = sqrtq*sum(spread(spread(vi,2,njo)*mf%A(:,j(OD),1),2,nz)* &
-         & spread(epz*I1(0:m-1,:)*DI2(1:m,:) - enz*DI1(0:m-1,:)*I2(1:m,:) - &
-         &        epz*I1(1:m,:)*DI2(0:m-1,:) - enz*DI1(1:m,:)*I2(0:m-1,:),3,njo),dim=1)/&
+    DIo(:,OD) = sqrtq * sum( spread(spread(vi,2,njo) * mf%A(:,j(OD),1),2,nz) * &
+         & spread(epz * I1(0:m-1,:) * DI2(1:m,:) - &
+         & enz * DI1(0:m-1,:) * I2(1:m,:) - &
+         & epz * I1(1:m,:) * DI2(0:m-1,:) - &
+         & enz * DI1(1:m,:) * I2(0:m-1,:),3,njo), dim=1) / &
          & spread(mf%A(1,j(OD),1),1,nz)
 
     DIo = DIo*spread(exp(abs(real(v1)) + abs(real(v2))),2,size(n))
@@ -658,17 +674,20 @@ contains
     call radderivfcnsetup(mf,n,z,sqrtq,v1,v2,enz,epz,v,vi,EV,OD)
     nje = size(EV)
     njo = size(OD)
-    j = floor(n*0.5_DP)
+    j = floor(0.5_DP * n)
     call BesselI_val_and_deriv(v1,m+1,I(0:m,:),DI(0:m,:))
     call BesselK_val_and_deriv(v2,m+1,K(0:m,:),DK(0:m,:))
 
-    DKe(:,EV) = sqrtq*sum(spread(mf%A(:,j(EV),0),2,nz)* &
-         & spread(epz*I(0:m-1,:)*DK(0:m-1,:) - enz*DI(0:m-1,:)*K(0:m-1,:),3,nje),dim=1)/&
+    DKe(:,EV) = sqrtq * sum( spread(mf%A(:,j(EV),0),2,nz) * &
+         & spread(epz * I(0:m-1,:) * DK(0:m-1,:) - &
+         & enz * DI(0:m-1,:) * K(0:m-1,:),3,nje), dim=1) /&
          & spread(mf%A(1,j(EV),0),1,nz)
 
-    DKe(:,OD) = sqrtq*sum(spread(mf%B(:,j(OD),1),2,nz)* &
-         & spread(epz*I(0:m-1,:)*DK(1:m,:) - enz*DI(0:m-1,:)*K(1:m,:) - &
-         &        epz*I(1:m,:)*DK(0:m-1,:) - epz*DI(1:m,:)*K(0:m-1,:),3,njo),dim=1)/ &
+    DKe(:,OD) = sqrtq * sum( spread(mf%B(:,j(OD),1),2,nz) * &
+         & spread(epz * I(0:m-1,:) * DK(1:m,:) - &
+         & enz * DI(0:m-1,:) * K(1:m,:) - &
+         & epz * I(1:m,:) * DK(0:m-1,:) - &
+         & epz * DI(1:m,:) * K(0:m-1,:),3,njo), dim=1) / &
          & spread(mf%B(1,j(OD),1),1,nz)
 
     DKe = DKe*spread(exp(abs(real(v1)) - v2),2,size(n))
@@ -700,19 +719,23 @@ contains
     call radderivfcnsetup(mf,n,z,sqrtq,v1,v2,enz,epz,v,vi,EV,OD)
     nje = size(EV)
     njo = size(OD)
-    j = floor((n-1)*0.5_DP)
+    j = floor(0.5_DP * (n-1))
     where (n == 0) j = 0
     call BesselI_val_and_deriv(v1,m+2,I(0:m+1,:),DI(0:m+1,:))
     call BesselK_val_and_deriv(v2,m+2,K(0:m+1,:),DK(0:m+1,:))
 
-    DKo(:,EV) = sqrtq*sum(spread(mf%B(:,j(EV),0),2,nz)* &
-         & spread(epz*I(0:m-1,:)*DK(2:m+1,:) - enz*DI(0:m-1,:)*K(2:m+1,:) - &
-         &        epz*I(2:m+1,:)*DK(0:m-1,:) - epz*DI(2:m+1,:)*K(0:m-1,:),3,nje),dim=1)/&
+    DKo(:,EV) = sqrtq * sum( spread(mf%B(:,j(EV),0),2,nz) * &
+         & spread(epz * I(0:m-1,:) * DK(2:m+1,:) - &
+         & enz * DI(0:m-1,:) * K(2:m+1,:) - &
+         & epz * I(2:m+1,:) * DK(0:m-1,:) - &
+         & epz * DI(2:m+1,:) * K(0:m-1,:),3,nje), dim=1) / &
          & spread(mf%B(1,j(EV),0),1,nz)
 
-    DKo(:,OD) = sqrtq*sum(spread(mf%A(:,j(OD),1),2,nz)* &
-         & spread(epz*I(0:m-1,:)*DK(1:m,:) - enz*DI(0:m-1,:)*K(1:m,:) + &
-         &        epz*I(1:m,:)*DK(0:m-1,:) - enz*DI(1:m,:)*K(0:m-1,:),3,njo),dim=1)/&
+    DKo(:,OD) = sqrtq * sum( spread(mf%A(:,j(OD),1),2,nz) * &
+         & spread(epz * I(0:m-1,:) * DK(1:m,:) - &
+         & enz * DI(0:m-1,:) * K(1:m,:) + &
+         & epz * I(1:m,:) * DK(0:m-1,:) - &
+         & enz * DI(1:m,:) * K(0:m-1,:),3,njo), dim=1) / &
          & spread(mf%A(1,j(OD),1),1,nz)
 
     DKo = DKo*spread(exp(abs(real(v1)) - v2),2,size(n))
@@ -1030,25 +1053,25 @@ contains
 
   ! possibly disable this checking subroutine for extra speed??
   subroutine check_order(n)
+    use, intrinsic :: iso_fortran_env, only : stderr => error_unit
     integer, dimension(:), intent(in) :: n
     integer :: nn
 
     nn = size(n)
     if (any(n < 0)) then
-       write(*,*) 'CHECK_ORDER1: order of Mathieu functions must be >= 0',n
-       stop 'CHECK_ORDER1: only non-negative Mathieu function orders'
+       write(stderr,'(/A/)') 'ERROR: Mathieu function order  must be >= 0 ',n
+       stop 990
     end if
 
     if (nn > 1) then
        ! since vectors of integer indexing vectors are used on the LHS of
-       ! expressions, we must test for many-to-one conditions, since it is a no-no
+       ! expressions, we test for many-to-one conditions, it is a no-no
 
        ! check integer orders are monotonically increasing
        if (any(n(2:nn) - n(1:nn-1) <= 0)) then
-          write(*,*) 'CHECK_ORDER2: cannot have out-of order or repeated '//&
-               & 'indices in vector order',n
-          stop 'CHECK_ORDER2: eliminate out-of-order or repeated indices '//&
-               &'to Mathieu functions'
+          write(stderr,'(/A/)') 'ERROR: Mathieu functions cannot have out-of ' &
+               & //'order or repeated indices in vector order',n
+          stop 991
        end if
     end if
 
@@ -1177,6 +1200,7 @@ contains
   !! these are SCALED results, un-scaling is done in the MF routines
 
   subroutine BesselI_val(arg,n,I)
+    use, intrinsic :: iso_fortran_env, only : stderr => error_unit
     use constants, only : DP
     use complex_bessel, only : cbesi
     complex(DP), intent(in), dimension(:) :: arg
@@ -1187,26 +1211,31 @@ contains
 
     ! scaling for I BF:: cy = I_fnu(z)*exp(-abs(x))
     ! where z = x + iy
-    ! only print up to the first 5 elements of the z vectors during error reporting
+    ! only print up to the first 5 elements of the
+    ! z vectors during error reporting
 
     do j = 1,size(arg)
-       call cbesi(z=arg(j), fnu=0.0_DP, kode=2, n=n, cy=I(0:n-1,j), nz=numzero, ierr=ierr)
+       call cbesi(z=arg(j), fnu=0.0_DP, kode=2, n=n, &
+            & cy=I(0:n-1,j), nz=numzero, ierr=ierr)
 
        if (ierr /= 0) then
           select case(ierr)
           case(1)
-             write(*,*) 'CBESI: input error, z=',arg(1:min(ubound(arg,1),NPRINT)),' n=',n
-             stop 'CBESI: input error'
+             write(stderr,*) 'CBESI: input error, z=', &
+                  & arg(1:min(ubound(arg,1),NPRINT)),' n=',n
+             stop 992
           case(2)
-             write(*,*) 'CBESI: overflow, z or order too' //&
-                  &'large for unscaled output, z=',arg(1:min(ubound(arg,1),NPRINT)),' n=',n
-             stop 'CBESI: overflow, z or order too large for unscaled output'
+             write(stderr,*) 'CBESI: overflow, z or order too' &
+                  & //'large for unscaled output, z=', &
+                  & arg(1:min(ubound(arg,1),NPRINT)),' n=',n
+             stop 993
           case(4)
-             write(*,*) 'CBESI: overflow, z or order too &
+             write(stderr,*) 'CBESI: overflow, z or order too &
                   &large, z=',arg(1:min(ubound(arg,1),NPRINT)),' n=',n
-             stop 'CBESI: overflow, z or order too large'
+             stop 994
           case(5)
-             stop 'CBESI: algorithm termination not met'
+             write(stderr,*) 'CBESI: algorithm termination not met'
+             stop 995
           end select
        end if
     end do
@@ -1218,22 +1247,31 @@ contains
   ! that is handled separately in the MF routines
   !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   subroutine BesselI_val_and_deriv(arg,n,I,ID)
+    use, intrinsic :: iso_fortran_env, only : stderr => error_unit
     use constants, only : DP
     complex(DP), intent(in), dimension(:) :: arg
     integer, intent(in) :: n
     complex(DP), intent(out), dimension(0:n-1,size(arg)) :: I, ID
 
     ! the recurrence relationships assume at least three entries
-    if (n < 3) stop 'mathieu_functions2.f90 : besseli_val_and_deriv, n must be > 3'
+    if (n < 3) then
+       write(stderr,*) 'besseli_val_and_deriv, n must be > 3'
+       stop 996
+    end if
+
     call BesselI_val(arg,n,I(0:n-1,:))
 
-    ID(1:n-2,:) = 0.5_DP*(I(0:n-3,:) + I(2:n-1,:)) ! middle
-    ID(0,:) = I(1,:) ! low end
-    ID(n-1,:) = I(n-2,:) - cmplx(real(n-1,DP),0.0_DP,DP)/arg*I(n-1,:) ! high end
+    ! middle
+    ID(1:n-2,:) = 0.5_DP * (I(0:n-3,:) + I(2:n-1,:))
+    ! low end
+    ID(0,:) = I(1,:)
+    ! high end
+    ID(n-1,:) = I(n-2,:) - cmplx(real(n-1,DP),0.0_DP,DP) / arg * I(n-1,:)
 
   end subroutine BesselI_val_and_deriv
 
   subroutine BesselK_val(arg,n,K)
+    use, intrinsic :: iso_fortran_env, only : stderr => error_unit
     use constants, only : DP
     use complex_bessel, only : cbesk
     complex(DP), intent(in), dimension(:) :: arg
@@ -1242,28 +1280,29 @@ contains
     integer :: numzero, ierr, j
     integer, parameter :: NPRINT = 5
 
-!!$    character(33) :: fmt
-
     ! scaling for K BF :: cy = K_fnu(z)*exp(z)
     do j=1,size(arg)
-       call cbesk(z=arg(j), fnu=0.0_DP, kode=2, n=n, cy=K(0:n-1,j), nz=numzero, ierr=ierr)
+       call cbesk(z=arg(j), fnu=0.0_DP, kode=2, n=n, &
+            & cy=K(0:n-1,j), nz=numzero, ierr=ierr)
 
        if (ierr /= 0) then
           select case(ierr)
           case(1)
-             write(*,*) 'CBESK: input error, z=',arg(1:min(ubound(arg,1),NPRINT)),' n=',n
-             stop 'CBESK: input error'
+             write(stderr,*) 'CBESK: input error, z=', &
+                  & arg(1:min(ubound(arg,1),NPRINT)),' n=',n
+             stop 997
           case(2)
-             write(*,*) 'CBESK: overflow, z too small or order ' // &
-                  &'too large for unscaled output, z=',arg(1:min(ubound(arg,1),NPRINT)),' n=',n
-             stop 'CBESK: overflow, z too small or order too &
-                  &large for unscaled output'
+             write(stderr,*) 'CBESK: overflow, z too small or ' &
+                  & //'order too large for unscaled output, z=',&
+                  & arg(1:min(ubound(arg,1),NPRINT)),' n=',n
+             stop 998
           case(4)
-             write(*,*) 'CBESK: overflow, z too small or order ' //&
+             write(stderr,*) 'CBESK: overflow, z too small or order ' //&
                   &'too large, z=',arg(1:min(ubound(arg,1),NPRINT)),' n=',n
-             stop 'CBESK: overflow, z too small or order too large'
+             stop 999
           case(5)
-             stop 'CBESK: algorithm termination not met'
+             write(stderr,*) 'CBESK: algorithm termination not met'
+             stop 1000
           end select
        end if
     end do
@@ -1275,38 +1314,46 @@ contains
   ! this does not include the derivative of the argument
   !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   subroutine BesselK_val_and_deriv(arg,n,K,KD)
+    use, intrinsic :: iso_fortran_env, only : stderr => error_unit
     use constants, only : DP
     complex(DP), intent(in), dimension(:) :: arg
     integer, intent(in) :: n
     complex(DP), intent(out), dimension(0:n-1,size(arg)) :: K, KD
 
     ! the recurrence relationships assume at least three entries
-    if (n < 3) stop 'mathieu_functions2.f90 : besselk_val_and_deriv, n must be > 3'
+    if (n < 3) then
+       write(stderr,*) 'besselk_val_and_deriv, n must be > 3'
+       stop 1001
+    end if
     call BesselK_val(arg,n,K(0:n-1,:))
 
-    KD(1:n-2,:) = -0.5_DP*(K(0:n-3,:) + K(2:n-1,:)) ! middle
-    KD(0,:) = -K(1,:) ! low end
-    KD(n-1,:) = -(K(n-2,:) + cmplx(real(n-1,DP),0.0_DP,DP)/arg*K(n-1,:)) ! high end
+    ! middle
+    KD(1:n-2,:) = -0.5_DP * (K(0:n-3,:) + K(2:n-1,:))
+    ! low end
+    KD(0,:) = -K(1,:)
+    ! high end
+    KD(n-1,:) = -(K(n-2,:) + cmplx(real(n-1,DP),0.0_DP,DP) / arg * K(n-1,:))
 
   end subroutine BesselK_val_and_deriv
 
   subroutine print_mathieu_type(m,n)
     use constants, only : ASCII
+    use, intrinsic :: iso_fortran_env, only : stdout => output_unit
     type(mathieu), intent(in) :: m
     integer, intent(in) :: n
     integer :: i,j
     character(kind=ASCII, len=43) :: fmt
-    write(*,'(2(A,I0))') 'M:',m%M,' buffer:',m%buffer
-    write(*,'(A,"(",ES13.6,",",ES13.6,")")') 'q: (',m%q
+    write(stdout,'(2(A,I0))') 'M:',m%M,' buffer:',m%buffer
+    write(stdout,'(A,"(",ES13.6,",",ES13.6,")")') 'q: (',m%q
     fmt = '(04(A,I0,A,XX("(",ES11.4,",",ES11.4,")")/))'
     write(fmt(12:13),'(I2.2)') n
-    write(*,'(A,I0)') 'mcn size: ',size(m%mcn)
-    write(*,fmt) (' mcn_',i,'(1:n):', (m%mcn(m%M*(i-1)+j),j=1,n),i=1,4)
+    write(stdout,'(A,I0)') 'mcn size: ',size(m%mcn)
+    write(stdout,fmt) (' mcn_',i,'(1:n):', (m%mcn(m%M*(i-1)+j),j=1,n),i=1,4)
     write(fmt(2:3),'(I2.2)') n
-    write(*,'(2(A,3(I0,1X)))') 'A shape:',shape(m%A),' B shape:',shape(m%B)
-    write(*,fmt) (' A(',j,',1:n,0):', (m%A(j,i,0),i=1,n),j=1,n)
-    write(*,fmt) (' A(',j,',1:n,1):', (m%A(j,i,1),i=1,n),j=1,n)
-    write(*,fmt) (' B(',j,',1:n,0):', (m%B(j,i,0),i=1,n),j=1,n)
-    write(*,fmt) (' B(',j,',1:n,1):', (m%B(j,i,1),i=1,n),j=1,n)
+    write(stdout,'(2(A,3(I0,1X)))') 'A shape:',shape(m%A),' B shape:',shape(m%B)
+    write(stdout,fmt) (' A(',j,',1:n,0):', (m%A(j,i,0),i=1,n),j=1,n)
+    write(stdout,fmt) (' A(',j,',1:n,1):', (m%A(j,i,1),i=1,n),j=1,n)
+    write(stdout,fmt) (' B(',j,',1:n,0):', (m%B(j,i,0),i=1,n),j=1,n)
+    write(stdout,fmt) (' B(',j,',1:n,1):', (m%B(j,i,1),i=1,n),j=1,n)
   end subroutine print_mathieu_type
 end module mathieu_functions

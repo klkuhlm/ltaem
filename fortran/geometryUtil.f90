@@ -47,14 +47,15 @@ contains
   end function xy2cA
 
   elemental function xy2eR(z,e) result(zeta)
-    ! elliptical coordinate from unrotated local complex Cartesian with respect to ellipse
+    ! elliptical coordinate from unrotated
+    ! local complex Cartesian with respect to ellipse
     use constants, only : DP, EYE
     use type_definitions, only : ellipse
     use utility, only : acosh
     complex(DP), intent(in) :: z
     type(ellipse), intent(in) :: e
     complex(DP) :: zeta
-    zeta = acosh(z*exp(-EYE*e%theta)/e%f)
+    zeta = acosh(z * exp(-EYE * e%theta) / e%f)
   end function xy2eR
   elemental function xy2eA(z,e) result(zeta)
     ! elliptical coordinate from global complex Cartesian
@@ -71,7 +72,7 @@ contains
     use constants, only : DP, EYE
     complex(DP), intent(in) :: zeta
     complex(DP) :: z
-    z = real(zeta)*exp(EYE*aimag(zeta))
+    z = real(zeta) * exp(EYE * aimag(zeta))
   end function c2xyR
   elemental function c2xyA(zeta,c) result(z)
     ! global Cartesian from elemental polar
@@ -91,7 +92,7 @@ contains
     complex(DP), intent(in) :: zeta
     type(ellipse), intent(in) :: e
     complex(DP) :: z
-    z = e%f*cosh(zeta)*exp(EYE*e%theta)
+    z = e%f * cosh(zeta) * exp(EYE * e%theta)
   end function e2xyR
   elemental function e2xyA(zeta,e) result(z)
     ! global Cartesian from elemental elliptical

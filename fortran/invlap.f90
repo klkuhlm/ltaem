@@ -49,7 +49,7 @@ contains
     use type_definitions, only : INVLT
     use ieee_arithmetic, only : ieee_is_nan
 
-    real(DP), intent(in) :: tee              ! scaling factor (previously T=2*tmax, but potentially adjustable)
+    real(DP), intent(in) :: tee              ! scaling (usually T=2*tmax)
     real(DP), intent(in), dimension(:) :: t   ! vector of times
     type(INVLT), intent(in) :: lap            ! structure of inputs
     complex(DP), intent(in), dimension(0:2*lap%M) :: fp
@@ -61,20 +61,21 @@ contains
     complex(DP), dimension(-1:2*lap%M,size(t)) :: A,B
     complex(DP), dimension(size(t)) :: z,brem,rem
     integer :: r, rq, n, max, nt, M
-    real(DP) :: gamma
+    real(DP) :: gamma, teeinv
 
     complex(DP), parameter :: EYEPI = cmplx(0,PI,DP)
 
     M = lap%M
     nt = size(t)
+    teeinv = 1.0_DP/tee
 
     ! Re(p) -- this is the de Hoog parameter c
-    gamma = lap%alpha - log(lap%tol)/(2.0_DP*tee)
+    gamma = lap%alpha - 0.5_DP * log(lap%tol) * teeinv
 
     ! initialize Q-D table
     e(0:2*M,0) = CZERO
-    q(0,1) = fp(1)/(fp(0)*0.5_DP) ! half first term
-    q(1:2*M-1,1) = fp(2:2*M)/fp(1:2*M-1)
+    q(0,1) = fp(1) / (fp(0) * 0.5_DP) ! half first term
+    q(1:2*M-1,1) = fp(2:2*M) / fp(1:2*M-1)
 
     ! rhombus rule for filling in triangular Q-D table
     do r = 1,M
@@ -90,7 +91,7 @@ contains
     end do
 
     ! build up continued fraction coefficients
-    d(0) = fp(0)*0.5_DP ! half first term
+    d(0) = 0.5_DP * fp(0) ! half first term
     do concurrent(r = 1:M)
       d(2*r-1) = -q(0,r) ! even terms
       d(2*r)   = -e(0,r) ! odd terms
@@ -99,29 +100,29 @@ contains
     ! seed A and B vectors for recurrence
     A(-1,1:nt) = CZERO
     A(0,1:nt) = d(0)
-    B(-1:0,1:nt) = cmplx(1.0_DP,0.0_DP,DP)
+    B(-1:0,1:nt) = cmplx(1.0_DP, 0.0_DP, DP)
 
     ! base of the power series
-    z(1:nt) = exp(EYEPI*t(:)/tee)
+    z(1:nt) = exp(EYEPI * t(:) * teeinv)
 
     ! coefficients of Pade approximation
     ! using recurrence for all but last term
     do n = 1,2*M-1
-      A(n,:) = A(n-1,:) + d(n)*A(n-2,:)*z(:)
-      B(n,:) = B(n-1,:) + d(n)*B(n-2,:)*z(:)
+      A(n,:) = A(n-1,:) + d(n)*A(n-2,:) * z(:)
+      B(n,:) = B(n-1,:) + d(n)*B(n-2,:) * z(:)
     end do
 
     ! "improved remainder" to continued fraction
-    brem(1:nt) = (1.0_DP + (d(2*M-1) - d(2*M))*z(:))*0.5_DP
-    rem(1:nt) = -brem*(1.0_DP - sqrt(1.0_DP + d(2*M)*z(:)/brem**2))
+    brem(1:nt) = 0.5_DP * (1.0_DP + (d(2*M-1) - d(2*M)) * z(:))
+    rem(1:nt) = -brem * (1.0_DP - sqrt(1.0_DP + d(2*M) * z(:) / (brem * brem)))
 
     ! last term of recurrence using new remainder
-    A(2*M,:) = A(2*M-1,:) + rem*A(2*M-2,:)
-    B(2*M,:) = B(2*M-1,:) + rem*B(2*M-2,:)
+    A(2*M,:) = A(2*M-1,:) + rem * A(2*M-2,:)
+    B(2*M,:) = B(2*M-1,:) + rem * B(2*M-2,:)
 
     ! diagonal Pade approximation
     ! F=A/B represents accelerated trapezoid rule
-    ft(1:nt) =  exp(gamma*t(:))/tee * real(A(2*M,:)/B(2*M,:))
+    ft(1:nt) =  exp(gamma * t(:)) * teeinv * real(A(2*M,:) / B(2*M,:))
 
     do n = 1, 2*M-1
       if (ieee_is_nan(real(fp(n))) .or. ieee_is_nan(aimag(fp(n)))) then
@@ -176,9 +177,12 @@ contains
     real(DP), intent(in) :: tee
     complex(DP), dimension(2*lap%M+1) :: p
     integer :: i
+    real(DP) :: teeinv
 
+    teeinv = 1.0_DP/tee
     do concurrent (i = 0:2*lap%M)
-      p(i+1) = cmplx(lap%alpha - log(lap%tol)/(2.0_DP*tee), PI*i/tee, DP)
+      p(i+1) = cmplx(lap%alpha - 0.5_DP * log(lap%tol) * teeinv, &
+           & PI * real(i,DP) * teeinv, DP)
     end do
   end function deHoog_pvalues
 end module inverse_Laplace_Transform
