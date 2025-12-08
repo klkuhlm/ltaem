@@ -382,6 +382,7 @@ contains
 
   !##################################################
   subroutine calcLocation(Z,c,e,dom,Rgp,Pgp,inside)
+    use, intrinsic :: iso_fortran_env, only : stderr => error_unit
     use constants, only : DP
     use type_definitions, only : circle, ellipse, domain
     use geomConv, only : xy2cA, xy2eA
@@ -420,9 +421,8 @@ contains
     Zgp(1:nc) = xy2cA(Z,c(:))
     do i=1,nc
       if (ieee_is_nan(real(Zgp(i))) .or. ieee_is_nan(aimag(Zgp(i)))) then
-        print *, 'GEOMETRY FAILURE at location Z=',Z
-        print *, 'Zgp:',Zgp
-        !call abort()
+        write(stderr,*) 'GEOMETRY FAILURE at location Z=',Z
+        write(stderr,*) 'Zgp:',Zgp
         stop 666
       end if
     end do

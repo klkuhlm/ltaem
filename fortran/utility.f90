@@ -26,7 +26,8 @@ module utility
   implicit none
 
   private
-  public :: v2c, diag, logspace, linspace, outer, ynot, rotate_vel, rotate_vel_mat
+  public :: ynot, rotate_vel, rotate_vel_mat
+  public :: v2c, diag, logspace, linspace, outer
   public :: cos_recurrence, sin_recurrence, cosh, acosh, tanh
 
   interface diag
@@ -38,7 +39,8 @@ module utility
   end interface
 
   interface outer
-     module procedure outerprod_r, outerprod_d, outerprod_z, outerprod_dz, outerprod_zd
+     module procedure outerprod_r, outerprod_d, outerprod_z, &
+          & outerprod_dz, outerprod_zd
   end interface
 
   ! overload intrinsic hyperbolic functions for complex argument
@@ -151,10 +153,10 @@ contains
     complex(DP), intent(in) :: z
     complex(DP) :: f
     real(DP) :: x,y
-    x = real(z)
-    y = aimag(z)
-    f = cmplx(tanh(2.0_DP*x)/(1.0_DP+cos(2.0_DP*y)/cosh(2.0_DP*x)), &
-         & sin(2.0_DP*y)/(cosh(2.0_DP*x)+cos(2.0_DP*y)),DP)
+    x = 2.0_DP * real(z)
+    y = 2.0_DP * aimag(z)
+    f = cmplx(tanh(x) / (1.0_DP + cos(y) / cosh(x)), &
+         & sin(y) / (cosh(x) + cos(y)), DP)
   end function ctanh
 
   elemental function cacosh(z) result(f)

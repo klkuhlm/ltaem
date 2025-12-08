@@ -58,7 +58,7 @@ contains
     integer :: numzero, ierr, j
 
     if (any(abs(z)*0.5_DP < spacing(0.0_DP))) then
-      print *, 'ZERO BESSELK input',size(z)
+      write(stderr,*) 'ZERO BESSELK input',size(z)
     end if
 
     do j = 1,size(z,dim=1)
@@ -77,11 +77,12 @@ contains
 
   ! K Bessel function for scalar argument / vector of N
   function besk_zscal(z,num) result(K)
+    use, intrinsic :: iso_fortran_env, only : stderr => error_unit
     use constants, only : DP
     complex(DP), intent(in) :: z
     integer, intent(in) :: num
     complex(DP), dimension(0:num-1) :: K
-    if (abs(z)*0.5_DP < spacing(0.0_DP)) print *, 'ZERO BESSELK input',z
+    if (abs(z)*0.5_DP < spacing(0.0_DP)) write(stderr,*) 'ZERO BESSELK input',z
     K = sum( besk_vectz([z],num), dim=1)
   end function besk_zscal
 

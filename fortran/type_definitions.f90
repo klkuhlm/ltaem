@@ -344,38 +344,39 @@ module type_definitions
 
 contains
   subroutine print_match_result(r)
+    use, intrinsic :: iso_fortran_env, only : stdout => output_unit
     use constants, only : ASCII
     type(match_result), intent(in) :: r
     integer :: row,col,i,j
     character(kind=ASCII, len=40), dimension(2) :: fmt
 
-    write(*,'(A)') '** matching result **'
+    write(stdout,'(A)') '** matching result **'
     row = size(r%RHS,dim=1)
     col = size(r%LHS,dim=2)
     if (row > 0 .and. col > 0) then
-       write(*,'(2(A,2(1X,I0)))') 'Shape: r%LHS:',&
+       write(stdout,'(2(A,2(1X,I0)))') 'Shape: r%LHS:',&
             & shape(r%LHS),' r%RHS:',shape(r%RHS)
        fmt(1) = '(A,I3,   (A,ES10.2E3,A,ES10.2E3,A))     '
        write(fmt(1)(7:9),'(I3.3)') col
        fmt(2) = '(7X,   (I12,12X))                       '
        write(fmt(2)(5:7),'(I3.3)') col
-       write(*,fmt(2)) [(i,i=1,col)] ! headers
+       write(stdout,fmt(2)) [(i,i=1,col)] ! headers
        do i = 1,row
-          write(*,fmt(1)) 'LHS:',i,('(',real(r%LHS(i,j)),',',&
+          write(stdout,fmt(1)) 'LHS:',i,('(',real(r%LHS(i,j)),',',&
                & aimag(r%LHS(i,j)),') ',j=1,col)
        end do
        do i = 1,row
-          write(*,'(A,I3,2(A,ES10.2E3),A)') 'RHS:',i,'(',&
+          write(stdout,'(A,I3,2(A,ES10.2E3),A)') 'RHS:',i,'(',&
                & real(r%RHS(i)),',',aimag(r%RHS(i)),')'
        end do
 
     elseif(row > 0) then
        do i = 1,row
-          write(*,'(A,I3,2(A,ES10.2E3),A)') 'RHS:',i,'(',&
+          write(stdout,'(A,I3,2(A,ES10.2E3),A)') 'RHS:',i,'(',&
                & real(r%RHS(i)),',',aimag(r%RHS(i)),')'
        end do
     else
-       write(*,*) '* nothing to print * row:',row,'col:',col
+       write(stdout,*) '* nothing to print * row:',row,'col:',col
     end if
   end subroutine print_match_result
 end module type_definitions
