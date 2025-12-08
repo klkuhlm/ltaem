@@ -216,7 +216,7 @@ contains
 
   !##################################################
   subroutine ComputeElementHierarchy(dom,sol,c,e)
-    use constants, only : DP, lenMSG
+    use constants, only : DP, lenMSG, ASCII
     use type_definitions, only : domain, solution, circle, ellipse
     use geomConv, only : xy2eR
     use, intrinsic :: iso_fortran_env, only : stderr => error_unit
@@ -232,8 +232,8 @@ contains
     integer, allocatable :: iv(:), nest(:), val(:)
     integer :: i, j, n, parent
     integer, parameter :: UELEM = 57
-    character(lenMSG) :: msg
-    character(4) :: chint
+    character(kind=ASCII, len=lenMSG) :: msg
+    character(kind=ASCII, len=4) :: chint
 
     nc = dom%num(1)
     ne = dom%num(2)

@@ -35,7 +35,7 @@ contains
   ! data structures used to store data.
   subroutine readInput(s,dom,bg,c,e,p)
 
-    use constants, only : DP, lenFN, lenMSG, PI
+    use constants, only : DP, lenFN, lenMSG, PI, ASCII
     use type_definitions, only : solution, particle, domain, element, &
          & circle, ellipse, explain_type
     use, intrinsic :: iso_fortran_env, only : stdout => output_unit, &
@@ -49,14 +49,14 @@ contains
     type(ellipse),  intent(out), allocatable :: e(:)
 
     type(explain_type) :: explain
-    character(4) :: chint
-    character(20), dimension(3) :: fmt
-    character(lenMSG) :: buf, msg
-    character(lenFN+5) :: echofname
-    character(lenFN) :: circleFname, ellipseFname, particleFname
-    integer :: ierr, j, ntot, nC, nE, ln, sln,s1,s2,slen, idx
+    character(kind=ASCII, len=4) :: chint
+    character(kind=ASCII, len=20), dimension(3) :: fmt
+    character(kind=ASCII, len=lenMSG) :: buf, msg
+    character(kind=ASCII, len=lenFN+5) :: echofname
+    character(kind=ASCII, len=lenFN) :: circleFname, ellipseFname, particleFname
+    integer :: ierr, j, ntot, nC, nE, ln, sln, s1, s2, slen, idx
     real(DP) :: tmp
-    character(55) :: explain_txt
+    character(kind=ASCII, len=55) :: explain_txt
 
     ! unit numbers for input/output files
     integer, parameter :: UINPUT = 15, UECHO = 16
@@ -98,7 +98,7 @@ contains
     if (ierr /= 0) then
        write(stderr,'(A,I0,A)') 'ERROR: line ',ln,' (flags: calc, particle, ' &
             & //'contour, deriv, Qcalc, output) of '//trim(s%infname)
-       write(stderr,'(/A)') 'WARNING: may have specified a secondary (i.e., ' &
+       write(stderr,'(/A/)') 'WARNING: may have specified a secondary (i.e., ' &
             & //'circle, ellipse, or particle) ' &
             & //'input file as main input file on command line'
        write(stderr,*) trim(msg)
@@ -159,7 +159,7 @@ contains
     end if
 
     if (s%Qcalc .and. s%particle) then
-       write(stdout,'(/A)') 'WARNING: resetting Qcalc to false for particle tracking'
+       write(stdout,'(/A/)') 'WARNING: resetting Qcalc to false for particle tracking'
        s%Qcalc = .false.
     end if
 
@@ -349,7 +349,7 @@ contains
     if (s%timeseries .and. s%nx /= s%ny) then
        write(stdout,'(/2(A,I0))') 'WARNING: for time series output nx==ny.  ' &
             & //'nx=',s%nx,' ny=',s%ny
-       write(stdout,*) '* RESETTING NY TO NX * and continuing'
+       write(stdout,'(A/)') '* RESETTING NY TO NX * and continuing'
        s%ny = s%nx
     end if
     allocate(s%x(s%nx), s%y(s%ny), s%t(s%nt))
@@ -365,10 +365,10 @@ contains
        s1 = 1
        slen = len_trim(buf) ! don't include trailing blanks
        do j = 1,s%nx
-          ! location names are separated by "|" character
+          ! location names are separated by '|' character
           s2 = index(buf(s1:),'|')
           if (s2 == 0) then
-             ! no "|" separator character found
+             ! no | separator character found
              if (j == 1 .and. slen > 1) then
                 ! first name no separator
                 s%obsname(1) = trim(buf)
@@ -447,7 +447,7 @@ contains
 
     if (s%nt >= 2) then
       if (any((s%t(2:s%nt) - s%t(1:s%nt-1)) <= 0.0_DP)) then
-         write(stderr,*) 'ERROR: value (line ',ln,') requires ' &
+         write(stderr,*) 'ERROR: value (line ',ln,') found non-' &
               & //'monotonically increasing times',s%t
          stop 2086
       end if
@@ -468,7 +468,7 @@ contains
           write(UECHO,fmt(1)) s%y(:)+s%yshift, '  ||    original y Vector'
           write(UECHO,fmt(1)) s%y(:),          '  ||    shifted y Vector'
        else
-          write(UECHO,'(/A)') '** WARNING: zero-length x or y output vector ' &
+          write(UECHO,'(/A/)') '** WARNING: zero-length x or y output vector ' &
                & //'specified, only element flowrates computed **'
        end if
        write(fmt(1)(2:5),'(I4.4)') s%nt
@@ -491,11 +491,11 @@ contains
     ! epsilon(1.0D+0) ~ 1.0E-16
     if (s%tol < epsilon(s%tol)) then
        s%tol = epsilon(s%tol)
-       write(stdout,'(/A,ES15.8)') 'WARNING: increased deHoog INVLAP ' &
+       write(stdout,'(/A,ES15.8/)') 'WARNING: increased deHoog INVLAP ' &
             & //'solution tolerance to and continuing ',s%tol
     end if
     if (s%alpha <= 0.0_DP) then
-       write(stdout,'(/A,ES15.8)') 'WARNING: deHoog alpha typically > 0 ',s%alpha
+       write(stdout,'(/A,ES15.8/)') 'WARNING: deHoog alpha typically > 0 ',s%alpha
     end if
     write(UECHO,'(A)') '=============== INVERSE LAPLACE ' &
          & //'TRANSFORM PARAMETERS ==============='
@@ -821,7 +821,7 @@ contains
 
        if(any(c%match .and. c%storin)) then
           write(stdout,'(/A)') 'WARNING: wellbore  storage only works for ibnd==2'
-          write(stdout,*) '**** resetting to false ****'
+          write(stdout,'(A/)') '**** resetting to false ****'
           where(c%match .and. c%storin)
              c%storin = .false.
           end where
@@ -831,7 +831,7 @@ contains
        do j = 1,size(c,dim=1)
           if (c(j)%ibnd == 2 .and. c(j)%N /= 1) then
              write(stdout,'(/A)') 'WARNING wells (ibnd==2) must have N=1'
-             write(stdout,*) '**** fixing circle #', j,' to N=1 ****'
+             write(stdout,'(A,I0,A/)') '* fixing circle # ',j,' to N=1; continuing *'
              c(j)%N = 1
           end if
        end do
@@ -950,10 +950,10 @@ contains
        read(UELIP,*,iostat=ierr) e(1:ne)%theta; sln=sln+1
        if (ierr /= 0) e(1:ne)%theta = read_real(UELIP,sln,'ellipse')
        if (any(e%theta < -PI) .or. any(e%theta > PI)) then
-          write(stderr,*) 'WARNING: line ',sln,' ellipse input; eliptical ' &
+          write(stderr,'(/A,I0,A,ES12.5)') 'WARNING: line ',sln,' ellipse input; eliptical ' &
                & //'angle wrt global cartesian (e%theta) must be -pi <= ' &
-               & //'theta <= +pi',e%theta
-          write(stderr,*) '* resetting to range -pi <= theta <= +pi; continuing'
+               & //'theta <= +pi ',e%theta
+          write(stderr,'(A/)') '* resetting to range -pi <= theta <= +pi; continuing'
           where (e%theta < -PI)
             e%theta = modulo(e%theta,-PI)
           elsewhere (e%theta > PI)
@@ -1123,7 +1123,7 @@ contains
        write(UECHO,fmt(1)) e(:)%n, '  ||   # elliptical free ' &
             & //'parameter (Fourier coeffs)'
        write(UECHO,fmt(1)) e(:)%m, '  ||   # ellipse matching locations'
-       write(UECHO,fmt(1)) e(:)%ms, '  ||   size "infinite" Mathieu matrices'
+       write(UECHO,fmt(1)) e(:)%ms, '  ||   size of Mathieu matrices'
        write(UECHO,fmt(1)) e(:)%ibnd, '  ||   ellipse ibnd array ' &
             & //'(-1: spec head, 0: matching, :1 spec total flux, 2: ' &
             & //'spec elem flux)'
@@ -1188,7 +1188,7 @@ contains
        ! TODO: handle free-water storage for ellipses?
        if(any(e%storin)) then
           write(stdout,'(/A)') 'WARNING: cant do wellbore storage for ellipses yet'
-          write(stdout,*) '**** resetting to false ****'
+          write(stdout,'(A/)') '* resetting to false *; continuing'
           e%storin = .false.
        end if
 
@@ -1386,18 +1386,18 @@ contains
   end subroutine readInput
 
   subroutine time_behavior(UIN,UECH,el,j,ln,tp,area)
-    use constants, only : lenMSG
+    use constants, only : lenMSG, ASCII
     use type_definitions, only : time, explain_type
     use, intrinsic :: iso_fortran_env, only : stderr => error_unit
     integer, intent(in) :: UIN, UECH, ln, j
     type(time), intent(inout) :: el
-    character(*), intent(in) :: tp
+    character(kind=ASCII, len=*), intent(in) :: tp
     logical, intent(in) :: area
 
     type(explain_type) :: explain
-    character(46) :: lfmt
-    character(8) :: lincon
-    character(lenMSG) :: msg
+    character(kind=ASCII, len=46) :: lfmt
+    character(kind=ASCII, len=8) :: lincon
+    character(kind=ASCII, len=lenMSG) :: msg
     integer :: ierr, tsize
 
     lfmt = '(I0,1X,    (ES15.8,1X),A,    (ES15.8,1X),A,I0)'
@@ -1480,13 +1480,13 @@ contains
   function computeVector(unit,n,line) result(v)
     use, intrinsic :: iso_fortran_env, only : stderr => error_unit
 
-    use constants, only : DP, lenMSG
+    use constants, only : DP, lenMSG, ASCII
     integer, intent(in) :: unit, n, line
     real(DP), dimension(n) :: v
-    integer :: ierr,i
+    integer :: ierr, i
     real(DP) :: minv,maxv,delta
-    character(6) :: vec
-    character(lenMSG) :: msg
+    character(kind=ASCII, len=6) :: vec
+    character(kind=ASCII, len=lenMSG) :: msg
 
     ! assume file is positioned at beginning of line
     ! if 'linvec','LINVEC','logvec', or 'LOGVEC' are the first
@@ -1537,7 +1537,7 @@ contains
   !******************************************************
   subroutine writeResults(s,p)
 
-    use constants, only : DP
+    use constants, only : DP, ASCII
     use type_definitions, only : solution, particle, explain_type
     use, intrinsic :: iso_fortran_env, only : stdout => output_unit, &
          &stderr => error_unit
@@ -1546,14 +1546,14 @@ contains
     type(particle), dimension(:), intent(inout) :: p
 
     type(explain_type) :: explain
-    character(5), dimension(2) :: chint
-    character(6) :: intfmt
+    character(kind=ASCII, len=5), dimension(2) :: chint
+    character(kind=ASCII, len=6) :: intfmt
     integer :: i, j, k, nt, idx
     integer, parameter :: UOUT = 20
 
     ! adjust the formats of time, location, and results here
-    character(6), parameter :: tfmt = 'ES16.8', xfmt = 'ES14.6'
-    character(9), parameter :: hfmt = 'ES22.14e3'
+    character(kind=ASCII, len=6), parameter :: tfmt = 'ES16.8', xfmt = 'ES14.6'
+    character(kind=ASCII, len=9), parameter :: hfmt = 'ES22.14e3'
 
     ! remove shift applied at beginning
     s%x(:) = s%x(:) + s%xshift
@@ -1568,7 +1568,7 @@ contains
     select case (s%output)
     case (1)
        ! ** Gnuplot contour map friendly output **
-       ! print results as x,y,{h,v,dh} "triplets" with the
+       ! print results as x,y,{h,v,dh} triplets with the
        ! times separated by double blank lines
 
        open(unit=UOUT, file=s%outfname, status='replace', action='write')
@@ -1900,7 +1900,7 @@ contains
 
   !##################################################
   subroutine writeGeometry(c,e,s)
-    use constants, only : DP
+    use constants, only : DP, ASCII
     use type_definitions, only : circle, ellipse, solution
     use, intrinsic :: iso_fortran_env, only : stdout => output_unit
 
@@ -1909,7 +1909,7 @@ contains
     type(solution), intent(in) :: s
     integer :: nc, ne, i, j, ierr
     complex(DP) :: origin
-    character(14) :: fmt
+    character(kind=ASCII, len=14) :: fmt
     integer, parameter :: UOUT = 40
 
     ! remove shift originally applied to coordinates
@@ -1924,7 +1924,7 @@ contains
          & action='write', iostat=ierr)
     if (ierr /= 0) then
        ! non-fatal error
-       write(stdout,'(/2A)') 'WARNING: writeGeometry error opening output ' &
+       write(stdout,'(/2A/)') 'WARNING: writeGeometry error opening output ' &
             & //'file for writing element matching locations ',trim(s%geomfName)
     else
        write(UOUT,'(A)') '# points along circumference circular ' &
@@ -1954,12 +1954,12 @@ contains
   end subroutine writeGeometry
 
   function read_int(unit,num,str) result(ival)
-    use constants, only : lenMSG
+    use constants, only : lenMSG, ASCII
     use, intrinsic :: iso_fortran_env, only : stderr => error_unit
     integer, intent(in) :: unit, num
     integer :: ival, ierr
-    character(*) :: str
-    character(lenMSG) :: msg
+    character(kind=ASCII, len=*) :: str
+    character(kind=ASCII, len=lenMSG) :: msg
     backspace(unit)
     read(unit,*,iostat=ierr, iomsg=msg) ival
     if (ierr /= 0) then
@@ -1970,13 +1970,13 @@ contains
   end function read_int
 
   function read_real(unit,num,str) result(fval)
-    use constants, only : DP, lenMSG
+    use constants, only : DP, lenMSG, ASCII
     use, intrinsic :: iso_fortran_env, only : stderr => error_unit
     integer, intent(in) :: unit, num
     real(DP) :: fval
     integer :: ierr
-    character(*) :: str
-    character(lenMSG) :: msg
+    character(kind=ASCII, len=*) :: str
+    character(kind=ASCII, len=lenMSG) :: msg
     backspace(unit)
     read(unit,*,iostat=ierr, iomsg=msg) fval
     if (ierr /= 0) then
@@ -1987,13 +1987,13 @@ contains
   end function read_real
 
   function read_logical(unit,num,str) result(lval)
-    use constants, only : lenMSG
+    use constants, only : lenMSG, ASCII
     use, intrinsic :: iso_fortran_env, only : stderr => error_unit
     integer, intent(in) :: unit, num
     logical :: lval
     integer :: ierr
-    character(*) :: str
-    character(lenMSG) :: msg
+    character(kind=ASCII, len=*) :: str
+    character(kind=ASCII, len=lenMSG) :: msg
     backspace(unit)
     read(unit,*,iostat=ierr, iomsg=msg) lval
     if (ierr /= 0) then
@@ -2005,7 +2005,7 @@ contains
 
   subroutine dump_coeff(sol,c,e,nt,s,tee,minlt,maxlt)
     use type_definitions, only : solution, circle, ellipse
-    use constants, only : DP, lenMSG
+    use constants, only : DP, lenMSG, ASCII
     use, intrinsic :: iso_fortran_env, only : stdout => output_unit, &
          & stderr => error_unit
     type(circle), intent(in), dimension(:) :: c
@@ -2017,7 +2017,7 @@ contains
     integer, intent(in) :: minlt,maxlt
 
     integer, parameter :: UDMP = 77
-    character(lenMSG) :: msg
+    character(kind=ASCII, len=lenMSG) :: msg
     integer :: ierr,i,nc,ne
     nc = size(c)
     ne = size(e)
@@ -2025,7 +2025,7 @@ contains
     open(unit=UDMP, file=sol%coefffname, status='replace', &
          & action='write', iostat=ierr, iomsg=msg)
     if (ierr /= 0) then
-       write(stdout,'(/A)') 'WARNING: error opening intermediate save file ' &
+       write(stdout,'(/A/)') 'WARNING: error opening intermediate save file ' &
             & //trim(sol%coefffname)//' continuing without saving results'
        write(stderr,*) trim(msg)
     else
@@ -2048,7 +2048,7 @@ contains
 
   subroutine read_coeff(sol,bg,c,e,nt,s,tee,minlt,maxlt,fail)
     use type_definitions, only : solution, circle, ellipse, element
-    use constants, only : DP, lenMSG
+    use constants, only : DP, lenMSG, ASCII
     use ellipse_mathieu_init, only : ellipse_init
     use, intrinsic :: iso_fortran_env, only : stdout => output_unit, &
          & stderr => error_unit
@@ -2064,8 +2064,8 @@ contains
     logical, intent(out) :: fail
 
     integer, parameter :: UDMP = 77
-    character(6) :: elType  ! element type {CIRCLE,ELLIPS}
-    character(lenMSG) :: msg
+    character(kind=ASCII, len=6) :: elType  ! element type {CIRCLE,ELLIPS}
+    character(kind=ASCII, len=lenMSG) :: msg
     integer :: ierr,i,j,nc,ne,crow,ccol
     nc = size(c)
     ne = size(e)

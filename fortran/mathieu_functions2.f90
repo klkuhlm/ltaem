@@ -165,8 +165,8 @@ contains
          & VL=dc, LDVL=di, VR=mat%A(1:m,0:m-1,0), LDVR=M, &
          & WORK=work, LWORK=lwork, RWORK=rwork, INFO=info)
 
-    if (info /= 0) write (*,'(A,I0,A)') "ZGEEV ERROR ",info, &
-         &" calculating even coefficients of even order"
+    if (info /= 0) write (*,'(A,I0,A)') 'ZGEEV ERROR ',info, &
+         & ' calculating even coefficients of even order'
 
     ! Morse norm  ce_2n(psi=0)
     w = sum(spread(vi(1:M),2,M)*mat%A(:,:,0),dim=1)
@@ -191,8 +191,8 @@ contains
          & VL=dc, LDVL=di, VR=mat%A(1:m,0:m-1,1), LDVR=M, &
          & WORK=work, LWORK=lwork, RWORK=rwork, INFO=info)
 
-    if (info /= 0) write(*,'(A,I0,A)') "ZGEEV ERROR ",info, &
-         &" calculating even coefficients of odd order"
+    if (info /= 0) write(*,'(A,I0,A)') 'ZGEEV ERROR ',info, &
+         & ' calculating even coefficients of odd order'
 
     ! se'_2n+1(psi=0)
     w = sum(spread((2.0_DP*v(0:M-1)+1.0_DP)*vi(0:M-1),2,M)*mat%A(:,:,1),dim=1)
@@ -218,8 +218,8 @@ contains
          & VL=dc, LDVL=di, VR=mat%B(1:m,0:m-1,0),LDVR=M,&
          & WORK=work, LWORK=lwork, RWORK=rwork, INFO=info)
 
-    if (info /= 0) write (*,'(A,I0,A)') "ZGEEV ERROR ",info, &
-         &" calculating odd coefficients of even order"
+    if (info /= 0) write (*,'(A,I0,A)') 'ZGEEV ERROR ',info, &
+         & ' calculating odd coefficients of even order'
 
     ! ce_2n+2(psi=0)
     w = sum(spread((2.0_DP*v(0:M-1)+2.0_DP)*vi(0:M-1),2,M)*mat%B(:,:,0),dim=1)
@@ -244,8 +244,8 @@ contains
          & VL=dc, LDVL=di, VR=mat%B(1:m,0:m-1,1), LDVR=M,&
          & WORK=work, LWORK=lwork, RWORK=rwork, INFO=info)
 
-    if (info /= 0) write (*,'(A,I0,A)') "ZGEEV ERROR ",info, &
-         &" calculating odd coefficients of odd order"
+    if (info /= 0) write (*,'(A,I0,A)') 'ZGEEV ERROR ',info, &
+         & ' calculating odd coefficients of odd order'
 
     ! ce_2n+1(psi=0)
     w = sum(mat%B(:,:,1)*spread(vi(0:M-1),2,M),dim=1)
@@ -1073,7 +1073,7 @@ contains
     end do
     v = cmplx(real(i,DP),0.0_DP,DP)
 
-    ! compute the "sign" vector
+    ! compute the sign vector
     vi = cmplx(1.0_DP,0.0_DP,DP)
     where (mod(i,2) == 1) vi = cmplx(-1.0_DP,0.0_DP,DP)
 
@@ -1109,7 +1109,7 @@ contains
     end do
     v = cmplx(real(i,DP),0.0_DP,DP)
 
-    ! compute the "sign" vector
+    ! compute the sign vector
     vi = cmplx(1.0_DP,0.0_DP,DP)
     where (mod(i,2) == 1) vi = cmplx(-1.0_DP,0.0_DP,DP)
 
@@ -1150,7 +1150,7 @@ contains
     end do
     v = cmplx(real(i,DP),0.0_DP,DP)
 
-    ! compute the "sign" vector
+    ! compute the sign vector
     vi = cmplx(1.0_DP,0.0_DP,DP)
     where (mod(i,2) == 1) vi = cmplx(-1.0_DP,0.0_DP,DP)
 
@@ -1185,8 +1185,6 @@ contains
     integer :: numzero, ierr, j
     integer, parameter :: NPRINT = 5
 
-!!$    character(33) :: fmt
-
     ! scaling for I BF:: cy = I_fnu(z)*exp(-abs(x))
     ! where z = x + iy
     ! only print up to the first 5 elements of the z vectors during error reporting
@@ -1197,22 +1195,18 @@ contains
        if (ierr /= 0) then
           select case(ierr)
           case(1)
-             write(*,*) "CBESI: input error, z=",arg(1:min(ubound(arg,1),NPRINT))," n=",n
-             stop "CBESI: input error"
+             write(*,*) 'CBESI: input error, z=',arg(1:min(ubound(arg,1),NPRINT)),' n=',n
+             stop 'CBESI: input error'
           case(2)
-             write(*,*) "CBESI: overflow, z or order too" //&
-                  &"large for unscaled output, z=",arg(1:min(ubound(arg,1),NPRINT))," n=",n
-             stop "CBESI: overflow, z or order too large for unscaled output"
-!!$          case(3)
-!!$             fmt = '(A, (ES11.3E3,1X,ES11.3E3,3X),I0)'
-!!$             write(fmt(4:4),'(I1)') min(ubound(arg,1),NPRINT)
-!!$             write(*,fmt) "CBESI: loss of precision, z=",arg(1:min(ubound(arg,1),NPRINT)),numzero
+             write(*,*) 'CBESI: overflow, z or order too' //&
+                  &'large for unscaled output, z=',arg(1:min(ubound(arg,1),NPRINT)),' n=',n
+             stop 'CBESI: overflow, z or order too large for unscaled output'
           case(4)
-             write(*,*) "CBESI: overflow, z or order too &
-                  &large, z=",arg(1:min(ubound(arg,1),NPRINT))," n=",n
-             stop "CBESI: overflow, z or order too large"
+             write(*,*) 'CBESI: overflow, z or order too &
+                  &large, z=',arg(1:min(ubound(arg,1),NPRINT)),' n=',n
+             stop 'CBESI: overflow, z or order too large'
           case(5)
-             stop "CBESI: algorithm termination not met"
+             stop 'CBESI: algorithm termination not met'
           end select
        end if
     end do
@@ -1257,23 +1251,19 @@ contains
        if (ierr /= 0) then
           select case(ierr)
           case(1)
-             write(*,*) "CBESK: input error, z=",arg(1:min(ubound(arg,1),NPRINT))," n=",n
-             stop "CBESK: input error"
+             write(*,*) 'CBESK: input error, z=',arg(1:min(ubound(arg,1),NPRINT)),' n=',n
+             stop 'CBESK: input error'
           case(2)
-             write(*,*) "CBESK: overflow, z too small or order " // &
-                  &"too large for unscaled output, z=",arg(1:min(ubound(arg,1),NPRINT))," n=",n
-             stop "CBESK: overflow, z too small or order too &
-                  &large for unscaled output"
-!!$          case(3)
-!!$             fmt = '(A, (ES11.3E3,1X,ES11.3E3,3X),I0)'
-!!$             write(fmt(4:4),'(I1)') min(ubound(arg,1),NPRINT)
-!!$             write(*,fmt) "CBESK: loss of precision, z=",arg(1:min(ubound(arg,1),NPRINT)),numzero
+             write(*,*) 'CBESK: overflow, z too small or order ' // &
+                  &'too large for unscaled output, z=',arg(1:min(ubound(arg,1),NPRINT)),' n=',n
+             stop 'CBESK: overflow, z too small or order too &
+                  &large for unscaled output'
           case(4)
-             write(*,*) "CBESK: overflow, z too small or order " //&
-                  &"too large, z=",arg(1:min(ubound(arg,1),NPRINT))," n=",n
-             stop "CBESK: overflow, z too small or order too large"
+             write(*,*) 'CBESK: overflow, z too small or order ' //&
+                  &'too large, z=',arg(1:min(ubound(arg,1),NPRINT)),' n=',n
+             stop 'CBESK: overflow, z too small or order too large'
           case(5)
-             stop "CBESK: algorithm termination not met"
+             stop 'CBESK: algorithm termination not met'
           end select
        end if
     end do
@@ -1301,10 +1291,11 @@ contains
   end subroutine BesselK_val_and_deriv
 
   subroutine print_mathieu_type(m,n)
+    use constants, only : ASCII
     type(mathieu), intent(in) :: m
     integer, intent(in) :: n
     integer :: i,j
-    character(43) :: fmt
+    character(kind=ASCII, len=43) :: fmt
     write(*,'(2(A,I0))') 'M:',m%M,' buffer:',m%buffer
     write(*,'(A,"(",ES13.6,",",ES13.6,")")') 'q: (',m%q
     fmt = '(04(A,I0,A,XX("(",ES11.4,",",ES11.4,")")/))'

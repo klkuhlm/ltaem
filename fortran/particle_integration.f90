@@ -476,7 +476,7 @@ contains
   pure subroutine trackDone(fwd,tp,dt,te,done,newdt)
     use constants, only : DP
     logical, intent(in) :: fwd  ! is tracking forward or backwards?
-    real(DP), intent(in) :: tp,dt,te ! particle and "end" time
+    real(DP), intent(in) :: tp,dt,te ! particle and end time
     logical, intent(out) :: done
     real(DP), intent(out) :: newdt ! delta t to land on final time
 

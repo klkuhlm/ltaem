@@ -74,7 +74,7 @@ contains
        ! instantaneous at t=par1
        mult(1:np) = exp(-par(1)*p)
     case(4)
-       ! "step test": increasing by integer multiples of Q each
+       ! step test: increasing by integer multiples of Q each
        ! integer multiple of par1 time, off at par2
        mult(1:np) = 1.0_DP/(p - p*exp(-par(1)*p)) * &
                       & (1.0_DP - exp(-par(2)*p))/p

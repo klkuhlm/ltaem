@@ -29,6 +29,7 @@ module constants
 
   ! real with range 300 orders of mag, 15 sig figs
   integer, parameter :: DP = selected_real_kind(p=15,r=300)
+  integer, parameter :: ASCII = selected_char_kind('ascii')
 
   ! length of filenames
   integer, parameter :: lenFN = 128

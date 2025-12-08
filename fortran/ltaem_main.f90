@@ -76,7 +76,7 @@ program ltaem_main
      sol%inFName = 'input.in'
   end if
 
-  ! some parallel-related statistics ("!$" is special OMP directive)
+  ! some parallel-related statistics ('!$' is special OMP directive)
   !$ write(stdout,'(2(A,I0))') 'OpenMP num procs:',omp_get_num_procs(), ' OpenMP max threads:', omp_get_max_threads()
 
   ! read in data, initialize variables, allocate major structs
@@ -164,8 +164,8 @@ program ltaem_main
      do lt = minlt,maxlt-1
         if (nt(lt) > 0) then
            do j = 1,2*sol%m+1
-              !$ write (*,'(I2,1X)',advance="no") OMP_get_thread_num()
-              write(stdout,"(I4,1X,I4,1X,'(',ES10.3,',',ES10.3,')')") lt,j,s(j,lt)
+              !$ write (*,'(I2,1X)',advance='no') OMP_get_thread_num()
+              write(stdout,'(I4,1X,I4,1X,"(",ES10.3,",",ES10.3,")")') lt,j,s(j,lt)
               call matrix_solution(c,e,dom,sol,s(j,lt),idxmat(j,lt))
            end do
         end if
@@ -271,7 +271,7 @@ program ltaem_main
 
      !$OMP PARALLEL DO PRIVATE(j,i,lt,calcZ,hp,vp,lot,hit,lop,hip) SHARED(sol,stmp,tnP,dom,c,e,bg)
      do j = 1,sol%nx
-        !$ write (*,'(I0,1X)',advance="no") OMP_get_thread_num()
+        !$ write (*,'(I0,1X)',advance='no') OMP_get_thread_num()
         write (*,'(A,ES13.5)') 'x: ',sol%x(j)
         do i = 1,sol%ny
 

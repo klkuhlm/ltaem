@@ -283,7 +283,7 @@ contains
           if (trg%ibnd == 0 .or. trg%ibnd == -1) then
 
              if (dom%inclBg(s,t) .or. dom%inclIn(t,s)) then
-                ! can the target "see" the outside of the source?
+                ! can the target see the outside of the source?
                 ! use exterior Bessel functions (Kn)
 
                 kap = kappa(p,src%parent)
@@ -312,7 +312,7 @@ contains
                      & trg%areaQ / (trg%alpha * kappa(p,trg%element,.true.)))
 
              else
-                ! can target element "see" the inside of the source element?
+                ! can target element see the inside of the source element?
                 ! i.e., is the source element the parent?
                 ! use interior Bessel functions (In)
 
@@ -449,7 +449,7 @@ contains
                   & spread(sin(src%G(t)%Pgm),2,2*N-1) + dPot_dP * &
                   & spread(cos(src%G(t)%Pgm) / src%G(t)%Rgm,2,2*N-1)
 
-             ! project from Cartesian to "radial" coordinate of target element
+             ! project from Cartesian to radial coordinate of target element
              if (trg%id <= dom%num(1)) then
                 ! other element is a circle
                 if (trg%ibnd == 2) then
@@ -532,7 +532,7 @@ contains
 
     kap = kappa(p,c%parent)
     Kn(0:1) = bK(kap*c%r,2)
-    ! TODO: should this have a factor "b" (thickness) in denominator?
+    ! TODO: should this have a factor b (thickness) in denominator?
     a0 = Kn(0) * timef(p,c%time,.false.) * c%bdryQ / (TWOPI * c%r * Kn(1) * kap)
   end function well
 
@@ -551,7 +551,7 @@ contains
 
     kap = kappa(p,c%parent)
     Kn(0:1) = bK(kap*c%r,2)
-    ! TODO : should this have a factor "b" in denominator?
+    ! TODO : should this have a factor b in denominator?
     ! TODO : off by a factor of 1/kappa?
     a0 = -Kn(0)*((2.0_DP + c%r**2 * c%dskin * p / c%parent%T) / &
          & (TWOPI * c%r) + (Kn(0) * c%r * p) / &

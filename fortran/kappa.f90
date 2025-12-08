@@ -108,7 +108,7 @@ contains
           ! multiporosity diffusion
           ! fraction of total storage in fractures
           omega = el%Ss / (el%Ss + el%matrixSs)
-          beta = (1.0_DP - omega) / omega ! "capacity ratio"
+          beta = (1.0_DP - omega) / omega ! capacity ratio
           allocate(a(el%NDiffterms),pdf(el%NDiffterms))
 
           if (el%NDiffTerms > 0) then

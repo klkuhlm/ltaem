@@ -12,7 +12,7 @@ Module Complex_Bessel
   ! interfaces to c wrappers
 
   interface
-    function arb_K(nu,z,scaled) bind(c,name="arb_K") result(K)
+    function arb_K(nu,z,scaled) bind(c,name='arb_K') result(K)
       use, intrinsic :: iso_c_binding, only : C_DOUBLE_COMPLEX, C_DOUBLE, C_INT
       complex(C_DOUBLE_COMPLEX), intent(in), value :: z
       real(C_DOUBLE), intent(in), value :: nu
@@ -21,7 +21,7 @@ Module Complex_Bessel
     end function arb_K
   end interface
   interface
-    function arb_I(nu,z,scaled) bind(c,name="arb_I") result(I)
+    function arb_I(nu,z,scaled) bind(c,name='arb_I') result(I)
       use, intrinsic :: iso_c_binding, only : C_DOUBLE_COMPLEX, C_DOUBLE, C_INT
       complex(C_DOUBLE_COMPLEX), intent(in), value :: z
       real(C_DOUBLE), intent(in), value :: nu

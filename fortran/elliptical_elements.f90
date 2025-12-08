@@ -163,7 +163,7 @@ contains
        ! put specified flux effects on RHS
        r%RHS(1:M) = timef(p,e%time,.false.)*e%bdryQ/ynot(e%r,e%f)
     case(2)
-       continue ! no ellipse "wellbore" storage
+       continue ! no ellipse wellbore storage
     end select
   end function ellipse_match_self
 
@@ -251,7 +251,7 @@ contains
           if (trg%ibnd == 0 .or. trg%ibnd == -1) then
 
              if (dom%inclBg(s,t) .or. dom%inclin(t,s)) then
-                ! can the target element "see" the outside of the source element?
+                ! can the target element see the outside of the source element?
                 ! use exterior angular and radial modified Mathieu functions
                 cemat(1:M,0:N-1) = ce(src%parent%mat(idx), vi(0:N-1), src%G(t)%Pgm(:))
                 semat(1:M,1:N-1) = se(src%parent%mat(idx), vi(1:N-1), src%G(t)%Pgm(:))
@@ -272,7 +272,7 @@ contains
                 r%LHS(1:M,loN+N:hiN)   = RMn(:,1:N-1,1)/spread(RMn0(1:N-1,1),1,M)*semat(:,1:N-1)/K ! b_n
 
              else
-                ! can target element "see" the inside of the source element?
+                ! can target element see the inside of the source element?
                 ! i.e., is the source element the parent?
                 ! use interior angular and radial modified Mathieu functions
                 cemat(1:M,0:N-1) = ce(src%mat(idx), vi(0:N-1), src%G(t)%Pgm(:))
@@ -406,7 +406,7 @@ contains
 
              deallocate(hsq)
 
-             ! project from Cartesian to "radial" coordinate of target element
+             ! project from Cartesian to radial coordinate of target element
              if (trg%id <= dom%num(1)) then
                 ! other element is a circle
                 if (trg%ibnd == 2) then

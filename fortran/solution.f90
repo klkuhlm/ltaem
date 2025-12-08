@@ -32,7 +32,7 @@ module solution_mod
 
 contains
   subroutine matrix_solution(c,e,dom,sol,p,idx)
-    use constants, only : DP, CZERO
+    use constants, only : DP, CZERO, ASCII
     use type_definitions, only : circle, solution, ellipse, domain, match_result
     use circular_elements, only : circle_match, well
     use elliptical_elements, only : ellipse_match, line
@@ -65,9 +65,9 @@ contains
     complex(DP), allocatable :: WORK(:)
 
     integer :: nrow, ncol
-    character(41) :: fmt, fmt2
-    fmt =  "(I3,1X,   ('(',ES8.1,',',ES8.1,')',1X))"
-    fmt2 = "(3X,   (8X,I4,8X))                     "
+    character(kind=ASCII, len=41) :: fmt, fmt2
+    fmt =  '(I3,1X,   ("(",ES8.1,",",ES8.1,")",1X))'
+    fmt2 = '(3X,   (8X,I4,8X))                     '
 
     nc = size(c,dim=1)
     ne = size(e,dim=1)

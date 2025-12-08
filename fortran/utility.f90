@@ -166,9 +166,9 @@ contains
     ! branch cut is left of +1, along x axis
     ! -pi <= aimag(f) <= +pi
     if(real(z) >= 0.0_DP) then
-       f = log(z + sqrt(z**2 - 1.0_DP))
+       f = log(z + sqrt(z*z - 1.0_DP))
     else
-       f = -log(z + sqrt(z**2 - 1.0_DP))
+       f = -log(z + sqrt(z*z - 1.0_DP))
     end if
   end function cacosh
 
@@ -186,7 +186,7 @@ contains
     else
        dx = (hi-lo)/(num-1)
        do concurrent (i=1:num)
-         v(i) = lo + (i-1)*dx
+         v(i) = lo + real(i-1,DP)*dx
        end do
     end if
   end function linspace
@@ -275,8 +275,8 @@ contains
        ! rotation is in opposite sense, so use -theta below
        subroutine ZDROT(N,CX,INCX,CY,INCY,C,S)
          integer, intent(in) :: n,incx,incy
-         real(8), intent(in) :: c,s
-         complex(8), dimension(n), intent(inout) :: cx,cy
+         real(KIND=8), intent(in) :: c,s
+         complex(KIND=8), dimension(n), intent(inout) :: cx,cy
        end subroutine ZDROT
     end interface
 
@@ -294,8 +294,8 @@ contains
     interface
        subroutine ZDROT(N,CX,INCX,CY,INCY,C,S)
          integer, intent(in) :: n,incx,incy
-         real(8), intent(in) :: c,s
-         complex(8), dimension(n), intent(inout) :: cx,cy
+         real(KIND=8), intent(in) :: c,s
+         complex(KIND=8), dimension(n), intent(inout) :: cx,cy
        end subroutine ZDROT
     end interface
 

@@ -21,7 +21,7 @@
 !
 
 module type_definitions
-  use constants, only : DP, lenFN
+  use constants, only : DP, lenFN, ASCII
   implicit none
 
   private
@@ -50,7 +50,7 @@ module type_definitions
 
   type :: explain_type
     ! explanation text (only used in ltaem_io.f90)
-    character(55), dimension(10) :: time = [&
+    character(kind=ASCII, len=55), dimension(10) :: time = [&
          & '[step on @ tpar(1)]                                    ',&
          & '[finite width pulse; tpar(1:2) = on/off times]         ',&
          & '[instantaneous pulse @ tpar(1)]                        ',&
@@ -62,19 +62,19 @@ module type_definitions
          & '[piecewise-constant rate]                              ',&
          & '[piecewise-linear rate]                                ']
 
-    character(39), dimension(0:3) :: leakFlag = &
+    character(kind=ASCII, len=39), dimension(0:3) :: leakFlag = &
          & ['(no leakage)                           ',&
          &  '(no-drawdown condition beyond aquitard)',&
          &  '(no-flow condition beyond aquitard)    ',&
          &  '(infinitely thick aquitard)            ']
 
-    character(24), dimension(-1:2) :: ibnd = [&
+    character(kind=ASCII, len=24), dimension(-1:2) :: ibnd = [&
          & '(specified total head)  ',&
          & '(matching)              ',&
          & '(specified total flux)  ',&
          & '(specified element flux)']
 
-    character(34), dimension(7) :: output = [&
+    character(kind=ASCII, len=34), dimension(7) :: output = [&
          & '(gnuplot contour map)             ',&
          & '(matlab contour map)              ',&
          & '(gnuplot time series w/ velocity) ',&
@@ -83,7 +83,7 @@ module type_definitions
          & '(gnuplot pathlines)               ',&
          & '(gnuplot streakline)              ']
 
-    character(39), dimension(4) :: particle = [&
+    character(kind=ASCII, len=39), dimension(4) :: particle = [&
          & 'Runge-Kutta-Merson (4th order adaptive)',&
          & 'Runge-Kutta  (4th order)               ',&
          & 'Analytical   (root-finding)            ',&
@@ -201,7 +201,7 @@ module type_definitions
      real(DP) :: x, y
      complex(DP) :: z
 
-     ! "radius" of element (eta for ellipses)
+     ! radius of element (eta for ellipses)
      ! semi-focal distance (zero for circles)
      ! angle of rotation (zero for circles)
      real(DP) :: r, f, theta
@@ -268,10 +268,10 @@ module type_definitions
      logical :: calc
 
      ! input/output filenames
-     character(lenFN) :: outfName, infName
-     character(lenFN) :: elemHfName, geomfName
-     character(lenFN) :: echofName, qfName
-     character(13) :: coefffName = 'dump-vars.out'
+     character(kind=ASCII, len=lenFN) :: outfName, infName
+     character(kind=ASCII, len=lenFN) :: elemHfName, geomfName
+     character(kind=ASCII, len=lenFN) :: echofName, qfName
+     character(kind=ASCII, len=13) :: coefffName = 'dump-vars.out'
 
      ! output index
      ! ------------------- <10 = contour map output --------------------
@@ -296,7 +296,7 @@ module type_definitions
      integer :: nx, ny, nt
      real(DP) :: xshift, yshift
      real(DP), allocatable :: x(:), y(:), t(:)
-     character(32), allocatable :: obsname(:)
+     character(kind=ASCII, len=32), allocatable :: obsname(:)
 
      ! compute log-derivative of solution?
      logical :: deriv
@@ -344,9 +344,10 @@ module type_definitions
 
 contains
   subroutine print_match_result(r)
+    use constants, only : ASCII
     type(match_result), intent(in) :: r
     integer :: row,col,i,j
-    character(40), dimension(2) :: fmt
+    character(kind=ASCII, len=40), dimension(2) :: fmt
 
     write(*,'(A)') '** matching result **'
     row = size(r%RHS,dim=1)
