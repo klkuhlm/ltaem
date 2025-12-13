@@ -25,14 +25,15 @@ module type_definitions
   implicit none
 
   private
-  public :: domain, time, element, match_result, matching, circle, ellipse, &
-       & INVLT, solution, particle, mathieu, explain_type, print_match_result
+  public :: domain, time, element, match_result, matching, circle, ellipse
+  public :: INVLT, solution, particle, mathieu, explain_type, print_match_result
 
   type :: mathieu
      ! things required to compute mathieu functions
      integer :: M,  buffer
      complex(DP) :: q
-     complex(DP), allocatable :: mcn(:), A(:,:,:), B(:,:,:)  ! 4*M; 1:M, 0:M-1, 0:1
+     ! 4*M; 1:M, 0:M-1, 0:1
+     complex(DP), allocatable :: mcn(:), A(:,:,:), B(:,:,:)
   end type mathieu
 
   type :: domain
@@ -94,25 +95,26 @@ module type_definitions
      ! all elements inherit the time behavior from this type
 
      ! time behavior / parameters
-     ! 1 = step on,              tpar(1)  = on time
-     ! 2 = finite pulse,         tpar(1:2) = on/off time
-     ! 3 = instan. pulse         tpar(1) = pulse time
-     ! 4 = stairs,               tpar(1) = time step (increasing Q by integer multiples
-     !                                     @ integer multiples tpar(1)); tpar(2) =off time.
-     ! 5 = + only square wave,   tpar(1) = 1/2 period of wave; tpar(2) = start time
-     ! 6 = cosine(tpar(1)*t),    tpar(1) = frequency multiplier; tpar(2) = start time
-     ! 7 = + only tri wave,      tpar(1) = 1/4 period of wave; tpar(2) = start time
-     ! 8 = +/- square wave,      tpar(1) = 1/2 period of wave; tpar(2) = start time
-     ! -100<n<0 = arbitrary piecewise constant rate, comprised of n steps from tpar(1) to tfinal
+     ! 1 = step on,            tpar(1)  = on time
+     ! 2 = finite pulse,       tpar(1:2) = on/off time
+     ! 3 = instan. pulse       tpar(1) = pulse time
+     ! 4 = stairs,             tpar(1) = time step (increasing Q by
+     !                                   integer multiples @ integer multiples
+     !                                   tpar(1)); tpar(2) = off time.
+     ! 5 = + only square wave, tpar(1) = 1/2 period of wave; tpar(2) = t0
+     ! 6 = cosine(tpar(1)*t),  tpar(1) = frequency multiplier; tpar(2) = t0
+     ! 7 = + only tri wave,    tpar(1) = 1/4 period of wave; tpar(2) = t0
+     ! 8 = +/- square wave,    tpar(1) = 1/2 period of wave; tpar(2) = t0
+     ! -100<n<0 = piecewise constant rate, n steps from tpar(1) to tfinal
      !                tpar(1:n) = starting times of each step
      !                tpar(n+1) = final time of last step
      !                tpar(n+2:2*n+1) = strength at each of n steps
-     ! (is multiplied by constant strength too -- you probably want to set that to unity)
-     ! n<-100 = arbitrary piecewise linear rate, comprised of n steps from tpar(1) to tfinal
+     ! (multiplied by constant strength -- probably want to set that to unity)
+     ! n<-100 = piecewise linear rate, n steps from tpar(1) to tfinal
      !                tpar(1:n) = starting times of each linear segment
      !                tpar(n+1) = final time of last linear segment
      !                tpar(n+2:2*n+1) = strength at each of n linear segment
-     ! (is multiplied by constant strength too -- you probably want to set that to unity)
+     ! (multiplied by constant strength -- probably want to set that to unity)
 
      ! type of time behavior for AREA/Boundary Head/Flux (see above)
      integer :: AreaTime, BdryTime
@@ -145,7 +147,8 @@ module type_definitions
      logical ::  unconfFlag
      real(DP) :: Sy, Kz
 
-     ! dual-porosity related (flag, matrix storativity, matrix/fracture exchange param)
+     ! dual-porosity related
+     ! (flag, matrix storativity, matrix/fracture exchange param)
      logical :: dualPFlag
      integer :: multiPDiff ! 1=slab, 2=cylinder, 3=spherical
      real(DP) :: matrixSs, lambda, kappa
@@ -155,7 +158,7 @@ module type_definitions
      real(DP) :: areaQ
 
      ! whether to calculate solution (Helmholtz eqn) inside element
-     ! and whether to compute storage (using mass conservation ODE) inside element
+     ! and whether to compute storage inside element
      ! StorIn is only checked if CalcIn is false for an element.
      logical :: CalcIn, StorIn
 
@@ -183,9 +186,11 @@ module type_definitions
      ! for lines/wells can be one (e.g., borehole storage) or zero (known Q)
      integer :: n, m
 
-     ! type of element: -1=specified head TOTAL, 0=match, +1=specified flux TOTAL
-     !                  -2=specified head ELEMENT, +2=specified flux ELEMENT
-     ! -2 doesn't really make sense from a physical perspective : not implemented
+     ! type of element: -1=specified head TOTAL, 0=match,
+     !                  +1=specified flux TOTAL
+     !                  -2=specified head ELEMENT,
+     !                  +2=specified flux ELEMENT
+     ! -2 doesn't make sense from a physical perspective: not implemented
      integer :: ibnd
 
      ! whether inclusion is a matching(T) or specified(F) inclusion
@@ -278,12 +283,12 @@ module type_definitions
      !  1= Gnuplot map (x,y,z triplets; times separated by blank lines);
      !  2= Matlab map (matrix output separate files);
      ! --------------->=10 <20 = time series output --------------------
-     ! 10= Gnuplot time series with velocity (column of times; locs sep. by blank lines);
+     ! 10= Gnuplot time series + velocity (column of times; grouped locs);
      ! 11= Gnuplot time serires no velocity (same as 10 no vel);
-     ! 12= Matlab for SCEM-UA inverse (column of times, locs sep. by blank lines);
+     ! 12= Matlab for inverse (column of times, grouped locs);
      ! --------------->=20 = particle track output ---------------------
-     ! 20= pathline Gnuplot (column of times, particles separated by blank lines);
-     ! 21= streakline Gnuplot (each block a requested time, each row a particle);
+     ! 20= pathline Gnuplot (column of times, grouped particles);
+     ! 21= streakline Gnuplot (blocks per requested time, rows particles);
 
      integer, dimension(21) :: OEMap = [1,2,0,0,0,0,0,0,0,&
                                       & 3,4,5,0,0,0,0,0,0,0,&
@@ -302,7 +307,8 @@ module type_definitions
      logical :: deriv
 
      ! containers for time-domain final results (x,y,t,[i:j])
-     real(DP),    allocatable :: h(:,:,:), v(:,:,:,:), dh(:,:,:), Q(:,:), dQ(:,:)
+     real(DP), allocatable :: h(:,:,:), v(:,:,:,:)
+     real(DP), allocatable :: dh(:,:,:), Q(:,:), dQ(:,:)
 
   end type solution
 

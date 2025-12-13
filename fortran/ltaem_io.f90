@@ -36,10 +36,10 @@ contains
   subroutine readInput(s,dom,bg,c,e,p)
 
     use constants, only : DP, lenFN, lenMSG, PI, ASCII
-    use type_definitions, only : solution, particle, domain, element, &
-         & circle, ellipse, explain_type
-    use, intrinsic :: iso_fortran_env, only : stdout => output_unit, &
-         & stderr => error_unit
+    use type_definitions, only : solution, particle, domain, element
+    use type_definitions, only : circle, ellipse, explain_type
+    use, intrinsic :: iso_fortran_env, only : stdout => output_unit
+    use, intrinsic :: iso_fortran_env, only : stderr => error_unit
 
     type(solution), intent(inout) :: s
     type(particle), intent(out), allocatable :: p(:)
@@ -1479,7 +1479,6 @@ contains
   !******************************************************
   function computeVector(unit,n,line) result(v)
     use, intrinsic :: iso_fortran_env, only : stderr => error_unit
-
     use constants, only : DP, lenMSG, ASCII
     integer, intent(in) :: unit, n, line
     real(DP), dimension(n) :: v
@@ -1539,8 +1538,8 @@ contains
 
     use constants, only : DP, ASCII
     use type_definitions, only : solution, particle, explain_type
-    use, intrinsic :: iso_fortran_env, only : stdout => output_unit, &
-         &stderr => error_unit
+    use, intrinsic :: iso_fortran_env, only : stdout => output_unit
+    use, intrinsic :: iso_fortran_env, only : stderr => error_unit
 
     type(solution), intent(inout) :: s
     type(particle), dimension(:), intent(inout) :: p

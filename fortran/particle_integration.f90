@@ -28,16 +28,19 @@ module particle_integrate
 contains
 
   subroutine rungeKuttaMerson(s,tee,c,e,bg,sol,dom,p,lo)
+    use, intrinsic :: iso_fortran_env, only : stdout => output_unit
     use constants, only : DP
     use inverse_laplace_transform, only : L => deHoog_invlap
-    use type_definitions, only : circle, ellipse, element, solution, particle, domain
+    use type_definitions, only : circle, ellipse, element, &
+         & solution, particle, domain
     use calc_routines, only : V => velcalc
     use utility, only : v2c
     implicit none
 
     integer, intent(in) :: lo
     real(DP), intent(in) :: tee(lo:)
-    complex(DP), intent(in) :: s(1:,lo:) !! matrix of Laplace parameter np by nlogcycles
+    !! matrix of Laplace parameter np by nlogcycles
+    complex(DP), intent(in) :: s(1:,lo:)
     type(particle), intent(inout) :: p
     type(circle),  dimension(:), intent(in) :: c
     type(ellipse), dimension(:), intent(in) :: e
@@ -65,7 +68,7 @@ contains
     count = 1
 
     partEnd = .false.
-    write(*,'(A,I0)') '** rkm integration, particle ',p%id
+    write(stdout,'(A,I0)') '** rkm integration, particle ',p%id
 
     ! Runge-Kutta-Merson 4th-order adaptive integration scheme
     rkm: do
@@ -76,11 +79,12 @@ contains
        call trackDone(p%forward,pt,dt,p%tf,done,enddt)
        if (done) then
          if (p%debug) then
-           print *, 'p%forward,pt,dt,p%tf,done,enddt',p%forward,pt,dt,p%tf,done,enddt
+           write(stdout,*) 'p%forward,pt,dt,p%tf,done,enddt', &
+                & p%forward,pt,dt,p%tf,done,enddt
          end if
          if (enddt < spacing(dt)) then
              ! close enough
-             write(*,'(A,I0,2(A,ES13.6E2))') &
+             write(stdout,'(A,I0,2(A,ES13.6E2))') &
                   & 'particle ',p%id,' reached final time:',pt,'=',p%tf
 
              ! compute velocity at final location
@@ -98,26 +102,31 @@ contains
        ! forward Euler 1/3-step  predictor
        call getsrange(pt,lo,ns,los,his,lt)
        vInit = L(pt,tee(lt), V(x0,s(:,lt),los,his,dom,c,e,bg), sol%INVLT)
-       FwdEuler(1:2) = x0(1:2) + dt/3.0_DP*vInit(1:2)
+       FwdEuler(1:2) = x0(1:2) + dt / 3.0_DP * vInit(1:2)
 
        ! trapezoid rule 1/3-step corrector
-       call getsrange(pt + dt/3.0_DP,lo,ns,los,his,lt)
-       vTrap = L(pt+dt/3.0_DP,tee(lt), V(FwdEuler,s(:,lt),los,his,dom,c,e,bg), sol%INVLT)
-       Trap(1:2) = x0(1:2) + dt/6.0_DP*(vInit(1:2) + vTrap(1:2))
+       call getsrange(pt + dt / 3.0_DP,lo,ns,los,his,lt)
+       vTrap = L(pt + dt / 3.0_DP,tee(lt), V(FwdEuler,s(:,lt), &
+            & los,his,dom,c,e,bg), sol%INVLT)
+       Trap(1:2) = x0(1:2) + dt / 6.0_DP * (vInit(1:2) + vTrap(1:2))
 
        ! Adams-Bashforth 1/2-step predictor
-       vAB3 = L(pt+dt/3.0_DP,tee(lt), V(Trap,s(:,lt),los,his,dom,c,e,bg), sol%INVLT)
-       halfAB(1:2) = x0(1:2) + dt/8.0_DP*(vInit(1:2) + 3.0_DP*vAB3(1:2))
+       vAB3 = L(pt + dt / 3.0_DP,tee(lt), V(Trap,s(:,lt), &
+            & los,his,dom,c,e,bg), sol%INVLT)
+       halfAB(1:2) = x0(1:2) + dt / 8.0_DP * (vInit(1:2) + 3.0_DP * vAB3(1:2))
 
        ! full step Adams-Bashforth predictor
-       call getsrange(pt + dt*0.5_DP,lo,ns,los,his,lt)
-       vAB2 = L(pt+dt*0.5_DP,tee(lt), V(halfAB,s(:,lt),los,his,dom,c,e,bg), sol%INVLT)
-       fullAB(1:2) = x0(1:2) + dt*0.5_DP*(vInit(1:2) - 3.0_DP*vAB3(1:2) + 4.0_DP*vAB2(1:2))
+       call getsrange(pt + 0.5_DP * dt,lo,ns,los,his,lt)
+       vAB2 = L(pt + dt * 0.5_DP,tee(lt), V(halfAB,s(:,lt), &
+            & los,his,dom,c,e,bg), sol%INVLT)
+       fullAB(1:2) = x0(1:2) + 0.5_DP * dt * (vInit(1:2) - &
+            & 3.0_DP * vAB3(1:2) + 4.0_DP * vAB2(1:2))
 
        ! full step Simpson's rule corrector
        call getsrange(pt + dt,lo,ns,los,his,lt)
        vSF = L(pt+dt,tee(lt), V(halfAB,s(:,lt),los,his,dom,c,e,bg), sol%INVLT)
-       Simp(1:2) = x0(1:2) + dt/6.0_DP*(vInit(1:2) + 4.0_DP*vAB2(1:2) + vSF(1:2))
+       Simp(1:2) = x0(1:2) + dt / 6.0_DP * &
+            & (vInit(1:2) + 4.0_DP * vAB2(1:2) + vSF(1:2))
 
        ! relative error (biggest of x- or y-direction)
        error = maxval(abs((Simp - fullAB)/Simp))
@@ -126,13 +135,15 @@ contains
        length = abs(v2c(Simp) - v2c(x0))
 
        ! partEnd indicates particle entered sink
-       ! partCut indicates particle swept out too large an angle with respect to a sink (heuristic)
+       ! partCut indicates particle swept out too large
+       !  an angle with respect to a sink (heuristic)
        call sinkCheck(Simp(1),Simp(2),c,e,px,py,partEnd,partCut)
 
        ! only advance to next step if error level is acceptable
        ! _and_ resulting step is less than prescribed limit
        ! _or_ we have gotten to the minimum step size (proceed anyways)
-       if (.not. partCut .and. ((error < p%tol .and. length <= p%maxL) .or. abs(dt) <= p%mindt)) then
+       if (.not. partCut .and. ((error < p%tol .and. length <= p%maxL) &
+            & .or. abs(dt) <= p%mindt)) then
           pt = pt + dt
           px0 = px
           py0 = py
@@ -144,7 +155,8 @@ contains
           count = count + 1
 
           if (partEnd) then
-             write(*,'(A,I0,A,ES13.6E2)') 'particle ',p%id,' entered a sink at t=',pt
+             write(stdout,'(A,I0,A,ES13.6E2)') 'particle ',p%id, &
+                  & ' entered a sink at t=',pt
           else
              if (count == ubound(p%r,dim=1)) then
                 ! if out of space in results array double the size
@@ -174,7 +186,8 @@ contains
 
           if (abs(dt) <= p%mindt) then
              if (p%debug) then
-               write(*,'(3(A,ES13.6E2))') 'min step; dt=',dt,' error=',error, ' pt=',pt
+               write(stdout,'(3(A,ES13.6E2))') 'min step; dt=',dt, &
+                    & ' error=',error, ' pt=',pt
              end if
              dt = p%mindt
              if (.not. p%forward) dt = -dt
@@ -186,15 +199,18 @@ contains
 
   !$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
   subroutine rungekutta(s,tee,c,e,bg,sol,dom,p,lo)
+    use, intrinsic :: iso_fortran_env, only : stdout => output_unit
     use constants, only : DP
     use inverse_laplace_transform, only : L => deHoog_invlap
-    use type_definitions, only : circle, ellipse, element, solution, particle, domain
+    use type_definitions, only : circle, ellipse, element, &
+         & solution, particle, domain
     use calc_routines, only : V => velCalc
     implicit none
 
     integer, intent(in) :: lo
     real(DP), intent(in) :: tee(lo:)
-    complex(DP), intent(in) :: s(1:,lo:) !! matrix of Laplace parameter np by nlogcycles
+    !! matrix of Laplace parameter np by nlogcycles
+    complex(DP), intent(in) :: s(1:,lo:)
     type(particle), intent(inout) :: p
     type(circle),  dimension(:), intent(in) :: c
     type(ellipse), dimension(:), intent(in) :: e
@@ -218,35 +234,38 @@ contains
     ! initialize with starting position
     p%r(0,1:3) = [pt,px,py]
 
-    write(*,'(A,I0)') '** rk integration, particle ',p%id
+    write(stdout,'(A,I0)') '** rk integration, particle ',p%id
 
     ! Runge-Kutta 4th order integration scheme (non-adaptive)
     numdt = ceiling((p%tf - pt)/abs(dt))
-    write(*,'(A,ES12.5,A,I0)') 'step size=',dt,' number steps needed=',numdt
+    write(stdout,'(A,ES12.5,A,I0)') 'step size=',dt,' # steps needed=',numdt
 
     rk: do i = 1,numdt
-       if (mod(i,100) == 0) write(*,'(I0,A,ES13.6E2)') i,' t=',pt
+       if (mod(i,100) == 0) write(stdout,'(I0,A,ES13.6E2)') i,' t=',pt
 
        x0 = [px,py]
 
        ! forward Euler 1/2-step  (predictor)
        call getsrange(pt,lo,ns,los,his,lt)
        vInit = L(pt,tee(lt), V(x0,s(:,lt),los,his,dom,c,e,bg), sol%INVLT)
-       FwdEuler(1:2) = x0(1:2) + dt*0.5_DP*vInit(1:2)
+       FwdEuler(1:2) = x0(1:2) + dt * 0.5_DP * vInit(1:2)
 
        ! backward Euler 1/2-step (corrector)
-       call getsrange(pt + dt*0.5_DP,lo,ns,los,his,lt)
-       vBkwdEuler = L(pt+dt*0.5_DP,tee(lt), V(FwdEuler,s(:,lt),los,his,dom,c,e,bg), sol%INVLT)
-       BkwdEuler(1:2) = x0(1:2) + dt*0.5_DP*vBkwdEuler(1:2)
+       call getsrange(pt + dt * 0.5_DP,lo,ns,los,his,lt)
+       vBkwdEuler = L(pt+dt*0.5_DP,tee(lt), V(FwdEuler,s(:,lt), &
+            & los,his,dom,c,e,bg), sol%INVLT)
+       BkwdEuler(1:2) = x0(1:2) + dt * 0.5_DP * vBkwdEuler(1:2)
 
        ! midpoint rule full-step predictor
        call getsrange(pt + dt,lo,ns,los,his,lt)
-       vMidpt = L(pt+dt,tee(lt), V(BkwdEuler,s(:,lt),los,his,dom,c,e,bg), sol%INVLT)
-       Midpt(1:2) = x0(1:2) + dt*vMidpt(1:2)
+       vMidpt = L(pt+dt,tee(lt), V(BkwdEuler,s(:,lt), &
+            & los,his,dom,c,e,bg), sol%INVLT)
+       Midpt(1:2) = x0(1:2) + dt * vMidpt(1:2)
 
        ! Simpson's rule full-step corrector
        vSimp = L(pt+dt,tee(lt), V(Midpt,s(:,lt),los,his,dom,c,e,bg), sol%INVLT)
-       Simp(1:2) = x0(:) + dt/6.0_DP*(vinit(:) + 2.0_DP*vBkwdEuler(:) + 2.0_DP*vMidpt(:) + vSimp(:))
+       Simp(1:2) = x0(:) + dt / 6.0_DP * (vinit(:) + 2.0_DP * vBkwdEuler(:) + &
+            & 2.0_DP * vMidpt(:) + vSimp(:))
 
        pt = pt + dt
        px0 = px
@@ -260,13 +279,14 @@ contains
        ! partCut not used
        call sinkCheck(px,py,c,e,px0,py0,sink,partCut)
        if (sink) then
-          write(*,'(A,I0,A,ES13.6E2)') 'particle ',p%id,' entered a sink at t=',pt
+          write(stdout,'(A,I0,A,ES13.6E2)') 'particle ',p%id, &
+               & ' entered a sink at t=',pt
           exit rk
        end if
     end do rk
 
     if (.not. sink) then
-       write(*,'(A,I0,2(A,ES13.6E2))') &
+       write(stdout,'(A,I0,2(A,ES13.6E2))') &
             & 'particle ',p%id,' reached final time:',pt,'=',p%tf
 
        ! compute velocity at final time
@@ -280,15 +300,18 @@ contains
 
   !$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
   subroutine fwdEuler(s,tee,c,e,bg,sol,dom,p,lo)
+    use, intrinsic :: iso_fortran_env, only : stdout => output_unit
     use constants, only : DP
     use inverse_laplace_transform, only : L => deHoog_invlap
-    use type_definitions, only : circle, ellipse, element, solution, particle, domain
+    use type_definitions, only : circle, ellipse, element, &
+         & solution, particle, domain
     use calc_routines, only : V => velCalc
     implicit none
 
     integer, intent(in) :: lo
     real(DP), intent(in) :: tee(lo:)
-    complex(DP), intent(in) :: s(1:,lo:) !! matrix of Laplace parameter np by nlogcycles
+    !! matrix of Laplace parameter np by nlogcycles
+    complex(DP), intent(in) :: s(1:,lo:)
     type(particle), intent(inout) :: p
     type(circle),  dimension(:), intent(in) :: c
     type(ellipse), dimension(:), intent(in) :: e
@@ -314,15 +337,16 @@ contains
     ! 1st order fwd Euler
     numdt = ceiling((p%tf - pt)/abs(dt))
 
-    write(*,'(A,I0)') '** fwd Euler integration, particle ', p%id
+    write(stdout,'(A,I0)') '** fwd Euler integration, particle ', p%id
 
     fe: do i = 1,numdt
-       if(mod(i,500) == 0) write(*,'(I0,A,ES13.6E2)') i,' t=',pt
+       if(mod(i,500) == 0) write(stdout,'(I0,A,ES13.6E2)') i,' t=',pt
 
        ! full step forward Euler
        call getsrange(pt,lo,ns,los,his,lt)
        if (p%debug) then
-         print *, 'FE t>:',pt,' lo>:',lo,' ns>:',ns,' los<:',los,' his<:',his,' lt<:',lt
+         write(stdout,*) 'FE t>:',pt,' lo>:',lo,' ns>:',ns, &
+              & ' los<:',los,' his<:',his,' lt<:',lt
        end if
 
        vel = L(pt,tee(lt),V([px,py],s(:,lt),los,his,dom,c,e,bg),sol%INVLT)
@@ -339,13 +363,14 @@ contains
        ! partCut not used
        call sinkCheck(px,py,c,e,px0,py0,sink,partCut)
        if (sink) then
-          write(*,'(A,I0,A,ES13.6E2)') 'particle ',p%id,' entered a sink at t=',pt
+          write(stdout,'(A,I0,A,ES13.6E2)') 'particle ',p%id, &
+               & ' entered a sink at t=',pt
           exit fe
        end if
     end do fe
 
     if (.not. sink) then
-       write(*,'(A,I0,2(A,ES13.6E2))') &
+       write(stdout,'(A,I0,2(A,ES13.6E2))') &
             &'particle',p%id,' reached final time:',pt,'=',p%tf
        ! compute velocity at final time
        call getsrange(pt,lo,ns,los,his,lt)
@@ -359,10 +384,12 @@ contains
 
   !$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
   subroutine analytic(s,tee,c,e,bg,sol,dom,p,lo)
+    use, intrinsic :: iso_fortran_env, only : stdout => output_unit
     use constants, only : DP
     use utility, only : outer
     use inverse_laplace_transform, only : L => deHoog_invlap
-    use type_definitions, only : circle, ellipse, element, solution, particle, domain
+    use type_definitions, only : circle, ellipse, element, &
+         & solution, particle, domain
     use calc_routines, only : V => velCalc
     implicit none
 
@@ -382,7 +409,8 @@ contains
     real(DP), dimension(2,3) :: ploc     ! location guesses
     ! f(x) and f(y) for root-finding
     complex(DP), dimension(size(s,1),2,3) :: fpv
-    complex(DP), dimension(size(s,1),2) :: vv, fx3x2, fx3x1, fx2x1, fx3x2x1, w, r
+    complex(DP), dimension(size(s,1),2) :: fx3x2, fx3x1, fx2x1, fx3x2x1
+    complex(DP), dimension(size(s,1),2) :: vv, w, r
     real(DP), parameter :: DTFRAC = 1.1_DP, ITERTOL = 1.0D-3
     integer, parameter :: MAXITER = 100
 
@@ -393,7 +421,8 @@ contains
     ! initialize with starting position
     p%r(0,1:3) = [p%ti,loc(:)]
 
-    ! TODO: does this work for non-zero start time? this may not be correct logic
+    ! TODO: does this work for non-zero start time?
+    ! this may not be correct logic
 
     ! compute particle location at time t,
     ! given initial location at t=ti, and desired time t=dt
@@ -414,7 +443,8 @@ contains
        vel = L(t(i),tee(lt),vv(:,1:2),sol%INVLT)
        ! estimated coordinates
        ploc(1:2,i) = loc(:) + t(i)*vel(:)
-       ! equation which is set to zero, and used for root-finding (p*x - x0) = V(x)
+       ! equation which is set to zero, and used for root-finding
+       ! (p*x - x0) = V(x)
        fpv(1:ns,1:2,i) = V(ploc(:,i),s(:,lt),los,his,dom,c,e,bg) - &
             & (outer(s(:,lt),ploc(:,i)) - spread(loc(:),1,ns))
     end do
@@ -434,7 +464,7 @@ contains
 
        if (any(abs(w) < epsilon(0.0_DP) .and. &
              & abs(fx3x2x1) < epsilon(0.0_DP))) then
-          print *, 'cancelled with',t,ploc
+          write(stdout,*) 'cancelled with',t,ploc
           stop
        end if
 
@@ -448,7 +478,8 @@ contains
        where (abs(w - r) > abs(w + r))
           r = -r
        end where
-       ploc(:,3) = ploc(:,3) - 2.0_DP*L(t(1),tee(lt),fpv(:,:,3)/(w+r),sol%INVLT) 
+       ploc(:,3) = ploc(:,3) - 2.0_DP * &
+            & L(t(1),tee(lt),fpv(:,:,3) / (w+r),sol%INVLT)
        fpv(:,:,3) = V(ploc(:,3),s(:,lt),los,his,dom,c,e,bg)  - &
             & (outer(s(:,lt),ploc(:,3)) - spread(loc(:),1,ns))
        if (all(abs(ploc(:,3) - ploc(:,2)) < ITERTOL)) then
@@ -459,11 +490,11 @@ contains
 
           p%r(1,1) = p%dt
           p%r(1,2:3) = p%r(0,2:3) + p%dt*vel(:)
-          print *, 'finished in',i,'iterations of',MAXITER
+          write(stdout,*) 'finished in',i,'iterations of',MAXITER
           exit mul
        end if
        if (i == MAXITER) then
-          print *, 'did not converge in',MAXITER,'iterations'
+          write(stdout,*) 'did not converge in',MAXITER,'iterations'
        end if
     end do mul
 
@@ -574,8 +605,10 @@ contains
         if (c(i)%ibnd == 2) then
           z = pz - c(i)%z
           z0 = pz0 - c(i)%z
-          if (abs(atan2(aimag(z),real(z)) - atan2(aimag(z0),real(z0))) >= ANGLE_TOL) then
-            ! too large an angle swept out wrt source, cut timestep (only applies to MKR)
+          if (abs(atan2(aimag(z),real(z)) - &
+               & atan2(aimag(z0),real(z0))) >= ANGLE_TOL) then
+             ! too large an angle swept out wrt source,
+             ! cut timestep (only applies to MKR)
             partCut = .true.
           end if
         end if
@@ -583,7 +616,9 @@ contains
     end if
 
     ! did the particle enter an ibnd==2 ellipse (line sink)?
-    if (any(e%ibnd == 2 .and. real(acosh((pz-e%z)*exp(-EYE*e%theta)/e%f)) < (e%r+epsilon(e%r)))) then
+    if (any(e%ibnd == 2 .and. &
+         &  real(acosh((pz-e%z) * exp(-EYE*e%theta) / e%f)) < &
+         & (e%r+epsilon(e%r)))) then
        partEnd = .true.
        goto 999
        ! TODO: handle ANGLE_TOL problem for ellipses too
@@ -592,7 +627,8 @@ contains
     ! TODO handle flowing into a constant head/flux element (from inside or
     !      from outside, circles or ellipses
 
-    ! TODO dealing with distributed sinks (or sources in reverse tracking) is more complex, will be dealt with later
+    ! TODO dealing with distributed sinks (or sources in reverse tracking)
+    ! is more complex, will be dealt with later
 
 999 continue
   end subroutine sinkCheck

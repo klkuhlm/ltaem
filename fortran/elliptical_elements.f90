@@ -35,6 +35,8 @@ module elliptical_elements
 
 contains
   function ellipse_match_self(e,p,i,debug) result(r)
+    use, intrinsic :: iso_fortran_env, only : stderr => error_unit
+    use, intrinsic :: iso_fortran_env, only : stdout => output_unit
     use constants, only : DP
     use kappa_mod, only : kappa
     use time_mod, only : timef
@@ -81,7 +83,7 @@ contains
           loM = 1
           hiM = M
           ! TODO: calculating inside a specified head/flux ellipse is broken
-          print *, 'WARNING: e%ibnd=={-1,1} and calcin are BROKEN?'
+          write(stderr,*) 'WARNING: e%ibnd=={-1,1} and calcin are BROKEN?'
 !!$       stop 'UNIMPLEMENTED: e%ibnd=={-1,1} and calcin'
        else
           ! ibnd = {-1,1}, but .not. calcin
@@ -93,14 +95,14 @@ contains
     end if
 
     if (debug) then
-       print '(A,I0,A,5(I0,1X))', 'ELLIPSE_MATCH_SELF parent: ',&
+       write(stdout,'(A,I0,A,5(I0,1X))') 'ELLIPSE_MATCH_SELF parent: ',&
             & e%parent%id,' (ibnd,nrows,ncols,loM,hiM): ',&
             & e%ibnd,nrows,ncols,loM,hiM
     end if
 
     allocate(r%LHS(nrows,ncols), r%RHS(nrows))
 
-    ! outside angular modified Mathieu functions (last dimension is inside/outside)
+    ! outside angular modified Mathieu functions (last dimension inside/outside)
     cemat(1:M,0:N-1,0) = ce(e%parent%mat(i), vi(0:N-1), e%Pcm(:))
     semat(1:M,1:N-1,0) = se(e%parent%mat(i), vi(1:N-1), e%Pcm(:))
     if (e%ibnd == 0 .or. (e%calcin .and. (e%ibnd == 1 .or. e%ibnd == -1))) then
@@ -133,8 +135,10 @@ contains
        dRMn(1:N-1,1) = dKo(e%parent%mat(i), vi(1:N-1), e%r) ! odd deriv
        dRMn(0,1) = 0.0_DP
 
-       r%LHS(loM:hiM,1:N) =       spread(dRMn(0:N-1,0)/RMn(0:N-1,0),1,M)*cemat(:,0:N-1,0) ! a_n flux
-       r%LHS(loM:hiM,N+1:2*N-1) = spread(dRMn(1:N-1,1)/RMn(1:N-1,1),1,M)*semat(:,1:N-1,0) ! b_n flu
+       r%LHS(loM:hiM,1:N) =       spread(dRMn(0:N-1,0) / &
+            & RMn(0:N-1,0),1,M) * cemat(:,0:N-1,0) ! a_n flux
+       r%LHS(loM:hiM,N+1:2*N-1) = spread(dRMn(1:N-1,1) / &
+            & RMn(1:N-1,1),1,M) * semat(:,1:N-1,0) ! b_n flu
 
        if (e%ibnd == 0 .or. (e%ibnd == 1 .and. e%calcin)) then
           RMn(0:N-1,0) =   Ie(e%mat(i), vi(0:N-1), e%r)
@@ -144,8 +148,10 @@ contains
           dRMn(1:N-1,1) = dIo(e%mat(i), vi(1:N-1), e%r)
           dRMn(0,1) = 0.0_DP
 
-          r%LHS(loM:hiM,2*N:3*N-1) = -spread(dRMn(0:N-1,0)/RMn(0:N-1,0), 1,M)*cemat(:,0:N-1,1) ! c_n flux
-          r%LHS(loM:hiM,3*N:4*N-2) = -spread(dRMn(1:N-1,1)/RMn(1:N-1,1), 1,M)*semat(:,1:N-1,1) ! d_n flux
+          r%LHS(loM:hiM,2*N:3*N-1) = -spread(dRMn(0:N-1,0) / &
+               & RMn(0:N-1,0), 1,M) * cemat(:,0:N-1,1) ! c_n flux
+          r%LHS(loM:hiM,3*N:4*N-2) = -spread(dRMn(1:N-1,1) / &
+               & RMn(1:N-1,1), 1,M) * semat(:,1:N-1,1) ! d_n flux
        end if
        deallocate(RMn,dRMn)
     end if
@@ -157,7 +163,9 @@ contains
        r%RHS(1:M) = timef(p,e%time,.false.)*e%bdryQ
     case(0)
        ! put constant area source term effects on RHS
-       r%RHS(1:M) = -timef(p,e%time,.true.)*e%areaQ*e%Ss/kappa(p,e%parent,.true.) ! optional 3rd argument -> kappa**2
+       ! optional 3rd argument -> kappa**2
+       r%RHS(1:M) = -timef(p,e%time,.true.) * e%areaQ * e%Ss / &
+            & kappa(p,e%parent,.true.)
        r%RHS(M+1:2*M) = 0.0_DP ! area source has no flux effects
     case(1)
        ! put specified flux effects on RHS
@@ -168,9 +176,12 @@ contains
   end function ellipse_match_self
 
   function ellipse_match_other(src,trg,dom,p,idx,debug) result(r)
+    use, intrinsic :: iso_fortran_env, only : stdout => output_unit
     use constants, only : DP, CZERO
-    use type_definitions, only : ellipse, element, domain, matching, match_result
-    use mathieu_functions, only : ce, se, dce, dse, Ke, Ko, dKe, dKo, Ie, Io, dIe, dIo
+    use type_definitions, only : ellipse, element, domain
+    use type_definitions, only : matching, match_result
+    use mathieu_functions, only : ce, se, dce, dse
+    use mathieu_functions, only : Ke, Ko, dKe, dKo, Ie, Io, dIe, dIo
     use utility, only : rotate_vel_mat
     implicit none
 
@@ -186,7 +197,8 @@ contains
     complex(DP), allocatable :: cemat(:,:), semat(:,:), dcemat(:,:), dsemat(:,:)
     integer, dimension(0:src%N-1) :: vi
     complex(DP), allocatable :: RMn(:,:,:), dRMn(:,:,:), RMn0(:,:)
-    complex(DP), allocatable :: dPot_dR(:,:), dPot_dP(:,:), dPot_dX(:,:), dPot_dY(:,:)
+    complex(DP), allocatable :: dPot_dR(:,:), dPot_dP(:,:)
+    complex(DP), allocatable :: dPot_dX(:,:), dPot_dY(:,:)
     real(DP), allocatable :: hsq(:,:)
     real(DP) :: K, factor
 
@@ -222,7 +234,8 @@ contains
     if (src%ibnd == 0) then
        ncols = 4*N-2
     elseif (src%ibnd == 2) then
-       ncols = 2*N-1  ! line source (ibound==2) later re-allocated to zero size LHS
+       ! line source (ibound==2) later re-allocated to zero size LHS
+       ncols = 2*N-1
     elseif (src%calcin .and. (src%ibnd == -1 .or. src%ibnd == 1)) then
        ! specified flux/head w/ calc inside
        ncols = 4*N-2
@@ -232,7 +245,8 @@ contains
     end if
 
     if (debug) then
-       print '(A,3(I0,1X),A,4(I0,1X))', 'ELLIPSE_MATCH_OTHER (parent,s,t): ',&
+       write(stdout,'(A,3(I0,1X),A,4(I0,1X))') &
+            & 'ELLIPSE_MATCH_OTHER (parent,s,t): ',&
             & src%parent%id,s,t,' (nrows,ncols,loM,hiM): ',nrows,ncols,loM,hiM
     end if
 
@@ -244,7 +258,8 @@ contains
 
        if (dom%inclBg(s,t) .or. dom%InclIn(s,t) .or. dom%InclIn(t,s)) then
 
-          allocate(RMn(M,0:N-1,0:1), RMn0(0:N-1,0:1), cemat(M,0:N-1), semat(M,N-1))
+          allocate(RMn(M,0:N-1,0:1), RMn0(0:N-1,0:1))
+          allocate(cemat(M,0:N-1), semat(M,N-1))
 
           ! setup LHS
           ! for matching or specified total head target elements
@@ -261,7 +276,8 @@ contains
                 RMn0(0:N-1,0) = Ke(src%parent%mat(idx), vi(0:N-1), src%r)
                 RMn0(1:N-1,1) = Ko(src%parent%mat(idx), vi(1:N-1), src%r)
                 RMn0(0,1) = 0.0_DP
-                ! odd functions not needed for line source, but computed anyway (?)
+                ! odd functions not needed for line source,
+                ! computed anyway (?)
                 K = src%parent%K
 
                 loN = 1
@@ -600,7 +616,8 @@ contains
     type(ellipse), intent(in) :: e
     complex(DP), intent(in) :: p
     integer, intent(in) :: idx
-    complex(DP), dimension(ceiling(e%N*0.5_DP)) :: a2n ! only even coefficients of even order
+    ! only even coefficients of even order
+    complex(DP), dimension(ceiling(e%N*0.5_DP)) :: a2n
     real(DP), dimension(0:max(e%ms-1,e%N)) :: vs
     real(DP), dimension(1:e%ms,ceiling(e%N*0.5_DP)) :: arg
     integer, dimension(0:max(e%ms-1,e%N)) :: vi

@@ -32,6 +32,7 @@ module solution_mod
 
 contains
   subroutine matrix_solution(c,e,dom,sol,p,idx)
+    use, intrinsic :: iso_fortran_env, only : stdout => output_unit
     use constants, only : DP, CZERO, ASCII
     use type_definitions, only : circle, solution, ellipse, domain, match_result
     use circular_elements, only : circle_match, well
@@ -88,34 +89,34 @@ contains
        col(i,1) = size(res(i,i)%LHS,2)
 
        if (sol%debug) then
-          print '(A,I0,A,2(I0,1X),3(A,I0))', 'SOL circ-self i: ',i,&
+          write(stdout,'(A,I0,A,2(I0,1X),3(A,I0))') 'SOL circ-self i: ',i,&
                & ' LHS_shape: ',shape(res(i,i)%LHS),&
                & ' RHS_length: ',size(res(i,i)%RHS),&
                & ' row: ',row(i,1),' col: ',col(i,1)
 
-          print '(A,I0,A)', 'SOL circ-self i: ',i,' LHS'
+          write(stdout,'(A,I0,A)') 'SOL circ-self i: ',i,' LHS'
           nrow = size(res(i,i)%LHS,1)
           ncol = size(res(i,i)%LHS,2)
           if (ncol > 0) then
              write(fmt2(5:7),'(I3.3)') ncol
              write(fmt(8:10),'(I3.3)') ncol
-             print fmt2, (j,j=1,ncol)
+             write(stdout,fmt2) (j,j=1,ncol)
              do j = 1, nrow
-                print fmt, j,res(i,i)%LHS(j,:)
+                write(stdout,fmt) j,res(i,i)%LHS(j,:)
              end do
           else
-             print '(A)', 'no output ncol==0'
+             write(stdout,'(A)') 'no output ncol==0'
           end if
 
-          print '(A,I0,A)', 'SOL circ-self i: ',i,' RHS'
+          write(stdout,'(A,I0,A)') 'SOL circ-self i: ',i,' RHS'
           nrow = size(res(i,i)%RHS)
           if (nrow > 0) then
              write(fmt2(5:7),'(I3.3)') nrow
              write(fmt(8:10),'(I3.3)') nrow
-             print fmt2, (j,j=1,nrow)
-             print fmt, 1,res(i,i)%RHS(:)
+             write(stdout,fmt2) (j,j=1,nrow)
+             write(stdout,fmt) 1,res(i,i)%RHS(:)
           else
-             print '(A)', 'no output nrow==0'
+             write(stdout,'(A)') 'no output nrow==0'
           end if
        end if
 
@@ -124,33 +125,33 @@ contains
           if(i /= j) then
              res(j,i) = circle_match(c(i),c(j)%matching,dom,p,sol%debug)
              if (sol%debug) then
-                print '(2(A,2(I0,1X)),A,I0)', 'SOL circ-circ i,j: ',i,j,&
+                write(stdout,'(2(A,2(I0,1X)),A,I0)') 'SOL circ-circ i,j: ',i,j,&
                      & ' LHS_shape: ',shape(res(j,i)%LHS),&
                      & ' RHS_size: ',size(res(j,i)%RHS)
 
-                print '(A,2(I0,1X),A)', 'SOL circ-circ i,j: ',i,j,' LHS'
+                write(stdout,'(A,2(I0,1X),A)') 'SOL circ-circ i,j: ',i,j,' LHS'
                 nrow = size(res(j,i)%LHS,1)
                 ncol = size(res(j,i)%LHS,2)
                 if (ncol > 0) then
                    write(fmt2(5:7),'(I3.3)') ncol
                    write(fmt(8:10),'(I3.3)') ncol
-                   print fmt2, (k,k=1,ncol)
+                   write(stdout,fmt2) (k,k=1,ncol)
                    do k = 1, nrow
-                      print fmt, k,res(j,i)%LHS(k,:)
+                      write(stdout,fmt) k,res(j,i)%LHS(k,:)
                    end do
                 else
-                   print '(A)', 'no LHS: ncol==0'
+                   write(stdout,'(A)') 'no LHS: ncol==0'
                 end if
 
-                print '(A,2(I0,1X),A)', 'SOL circ-circ i,j: ',i,j,' RHS'
+                write(stdout,'(A,2(I0,1X),A)') 'SOL circ-circ i,j: ',i,j,' RHS'
                 nrow = size(res(j,i)%RHS(:))
                 if (nrow > 0) then
                    write(fmt2(5:7),'(I3.3)') nrow
                    write(fmt(8:10),'(I3.3)') nrow
-                   print fmt2, (k,k=1,nrow)
-                   print fmt, 1,res(j,i)%RHS(:)
+                   write(stdout,fmt2) (k,k=1,nrow)
+                   write(stdout,fmt) 1,res(j,i)%RHS(:)
                 else
-                   print '(A)', 'no RHS: nrow==0'
+                   write(stdout,'(A)') 'no RHS: nrow==0'
                 end if
              end if
 
@@ -162,33 +163,33 @@ contains
           jj = j+nc
           res(jj,i) = circle_match(c(i),e(j)%matching,dom,p,sol%debug)
           if (sol%debug) then
-             print '(2(A,2(I0,1X)),A,I0)', 'SOL circ-ellip i,j: ',i,jj,&
+             write(stdout,'(2(A,2(I0,1X)),A,I0)') 'SOL circ-ellip i,j: ',i,jj,&
                   & ' LHS_shape:',shape(res(jj,i)%LHS),&
                   & ' RHS_size:',size(res(jj,i)%RHS)
 
-             print '(A,2(I0,1X),A)', 'SOL circ-ellip i,j: ',i,jj,' LHS'
+             write(stdout,'(A,2(I0,1X),A)') 'SOL circ-ellip i,j: ',i,jj,' LHS'
              nrow = size(res(jj,i)%LHS,1)
              ncol = size(res(jj,i)%LHS,2)
              if (ncol > 0) then
                 write(fmt2(5:7),'(I3.3)') ncol
                 write(fmt(8:10),'(I3.3)') ncol
-                print fmt2, (k,k=1,ncol)
+                write(stdout,fmt2) (k,k=1,ncol)
                 do k = 1, nrow
-                   print fmt, k,res(jj,i)%LHS(k,:)
+                   write(stdout,fmt) k,res(jj,i)%LHS(k,:)
                 end do
              else
-                print '(A)', 'no LHS: ncol==0'
+                write(stdout,'(A)') 'no LHS: ncol==0'
              end if
 
-             print '(A,2(I0,1X),A)', 'SOL circ-ellip i,j: ',i,jj,' RHS'
+             write(stdout,'(A,2(I0,1X),A)') 'SOL circ-ellip i,j: ',i,jj,' RHS'
              nrow = size(res(jj,i)%RHS(:))
              if (nrow > 0) then
                 write(fmt2(5:7),'(I3.3)') nrow
                 write(fmt(8:10),'(I3.3)') nrow
-                print fmt2, (k,k=1,nrow)
-                print fmt, 1,res(jj,i)%RHS(:)
+                write(stdout,fmt2) (k,k=1,nrow)
+                write(stdout,fmt) 1,res(jj,i)%RHS(:)
              else
-                print '(A)', 'no RHS: nrow==0'
+                write(stdout,'(A)') 'no RHS: nrow==0'
              end if
           end if
        end do
@@ -203,34 +204,34 @@ contains
        col(ii,1) = size(res(ii,ii)%LHS,2)
 
        if (sol%debug) then
-          print '(A,I0,A,2(I0,1X),3(A,I0))', 'SOL ellip-self i: ',ii,&
+          write(stdout,'(A,I0,A,2(I0,1X),3(A,I0))') 'SOL ellip-self i: ',ii,&
                & ' LHS_shape:',shape(res(ii,ii)%LHS),&
                & ' RHS_size:',size(res(ii,ii)%RHS),&
                & ' row: ',row(ii,1),' col: ',col(ii,1)
 
-          print '(A,I0,A)', 'SOL ellip-self i: ',ii,' LHS'
+          write(stdout,'(A,I0,A)') 'SOL ellip-self i: ',ii,' LHS'
           nrow = size(res(ii,ii)%LHS,1)
           ncol = size(res(ii,ii)%LHS,2)
           if (ncol > 0) then
              write(fmt2(5:7),'(I3.3)') ncol
              write(fmt(8:10),'(I3.3)') ncol
-             write(*,fmt2) (j,j=1,ncol)
+             write(stdout,fmt2) (j,j=1,ncol)
              do j = 1, nrow
-                print fmt, j,res(ii,ii)%LHS(j,:)
+                write(stdout,fmt) j,res(ii,ii)%LHS(j,:)
              end do
           else
-             print '(A)', 'no output ncol==0'
+             write(stdout,'(A)') 'no output ncol==0'
           end if
 
-          print '(A,I0,A)', 'SOL ellip-self i: ',ii,' RHS'
+          write(stdout,'(A,I0,A)') 'SOL ellip-self i: ',ii,' RHS'
           nrow = size(res(ii,ii)%RHS)
           if (nrow > 0) then
              write(fmt2(5:7),'(I3.3)') nrow
              write(fmt(8:10),'(I3.3)') nrow
-             print fmt2, (j,j=1,nrow)
-             print fmt, 1,res(ii,ii)%RHS(:)
+             write(stdout,fmt2) (j,j=1,nrow)
+             write(stdout,fmt) 1,res(ii,ii)%RHS(:)
           else
-             print '(A)', 'no output nrow==0'
+             write(stdout,'(A)') 'no output nrow==0'
           end if
 
        end if
@@ -240,8 +241,8 @@ contains
           res(j,ii) = ellipse_match(e(i),c(j)%matching,dom,p,idx,sol%debug)
 
           if (sol%debug) then
-             print *, 'SOL ellip-circ i,j:',ii,j,'LHS shape:',shape(res(j,ii)%LHS),&
-                  &'RHS shape:',shape(res(j,ii)%RHS)
+             write(stdout,*)'SOL ellip-circ i,j:',ii,j,'LHS shape:',&
+                  & shape(res(j,ii)%LHS), 'RHS shape:',shape(res(j,ii)%RHS)
           end if
        end do
 
@@ -251,8 +252,8 @@ contains
           if (i /= j) then
              res(jj,ii) = ellipse_match(e(i),e(j)%matching,dom,p,idx,sol%debug)
              if (sol%debug) then
-                print *, 'SOL ellip-ellip i,j:',ii,jj,'LHS shape:',shape(res(jj,ii)%LHS),&
-                     &'RHS shape:',shape(res(jj,ii)%RHS)
+                write(stdout,*) 'SOL ellip-ellip i,j:',ii,jj,'LHS shape:',&
+                     & shape(res(jj,ii)%LHS), 'RHS shape:',shape(res(jj,ii)%RHS)
              end if
           end if
        end do
@@ -262,7 +263,7 @@ contains
     bigN = sum(col(:,1))
 
     if (sol%debug) then
-       print *, 'SOL bigM:',bigM,' bigN:',bigN
+       write(stdout,'(2(A,I0))') 'SOL bigM:',bigM,' bigN:',bigN
     end if
 
     allocate(A(bigM,bigN), b(bigM))
@@ -280,14 +281,14 @@ contains
      end do
 
     if (sol%debug) then
-       print *, 'SOL row:'
+       write(stdout,'(A)') 'SOL row:'
        do i=1,size(row,1)
-          print *, i,':',row(i,:)
+          write(stdout,*) i,':',row(i,:)
        end do
 
-       print *, 'SOL col:'
+       write(stdout,'(A)') 'SOL col:'
        do i=1,size(col,1)
-          print *, i,':',col(i,:)
+          write(stdout,*) i,':',col(i,:)
        end do
     end if
 
@@ -295,7 +296,7 @@ contains
     do rr = 1,ntot
        do cc = 1,ntot
           if (sol%debug) then
-             print *, 'convert',rr,cc,' row range:',row(rr,0),row(rr,2),&
+             write(stdout,*) 'convert',rr,cc,' row range:',row(rr,0),row(rr,2),&
                   & ' col range:',col(cc,0),col(cc,2)
           end if
 
@@ -311,14 +312,16 @@ contains
        ! this routine works for all three potential use cases
        ! M>N (overdetermined), M==N (even-determined), and M<N (underdetermined)
        if (sol%debug) then
-          print *, 'ZGELS debug :: bigM,bigN',bigM,bigN,' :: work ',size(work),&
-               & ':: bshape', shape(b),':: Ashape',shape(A)
-          print *, '1:TRANSA=','N', ', 2:M=',bigM, ', 3:N=',bigN, ', 4:NRHS=',1, ', 5:A=',A(:,:), ', 6:LDA=',bigM, ', 7:B=',b(:), &
-            & ', 8:LDB=',bigM, ', 9:WORK=',work, ', 10:LDWORK=',size(work), ', 11:INFO=',ierr
+          write(stdout,*) 'ZGELS debug :: bigM,bigN',bigM,bigN,' :: work ',&
+               & size(work), ':: bshape', shape(b),':: Ashape',shape(A)
+          write(stdout,*) '1:TRANSA=','N', ', 2:M=',bigM, ', 3:N=',bigN, &
+               & ', 4:NRHS=',1, ', 5:A=',A(:,:), ', 6:LDA=',bigM, ', 7:B=', &
+               & b(:), ', 8:LDB=',bigM, ', 9:WORK=',work, ', 10:LDWORK=',&
+               & size(work), ', 11:INFO=',ierr
        end if
 
-       call ZGELS(TRANSA='N', M=bigM, N=bigN, NRHS=1, A=A(:,:), LDA=bigM, B=b(:), &
-            & LDB=bigM, WORK=work, LDWORK=size(work), INFO=ierr)
+       call ZGELS(TRANSA='N', M=bigM, N=bigN, NRHS=1, A=A(:,:), LDA=bigM, &
+            & B=b(:), LDB=bigM, WORK=work, LDWORK=size(work), INFO=ierr)
        if (ierr /= 0) then
           write(*,'(A,I0,"(",ES10.3,",",ES10.3,")")') 'ZGELS error: ',ierr,p
           stop 999
@@ -338,7 +341,7 @@ contains
        if (.not. (c(i)%ibnd == 2 .and. (.not. c(i)%storin))) then
           ! coefficients come from least-squares solution above
           if (sol%debug) then
-             print *, 'copy least-squares results into coeff: circle',i
+             write(stdout,*) 'copy least-squares results into coeff: circle',i
           end if
 
           c(i)%coeff(idx,:) = b(col(i,0):col(i,2))
@@ -351,7 +354,7 @@ contains
           end if
 
           if (sol%debug) then
-             print *, 'compute well coefficients for circle',i
+             write(stdout,*) 'compute well coefficients for circle',i
           end if
 
           ! get a0 coefficient from well routine
@@ -366,7 +369,7 @@ contains
        end if
        if (.not. e(i)%ibnd == 2) then
           if (sol%debug) then
-             print *, 'copy least-squares results into coeff: ellipse',i
+             write(stdout,*) 'copy least-squares results into coeff: ellipse',i
           end if
 
           ! coefficients from least-squares solution above
@@ -380,10 +383,10 @@ contains
           end if
 
           if (sol%debug) then
-             print *, 'compute line coefficients for ellipse',i
+             write(stdout,*) 'compute line coefficients for ellipse',i
           end if
 
-          ! get coefficients from line routine (only even-order, even coeff used)
+          ! get coefficients from line routine (only even-order, even coeff)
           e(i)%coeff(idx,:) = 0.0_DP
           e(i)%coeff(idx,1:e(i)%N:2) = line(e(i),p,idx) ! a_(2n)
        end if

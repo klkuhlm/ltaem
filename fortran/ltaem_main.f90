@@ -22,17 +22,20 @@
 
 ! this is the driver routine for LT-AEM programs, which
 ! can compute a time-domain solution either on a grid of locations and times,
-! at a single point through time (i.e., time series), or at a particle location through
-! space and time.  The solution depends on the given properties of circular and
-! elliptical elements.  Wells or points are treated as special case circles, and lines are
-! treated as special case ellipses.
+! at a single point through time (i.e., time series), or at a particle
+! location through space and time. The solution depends on the given properties
+! of circular and elliptical elements. Wells or points are treated as special
+! case circles, and lines are treated as special case ellipses.
 
 program ltaem_main
-  use constants, only : DP
-  use type_definitions, only : domain, element, matching, circle, ellipse, solution, INVLT, particle
+  use constants, only : DP, ASCII
+  use type_definitions, only : domain, element, matching, &
+       & circle, ellipse, solution, INVLT, particle
   use file_ops, only : readinput, writeresults, read_coeff, dump_coeff
-  use inverse_Laplace_Transform, only : Linv => deHoog_invlap, pvalues => deHoog_pvalues
-  use particle_integrate, only : rungeKuttaMerson, rungeKutta, fwdEuler, analytic
+  use inverse_Laplace_Transform, only : Linv => deHoog_invlap, &
+       & pvalues => deHoog_pvalues
+  use particle_integrate, only : rungeKuttaMerson, rungeKutta, &
+       & fwdEuler, analytic
   use solution_mod, only : matrix_solution
   use calc_routines, only : headCalc, velCalc, elementFlowrate
   use geometry, only : distanceAngleCalcs
@@ -41,7 +44,8 @@ program ltaem_main
   use, intrinsic :: iso_fortran_env, only : stdout => output_unit
 
   !!  for parallel execution using OpenMP
-  !$  use omp_lib, only : omp_get_thread_num, omp_get_num_procs, omp_get_max_threads
+  !$ use omp_lib, only : omp_get_thread_num
+  !$ use omp_lib, only : omp_get_num_procs,omp_get_max_threads
 
   implicit none
   type(domain)  :: dom
@@ -52,19 +56,20 @@ program ltaem_main
   type(particle), allocatable :: part(:)
 
   integer :: i, j, k
-  integer :: tnP                              ! total # p (product of dimensions)
+  integer :: tnP                              ! total # p
   integer :: nc, ne                           ! #circles, #ellipses
   integer :: lt, minlt, maxlt                 ! indexes related to log10 time
-  integer :: lot, hit, lop, hip, lo           ! local hi and lo indices for log cycles
+  integer :: lot, hit, lop, hip, lo           ! hi and lo indices for log cycles
   integer, allocatable :: nt(:)               ! # times per log cycle
-  integer, allocatable :: parnumdt(:)         ! number of dt expected for each particle
-  integer, allocatable :: idxmat(:,:)         ! matrix of indices for parallelization
+  integer, allocatable :: parnumdt(:)         ! # dt expected for each particle
+  integer, allocatable :: idxmat(:,:)         ! index matrix for parallelization
   real(DP), allocatable :: logt(:), tee(:)    ! log10 time, deHoog T
-  complex(DP), allocatable :: s(:,:), stmp(:) ! Laplace parameter (different shapes)
+  complex(DP), allocatable :: s(:,:), stmp(:) ! Laplace parameter
   complex(DP) :: calcZ                        ! calculation point
-  complex(DP), allocatable :: hp(:), vp(:,:)  ! L-space head and velocity vectors
-  complex(DP), allocatable :: qp(:,:)         ! L-space flowrate into/out of element
+  complex(DP), allocatable :: hp(:), vp(:,:)  ! L-space head/velocity vectors
+  complex(DP), allocatable :: qp(:,:)         ! L-space flow into/out of element
   logical :: fail
+  character(kind=ASCII, len=40) :: fmt
 
   real(DP), parameter :: MOST_LOGT = 0.999_DP, TMAX_MULT = 2.0_DP
 
@@ -76,8 +81,9 @@ program ltaem_main
      sol%inFName = 'input.in'
   end if
 
-  ! some parallel-related statistics ('!$' is special OMP directive)
-  !$ write(stdout,'(2(A,I0))') 'OpenMP num procs:',omp_get_num_procs(), ' OpenMP max threads:', omp_get_max_threads()
+  ! some parallel-related statistics ('!$' is special omp directive)
+  !$ write(stdout,'(A,I0)') 'OpenMP # procs:',omp_get_num_procs()
+  !$ write(stdout,'(A,I0)')' OpenMP max # threads:', omp_get_max_threads()
 
   ! read in data, initialize variables, allocate major structs
   call readInput(sol,dom,bg,c,e,part)
@@ -109,22 +115,23 @@ program ltaem_main
         ! to make it possible for particles / contours to share code...
         maxlt = maxlt + 1
 
-     !^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     !^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
      else   ! contour maps / time-series plots
         allocate(logt(1:sol%nt))
 
         lo = 1
         logt(:) = log10(sol%t(:))
         minlt =   floor(minval(logt(:)))
-        ! adding the tiny helps catch round-off errors when ending exactly on a log cycle (which is common)
+        ! adding the tiny helps catch round-off errors when
+        ! ending exactly on a log cycle (which is common)
         maxlt = ceiling(maxval(logt(:) + spacing(logt(sol%nt))))
 
-        allocate(s(2*sol%m+1,minlt:maxlt-1), nt(minlt:maxlt-1), tee(minlt:maxlt-1))
+        allocate(s(2*sol%m+1,minlt:maxlt-1))
+        allocate(nt(minlt:maxlt-1), tee(minlt:maxlt-1))
 
         logcycles: do lt = minlt, maxlt-1
           ! number of times falling in (or on the edge of) this logcycle
           nt(lt) = count(logt >= real(lt,DP) .and. logt < real(lt+1,DP))
-          !print *, 'DBG:',lt,lo,nt(lt),lo+nt(lt)-1,maxval(sol%t(lo:lo+nt(lt)-1))
            if (nt(lt) == 0) then
              cycle logcycles
            end if
@@ -149,28 +156,28 @@ program ltaem_main
         call ellipse_init(e,bg,s)
      end if
 
-     ! create an index the same shape as s (which has non-standard lower bound on dim 2)
+     ! create index same shape as s (w/ non-standard lower bound on dim 2)
      allocate(idxmat(size(s,dim=1),lbound(s,dim=2):ubound(s,dim=2)))
      idxmat = reshape([(j,j=1,tnP)],shape(s))
 
-     ! when in parallel, call once to initialize the results matrices in solution.f90
+     ! in parallel, call once to initialize the results matrices in solution.f90
      !$ call matrix_solution(c,e,dom,sol,s(1,minlt),idxmat(1,minlt))
      !$ write(stdout,'(A/)') 'parallel solution initialization...'
 
      !$ write(stdout,'(A)',advance="no") 'thr'
      write(stdout,'(A)') ' logt  idx            p'
-
-     !$OMP PARALLEL DO PRIVATE(lt,j) SHARED(s,c,e,dom,sol,idxmat) 
+     fmt = '(I4,1X,I4,1X,"(",ES10.3,",",ES10.3,")")' 
+     !$omp parallel do private(lt,j) shared(s,c,e,dom,sol,idxmat)
      do lt = minlt,maxlt-1
         if (nt(lt) > 0) then
            do j = 1,2*sol%m+1
               !$ write (*,'(I2,1X)',advance='no') OMP_get_thread_num()
-              write(stdout,'(I4,1X,I4,1X,"(",ES10.3,",",ES10.3,")")') lt,j,s(j,lt)
+              write(stdout,fmt) lt,j,s(j,lt)
               call matrix_solution(c,e,dom,sol,s(j,lt),idxmat(j,lt))
            end do
         end if
      end do
-     !$OMP END PARALLEL DO
+     !$omp end parallel do
 
      !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
      ! save coefficient matrices to file (if sol%output < 100)
@@ -206,7 +213,7 @@ program ltaem_main
         part(i)%id = i
      end do
 
-     !$OMP PARALLEL DO PRIVATE(j) SHARED(s,tee,c,e,bg,sol,dom,part)
+     !$omp parallel do private(j) shared(s,tee,c,e,bg,sol,dom,part)
      do j = 1, sol%nPart
         select case (part(j)%int)
         case (1)
@@ -219,7 +226,7 @@ program ltaem_main
            call fwdEuler(s,tee,c,e,bg,sol,dom,part(j),lbound(tee,dim=1))
         end select
      end do
-     !$OMP END PARALLEL DO
+     !$omp end parallel do
 
   !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   elseif(sol%contour) then ! x,y locations outer product of x,y vectors
@@ -233,9 +240,9 @@ program ltaem_main
 
      stmp(1:tnP) = reshape(s,[tnP])
 
-     ! TODO: this block of code is almost repeated below. Refactor into function?
+     ! TODO: this block is ~repeated below. Refactor into function?
      if (sol%Qcalc) then
-        write(stdout,'(A)',advance='no') 'computing element boundary flowrates: '
+        write(stdout,'(A)',advance='no') 'element boundary flowrates: '
         allocate(sol%Q(sol%nt,nc+ne),qp(tnP,nc+ne))
         if (sol%deriv) then
            allocate(sol%dQ(sol%nt,nc+ne))
@@ -250,7 +257,7 @@ program ltaem_main
         end do
         write(stdout,'(/)')
 
-        !$OMP PARALLEL DO PRIVATE(lt,lot,hit,lop,hip,k) SHARED(sol,tee,stmp,qp)
+        !$omp parallel do private(lt,lot,hit,lop,hip,k) shared(sol,tee,stmp,qp)
         do lt = minlt,maxlt-1
            lot = 1 + sum(nt(minlt:lt-1))
            hit = sum(nt(minlt:lt))
@@ -259,17 +266,19 @@ program ltaem_main
            hip = lop + size(s,1) - 1
 
            do k = 1,nc+ne
-              sol%Q(lot:hit,k) = Linv(sol%t(lot:hit), tee(lt), qp(lop:hip,k), sol%INVLT)
+              sol%Q(lot:hit,k) = Linv(sol%t(lot:hit), tee(lt), &
+                   & qp(lop:hip,k), sol%INVLT)
               if (sol%deriv) then
                  sol%dQ(lot:hit,k) = Linv(sol%t(lot:hit), tee(lt), &
                       & qp(lop:hip,k)*stmp(lop:hip), sol%INVLT)*sol%t(lot:hit)
               end if
            end do
         end do
-        !$OMP END PARALLEL DO
+        !$omp end parallel do
      end if
 
-     !$OMP PARALLEL DO PRIVATE(j,i,lt,calcZ,hp,vp,lot,hit,lop,hip) SHARED(sol,stmp,tnP,dom,c,e,bg)
+     !$omp parallel do private(j,i,lt,calcZ,hp,vp,lot,hit,lop,hip) &
+     !$omp            & shared(sol,stmp,tnP,dom,c,e,bg)
      do j = 1,sol%nx
         !$ write (*,'(I0,1X)',advance='no') OMP_get_thread_num()
         write (*,'(A,ES13.5)') 'x: ',sol%x(j)
@@ -297,19 +306,22 @@ program ltaem_main
               lop = (lt - minlt)*size(s,dim=1) + 1
               hip = lop + size(s,dim=1) - 1
 
-              sol%h(lot:hit,j,i) =     Linv(sol%t(lot:hit), tee(lt), hp(lop:hip), sol%INVLT)
-              sol%v(lot:hit,1:2,j,i) = Linv(sol%t(lot:hit), tee(lt), vp(lop:hip,1:2), sol%INVLT)
+              sol%h(lot:hit,j,i) =     Linv(sol%t(lot:hit), &
+                   & tee(lt), hp(lop:hip), sol%INVLT)
+              sol%v(lot:hit,1:2,j,i) = Linv(sol%t(lot:hit), &
+                   & tee(lt), vp(lop:hip,1:2), sol%INVLT)
 
               if (sol%deriv) then
                  ! multiply solution by p for derivative
                  hp(lop:hip) = hp(lop:hip)*stmp(lop:hip)
-                 sol%dh(lot:hit,j,i) = Linv(sol%t(lot:hit), tee(lt), hp(lop:hip), &
+                 sol%dh(lot:hit,j,i) = Linv(sol%t(lot:hit), &
+                      & tee(lt), hp(lop:hip), &
                       & sol%INVLT)*sol%t(lot:hit)
               end if
            end do
         end do
      end do
-     !$OMP END PARALLEL DO
+     !$omp end parallel do
 
   !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   elseif(sol%timeseries) then ! x,y locations are in pairs; e.g. inner product
@@ -325,7 +337,7 @@ program ltaem_main
 
      ! TODO: see repeated code above
      if (sol%Qcalc) then
-        write(stdout,'(A)',advance='no') 'computing element boundary flowrates: '
+        write(stdout,'(A)',advance='no') 'elemeznt boundary flowrates: '
         allocate(sol%Q(sol%nt,nc+ne),qp(tnP,nc+ne))
         if (sol%deriv) then
            allocate(sol%dQ(sol%nt,nc+ne))
@@ -340,7 +352,8 @@ program ltaem_main
         end do
         write(stdout,'(/)')
 
-        !$OMP PARALLEL DO PRIVATE(lt,lot,hit,lop,hip,k) SHARED(sol,tee,stmp,qp)
+        !$omp parallel do private(lt,lot,hit,lop,hip,k) &
+        !$omp            & shared(sol,tee,stmp,qp)
         do lt = minlt,maxlt-1
            lot = 1 + sum(nt(minlt:lt-1))
            hit = sum(nt(minlt:lt))
@@ -349,20 +362,22 @@ program ltaem_main
            hip = lop + size(s,1) - 1
 
            do k = 1, nc+ne
-              sol%Q(lot:hit,k) = Linv(sol%t(lot:hit), tee(lt), qp(lop:hip,k), sol%INVLT)
+              sol%Q(lot:hit,k) = Linv(sol%t(lot:hit), &
+                   & tee(lt), qp(lop:hip,k), sol%INVLT)
               if (sol%deriv) then
                  sol%dQ(lot:hit,k) = Linv(sol%t(lot:hit), tee(lt), &
                       & qp(lop:hip,k)*stmp(lop:hip), sol%INVLT)*sol%t(lot:hit)
               end if
            end do
         end do
-        !$OMP END PARALLEL DO
+        !$omp end parallel do
      end if
 
-     !$OMP PARALLEL DO PRIVATE(i,lt,calcZ,hp,vp,lot,hit,lop,hip) SHARED(sol,stmp,tnP,dom,c,e,bg)
+     !$omp parallel do private(i,lt,calcZ,hp,vp,lot,hit,lop,hip) &
+     !$omp            & shared(sol,stmp,tnP,dom,c,e,bg)
      do i = 1,sol%nx
-        write(stdout,'(A,2(3X,ES14.7E1))') trim(sol%obsname(i)),sol%xshift+sol%x(i),&
-             & sol%yshift+sol%y(i)
+        write(stdout,'(A,2(3X,ES14.7E1))') trim(sol%obsname(i)), &
+             & sol%xshift+sol%x(i), sol%yshift+sol%y(i)
 
         calcZ = cmplx(sol%x(i),sol%y(i),DP)
         hp(1:tnP) =    headCalc(calcZ,stmp,1,tnP,dom,c,e,bg)
@@ -370,12 +385,12 @@ program ltaem_main
         vp(1:tnP,1:2) = velCalc(calcZ,stmp,1,tnP,dom,c,e,bg)
 
         do lt = minlt,maxlt-1
-          
+
            if (nt(lt) == 0) then
              ! empty logcycle
              cycle
            end if
-           
+
            lot = 1 + sum(nt(minlt:lt-1))
            hit = sum(nt(minlt:lt))
 
@@ -383,8 +398,10 @@ program ltaem_main
            hip = lop + size(s,1) - 1
 
            ! don't need second dimension of results matrices
-           sol%h(lot:hit,i,1) =     Linv(sol%t(lot:hit), tee(lt), hp(lop:hip), sol%INVLT)
-           sol%v(lot:hit,1:2,i,1) = Linv(sol%t(lot:hit), tee(lt), vp(lop:hip,1:2), sol%INVLT)
+           sol%h(lot:hit,i,1) =     Linv(sol%t(lot:hit), &
+                & tee(lt), hp(lop:hip), sol%INVLT)
+           sol%v(lot:hit,1:2,i,1) = Linv(sol%t(lot:hit), &
+                & tee(lt), vp(lop:hip,1:2), sol%INVLT)
 
            if (sol%deriv) then
               ! multiply solution by p for derivative
@@ -394,7 +411,7 @@ program ltaem_main
            end if
         end do
      end do
-     !$OMP END PARALLEL DO
+     !$omp end parallel do
 
   end if
 

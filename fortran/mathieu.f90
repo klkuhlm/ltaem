@@ -91,7 +91,8 @@ contains
     ! i.e., the position in the infinite sum
 
     ! A/B 2nd dimension: superscript in McLachlan notation,
-    ! i.e., the n in the order 2n+1 of the Mathieu function which it is associated with
+    ! i.e., the n in the order 2n+1 of the Mathieu function
+    !  which it is associated with
 
     ! A/B 3rd dimension: 0(even) or 1(odd) cases of the second dimension
 

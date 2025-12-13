@@ -102,7 +102,7 @@ contains
        ! sine wave shifted to start at t=par2
        mult(1:np) = exp(-par(2)*p)*par(1)/(p**2 + par(1)**2)
     case(-100:-1)
-       !! arbitrary piecewise constant pumping rate with n steps, from ti(1) to tf
+       ! piecewise constant pumping rate with n steps, from ti(1) to tf
        n = -flag
        allocate(ti(n),y(0:n),dy(n))
 
