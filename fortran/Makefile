@@ -78,7 +78,7 @@ F90=gfortran
 OMP=-fopenmp
 ##CPP=-cpp
 ###DFLAGS=-O2 -march=native -fprofile-generate -flto
-DFLAGS=-Wall -Wextra -O0 -g -fcheck=all # -ffpe-trap=invalid,zero #  -fanalyzer
+DFLAGS=-Wall -Wextra -Og -g -fcheck=all # -ffpe-trap=invalid,zero #  -fanalyzer
 ###DFLAGS+=-fdump-rtl-expand 
 ##LINKOPT=-fbacktrace -B/usr/lib/x86_64-linux-gnu  # needed to make dev version of gcc to work?
 LINKOPT=-flto=auto

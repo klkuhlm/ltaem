@@ -70,10 +70,10 @@ module type_definitions
          &  '(infinitely thick aquitard)            ']
 
     character(kind=ASCII, len=24), dimension(-1:2) :: ibnd = [&
-         & '(specified total head)  ',&
-         & '(matching)              ',&
-         & '(specified total flux)  ',&
-         & '(specified element flux)']
+         & '(specified total head)  ',& ! -1
+         & '(matching)              ',& !  0
+         & '(specified total flux)  ',& ! +1
+         & '(specified element flux)']  ! +2
 
     character(kind=ASCII, len=34), dimension(7) :: output = [&
          & '(gnuplot contour map)             ',&

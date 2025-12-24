@@ -10,7 +10,7 @@ LINVEC 0.0 5.0             :: x
 LINVEC 0.0 5.0             :: y
 LINVEC 0.1 20.0             :: t
 1.0D-14  1.0D-15  40          :: alpha, tolerance, M
-2  well_single_circle_circles.cin  :: number of circular elements, circle data file
+3  well_single_circle_circles.cin  :: number of circular elements, circle data file
 0  20 not_used              :: number of elliptical elements, ellipse MS, ellipse data file
 not_used                    ::  particle data file
 
