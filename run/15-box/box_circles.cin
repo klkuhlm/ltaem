@@ -9,12 +9,6 @@ F  F  :: storin?
 1.0D0 1.0D0    :: K
 1.0D0 1.0D0    :: Ss
 1.0D0 1.0D0    :: porosity
-0.0D0 0.0D0    :: area source strength
-2.4D-1 -2.6D-1   :: boundary source strength
-001  0.0D0  0.0D0  :: area time flag, tpar1, tpar2
-001  0.0D0  0.0D0  :: area time flag, tpar1, tpar2
-001  0.0D0  0.0D0  :: boundary time flag, tpar1, tpar2
-001  0.0D0  0.0D0  :: boundary time flag, tpar1, tpar2
 0 0  :: leaky type flag
 1.0D0 1.0D0 :: K2
 1.0D0 1.0D0 :: Ss2
@@ -26,6 +20,15 @@ F   F :: unconfined?
 F     F       :: dual porosity flag?
 1.0D0 1.0D0   :: dual porosity matrix Ss
 1.0D0 1.0D0   :: dual porosity lambda
+0     0       :: multiporosity diffusion index
+1.0E-5 1.0E-5 :: Dm
+1      1      :: NDiffTerms
 1.0D0 1.0D0   :: dimensionless skin
+0.0D0 0.0D0    :: area source strength
+2.4D-1 -2.6D-1   :: boundary source strength
+001  0.0D0  0.0D0  :: area time flag, tpar1, tpar2
+001  0.0D0  0.0D0  :: area time flag, tpar1, tpar2
+001  0.0D0  0.0D0  :: boundary time flag, tpar1, tpar2
+001  0.0D0  0.0D0  :: boundary time flag, tpar1, tpar2
 
 

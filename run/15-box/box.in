@@ -1,0 +1,16 @@
+T  F  T  T F 1   ::  calc?, particle?, contour?, output flag, outputFN
+box_contour.dat
+2.0D-1  2.0D0  1.0D-4  ::  background: por, k, Ss
+0  1.0D0  1.0D-4  1.0D0  ::  leakFlag, K2, Ss2, b2
+F 1.5D-1  2.0D0  1.0  :: Sy, Kz, unconfined?, b
+F 1.0D-3  2.0D0 0  1.0D-5  1  :: MultiPORO  Flag?, matrixSs, lambda, diffusion idx, Dm, NDiffTerms
+50  50  5  :: nx, ny, nt
+DUMMMY OBS NAME
+LINVEC -0.26000 0.26000  :: x
+LINVEC -0.13500 0.13500  :: y
+0.125 0.250 0.500 0.750 0.875 :: t
+1.0D-16  1.0D-15  10  :: alpha, tolerance, M
+2  box_circles.cin     :: number of circular elements, circular elements input file
+4  10  box_ellipses.ein    :: number of elliptical elements, elliptical elements input file
+file_not_used     :: particle inputs file
+
