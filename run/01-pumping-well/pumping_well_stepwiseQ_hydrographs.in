@@ -5,9 +5,9 @@ pumping_well_stepwiseQ_hydrographs.dat
 False 1.5D-1  2.0D0  1.0  :: UNCONFINED: unconfinedFlag?, Sy, Kz, b
 False  1.0D-5  2.0D0  1  1.0D-5  1  :: MultiPORO  Flag?, matrixSs, lambda, diffusion idx, Dm, NDiffTerms
 8  8  100  :: nx, ny, nt
-NW LOC|NE LOC|SE LOC|SW LOC|W LOC|N LOC|E LOC|S LOC
--1.25  1.25  1.25 -1.25 -1.25  0.0   1.25  0.0    ::    x 
- 1.25  1.25 -1.25 -1.25  0.0   1.25  0.0  -1.25   ::    y 
+NW|NE|SE|SW|W|N|E|S
+-1.25  1.25  1.5 -1.5 -1.25  0.0   1.5  0.0    ::    x 
+ 1.25  1.25 -1.5 -1.5  0.0   1.25  0.0  -1.5   ::    y 
 LINVEC 0.1 7.0 :: t 
 1.0D-16  1.0D-15  150  :: alpha, tolerance, M
 1  pumping_well_circles_stepwiseQ.cin     :: number of circular elements, circle data file
