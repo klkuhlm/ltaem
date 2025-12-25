@@ -42,6 +42,7 @@ idx = 5
 
 for i in range(nt):
     # header at beginning of each time
+    t.append(float(lines[idx].strip().split("=")[1]))
     idx += 2
     f = []
     for j in range(nx * ny):
@@ -59,22 +60,19 @@ for i in range(nt):
 X = r[:, 0].reshape(nx, ny, order="F")
 Y = r[:, 1].reshape(nx, ny, order="F")
 
-ts = 2
-
-fig = plt.figure(figsize=(18, 6))
-plt.subplot(131)
-plt.contourf(X, Y, h[:, :, ts], 30)
-plt.title("head")
-plt.axis("equal")
-plt.grid()
-plt.subplot(132)
-plt.quiver(X, Y, v[:, :, 0, ts], v[:, :, 1, ts])
-plt.title("velocity vectors")
-plt.axis("equal")
-plt.grid()
-plt.subplot(133)
-plt.contourf(X, Y, dh[:, :, ts], 30)
-plt.title("head ln(t) derivative")
-plt.axis("equal")
-plt.grid()
-plt.savefig("test-contours.png")
+for j in range(nt):
+    fig, ax = plt.subplots(1,3,num=1,figsize=(18, 6),constrained_layout=True)
+    ax[0].contourf(X, Y, h[:, :, j], 30)
+    ax[0].set_title(f"head (t={t[j]:.3E})")
+    ax[0].set_aspect("equal", "box")
+    ax[0].grid(True)
+    ax[1].quiver(X, Y, v[:, :, 0, j], v[:, :, 1, j])
+    ax[1].set_title("velocity vectors")
+    ax[1].set_aspect("equal", "box")
+    ax[1].grid(True)
+    ax[2].contourf(X, Y, dh[:, :, j], 30)
+    ax[2].set_title("head ln(t) derivative")
+    ax[2].set_aspect("equal", "box")
+    ax[2].grid(True)
+    plt.savefig(f"test_contours_{j:03}.png")
+    plt.close(1)
