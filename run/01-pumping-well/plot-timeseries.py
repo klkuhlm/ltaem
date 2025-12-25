@@ -2,18 +2,18 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # read timeseriesoutput
-fn = 'boise_timeseries.dat'
+fn = "pumping_well_hydrographs.dat"
 
-fh = open(fn,'r')
-lines = fh.readlines()
-fh.close()
+with open(fn, "r", encoding="ascii") as fh:
+    lines = fh.readlines()
+
 header = lines[1]
 outputtype = int(lines[0].split()[1])  # which output_flag was used
-nloc = int(header.lstrip('#').split('locations')[0].strip())
-nt =  int(header.split('locations')[1].strip().rstrip('times').strip())
+nloc = int(header.lstrip("#").split("locations")[0].strip())
+nt = int(header.split("locations")[1].strip().rstrip("times").strip())
 
 if outputtype < 10 or outputtype > 11:
-    print 'ERROR: only output_flag = {10,11} works with this script'
+    print("ERROR: only output_flag = {10,11} works with this script")
 
 ###########################
 # whole-file header: 2 line
@@ -43,91 +43,94 @@ idx = 2
 for loc in range(nloc):
     # header at beginning of each time
     header = lines[idx]
-    xloc = float(header.split('x=')[1].split('y=')[0].strip())
-    yloc = float(header.split('y=')[1].split()[0].strip())
-    name = ' '.join(header.split()[6:])
-        
-    mdv.append({'xloc':xloc,'yloc':yloc,'name':name})
+    xloc = float(header.split("x=")[1].split("y=")[0].strip())
+    yloc = float(header.split("y=")[1].split()[0].strip())
+    name = " ".join(header.split()[6:])
+
+    mdv.append({"xloc": xloc, "yloc": yloc, "name": name})
     idx += 2
 
     f = []
     for i in range(nt):
         f.append([float(x) for x in lines[idx].split()])
-        idx += 1 # empty rows between locations
+        idx += 1  # empty rows between locations
     idx += 2
 
     r = np.array(f)
     if loc == 0:
-        t = r[:,0]
-    hv.append(r[:,1])
+        t = r[:, 0]
+    hv.append(r[:, 1])
     if outputtype == 10:
-        vv.append(r[:,2:4])
-        dhv.append(r[:,4])
+        vv.append(r[:, 2:4])
+        dhv.append(r[:, 4])
     else:
-        dhv.append(r[:,2])
+        dhv.append(r[:, 2])
 
-fig = plt.figure(figsize=(12,6))
-first = True
+if outputtype == 10:
+    nplotcol = 3
+else:
+    nplotcol = 2
 
-colors = ['red','green','blue','pink','magenta','cyan','orange','purple']
+fig, ax = plt.subplots(nplotcol, 1, figsize=(8, 8), constrained_layout=True)
+
+colors = ["red", "green", "blue", "pink", "magenta", "cyan", "orange", "purple"]
 ncol = len(colors)
-lines = ['-','--','-.',':']
+lines = ["-", "--", "-.", ":"]
 
 ##plt.suptitle('%s (x=%.5g, y=%.5g)' % (md['name'],md['xloc'],md['yloc']))
 
-#loc = 2 # which of the locations to plot?
+# loc = 2 # which of the locations to plot?
 for loc in range(nloc):
-    
-    if outputtype == 10:
-        nplotcol = 3
-    else:
-        nplotcol = 2
-    
+
     # two/three side-by-side timeseries plots
-    if first:
-        ax1 = fig.add_subplot(1,nplotcol,1)
-    ax1.plot(t,(hv[loc]),linestyle=lines[int(loc/ncol)],color=colors[loc%ncol],
-             label='%s (x=%.5g, y=%.5g)' % (mdv[loc]['name'],mdv[loc]['xloc'],mdv[loc]['yloc']))
-    ax1.set_xscale('log')
-    ax1.set_yscale('linear')
-    #ax1.set_ylim([0.001,3])
-    ax1.set_xlabel('time')
-    ax1.set_ylabel('head')
-    #ax1.axis('equal')
-    ax1.grid()
-    
-    if first:
-        ax2 = fig.add_subplot(1,nplotcol,2)
-    ax2.plot(t,dhv[loc])
-    ax2.set_xscale('log')
-    ax2.set_yscale('linear')
-    ax2.set_xlabel('time')
-    ax2.set_ylabel('$\partial$ head/$\\ln t$')
-    ax2.set_ylim([-20,20])
-    ax2.grid()
-    #ax2.axis('equal')
-    
+    ax[0].plot(
+        t,
+        (hv[loc]),
+        linestyle=lines[int(loc / ncol)],
+        color=colors[loc % ncol],
+        label=(
+            f"{mdv[loc]['name']} (x={mdv[loc]['xloc']:.5g}, y={mdv[loc]['yloc']:.5g})"
+        ),
+    )
+    ax[0].set_xscale("log")
+    ax[0].set_yscale("linear")
+    # ax[0].set_ylim([0.001,3])
+    ax[0].set_xlabel("time")
+    ax[0].set_ylabel("head")
+    # ax[0].axis('equal')
+    ax[0].grid(True)
+
+    ax[1].plot(t, dhv[loc])
+    ax[1].set_xscale("log")
+    ax[1].set_yscale("linear")
+    ax[1].set_xlabel("time")
+    ax[1].set_ylabel("$\\partial$ head/$\\ln t$")
+    # ax[1].set_ylim([-20, 20])
+    ax[1].grid(True)
+    # ax[1].axis('equal')
+
     if outputtype == 10:
-        if first:
-            ax3 = fig.add_subplot(133)
-        ax3.plot(t,vv[loc][:,0],'r:',label='$v_x$')
-        ax3.plot(t,vv[loc][:,1],'g--',label='$v_y$')
-        ax3.plot(t,np.abs(vv[loc][:,0]+v[loc][:,1]*1j),'k-',label='$|v|$')
-        ax3.set_xscale('linear')
-        ax3.set_yscale('linear')
-        ax3.set_xlabel('time')
-        ax3.set_ylabel('velocity')
-        ax3.grid()
+        if loc == 0:
+            labelx = "$v_x$"
+            labely = "$v_y$"
+            labela = "$|v|$"
+        else:
+            labelx, labely, labela = (None, None, None)
+        ax[2].plot(t, vv[loc][:, 0], "r:", label=labelx)
+        ax[2].plot(t, vv[loc][:, 1], "g--", label=labely)
+        ax[2].plot(t, np.abs(vv[loc][:, 0] + vv[loc][:, 1] * 1j), "k-", label=labela)
+        ax[2].set_xscale("log")
+        ax[2].set_yscale("linear")
+        ax[2].set_xlabel("time")
+        ax[2].set_ylabel("velocity")
+        ax[2].grid(True)
 
-
-#ax1.legend(loc=0)
-ax1.set_title('head')
-#ax2.legend(loc=0)
-ax2.set_title('derivative')
+ax[0].legend(loc=0, fontsize="x-small", ncol=2)
+ax[0].set_title("head")
+# ax[1].legend(loc=0)
+ax[1].set_title("derivative")
 if outputtype == 10:
-#    ax3.legend(loc=0)
-    ax3.set_title('velocity')
+    ax[2].legend(loc=0, fontsize="x-small")
+    ax[2].set_title("velocity")
 
-plt.tight_layout()
-plt.savefig('test-timeseries.png')
-
+plt.savefig("test-timeseries.png")
