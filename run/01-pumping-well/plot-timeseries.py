@@ -1,8 +1,14 @@
+import sys
 import matplotlib.pyplot as plt
 import numpy as np
 
 # read timeseriesoutput
-fn = "pumping_well_hydrographs.dat"
+if not len(sys.argv) == 2:
+    print("pass filename of .dat output to plot at command line")
+    sys.exit(1)
+else:
+    fn = sys.argv[1]
+    print(f"opening {fn} for reading hydrograph output")
 
 with open(fn, "r", encoding="ascii") as fh:
     lines = fh.readlines()
@@ -77,7 +83,7 @@ colors = ["red", "green", "blue", "pink", "magenta", "cyan", "orange", "purple"]
 ncol = len(colors)
 lines = ["-", "--", "-.", ":"]
 
-##plt.suptitle('%s (x=%.5g, y=%.5g)' % (md['name'],md['xloc'],md['yloc']))
+plt.suptitle(f"data from '{fn}'")
 
 # loc = 2 # which of the locations to plot?
 for loc in range(nloc):
@@ -95,7 +101,7 @@ for loc in range(nloc):
     ax[0].set_xscale("log")
     ax[0].set_yscale("linear")
     # ax[0].set_ylim([0.001,3])
-    ax[0].set_xlabel("time")
+    #ax[0].set_xlabel("time")
     ax[0].set_ylabel("head")
     # ax[0].axis('equal')
     ax[0].grid(True)
@@ -103,7 +109,7 @@ for loc in range(nloc):
     ax[1].plot(t, dhv[loc])
     ax[1].set_xscale("log")
     ax[1].set_yscale("linear")
-    ax[1].set_xlabel("time")
+    #ax[1].set_xlabel("time")
     ax[1].set_ylabel("$\\partial$ head/$\\ln t$")
     # ax[1].set_ylim([-20, 20])
     ax[1].grid(True)
@@ -126,11 +132,11 @@ for loc in range(nloc):
         ax[2].grid(True)
 
 ax[0].legend(loc=0, fontsize="x-small", ncol=2)
-ax[0].set_title("head")
+#ax[0].set_title("head")
 # ax[1].legend(loc=0)
-ax[1].set_title("derivative")
+#ax[1].set_title("derivative")
 if outputtype == 10:
     ax[2].legend(loc=0, fontsize="x-small")
-    ax[2].set_title("velocity")
+    #ax[2].set_title("velocity")
 
-plt.savefig("test-timeseries.png")
+plt.savefig(f"plot_{fn.replace('.dat','.png')}")

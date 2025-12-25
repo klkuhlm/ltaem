@@ -61,7 +61,8 @@ X = r[:, 0].reshape(nx, ny, order="F")
 Y = r[:, 1].reshape(nx, ny, order="F")
 
 for j in range(nt):
-    fig, ax = plt.subplots(1,3,num=1,figsize=(18, 6),constrained_layout=True)
+    fig, ax = plt.subplots(1, 3, num=1,
+                           figsize=(18, 6), constrained_layout=True)
     ax[0].contourf(X, Y, h[:, :, j], 30)
     ax[0].set_title(f"head (t={t[j]:.3E})")
     ax[0].set_aspect("equal", "box")
