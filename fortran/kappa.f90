@@ -47,24 +47,32 @@ contains
     integer :: np, i
     complex(DP), allocatable ::  kap2(:), exp2z(:)
 
-    real(DP) :: omega, beta
+    real(DP) :: omega, beta !, boulton
     real(DP), allocatable :: a(:), pdf(:)
 
     if (.not. present(sq_arg)) then
+      ! return kappa
       squared = .false.
     else
+      ! return kappa*kappa
       squared = sq_arg
     end if
 
     np = size(p)
 
     !! standard confined definition
+    !! kappa^2 = p/alpha
     q(1:np) = p(:)/el%alpha
 
     if (el%wave) then
       !! wave solution (another time derivative)
       q(1:np) = q(:) * p
     end if
+
+    !! these terms are defined additively, so multiple effects
+    !! could be turned on simultaneously. Only leaky and unconfine
+    !! can be added for now, because the multiporosity solution
+    !! is not additive.
 
     !! leaky
     !! ##############################
@@ -76,10 +84,12 @@ contains
        select case(el%leakFlag)
        case(1)
           !! case I, no-drawdown condition at top of aquitard
+          !! coth(kappa2*b2)
           q(1:np) = q + kap2(:) * el%aquitardK / (el%b * el%K) * &
                & (1.0_DP + exp2z(:))/(1.0_DP - exp2z(:))
        case(2)
           !! case II, no-flow condition at top of aquitard
+          !! tanh(kappa2*b2)
           q(1:np) = q + kap2(:) * el%aquitardK / (el%b * el%K) * &
                & (1.0_DP - exp2z(:))/(1.0_DP + exp2z(:))
        case(3)
@@ -94,7 +104,12 @@ contains
     !! ##############################
     if(el%unconfFlag) then
        ! integrated (0->b dz) Neuman (1972, WRR) solution
+       ! fully penetrating solution
        q(1:np) = q + el%Kz * p(:) / (el%K * el%b * (el%Kz / el%Sy + p(:)))
+
+       ! Boulton
+       !boulton = 3.0_DP * el%Kz / (el%Sy * el%b)
+       !q(1:np) = q + (el%Sy * p(:) / el%K) * (boulton / (boulton + p(:)))
     end if
 
     !! dual porosity

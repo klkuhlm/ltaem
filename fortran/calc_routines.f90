@@ -125,12 +125,14 @@ contains
 
        if (in <= nc) then
           ! circle
-          H(1:np) = H(:) - c(in)%areaQ*c(in)%Ss*timef(p,c(in)%time,.true.)/kappa(p,c(in)%element,.true.)
+          H(1:np) = H(:) - c(in)%areaQ*c(in)%Ss*timef(p,c(in)%time,.true.) / &
+               & kappa(p,c(in)%element,.true.)
           H(1:np) = H(:)/c(in)%K ! convert to head
        else
           ! ellipse
           ein = in-nc
-          H(1:np) = H(:) - e(ein)%areaQ*e(ein)%Ss*timef(p,e(ein)%time,.true.)/kappa(p,e(ein)%element,.true.)
+          H(1:np) = H(:) - e(ein)%areaQ*e(ein)%Ss*timef(p,e(ein)%time,.true.) / &
+               & kappa(p,e(ein)%element,.true.)
           H(1:np) = H(:)/e(ein)%K ! convert to head
        end if
     end if
