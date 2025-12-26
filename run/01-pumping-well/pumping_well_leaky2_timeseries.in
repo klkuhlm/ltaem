@@ -1,9 +1,9 @@
 True  False  False True  True 10  :: calc?, particle?, contour?, log(t)_deriv?, Qcalc?, output_flag
-pumping_well_dualporosity_hydrographs.dat
+pumping_well_leaky2_timeseries.dat 
 1.0D0   2.0D-2   1.0D-5     :: por, k, Ss
-0   1.0D-4   1.0D-3   5.0D-1   :: LEAKY: leakFlag, K2, Ss2, b2
+2   1.0D-4   1.0D-3   5.0D-1   :: LEAKY: leakFlag, K2, Ss2, b2
 False 1.5D-1  2.0D0   1.0   :: UNCONFINED: unconfinedFlag?, Sy, Kz, b
-True 1.0D-2  2.0D-1  1  1.0D-5  1  :: MultiPORO  Flag?, matrixSs, lambda, diffusion idx, Dm, nDiffTerms
+False 1.0D-5  2.0D0     1  1.0D-5  1  :: MultiPORO  Flag?, matrixSs, lambda, diffusion idx, Dm, NDiffTerms
 8  8  100  :: nx, ny, nt
 NW|NE|SE|SW|W|N|E|S
 -1.25  1.25  1.5 -1.5 -1.25  0.0   1.5  0.0    ::    x 
