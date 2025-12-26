@@ -108,11 +108,11 @@ for loc in range(nloc):
     # ax[0].axis('equal')
     ax[0].grid(True)
 
-    ax[1].plot(t, dhv[loc])
+    ax[1].plot(t, dhv[loc],color=colors[loc % ncol])
     ax[1].set_xscale("log")
     ax[1].set_yscale("linear")
     #ax[1].set_xlabel("time")
-    ax[1].set_ylabel("$\\partial$ head/$\\ln t$")
+    ax[1].set_ylabel("$\\partial h/\\partial(\\ln t)$")
     # ax[1].set_ylim([-20, 20])
     ax[1].grid(True)
     # ax[1].axis('equal')
@@ -133,12 +133,12 @@ for loc in range(nloc):
         ax[2].set_ylabel("velocity")
         ax[2].grid(True)
 
-ax[0].legend(loc=0, fontsize="x-small", ncol=2)
+ax[0].legend(loc=0, fontsize="small", ncol=(1 + loc//6))
 #ax[0].set_title("head")
 # ax[1].legend(loc=0)
 #ax[1].set_title("derivative")
 if outputtype == 10:
-    ax[2].legend(loc=0, fontsize="x-small")
+    ax[2].legend(loc=0, fontsize="small")
     #ax[2].set_title("velocity")
 
 plt.savefig(f"plot_{fn.replace('.dat','.png')}")

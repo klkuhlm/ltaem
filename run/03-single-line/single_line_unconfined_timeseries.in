@@ -1,0 +1,16 @@
+T  F  F  T  T  10  F ::  calc?, particle?, contour?, log(t)_deriv?, CalcQ?, output_flag, (optional debug?)
+single_line_unconfined_timeseries.dat
+1.0D0   2.0D0   1.0D-4       ::  por, k, Ss 
+0   1.0D0   1.0D-4   1.0D0   :: LEAKY:      leakFlag, K2, Ss2, b2
+True 1.0D-1  2.0D-2  1.0D0   :: UNCONFINED: unconfinedFlag?< Sy, Kz, b
+False 1.0D-5  2.0D0  0  1.0D-5  1  :: MultiPORO  Flag?, matrixSs, lambda, diffusion idx, Dm, NDiffTerms
+3 3 50 :: nx, ny, nt
+A|B|C
+0.0 0.0 0.5 :: x 
+1.0 0.0 1.0 :: y
+logvec -5.0 3.0 :: t
+1.0D-16  1.0D-15  10  :: alpha, tolerance, M
+0  not.used    :: number of circular elements, circle data file
+1  30 single_line_ellipse_source.ein    :: number of elliptical elements, ellipse MS, ellipse data file
+not_used   ::  particle data file
+
