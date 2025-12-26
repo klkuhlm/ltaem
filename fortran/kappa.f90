@@ -135,9 +135,6 @@ contains
                   a(i) = real((2*i - 1)**2, DP) * PISQ * el%lambda * 0.25_DP
                   pdf(i) = 8.0_DP * beta / (real((2*i-1)**2, DP) * PISQ)
                 end do
-             case(2)
-                write(stderr,*) 'cylindrical multiporo matrix not implemented'
-                stop 444
              case(3)
                 do concurrent (i = 1:el%NDiffterms)
                   a(i) = real(i**2, DP) * PISQ * el%lambda
@@ -160,9 +157,6 @@ contains
                 q = p * (omega + sqrt(el%lambda * (1.0_DP - omega) / &
                      & (3.0_DP * p)) * tanh(sqrt(3.0_DP * (1.0_DP - omega) * &
                      & p / el%lambda)))
-             case(2)
-                write(stderr,*) 'cylindrical multiporo matrix not implemented'
-                stop 446
              case(3)
                 q = p * (omega + (sqrt(15.0_DP * (1.0_DP - omega * p) / &
                      & el%lambda) / tanh(sqrt(15.0_DP * (1.0_DP - omega * p) / &
