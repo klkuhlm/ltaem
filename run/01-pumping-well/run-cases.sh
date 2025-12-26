@@ -16,8 +16,14 @@ for t in  "contour" "hydrographs" ; do
     fi
 done
 
+ln -sf ../plot_contour.py .
+python plot_contour.py pumping_well_contour.dat
+
+ln -sf ../plot_timeseries.py .
+python plot_timeseries.py pumping_well_hydrographs.dat
+
 # specific PDEs associated with hydrograph types
-for t in  "dualporosity" "leaky1" "leaky2" "leaky3" "stepwiseQ" "linearQ"; do 
+for t in  "dualporosity" "leaky1" "leaky2" "leaky3" "kazemi" "warrenroot" "stepwiseQ" "linearQ"; do 
     echo "pumping_well ${t} hydrographs"
     ${EXE} ./pumping_well_${t}_hydrographs.in \
         1> pumping_well_${t}_hydrographs.screen \
@@ -25,5 +31,7 @@ for t in  "dualporosity" "leaky1" "leaky2" "leaky3" "stepwiseQ" "linearQ"; do
     if [ -s pumping_well_${t}_hydrographs.err ] ; then
         echo "********************************** WARNING: ${t} produced an error **********************************"
         tail pumping_well_${t}_hydrographs.err
+    else
+        python plot_timeseries.py pumping_well_${t}_hydrographs.dat
     fi
 done
