@@ -17,7 +17,7 @@ with open(fn, "r", encoding="ascii") as fh:
     if outputtype != 1:
         print("this script only works with gnuplot-style contour output (1)")
         sys.exit(2)
-    
+
     nt = int(lines[1].strip().split(":")[1])
     nx = int(lines[2].strip().split(":")[1])
     ny = int(lines[3].strip().split(":")[1])
@@ -53,7 +53,7 @@ with open(fn.replace(".dat", ".geom"), "r", encoding="ascii") as fh:
             if "EOF" in line:
                 break
             f = line.lstrip("#").strip().split()
-            t = f[0]
+            typ = f[0]
             num = int(f[1])
             m = int(f[3])
             dd = []
@@ -62,24 +62,29 @@ with open(fn.replace(".dat", ".geom"), "r", encoding="ascii") as fh:
                 dd.append(
                     [float(x) for x in lines[j + i + 1].lstrip("#").strip().split()]
                 )
-            if t[0:4] == "circ":
+            if typ[0:4] == "circ":
                 c.append({"id": num, "m": m, "xt": np.array(dd)})
-            elif t[0:4] == "elli":
+            elif typ[0:4] == "elli":
                 e.append({"id": num, "m": m, "xt": np.array(dd)})
             else:
-                print("invalid type", t)
+                print("invalid type", typ)
 
-titles = ["head", "dh/d(lnt)", "vx", "vy"]
+titles = ["$h$", "$\\partial h/\\partial(\\ln t)$", "$v_x$", "$v_y$"]
+
+print(t)
 
 for j in range(nt):
     print(f"time {j}")
-    fig, axes = plt.subplots(2, 2, num=1, figsize=(10, 5), constrained_layout=True)
+    fig, axes = plt.subplots(2, 2, num=1, figsize=(10, 10), constrained_layout=True)
+    plt.suptitle(f"t={t[j]:.3E} [{j}]")
     for i, ax in enumerate(axes.ravel()):
         CS = ax.contour(X, Y, data[i][:, :, j].transpose(), levels=20, linewidths=0.5)
         ax.clabel(CS, fontsize=6)
-        #ax.streamplot(X, Y, data[2][:, :, j].transpose(), data[3][:, :, j].transpose())
-        ax.quiver(X,Y,data[2][:,:,j].transpose(),data[3][:,:,j].transpose())
-        ax.set_title(titles[i])
+        # ax.streamplot(X, Y, data[2][:, :, j].transpose(), data[3][:, :, j].transpose())
+        ax.quiver(X, Y, data[2][:, :, j].transpose(), data[3][:, :, j].transpose())
+        ax.set_title(
+            f"{titles[i]} (min={data[i][:,:,j].min():.3g}, max={data[i][:,:,j].max():.3g})"
+        )
         ax.set_aspect("equal")
 
         for cc in c:
