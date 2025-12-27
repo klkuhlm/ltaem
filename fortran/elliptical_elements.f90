@@ -84,7 +84,8 @@ contains
           hiM = M
           ! TODO: calculating inside a specified head/flux ellipse is broken
           write(stderr,*) 'WARNING: e%ibnd=={-1,1} and calcin are BROKEN?'
-!!$       stop 'UNIMPLEMENTED: e%ibnd=={-1,1} and calcin'
+          write(stderr,*) 'UNIMPLEMENTED: e%ibnd=={-1,1} and calcin'
+          stop 777
        else
           ! ibnd = {-1,1}, but .not. calcin
           nrows = M
