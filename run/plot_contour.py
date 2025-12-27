@@ -76,7 +76,7 @@ print(t)
 for j in range(nt):
     print(f"time {j}")
     fig, axes = plt.subplots(2, 2, num=1, figsize=(10, 10), constrained_layout=True)
-    plt.suptitle(f"t={t[j]:.3E} [{j}]")
+    plt.suptitle(f"t={t[j]:.3g} [{j}]")
     for i, ax in enumerate(axes.ravel()):
         CS = ax.contour(X, Y, data[i][:, :, j].transpose(), levels=20, linewidths=0.5)
         ax.clabel(CS, fontsize=6)
