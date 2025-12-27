@@ -192,7 +192,7 @@ contains
     do i = 1,M
        flux(1:np,1:2,i) = velCalcZ(calclocs(i),p,lo,hi,dom,c,e,bg)
     end do
-    !$OMP END PARALLEL DO
+    !$omp end parallel do
 
     ! project flux onto radius vector and integrate w/ trapezoid rule
     if (el%id <= dom%num(1)) then
