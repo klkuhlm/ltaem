@@ -199,7 +199,7 @@ deps:
 	gfortran -cpp -MM $(SRCS) > ltaem.deps
 
 # build python module of stripped-down version of mathieu libraries using f2py
-pymodule fmathieu.so : cbessel.f90 mathieu.f90
-	f2py --fcompiler=gnu95 $(LAPACKLIB) $(BLASLIB) -c fmathieu.pyf ./external/cbessel.f90 mathieu.f90
+pymodule: cbessel.f90 mathieu.f90
+	FC=gfortran f2py $(LAPACKLIB) $(BLASLIB) -c fmathieu.pyf ./external/cbessel.f90 mathieu.f90
 
 

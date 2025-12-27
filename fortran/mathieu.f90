@@ -27,7 +27,7 @@
 ! be used to create a python-callable complex-parameter modified
 ! Mathieu function library.
 !
-! f2py --fcompiler=gnu95 -llapack -lblas -c fmathieu.pyf cbessel.f90 mathieu.f90
+! FC=gfortran f2py -llapack -lblas -c fmathieu.pyf cbessel.f90 mathieu.f90
 
 module mf
 
