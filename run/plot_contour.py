@@ -52,19 +52,19 @@ with open(fn.replace(".dat", ".geom"), "r", encoding="ascii") as fh:
         if "#" in line:
             if "EOF" in line:
                 break
-            f = line.strip().split()
-            t = f[1]
-            num = int(f[2])
-            m = int(f[4])
+            f = line.lstrip("#").strip().split()
+            t = f[0]
+            num = int(f[1])
+            m = int(f[3])
             dd = []
             for i in range(m):
                 # x, y, local angle
                 dd.append(
                     [float(x) for x in lines[j + i + 1].lstrip("#").strip().split()]
                 )
-            if t == "circle":
+            if t[0:4] == "circ":
                 c.append({"id": num, "m": m, "xt": np.array(dd)})
-            elif t == "ellipse":
+            elif t[0:4] == "elli":
                 e.append({"id": num, "m": m, "xt": np.array(dd)})
             else:
                 print("invalid type", t)
