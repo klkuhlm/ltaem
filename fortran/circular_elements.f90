@@ -584,7 +584,7 @@ contains
     end do
 
     if (inside) then
-       if (c%ibnd == 0) then
+       if (c%match) then
           n0 = 2*N ! inside of matching circle
        else
           n0 = 1   ! inside of specified {head,flux} boundary circle
