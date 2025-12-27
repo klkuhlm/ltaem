@@ -77,8 +77,8 @@ for j in range(nt):
     for i, ax in enumerate(axes.ravel()):
         CS = ax.contour(X, Y, data[i][:, :, j].transpose(), levels=20, linewidths=0.5)
         ax.clabel(CS, fontsize=6)
-        ax.streamplot(X, Y, data[2][:, :, j].transpose(), data[3][:, :, j].transpose())
-        # ax.quiver(X,Y,data[2][:,:,j],data[3][:,:,j])
+        #ax.streamplot(X, Y, data[2][:, :, j].transpose(), data[3][:, :, j].transpose())
+        ax.quiver(X,Y,data[2][:,:,j],data[3][:,:,j])
         ax.set_title(titles[i])
         ax.set_aspect("equal")
 
