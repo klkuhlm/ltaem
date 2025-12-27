@@ -188,7 +188,7 @@ contains
     allocate(flux(np,2,M),rflux(np,M))
 
     ! compute Cartesian components of flux at matching locations
-    !$OMP PARALLEL DO PRIVATE(i) SHARED(flux)
+    !$omp parallel do private(i) shared(calclocs,p,lo,hi,dom,c,e,bg,flux)
     do i = 1,M
        flux(1:np,1:2,i) = velCalcZ(calclocs(i),p,lo,hi,dom,c,e,bg)
     end do

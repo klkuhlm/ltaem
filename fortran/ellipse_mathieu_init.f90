@@ -60,11 +60,11 @@ contains
     ! either bail out if too large, or potentially use an
     ! asymptotic expansion (needs investigation)
 
-    !$OMP PARALLEL DO PRIVATE(i) SHARED(bg)
+    !$omp parallel do private(i) shared(bg, kap, shirtdim)
     do i = 1, tnp
        bg%mat(i) = mathieu_init(kap(i), MM=max(bg%ms,shirtdim(i)))
     end do
-    !$OMP END PARALLEL DO
+    !$omp end parallel do
 
     ! allocate/initialize each element for each value of p
     do j = 1, size(e)
@@ -74,11 +74,11 @@ contains
           kap = kappa(p,e(j)%element)
           shirtdim(:) = shirts(e(j)%N+2, kap)
 
-          !$OMP PARALLEL DO PRIVATE(i) SHARED(e)
+          !$omp parallel do private(i) shared(e, kap, shirtdim)
           do i = 1, tnp
              e(j)%mat(i) = mathieu_init(kap(i), MM=max(e(j)%MS,shirtdim(i)))
           end do
-          !$OMP END PARALLEL DO
+          !$omp end parallel do
        end if
     end do
   end subroutine ellipse_init
