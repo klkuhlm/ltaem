@@ -25,12 +25,12 @@ F   :: dual porosity flag
 1       :: NDiffTerms
 1.0D0    :: dimensionless skin
 0.0D0    :: area source strength
--0.75 -1.0 -1.25 -1.5 :: boundary source strength
+-0.5d0 +1.0d0 -1.5d0 +2.0d0 :: boundary source strength
 1  0.0D0  0.0D0  :: 1 area time flag, tpar1, tpar2
 1  0.0D0  0.0D0  :: 2 area time flag, tpar1, tpar2
 1  0.0D0  0.0D0  :: 3 area time flag, tpar1, tpar2
 1  0.0D0  0.0D0  :: 4 area time flag, tpar1, tpar2
-2  0.0D+0   1.0D+0  :: 1 boundary time flag, tpar1, tpar2
-2  5.0D-1   1.5D+0  :: 2 boundary time flag, tpar1, tpar2
-2  1.0D+0   2.0D+0  :: 3 boundary time flag, tpar1, tpar2
-2  1.5D+0   2.5D+0  :: 4 boundary time flag, tpar1, tpar2
+2  0.0D+0   1.5D+0  :: 1 boundary time flag, tpar1, tpar2
+2  1.0D+0   2.5D+0  :: 2 boundary time flag, tpar1, tpar2
+2  2.0D+0   3.5D+0  :: 3 boundary time flag, tpar1, tpar2
+2  3.0D+0   4.5D+0  :: 4 boundary time flag, tpar1, tpar2
