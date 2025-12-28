@@ -2,12 +2,22 @@ import sys
 import numpy as np
 import matplotlib.pyplot as plt
 
+particles = False
+
 if len(sys.argv) < 2:
-    print("provide contour output filename at command line")
+    print(
+        "provide contour output filename at command line, possibly also particle track file (for same arrangements of sources/sinks)"
+    )
     sys.exit(1)
 else:
     fn = sys.argv[1]
-    print(f"opening {fn} for output")
+    print(f"opening {fn} for contour output")
+
+    if len(sys.argv) == 3:
+        pfn = sys.argv[2]
+        particles = True
+        print(f"opening {pfn} for particle output")
+
 
 tvec = []
 with open(fn, "r", encoding="ascii") as fh:
@@ -26,7 +36,26 @@ with open(fn, "r", encoding="ascii") as fh:
         if "t= " in line:
             tvec.append(float(line.strip().split("=")[1]))
 
-# this skips blanks and comments
+if particles:
+    parts = []
+    with open(pfn, "r", encoding="ascii") as pfh:
+        lines = pfh.readlines()
+        nump = int(lines[1].lstrip("#").split()[0])
+        for i, find_header_line in enumerate(lines[2:]):
+            if "# particle" in find_header_line:
+                thispart = []
+                numpart = int(find_header_line.lstrip("#").split()[1])
+                print(f"number of particle {numpart}")
+                for j, ll in enumerate(lines[i + 4 :]):
+                    if len(ll) < 3:
+                        # two empty lines between particles
+                        break
+                    thispart.append([float(x) for x in ll.strip().split()])
+                parts.append(np.array(thispart))
+
+    print("particles", len(parts), [x.shape for x in parts])
+
+# this skips blanks and commentsd
 # reads in as one giant matrix
 d = np.loadtxt(fn)
 
@@ -78,10 +107,16 @@ for j in range(nt):
     fig, axes = plt.subplots(2, 2, num=1, figsize=(10, 10), constrained_layout=True)
     plt.suptitle(f"t={t[j]:.3g} [{j}]")
     for i, ax in enumerate(axes.ravel()):
-        CS = ax.contour(X, Y, data[i][:, :, j].transpose(), levels=20, linewidths=0.5)
+        CS = ax.contour(
+            X,
+            Y,
+            data[i][:, :, j].transpose(),
+            levels=np.linspace(-30, 10, 40),
+            linewidths=0.5,
+        )
         ax.clabel(CS, fontsize=6)
         # ax.streamplot(X, Y, data[2][:, :, j].transpose(), data[3][:, :, j].transpose())
-        ax.quiver(X, Y, data[2][:, :, j].transpose(), data[3][:, :, j].transpose())
+        # ax.quiver(X, Y, data[2][:, :, j].transpose(), data[3][:, :, j].transpose())
         ax.set_title(
             f"{titles[i]} (min={data[i][:,:,j].min():.3g}, max={data[i][:,:,j].max():.3g})"
         )
@@ -93,6 +128,12 @@ for j in range(nt):
         for ee in e:
             xx = ee["xt"]
             ax.plot(xx[:, 0], xx[:, 1], "k-", lw=0.25)
+
+        if particles:
+            for p in parts:
+                # plot particle up to this time
+                idx = np.argmin(np.abs(p[:, 0] - t[j]))
+                ax.plot(p[:idx, 1], p[:idx, 2], "-", lw=0.5)
 
     fig.savefig(f"contour_{fn.replace(".dat","")}_{j}.png", dpi=200)
     plt.close(1)
