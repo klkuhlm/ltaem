@@ -9,7 +9,7 @@ DUMMY OBS NAME
 LINVEC -0.1 1.1 :: x 
 LINVEC -0.1 1.1 :: y
 0.25 1.25 2.25 3.25 4.25 5.25 6.25 7.25 :: t
-1.0D-16  1.0D-15  20  :: alpha, tolerance, M
+1.0E-9  1.0D-8  30  :: alpha, tolerance, M
 4  multiple_wells_circles.cin     :: number of circular elements, circle data file
 0  20 not_used    :: number of elliptical elements, ellipse MS, ellipse data file
 multiple_wells_particles.pin   ::  particle data file

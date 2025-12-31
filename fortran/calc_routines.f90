@@ -386,11 +386,11 @@ contains
   subroutine calcLocation(Z,c,e,dom,Rgp,Pgp,inside)
     use, intrinsic :: iso_fortran_env, only : stderr => error_unit
     use constants, only : DP
+    use utility, only : cisnan
     use type_definitions, only : circle, ellipse, domain
     use geomConv, only : xy2cA, xy2eA
     use, intrinsic :: iso_fortran_env, only : stderr => error_unit
 
-    use ieee_arithmetic, only : ieee_is_nan
     integer :: i
 
     complex(DP), intent(in) :: Z
@@ -421,13 +421,15 @@ contains
 
     ! components of vector from center of circle to observation point
     Zgp(1:nc) = xy2cA(Z,c(:))
-    do i=1,nc
-      if (ieee_is_nan(real(Zgp(i))) .or. ieee_is_nan(aimag(Zgp(i)))) then
-        write(stderr,*) 'GEOMETRY FAILURE at location Z=',Z
-        write(stderr,*) 'Zgp:',Zgp
-        stop 666
-      end if
-    end do
+    if (any(cisnan(Zgp))) then
+       do i=1,nc
+          if (cisnan(Zgp(i))) then
+             write(stderr,*) 'GEOMETRY FAILURE at location Z=',Z
+             write(stderr,*) 'Zgp:',Zgp
+             stop 666
+          end if
+       end do
+    end if
 
     Rgp(1:nc) = real(Zgp(1:nc))   ! r
     Pgp(1:nc) = aimag(Zgp(1:nc)) ! theta

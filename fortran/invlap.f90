@@ -46,8 +46,8 @@ contains
   !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   function deHoog_invLap_vect(t,tee,fp,lap) result(ft)
     use constants, only : DP, PI, CZERO
+    use utility, only : cisnan
     use type_definitions, only : INVLT
-    use ieee_arithmetic, only : ieee_is_nan
 
     real(DP), intent(in) :: tee              ! scaling (usually T=2*tmax)
     real(DP), intent(in), dimension(:) :: t   ! vector of times
@@ -67,7 +67,7 @@ contains
 
     M = lap%M
     nt = size(t)
-    teeinv = 1.0_DP/tee
+    teeinv = 1.0_DP/(tee)
 
     ! Re(p) -- this is the de Hoog parameter c
     gamma = lap%alpha - 0.5_DP * log(lap%tol) * teeinv
@@ -108,8 +108,8 @@ contains
     ! coefficients of Pade approximation
     ! using recurrence for all but last term
     do n = 1,2*M-1
-      A(n,:) = A(n-1,:) + d(n)*A(n-2,:) * z(:)
-      B(n,:) = B(n-1,:) + d(n)*B(n-2,:) * z(:)
+      A(n,:) = A(n-1,:) + d(n) * A(n-2,:) * z(:)
+      B(n,:) = B(n-1,:) + d(n) * B(n-2,:) * z(:)
     end do
 
     ! "improved remainder" to continued fraction
@@ -124,11 +124,13 @@ contains
     ! F=A/B represents accelerated trapezoid rule
     ft(1:nt) =  exp(gamma * t(:)) * teeinv * real(A(2*M,:) / B(2*M,:))
 
-    do n = 1, 2*M-1
-      if (ieee_is_nan(real(fp(n))) .or. ieee_is_nan(aimag(fp(n)))) then
-        write(*,*) 'Laplace-space function is NaN', n,fp(n)
-      end if
-    end do
+    if (any(cisnan(fp))) then
+       do n=1,size(fp)
+          if (cisnan(fp(n))) then
+             write(*,*) 'Laplace-space function is NaN', n,fp(n)
+          end if
+       end do
+    end if
   end function deHoog_invLap_vect
 
   function deHoog_invLap_scalt(t,tee,fp,lap) result(ft)

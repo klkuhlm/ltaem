@@ -622,9 +622,9 @@ contains
     use time_mod, only : timef
     use type_definitions, only : circle
     use bessel_functions, only : bK, bI, dbk, dbi
-    use ieee_arithmetic, only : ieee_is_nan
+    use utility, only : cisnan
+    
     integer :: j
-    complex(DP) :: tmp
 
     complex(DP), dimension(:), intent(in) :: p
     type(circle), intent(in) :: c
@@ -658,15 +658,16 @@ contains
     else
       n0 = 1
       kap(1:np) = kappa(p(:),c%parent)
-      do j=1,np
-        tmp = Rgp*kap(j)
-        if (ieee_is_nan(real(tmp)) .or. ieee_is_nan(aimag(tmp))) then
-          print *, 'DEBUG1:(p)',p(j)
-          print *, 'DEBUG2:(kap)',kap(j)
-          print *, 'DEBUG3:(Rgp)',Rgp
-        end if
-      end do
-
+      if (any(cisnan(Rgp*kap))) then
+         do j=1,np
+            if (cisnan(Rgp*kap(j))) then
+               print *, 'DEBUG1:(p)',p(j)
+               print *, 'DEBUG2:(kap)',kap(j)
+               print *, 'DEBUG3:(Rgp)',Rgp
+            end if
+         end do
+      end if
+      
       call dBK(Rgp*kap(:),N,BRgp(1:np,0:N-1),dBRgp(1:np,0:N-1))
       dBRgp(1:np,0:N-1) = spread(kap(1:np),2,N)*dBRgp(:,:)
       BR0(1:np,0:N-1) =  bK(c%r*kap(:),N)

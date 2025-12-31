@@ -26,9 +26,13 @@ module utility
   implicit none
 
   private
-  public :: ynot, rotate_vel, rotate_vel_mat
+  public :: ynot, rotate_vel, rotate_vel_mat, cisnan
   public :: v2c, diag, logspace, linspace, outer
   public :: cos_recurrence, sin_recurrence, cosh, acosh, tanh
+
+  interface cisnan
+    module procedure vec_cisnan, scal_cisnan
+  end interface cisnan
 
   interface diag
      module procedure diagonal_z, diagonal_d
@@ -57,7 +61,28 @@ module utility
   end interface tanh
 
 contains
+      
+  function vec_cisnan(z) result(log)
+    use constants, only : DP
+    use ieee_arithmetic, only : ieee_is_nan
+    complex(DP), intent(in), dimension(:) :: z
+    logical, dimension(size(z)) :: log
+    integer :: i
 
+    do concurrent (i=1:size(z))
+       log(i) = ieee_is_nan(real(z(i))) .and. ieee_is_nan(aimag(z(i)))
+    end do
+  end function vec_cisnan
+
+  function scal_cisnan(z) result(log)
+    use constants, only : DP
+    use ieee_arithmetic, only : ieee_is_nan
+    complex(DP), intent(in) :: z
+    logical :: log
+
+    log = ieee_is_nan(real(z)) .and. ieee_is_nan(aimag(z))
+  end function scal_cisnan
+  
   function cos_recurrence(x,n) result(c)
     use constants, only : DP
     real(DP), intent(in), dimension(:) :: x
