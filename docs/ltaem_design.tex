@@ -6,11 +6,15 @@
 \usepackage{hyperref}
 
 \begin{document}
+This is a high-level explanation of the LT-AEM through examples, as implemented in the Fortran programs in the LT-AEM Github repository \url{https://github.com/klkuhlm/ltaem}.
+
+Test cases are found in the \texttt{ltaem/run} folder. These test cases are used as examples of the capabilities of the overall approach.
+
 \section{Input File}
 \label{sec:input}
-The input format for LT-AEM attempts to be somewhat flexible,  but it is fairly rigid because parsing strings in Fortran is awful.  
+The input format for LT-AEM attempts to be somewhat flexible,  but it is fairly rigid because of how strings are parsed in Fortran. The convention followed is that highest-level input files end in the \texttt{.in} suffix, while the circular elements are specified in an input file that ends in \texttt{.cin} and the elliptical elements are specified in an input file that ends in \texttt{.ein}. This is just convention.
 
-The following simple input file to compute contours of results on a 40$\times$40
+The following simple highest-level input file to compute contours of results on a 40$\times$40
 grid, at 4 different times.
 
 \begin{verbatim}
@@ -31,24 +35,28 @@ LOGVEC -3.0 0.0
 NOT_USED  
 \end{verbatim}
 
+The variables are based on position. The following input shows the names of the variables. At the end of each variable, a \texttt{[?]} means a logical variable \{T,F,True,False\}, \texttt{[i]} means an integer variable, \texttt{[s]} means a string variable, and \texttt{[f]} means a floating point variable. A few variables were added later, and were made optional, so that old input files would not be broken. Optional variables are listed in angle brackets \texttt{<>}. Variables should be separated by some kind of whitespace, and records (i.e., lines) cannot be broken (i.e., newline is not valid whitespace in a line).
+
 \begin{verbatim}
-CALC? PARTICLE? CONTOUR? TDERIV? OUTPUT_TYPE OUTPUT_FN DUMP_FN ELEM_ORG_FN ELEM_GEOM_FN  
-POROSITY  K  Ss   
-LEAK_FLAG  AQT_K AQT_Ss  AQT_b  
-UNCONFINED_FLAG?, Sy  Ks  AQF_b
-DUALPORO_FLAG?, MATRIX_Ss, LAMBDA
-NUM_X, NUM_Y, NUM_T
-OBS_LOC_NAMES
-XVALS
-YVALS
-TVALS
-DKS_ALPHA  DKS_TOL  DKS_M  
-NUM_CIRCLES  CIRCLE_INPUT_FN   
-NUM_ELLIPSES BG_MS ELLIPSE_INPUT_FN
-PARTICLE_INPUT_FN
+CALC[?] PARTICLE[?] CONTOUR[?] TIMEDERIV[?] OUTPUT_TYPE[i]
+OUTPUT_FN[s] 
+BG_POROSITY[f] BG_K[f]  BG_Ss[f]   
+BG_LEAK_FLAG[i]  BG_AQT_K[f] BG_AQT_Ss[f]  BG_AQT_b[f]
+UNCONFINED_FLAG[?] BG_Sy[f]  BG_Ks[f]  BG_AQF_b[f]
+DUALPORO_FLAG[?] BG_MATRIX_Ss[f] BG_LAMBDA[f]
+OUT_NUM_X[i] OUT_NUM_Y[i] OUT_NUM_T[i]
+OUT_LOC_NAMES[s]
+XVALS[f]
+YVALS[f]
+TVALS[f]
+DKS_ALPHA[f]  DKS_TOL[f]  DKS_M[i]
+NUM_CIRCLES[i]  CIRCLE_INPUT_FN[s]   
+NUM_ELLIPSES[i] BG_M[i]S ELLIPSE_INPUT_FN[s]
+PARTICLE_INPUT_FN[s]
 \end{verbatim}
 
-TODO: explain input format/style
+Some error and consistency checks are made at run-time, when the input file is read (i.e., physical variables are not negative or zero, integer flags have valid values). When a simulation is run, a \texttt{.echo} file is written that echos the input, with a terse explanation of what each variable means. This is useful to check, to make sure the 
+
 
 \section{Problem setup and solution}
 \label{sec:problem-setup}
