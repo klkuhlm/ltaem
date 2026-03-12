@@ -389,7 +389,6 @@ contains
     use utility, only : cisnan
     use type_definitions, only : circle, ellipse, domain
     use geomConv, only : xy2cA, xy2eA
-    use, intrinsic :: iso_fortran_env, only : stderr => error_unit
 
     integer :: i
 
