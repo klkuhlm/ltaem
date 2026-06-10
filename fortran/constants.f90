@@ -45,7 +45,7 @@ module constants
   real(DP), parameter :: LN2 = log(2.0_DP) ! 0.69314718055994529...
   real(DP), parameter :: LNPIOV2 = log(2.0_DP*atan(1.0_DP))  ! 0.45158270528945482...
 
-  ! sqrt(-1)
+  ! 0, sqrt(-1)
   complex(DP), parameter :: CZERO = cmplx(0.0_DP,0.0_DP,DP)
   complex(DP), parameter :: EYE = cmplx(0.0_DP,1.0_DP,DP)
 
