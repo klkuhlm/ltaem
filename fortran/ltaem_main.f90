@@ -337,7 +337,7 @@ program ltaem_main
 
      ! TODO: see repeated code above
      if (sol%Qcalc) then
-        write(stdout,'(A)',advance='no') 'elemeznt boundary flowrates: '
+        write(stdout,'(A)',advance='no') 'element boundary flowrates: '
         allocate(sol%Q(sol%nt,nc+ne),qp(tnP,nc+ne))
         if (sol%deriv) then
            allocate(sol%dQ(sol%nt,nc+ne))
